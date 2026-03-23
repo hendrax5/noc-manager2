@@ -129,6 +129,7 @@ export default function SettingsClient({ initialFields, initialCategories }) {
                 <select value={newField.type} onChange={e => setNewField({...newField, type: e.target.value})} style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
                   <option value="text">Text Box</option>
                   <option value="textarea">Text Area</option>
+                  <option value="date">Date Picker</option>
                   <option value="select">Dropdown Menu</option>
                 </select>
               </div>
@@ -177,6 +178,7 @@ export default function SettingsClient({ initialFields, initialCategories }) {
                           <select value={editFieldData.type} onChange={e => setEditFieldData({...editFieldData, type: e.target.value})} style={{ width: '100%', padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
                             <option value="text">Text Box</option>
                             <option value="textarea">Text Area</option>
+                            <option value="date">Date Picker</option>
                             <option value="select">Dropdown Menu</option>
                           </select>
                         </td>

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import SearchableAttendeeSelect from "@/components/SearchableAttendeeSelect";
 
 export default function MeetingDetailClient({ initialMeeting, currentUser, allUsers, allDepartments }) {
   const router = useRouter();
@@ -174,23 +175,14 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
             <label style={{ fontWeight: 'bold' }}>Scheduled Date</label>
             <input type="datetime-local" value={editFormData.scheduledAt} onChange={e => setEditFormData({...editFormData, scheduledAt: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
           </div>
-          <div className="form-group">
+          <div className="form-group" style={{ zIndex: 99 }}>
             <label style={{ fontWeight: 'bold' }}>Invited Global Attendees</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-              {allUsers.map(u => {
-                const selected = editFormData.attendees.includes(u.id);
-                return (
-                  <label key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: selected ? '#dbeafe' : 'white', border: selected ? '1px solid #bfdbfe' : '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', margin: 0, boxShadow: selected ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}>
-                    <input type="checkbox" checked={selected} onChange={() => {
-                        setEditFormData(prev => ({
-                          ...prev, attendees: selected ? prev.attendees.filter(id => id !== u.id) : [...prev.attendees, u.id]
-                        }));
-                    }} style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }} />
-                    <span style={{ fontSize: '0.85rem', fontWeight: selected ? 'bold' : '500', color: selected ? '#1e40af' : '#475569' }}>{u.name || u.email}</span>
-                  </label>
-                );
-              })}
-            </div>
+            <SearchableAttendeeSelect 
+               users={allUsers} 
+               departments={allDepartments}
+               selectedIds={editFormData.attendees}
+               onChange={(newIds) => setEditFormData({...editFormData, attendees: newIds})}
+            />
           </div>
           <button type="submit" className="primary-btn" style={{ padding: '0.75rem' }}>Save Changes</button>
         </form>

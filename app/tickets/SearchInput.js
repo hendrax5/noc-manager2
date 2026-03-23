@@ -1,14 +1,19 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export default function SearchInput({ defaultQuery }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get('tab');
   const [q, setQ] = useState(defaultQuery || "");
 
   const handleSearch = (e) => {
     e.preventDefault();
-    router.push(`/tickets?q=${encodeURIComponent(q)}`);
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (currentTab) params.set('tab', currentTab);
+    router.push(`/tickets?${params.toString()}`);
   };
 
   return (
@@ -24,7 +29,12 @@ export default function SearchInput({ defaultQuery }) {
       {q && (
         <button 
           type="button" 
-          onClick={() => { setQ(''); router.push('/tickets'); }} 
+          onClick={() => { 
+            setQ(''); 
+            const params = new URLSearchParams();
+            if (currentTab) params.set('tab', currentTab);
+            router.push(`/tickets?${params.toString()}`); 
+          }} 
           style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '0.75rem 1.5rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
         >
           Clear

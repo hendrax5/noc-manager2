@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import SearchableAttendeeSelect from "@/components/SearchableAttendeeSelect";
 
-export default function MeetingForm({ users }) {
+export default function MeetingForm({ users, departments }) {
   const router = useRouter();
   const [formData, setFormData] = useState({ 
     title: "", 
@@ -67,24 +68,12 @@ export default function MeetingForm({ users }) {
 
         <div className="form-group" style={{ gridRow: 'span 2' }}>
           <label style={{ fontWeight: 'bold' }}>Invite Attendees</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            {users.map(u => {
-              const selected = formData.attendees.includes(u.id);
-              return (
-                <label key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: selected ? '#dbeafe' : 'white', border: selected ? '1px solid #bfdbfe' : '1px solid #cbd5e1', padding: '0.4rem 0.8rem', borderRadius: '20px', cursor: 'pointer', transition: 'all 0.2s', margin: 0, boxShadow: selected ? '0 1px 2px rgba(0,0,0,0.05)' : 'none' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={selected}
-                    onChange={() => toggleAttendee(u.id)}
-                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
-                  />
-                  <span style={{ fontSize: '0.85rem', fontWeight: selected ? 'bold' : '500', color: selected ? '#1e40af' : '#475569' }}>
-                    {u.name || u.email}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
+          <SearchableAttendeeSelect 
+             users={users} 
+             departments={departments}
+             selectedIds={formData.attendees}
+             onChange={(newIds) => setFormData({...formData, attendees: newIds})}
+          />
         </div>
 
         <div className="form-group">

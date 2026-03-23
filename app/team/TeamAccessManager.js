@@ -8,6 +8,9 @@ export default function TeamAccessManager({ users, roles, departments }) {
   const [activeTab, setActiveTab] = useState("users");
   const [newRole, setNewRole] = useState("");
   const [newDept, setNewDept] = useState("");
+  const [userPage, setUserPage] = useState(1);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const userPageSize = 10;
 
   const [newUser, setNewUser] = useState({
     name: "", email: "", password: "", roleId: roles[0]?.id || "", departmentId: departments[0]?.id || ""
@@ -75,6 +78,11 @@ export default function TeamAccessManager({ users, roles, departments }) {
     router.refresh();
   };
 
+  const filteredUsers = users.filter(u => 
+    (u.name && u.name.toLowerCase().includes(userSearchQuery.toLowerCase())) || 
+    (u.email && u.email.toLowerCase().includes(userSearchQuery.toLowerCase()))
+  );
+
   return (
     <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', background: '#f8fafc' }}>
@@ -98,6 +106,13 @@ export default function TeamAccessManager({ users, roles, departments }) {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
               <h2>Manage Users</h2>
+              <input 
+                type="search" 
+                placeholder="🔍 Search users by name or email..." 
+                value={userSearchQuery}
+                onChange={e => {setUserSearchQuery(e.target.value); setUserPage(1);}}
+                style={{ width: '300px', padding: '0.6rem 1rem', borderRadius: '50px', border: '1px solid #cbd5e1', outline: 'none' }}
+              />
             </div>
             <form onSubmit={handleAddUser} style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '1rem', marginBottom: '2rem', background: '#f1f5f9', padding: '1.5rem', borderRadius: '6px' }}>
               <input type="text" placeholder="Full Name" required value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} style={{ padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
@@ -113,7 +128,26 @@ export default function TeamAccessManager({ users, roles, departments }) {
               </select>
               <button type="submit" className="primary-btn" style={{ padding: '0.6rem 1rem' }}>+ Create User</button>
             </form>
-            <UserTableClient users={users} roles={roles} departments={departments} />
+            <UserTableClient users={filteredUsers.slice((userPage-1)*userPageSize, userPage*userPageSize)} roles={roles} departments={departments} />
+            
+            {filteredUsers.length > userPageSize && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                  Showing <strong>{((userPage - 1) * userPageSize) + 1}</strong> to <strong>{Math.min(userPage * userPageSize, filteredUsers.length)}</strong> of <strong>{filteredUsers.length}</strong> entries
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => setUserPage(p => Math.max(1, p - 1))} disabled={userPage === 1} style={{ padding: '0.5rem 1rem', background: userPage > 1 ? 'white' : '#f1f5f9', color: userPage > 1 ? '#3b82f6' : '#94a3b8', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: userPage > 1 ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>&laquo; Prev</button>
+                  <span style={{ padding: '0.5rem 1rem', background: 'white', border: '1px solid #cbd5e1', borderRadius: '4px', fontWeight: 'bold' }}>Page {userPage}</span>
+                  <button onClick={() => setUserPage(p => Math.min(Math.ceil(filteredUsers.length / userPageSize), p + 1))} disabled={userPage >= Math.ceil(filteredUsers.length / userPageSize)} style={{ padding: '0.5rem 1rem', background: userPage < Math.ceil(filteredUsers.length / userPageSize) ? 'white' : '#f1f5f9', color: userPage < Math.ceil(filteredUsers.length / userPageSize) ? '#3b82f6' : '#94a3b8', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: userPage < Math.ceil(filteredUsers.length / userPageSize) ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>Next &raquo;</button>
+                </div>
+              </div>
+            )}
+            
+            {filteredUsers.length === 0 && (
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', fontStyle: 'italic', border: '1px dashed #cbd5e1', borderRadius: '8px' }}>
+                No users found matching "{userSearchQuery}".
+              </div>
+            )}
           </div>
         )}
 

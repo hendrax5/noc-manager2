@@ -29,7 +29,9 @@ export const authOptions = {
             roleId: user.roleId, 
             departmentId: user.departmentId,
             role: user.role.name,
-            department: user.department.name
+            department: user.department.name,
+            avatarUrl: user.avatarUrl,
+            signature: user.signature
           };
         }
         return null;
@@ -44,6 +46,8 @@ export const authOptions = {
         token.role = user.role;
         token.department = user.department;
         token.id = user.id;
+        token.avatarUrl = user.avatarUrl;
+        token.signature = user.signature;
       }
       return token;
     },
@@ -54,6 +58,8 @@ export const authOptions = {
         session.user.role = token.role;
         session.user.department = token.department;
         session.user.id = token.id;
+        session.user.avatarUrl = token.avatarUrl;
+        session.user.signature = token.signature;
       }
       return session;
     }

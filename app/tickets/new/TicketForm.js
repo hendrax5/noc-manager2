@@ -11,7 +11,9 @@ export default function TicketForm({ departments, categories, customFields }) {
     description: '',
     priority: 'Medium',
     departmentId: departments[0]?.id || '',
-    jobCategoryId: ''
+    jobCategoryId: '',
+    enableSla: false,
+    slaTimerMins: 15
   });
   const [file, setFile] = useState(null);
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
@@ -181,6 +183,32 @@ export default function TicketForm({ departments, categories, customFields }) {
       </div>
 
       {renderCustomFields('below_job_category')}
+
+      {/* SLA Opt-In Block */}
+      <div className="form-group" style={{ gridColumn: '1 / -1', background: '#fef3c7', padding: '1.5rem', borderRadius: '8px', border: '1px solid #fde68a', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#92400e' }}>
+          <input 
+            type="checkbox" 
+            checked={formData.enableSla} 
+            onChange={e => setFormData({...formData, enableSla: e.target.checked})} 
+            style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
+          />
+          Enable External SLA Tracking (Follow-Up Timer)
+        </label>
+        {formData.enableSla && (
+          <div style={{ paddingLeft: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <span style={{ fontSize: '0.9rem', color: '#92400e' }}>Timer Duration:</span>
+            <input 
+              type="number" 
+              value={formData.slaTimerMins} 
+              onChange={e => setFormData({...formData, slaTimerMins: parseInt(e.target.value)})} 
+              min="5" max="1440" 
+              style={{ padding: '0.5rem', width: '80px', border: '1px solid #fcd34d', borderRadius: '4px' }}
+            />
+            <span style={{ fontSize: '0.9rem', color: '#92400e' }}>Minutes (Default: 15)</span>
+          </div>
+        )}
+      </div>
 
       {renderCustomFields('bottom')}
 

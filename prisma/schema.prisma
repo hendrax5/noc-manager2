@@ -34,6 +34,8 @@ model User {
   id           Int         @id @default(autoincrement())
   email        String      @unique
   name         String?
+  avatarUrl    String?
+  signature    String?
   password     String      @default("password123")
   roleId       Int
   role         Role        @relation(fields: [roleId], references: [id])
@@ -51,6 +53,8 @@ model User {
   presentSessions   MeetingSession[] @relation("SessionPresentAttendees")
   meetingSessions   MeetingSession[]
   actionItems       ActionItem[]
+  schedulePreference UserSchedulePreference?
+  schedules         ShiftSchedule[]
 }
 
 model Ticket {
@@ -61,6 +65,13 @@ model Ticket {
   status       String     @default("New")
   customData   Json?
   priority     String     @default("Medium")
+  
+  // SLA Tracking (Phase 22)
+  nextSlaDeadline DateTime?
+  slaBreaches     Int       @default(0)
+  slaTimerMins    Int       @default(15)
+  enableSla       Boolean   @default(false)
+  
   departmentId Int
   department   Department @relation(fields: [departmentId], references: [id])
   assigneeId   Int?
@@ -75,6 +86,7 @@ model Ticket {
   actionItem   ActionItem?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  resolvedAt   DateTime?
 }
 
 model DailyReport {
@@ -130,6 +142,11 @@ model TicketHistory {
   action    String   
   actorId   Int?     
   actor     User?    @relation(fields: [actorId], references: [id])
+  
+  // Segmented Timeline Point Ledger
+  jobCategoryId Int?
+  awardedScore  Int?
+  
   createdAt DateTime @default(now())
 }
 
@@ -185,4 +202,35 @@ model MeetingSession {
   presentAttendees User[] @relation("SessionPresentAttendees")
   actionItems ActionItem[]
   createdAt DateTime @default(now())
+}
+
+model ShiftType {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  startTime String 
+  endTime   String 
+  preferences UserSchedulePreference[]
+  schedules   ShiftSchedule[]
+  active    Boolean  @default(true)
+}
+
+model UserSchedulePreference {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduleMode   String    @default("RANDOM") 
+  fixedShiftId   Int?
+  fixedShift     ShiftType? @relation(fields: [fixedShiftId], references: [id])
+  fixedOffDays   String    @default("[]") 
+}
+
+model ShiftSchedule {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime @db.Date
+  shiftTypeId Int?     
+  shiftType   ShiftType? @relation(fields: [shiftTypeId], references: [id])
+  
+  @@unique([userId, date])
 }

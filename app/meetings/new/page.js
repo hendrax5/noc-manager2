@@ -6,6 +6,9 @@ export default async function NewMeetingPage() {
     include: { department: true },
     orderBy: { name: 'asc' }
   });
+  const departments = await prisma.department.findMany({
+    orderBy: { name: 'asc' }
+  });
 
   return (
     <main className="container">
@@ -13,7 +16,7 @@ export default async function NewMeetingPage() {
         <h1>Schedule Meeting</h1>
         <p>Set up an agenda, lock down problems, and invite key delegates for an upcoming synchronization.</p>
       </header>
-      <MeetingForm users={users} />
+      <MeetingForm users={users} departments={departments} />
     </main>
   );
 }

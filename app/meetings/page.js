@@ -3,15 +3,25 @@ import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import Pagination from "@/components/Pagination";
 
-export default async function MeetingsPage() {
+export default async function MeetingsPage({ searchParams }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
 
-  const meetings = await prisma.meeting.findMany({
-    include: { organizedBy: true, attendees: true },
-    orderBy: { scheduledAt: 'desc' }
-  });
+  const resolvedParams = await searchParams;
+  const page = parseInt(resolvedParams?.page) || 1;
+  const pageSize = 6;
+
+  const [totalMeetings, meetings] = await Promise.all([
+    prisma.meeting.count(),
+    prisma.meeting.findMany({
+      include: { organizedBy: true, attendees: true },
+      orderBy: { scheduledAt: 'desc' },
+      take: pageSize,
+      skip: (page - 1) * pageSize
+    })
+  ]);
 
   return (
     <main className="container">
@@ -55,6 +65,8 @@ export default async function MeetingsPage() {
           </div>
         ))}
       </div>
+      
+      {totalMeetings > pageSize && <Pagination totalCount={totalMeetings} pageSize={pageSize} />}
     </main>
   );
 }

@@ -14,11 +14,31 @@ export async function PATCH(req, { params }) {
     // Evaluate exact permutations requiring audit snapshots
     const oldTicket = await prisma.ticket.findUnique({ where: { id } });
     
+    // Prevent same-day Re-Opens from Resolved state
+    if (oldTicket.status === 'Resolved' && body.status && body.status !== 'Resolved') {
+      if (oldTicket.resolvedAt) {
+        const dateResolved = new Date(oldTicket.resolvedAt);
+        const dateNow = new Date();
+        const isSameDay = dateResolved.getFullYear() === dateNow.getFullYear() &&
+                          dateResolved.getMonth() === dateNow.getMonth() &&
+                          dateResolved.getDate() === dateNow.getDate();
+                          
+        if (isSameDay) {
+          return NextResponse.json({ error: "Cannot Re-Open or Modify a Ticket that was designated 'Resolved' on the exact same chronological Date. Please execute Upgrades the following day, or create a New Ticket." }, { status: 400 });
+        }
+      }
+    }
+
     let logs = [];
     if (oldTicket.status !== body.status) logs.push({ action: `Status changed to [ ${body.status} ]`, actorId: userId });
     if (oldTicket.priority !== body.priority) logs.push({ action: `Priority elevated to [ ${body.priority} ]`, actorId: userId });
     if (oldTicket.departmentId != body.departmentId && body.departmentId) logs.push({ action: `Department transfer initiated`, actorId: userId });
     if (oldTicket.assigneeId != body.assigneeId && body.assigneeId) logs.push({ action: `Assignee rotation enacted`, actorId: userId });
+    
+    // Evaluate Due Date / Trial modifications
+    if (body.customData && JSON.stringify(oldTicket.customData) !== JSON.stringify(body.customData)) {
+      logs.push({ action: `Custom Fields / Operational Parameters updated`, actorId: userId });
+    }
 
     const ticketData = {
       title: body.title,
@@ -26,15 +46,28 @@ export async function PATCH(req, { params }) {
       status: body.status,
       priority: body.priority,
       departmentId: parseInt(body.departmentId),
-      assigneeId: body.assigneeId ? parseInt(body.assigneeId) : null
+      assigneeId: body.assigneeId ? parseInt(body.assigneeId) : null,
+      jobCategoryId: body.jobCategoryId ? parseInt(body.jobCategoryId) : oldTicket.jobCategoryId,
+      ...(body.customData && { customData: body.customData })
     };
 
     if (body.status === 'Resolved') {
       const explicitCategoryId = body.jobCategoryId ? parseInt(body.jobCategoryId) : oldTicket.jobCategoryId;
-      if (explicitCategoryId) {
+      if (explicitCategoryId && oldTicket.status !== 'Resolved') {
         ticketData.jobCategoryId = explicitCategoryId;
         const cat = await prisma.jobCategory.findUnique({ where: { id: ticketData.jobCategoryId } });
-        if (cat) ticketData.awardedScore = cat.score;
+        if (cat) {
+          const recipientId = ticketData.assigneeId || oldTicket.assigneeId;
+          if (recipientId && !logs.some(l => l.awardedScore)) {
+            // Drop absolute Ledger Point assignment natively targeting the Technician
+            logs.push({ 
+              action: `Ticket Resolved: [+${cat.score} Pts] for [${cat.name}] automatically locked.`, 
+              actorId: recipientId, 
+              jobCategoryId: cat.id, 
+              awardedScore: cat.score 
+            });
+          }
+        }
       }
       
       // Auto-resolve ActionItem if transitioned to Resolved
@@ -48,9 +81,13 @@ export async function PATCH(req, { params }) {
           logs.push({ action: `Systemic Trigger: Meeting Action Item automatically completed`, actorId: userId });
         }
       }
+      
+      ticketData.resolvedAt = oldTicket.resolvedAt || new Date();
+      ticketData.nextSlaDeadline = null; // Stops SLA Pings forever
 
     } else if (body.status !== 'Resolved') {
       ticketData.awardedScore = null;
+      ticketData.resolvedAt = null;
     }
 
     const ticket = await prisma.ticket.update({

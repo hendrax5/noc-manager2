@@ -3,8 +3,35 @@
   --secondary-color: #3b82f6;
   --bg-color: #f8fafc;
   --text-color: #334155;
+  --heading-color: #0f172a;
   --card-bg: #ffffff;
   --border-color: #e2e8f0;
+  --input-bg: #ffffff;
+  --input-text: #0f172a;
+  --table-header-bg: #f1f5f9;
+  --hover-bg: #f1f5f9;
+  --navbar-bg: #0f172a;
+  --sidebar-bg: #ffffff;
+}
+
+[data-theme='dark'] {
+  --primary-color: #3b82f6;
+  --secondary-color: #3b82f6;
+  --bg-color: #121212;
+  --text-color: #a3a3a3;
+  --heading-color: #ededed;
+  --card-bg: #1e1e1e;
+  --border-color: #333333;
+  --input-bg: #121212;
+  --input-text: #e5e5e5;
+  --table-header-bg: #1e1e1e;
+  --hover-bg: #262626;
+  --navbar-bg: #121212;
+  --sidebar-bg: #1e1e1e;
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --danger-text: #fca5a5;
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --warning-text: #fcd34d;
 }
 
 body {
@@ -26,7 +53,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background-color: var(--primary-color);
+  background-color: var(--navbar-bg);
   color: white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
@@ -53,7 +80,7 @@ body {
 }
 
 .page-header h1 {
-  color: var(--primary-color);
+  color: var(--heading-color);
   margin-bottom: 0.5rem;
 }
 
@@ -65,7 +92,7 @@ body {
 
 .card {
   background: var(--card-bg);
-  padding: 1.5rem;
+  padding: 1.25rem;
   border-radius: 8px;
   border: 1px solid var(--border-color);
   box-shadow: 0 4px 6px rgba(0,0,0,0.05);
@@ -74,7 +101,7 @@ body {
 .card h2 {
   font-size: 1.25rem;
   margin-bottom: 1rem;
-  color: var(--primary-color);
+  color: var(--heading-color);
 }
 
 .login-container {
@@ -96,7 +123,7 @@ body {
 .login-card h2 {
   margin-top: 0;
   margin-bottom: 1.5rem;
-  color: var(--primary-color);
+  color: var(--heading-color);
   text-align: center;
 }
 
@@ -121,8 +148,8 @@ body {
   box-sizing: border-box;
   font-family: inherit;
   font-size: 0.95rem;
-  color: var(--primary-color);
-  background-color: white;
+  color: var(--input-text);
+  background-color: var(--input-bg);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -178,8 +205,8 @@ body {
 }
 
 .logout-btn:hover {
-  background: white;
-  color: var(--primary-color);
+  background: var(--text-color);
+  color: var(--bg-color);
 }
 
 .data-table {
@@ -192,15 +219,15 @@ body {
 }
 
 .data-table th, .data-table td {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
 }
 
 .data-table th {
-  background-color: #f1f5f9;
+  background-color: var(--table-header-bg);
   font-weight: 600;
-  color: var(--primary-color);
+  color: var(--heading-color);
 }
 
 .badge {
@@ -233,14 +260,25 @@ body {
   .navbar, .sidebar, .no-print {
     display: none !important;
   }
-  body {
+  html, body {
     background-color: white !important;
     color: black !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   .container {
     padding: 0 !important;
     margin: 0 !important;
     max-width: 100% !important;
+  }
+  /* Flatten complex CSS grids to linear blocks natively accommodating rigid A4 pagination bounds */
+  [style*="display: grid"], [style*="display: flex"] {
+    display: block !important;
+    width: 100% !important;
+    page-break-inside: auto;
   }
   * {
     -webkit-print-color-adjust: exact !important;
@@ -265,3 +303,34 @@ body {
     page-break-after: auto;
   }
 }
+
+/* Dashboard Specific Utility Classes for Dark/Light Mode Gradients */
+.kpi-new { background: linear-gradient(145deg, #fff1f2, #ffe4e6); border: 1px solid rgba(254, 205, 211, 0.5); }
+.kpi-pending { background: linear-gradient(145deg, #fffbeb, #fef3c7); border: 1px solid rgba(253, 230, 138, 0.5); }
+.kpi-resolved { background: linear-gradient(145deg, #f0fdf4, #dcfce7); border: 1px solid rgba(187, 247, 208, 0.5); }
+.kpi-ttr { background: linear-gradient(145deg, #eef2ff, #e0e7ff); border: 1px solid rgba(199, 210, 254, 0.5); }
+.icon-bg { background: white; }
+.glass-panel { background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248, 250, 252, 0.9)); border: 1px solid rgba(255,255,255,0.5); border-top: 1px solid white; border-left: 1px solid white; }
+.bg-white-card { background: white; }
+.bg-light-stripe { background: #f8fafc; }
+.text-dark { color: #0f172a; }
+
+[data-theme='dark'] .kpi-new { background: linear-gradient(145deg, #4c0519, #e11d48); border-color: rgba(225, 29, 72, 0.5); }
+[data-theme='dark'] .kpi-pending { background: linear-gradient(145deg, #451a03, #d97706); border-color: rgba(217, 119, 6, 0.5); }
+[data-theme='dark'] .kpi-resolved { background: linear-gradient(145deg, #022c22, #059669); border-color: rgba(16, 185, 129, 0.5); }
+[data-theme='dark'] .kpi-ttr { background: linear-gradient(145deg, #1e1b4b, #4338ca); border-color: rgba(79, 70, 229, 0.5); }
+[data-theme='dark'] .icon-bg { background: var(--border-color); }
+[data-theme='dark'] .glass-panel { background: linear-gradient(135deg, rgba(15,23,42,0.8), rgba(2,6,23,0.9)); border: 1px solid rgba(255,255,255,0.05); }
+
+.ticket-row-sla { background: #fef2f2; border-left: 4px solid #ef4444; }
+.ticket-row-warning { background: #fffbeb; border-left: 4px solid #f59e0b; }
+.ticket-row-critical { background: #fef2f2; border-left: 4px solid #b91c1c; }
+.ticket-row-expired { background: #fdf2f8; border-left: 4px solid #db2777; }
+
+[data-theme='dark'] .ticket-row-sla { background: rgba(239, 68, 68, 0.05) !important; border-left-color: #ef4444; }
+[data-theme='dark'] .ticket-row-warning { background: rgba(245, 158, 11, 0.05) !important; border-left-color: #f59e0b; }
+[data-theme='dark'] .ticket-row-critical { background: rgba(185, 28, 28, 0.05) !important; border-left-color: #b91c1c; }
+[data-theme='dark'] .ticket-row-expired { background: rgba(219, 39, 119, 0.05) !important; border-left-color: #db2777; }
+[data-theme='dark'] .bg-white-card { background: var(--card-bg); }
+[data-theme='dark'] .bg-light-stripe { background: var(--hover-bg); }
+[data-theme='dark'] .text-dark { color: #f8fafc; }
