@@ -208,7 +208,7 @@ export default async function UserReportDetail({ params, searchParams }) {
                 ))}
               </tbody>
             </table>
-            {totalTicketsCount > pageSize && <div style={{ borderTop: '1px solid #e2e8f0', background: 'white' }}><Pagination totalCount={totalTicketsCount} pageSize={pageSize} /></div>}
+            {totalTicketsCount > pageSize && <div style={{ borderTop: '1px solid var(--border-color)', background: 'var(--card-bg)' }}><Pagination totalCount={totalTicketsCount} pageSize={pageSize} /></div>}
           </div>
 
           {/* Recent Responses Table */}

@@ -11,6 +11,7 @@ export default function Navbar({ appName = "NOC Management" }) {
 
   const { theme, toggleTheme } = useTheme();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (status === "loading") return null;
   // Jangan render navbar jika tidak ada session dan sedang di halaman login
@@ -20,20 +21,41 @@ export default function Navbar({ appName = "NOC Management" }) {
     <nav className="navbar">
       <div className="nav-brand">{appName}</div>
       {session && (
-        <div className="nav-links" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-          <Link href="/dashboard" className={pathname === "/dashboard" ? "active" : ""}>Dashboard</Link>
-          <Link href="/tickets" className={pathname.startsWith("/tickets") ? "active" : ""}>Tickets</Link>
+        <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} title="Menu">
+          {isMobileMenuOpen ? '✖' : '☰'}
+        </button>
+      )}
+      {session && (
+        <div className={`nav-links ${isMobileMenuOpen ? 'open' : ''}`} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+          <Link href="/dashboard" className={pathname === "/dashboard" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
+          <Link href="/tickets" className={pathname.startsWith("/tickets") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Tickets</Link>
+          {/* Resources Dropdown */}
+          <div className="nav-dropdown">
+            <button className={`nav-dropdown-btn ${(pathname.startsWith("/knowledge") || pathname.startsWith("/assets")) ? "active" : ""}`}>
+              Resources ▾
+            </button>
+            <div className="nav-dropdown-content">
+              <Link href="/knowledge" className={pathname.startsWith("/knowledge") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>📚 Knowledge Base</Link>
+              <Link href="/assets" className={pathname.startsWith("/assets") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>🗄️ Assets & Services</Link>
+            </div>
+          </div>
+
+          {/* Administration Dropdown */}
           {(session.user?.role === 'Admin' || session.user?.role === 'Manager') && (
-            <Link href="/reports" className={pathname.startsWith("/reports") ? "active" : ""}>Reports</Link>
-          )}
-          <Link href="/meetings" className={pathname.startsWith("/meetings") ? "active" : ""}>Meetings</Link>
-          <Link href="/knowledge" className={pathname.startsWith("/knowledge") ? "active" : ""}>Knowledge</Link>
-          <Link href="/assets" className={pathname.startsWith("/assets") ? "active" : ""}>Assets</Link>
-          {session.user?.role === 'Admin' && (
-            <>
-              <Link href="/team" className={pathname === "/team" ? "active" : ""}>Team</Link>
-              <Link href="/settings" className={pathname.startsWith("/settings") ? "active" : ""}>Settings</Link>
-            </>
+            <div className="nav-dropdown">
+              <button className={`nav-dropdown-btn ${(pathname.startsWith("/reports") || pathname.startsWith("/team") || pathname.startsWith("/settings")) ? "active" : ""}`}>
+                Administration ▾
+              </button>
+              <div className="nav-dropdown-content">
+                <Link href="/reports" className={pathname.startsWith("/reports") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>📊 Reports & Analytics</Link>
+                {session.user?.role === 'Admin' && (
+                  <>
+                    <Link href="/team" className={pathname === "/team" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>👥 Team Management</Link>
+                    <Link href="/settings" className={pathname.startsWith("/settings") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>⚙️ System Settings</Link>
+                  </>
+                )}
+              </div>
+            </div>
           )}
           
           <div style={{ position: 'relative', marginLeft: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -60,8 +82,8 @@ export default function Navbar({ appName = "NOC Management" }) {
             </button>
 
             {showProfileMenu && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '0.5rem', background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', minWidth: '220px', zIndex: 100, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ padding: '1rem', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
+              <div className="profile-dropdown" style={{ position: 'absolute', top: '100%', right: 0, marginTop: '0.5rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', minWidth: '220px', zIndex: 100, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', background: 'var(--hover-bg)' }}>
                   <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Signed in as</div>
                   <div style={{ fontWeight: 'bold', color: '#0f172a', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '0.2rem' }}>{session.user?.email}</div>
                 </div>

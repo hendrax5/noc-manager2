@@ -117,7 +117,7 @@ export default async function DashboardPage() {
           </div>
         </div>
         <Link href="/tickets/new" className="primary-btn" style={{ 
-          background: 'white', color: '#0f172a', fontWeight: 'bold', padding: '0.8rem 1.5rem', 
+          background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', padding: '0.8rem 1.5rem', 
           borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem',
           boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none'
         }}>

@@ -260,10 +260,34 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                           <label style={{ color: '#64748b', fontWeight: 'bold' }}>{f.name}:</label>
                           {f.type === 'textarea' ? (
                             <textarea 
-                              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', outline: 'none' }}
+                              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', outline: 'none' }}
                               value={formData.customData?.[f.name] || ''}
                               onChange={e => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: e.target.value }})}
                             />
+                          ) : f.type === 'select' && f.options === '@Customers' ? (
+                            isEditing ? (
+                              <AsyncSearchSelect
+                                value={formData.customData?.[f.name] || ''}
+                                onChange={(val) => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: val }})}
+                                placeholder="Search Customer..."
+                                apiRoute="/api/assets/customers/search"
+                                disabled={false}
+                              />
+                            ) : (
+                               <span style={{ color: 'var(--text-color)' }}>{ticket.customData?.[f.name] || '-'}</span>
+                            )
+                          ) : f.type === 'select' && f.options === '@Customers' ? (
+                            isEditing ? (
+                              <AsyncSearchSelect
+                                value={formData.customData?.[f.name] || ''}
+                                onChange={(val) => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: val }})}
+                                placeholder="Search Customer..."
+                                apiRoute="/api/assets/customers/search"
+                                disabled={false}
+                              />
+                            ) : (
+                               <span style={{ color: 'var(--text-color)' }}>{ticket.customData?.[f.name] || '-'}</span>
+                            )
                           ) : f.type === 'select' ? (
                             <SearchableSelect 
                               options={(f.options ? (function(){
@@ -277,7 +301,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                           ) : (
                             <input 
                               type={f.type === 'date' ? 'date' : 'text'}
-                              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', outline: 'none' }}
+                              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', outline: 'none' }}
                               value={formData.customData?.[f.name] || ''}
                               onChange={e => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: e.target.value }})}
                             />

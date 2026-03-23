@@ -15,23 +15,23 @@
 }
 
 [data-theme='dark'] {
-  --primary-color: #3b82f6;
-  --secondary-color: #3b82f6;
-  --bg-color: #121212;
-  --text-color: #a3a3a3;
-  --heading-color: #ededed;
-  --card-bg: #1e1e1e;
-  --border-color: #333333;
-  --input-bg: #121212;
-  --input-text: #e5e5e5;
-  --table-header-bg: #1e1e1e;
-  --hover-bg: #262626;
-  --navbar-bg: #121212;
-  --sidebar-bg: #1e1e1e;
-  --danger-bg: rgba(239, 68, 68, 0.15);
-  --danger-text: #fca5a5;
-  --warning-bg: rgba(245, 158, 11, 0.15);
-  --warning-text: #fcd34d;
+  --primary-color: #007acc;
+  --secondary-color: #007acc;
+  --bg-color: #1e1e1e;
+  --text-color: #d4d4d4;
+  --heading-color: #ffffff;
+  --card-bg: #252526;
+  --border-color: #454545;
+  --input-bg: #3c3c3c;
+  --input-text: #cccccc;
+  --table-header-bg: #2d2d2d;
+  --hover-bg: #2a2d2e;
+  --navbar-bg: #333333;
+  --sidebar-bg: #252526;
+  --danger-bg: rgba(241, 76, 76, 0.15);
+  --danger-text: #f14c4c;
+  --warning-bg: rgba(204, 167, 0, 0.15);
+  --warning-text: #cca700;
 }
 
 body {
@@ -56,6 +56,17 @@ body {
   background-color: var(--navbar-bg);
   color: white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
 }
 
 .nav-brand {
@@ -191,6 +202,91 @@ body {
   padding-bottom: 2px;
 }
 
+/* =========================================
+   DROPDOWN MENUS (Navbar Grouping)
+   ========================================= */
+.nav-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.nav-dropdown-btn {
+  background: transparent;
+  color: #e2e8f0;
+  border: none;
+  font-weight: 500;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 1.5rem;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.nav-dropdown-btn:hover {
+  color: white;
+}
+
+.nav-dropdown-btn.active {
+  color: white;
+  border-bottom: 2px solid white;
+  padding-bottom: 2px;
+}
+
+.nav-dropdown-content {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 1.5rem; /* align with the margin-left of the button */
+  background-color: var(--navbar-bg);
+  min-width: 220px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+  z-index: 100;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 0; /* REMOVED THE DEAD ZONE GAP */
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Create an invisible bridge to prevent mouse-leave events when moving cursor */
+.nav-dropdown:hover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  height: 20px;
+  background: transparent;
+  z-index: 99;
+}
+
+.nav-dropdown-content a {
+  color: #e2e8f0;
+  padding: 0.75rem 1rem !important;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  margin-left: 0 !important;
+  font-size: 0.95rem !important;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.nav-dropdown-content a:last-child {
+  border-bottom: none;
+}
+
+.nav-dropdown-content a:hover {
+  background-color: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.nav-dropdown:hover .nav-dropdown-content {
+  display: block;
+}
+
 .logout-btn {
   margin-left: 2rem;
   background: transparent;
@@ -254,6 +350,133 @@ body {
 
 .list-item:last-child {
   border-bottom: none;
+}
+
+/* =========================================
+   📱 MOBILE RESPONSIVENESS (Universal Overrides)
+   ========================================= */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 1rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .mobile-menu-btn {
+    display: block;
+    margin-left: auto;
+  }
+  
+  .nav-brand {
+    text-align: left;
+    flex: 1;
+    width: auto;
+  }
+
+  /* Make Navbar Links drop down cleanly vertically */
+  .nav-links {
+    display: none !important;
+    width: 100%;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    margin-top: 1rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  .nav-links.open {
+    display: flex !important;
+    animation: fadeIn 0.2s ease-in-out;
+  }
+
+  .nav-links a {
+    white-space: nowrap;
+    margin-left: 0 !important;
+    margin-top: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 0;
+    font-size: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  
+  .nav-links > div {
+    margin-left: 0 !important;
+    margin-top: 1.5rem;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .container {
+    padding: 1rem; /* Reduce container padding structurally */
+  }
+
+  /* Force all Data Tables to scroll horizontally instead of breaking the layout */
+  .data-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .login-card {
+    padding: 1.5rem;
+  }
+
+  /* BRUTE-FORCE OVERRIDE: Flatten embedded inline React CSS Grids (like 2fr 1fr or 3 columns) into single column stacks */
+  [style*="display: grid"],
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Force Ticket Detail Left/Right Panes into stacking natively */
+  [style*="gridTemplateColumns"],
+  [style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Profile Menu positioning adjustments */
+  .profile-dropdown {
+    right: 50% !important;
+    transform: translateX(50%) !important;
+    width: 90vw !important;
+    max-width: 300px;
+  }
+  /* Flatten Dropdown structures inside Mobile Hamburgers */
+  .nav-dropdown {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+  
+  .nav-dropdown-btn {
+    margin-left: 0;
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0;
+    pointer-events: none; /* Make unclickable because content is natively shown */
+    color: rgba(255,255,255,0.5);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: none !important;
+  }
+  
+  .nav-dropdown-content {
+    display: block !important;
+    position: relative;
+    box-shadow: none;
+    background: transparent;
+    border: none;
+    margin-top: 0;
+    padding-left: 1rem; /* Indent sub-links */
+  }
+  
+  .nav-dropdown-content a {
+    padding: 0.5rem 0 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
 }
 
 @media print {

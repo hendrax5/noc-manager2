@@ -194,7 +194,7 @@ export default async function ReportsPage({ searchParams }) {
                 )})}
               </tbody>
             </table>
-            {totalCS > pageSize && <div style={{ borderTop: '1px solid #e2e8f0', background: 'white' }}><Pagination totalCount={totalCS} pageSize={pageSize} /></div>}
+            {totalCS > pageSize && <div style={{ borderTop: '1px solid var(--border-color)', background: 'var(--card-bg)' }}><Pagination totalCount={totalCS} pageSize={pageSize} /></div>}
           </div>
         </div>
 
@@ -235,7 +235,7 @@ export default async function ReportsPage({ searchParams }) {
                 )})}
               </tbody>
             </table>
-            {totalTech > pageSize && <div style={{ borderTop: '1px solid #e2e8f0', background: 'white' }}><Pagination totalCount={totalTech} pageSize={pageSize} /></div>}
+            {totalTech > pageSize && <div style={{ borderTop: '1px solid var(--border-color)', background: 'var(--card-bg)' }}><Pagination totalCount={totalTech} pageSize={pageSize} /></div>}
           </div>
         </div>
 

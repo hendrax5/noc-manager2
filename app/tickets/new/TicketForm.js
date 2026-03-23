@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import AsyncSearchSelect from "@/components/AsyncSearchSelect";
 
 export default function TicketForm({ departments, categories, customFields, services, serviceTemplates }) {
   const router = useRouter();
@@ -68,13 +69,21 @@ export default function TicketForm({ departments, categories, customFields, serv
             {field.name} {field.required && <span style={{color: '#ef4444'}}>*</span>}
           </label>
           {field.type === 'text' && (
-            <input type="text" style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'white' }} required={field.required} value={customData[field.name] || ''} onChange={e => setCustomData({...customData, [field.name]: e.target.value})} />
+            <input type="text" style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customData[field.name] || ''} onChange={e => setCustomData({...customData, [field.name]: e.target.value})} />
           )}
           {field.type === 'textarea' && (
-            <textarea rows="3" style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', resize: 'vertical', background: 'white' }} required={field.required} value={customData[field.name] || ''} onChange={e => setCustomData({...customData, [field.name]: e.target.value})}></textarea>
+            <textarea rows="3" style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', resize: 'vertical', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customData[field.name] || ''} onChange={e => setCustomData({...customData, [field.name]: e.target.value})}></textarea>
           )}
-          {field.type === 'select' && (
-            <select style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'white' }} required={field.required} value={customData[field.name] || ''} onChange={e => setCustomData({...customData, [field.name]: e.target.value})}>
+          {field.type === 'select' && field.options === '@Customers' ? (
+            <AsyncSearchSelect
+              value={customData[field.name] || ''}
+              onChange={(val) => setCustomData({...customData, [field.name]: val})}
+              placeholder="Search Customer ID/Name (Min 3 chars)..."
+              apiRoute="/api/assets/customers/search"
+              disabled={false}
+            />
+          ) : field.type === 'select' && (
+            <select style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customData[field.name] || ''} onChange={e => setCustomData({...customData, [field.name]: e.target.value})}>
               <option value="">-- Select --</option>
               {(field.options === '@ServiceTemplates' 
                   ? (serviceTemplates || []).map(st => st.name) 

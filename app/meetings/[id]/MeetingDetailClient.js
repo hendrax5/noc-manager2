@@ -205,7 +205,7 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
                      ⚙️ Admin
                   </button>
                   {showActions && (
-                     <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '0.25rem', background: 'white', border: '1px solid #e2e8f0', shadow: '0 4px 6px rgba(0,0,0,0.1)', borderRadius: '4px', zIndex: 10, display: 'flex', flexDirection: 'column', minWidth: '150px' }}>
+                     <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '0.25rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)', shadow: '0 4px 6px rgba(0,0,0,0.1)', borderRadius: '4px', zIndex: 10, display: 'flex', flexDirection: 'column', minWidth: '150px' }}>
                         <button onClick={() => { setIsEditingMeeting(true); setShowActions(false); }} style={{ padding: '0.75rem', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}>✎ Edit Meeting</button>
                         <button onClick={async () => {
                           if (confirm('Irreversible: Delete this entire Megathread and ALL its sessions?')) {
@@ -298,7 +298,7 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 2fr) minmax(250px, 1fr)', gap: '1px', background: '#e2e8f0' }}>
                 
                 {/* Left Column: Discussion Notes & Action Items */}
-                <div style={{ background: 'white', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div style={{ background: 'var(--card-bg)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem', borderRadius: '8px' }}>
                   
                   {/* Notes Content */}
                   <div>
@@ -347,18 +347,18 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
                           style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
                         />
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          <select value={inputs.assigneeType} onChange={e => updateTaskInput(session.id, 'assigneeType', e.target.value)} style={{ padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'white' }}>
+                          <select value={inputs.assigneeType} onChange={e => updateTaskInput(session.id, 'assigneeType', e.target.value)} style={{ padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}>
                             <option value="user">User</option>
                             <option value="dept">Team</option>
                           </select>
                           
                           {inputs.assigneeType === 'user' ? (
-                            <select value={inputs.assigneeId} onChange={e => updateTaskInput(session.id, 'assigneeId', e.target.value)} style={{ flex: 1, padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'white' }}>
+                            <select value={inputs.assigneeId} onChange={e => updateTaskInput(session.id, 'assigneeId', e.target.value)} style={{ flex: 1, padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}>
                               <option value="">-- Person --</option>
                               {allUsers.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
                             </select>
                           ) : (
-                            <select value={inputs.departmentId} onChange={e => updateTaskInput(session.id, 'departmentId', e.target.value)} style={{ flex: 1, padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'white' }}>
+                            <select value={inputs.departmentId} onChange={e => updateTaskInput(session.id, 'departmentId', e.target.value)} style={{ flex: 1, padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}>
                               <option value="">-- Department --</option>
                               {allDepartments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                             </select>

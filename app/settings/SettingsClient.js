@@ -454,7 +454,7 @@ export default function SettingsClient({ initialFields, initialCategories, initi
               <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
                  <h3 style={{ margin: 0, color: '#991b1b', borderBottom: '1px solid #fecaca', paddingBottom: '0.5rem' }}>Manual Factory Reset Selection</h3>
                 
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', padding: '0.8rem', background: 'white', borderRadius: '6px', border: '1px solid #fecaca' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', padding: '0.8rem', background: 'var(--card-bg)', borderRadius: '6px', border: '1px solid #fecaca' }}>
                    <input type="checkbox" checked={wipeOpts.wipeTransactional} onChange={e => setWipeOpts({...wipeOpts, wipeTransactional: e.target.checked})} style={{ width: '1.2rem', height: '1.2rem', accentColor: '#ef4444' }} />
                    <div>
                      <strong style={{ display: 'block', color: '#991b1b' }}>Wipe Transactional Data (Tickets, Reports, Meetings & Logs)</strong>
@@ -462,7 +462,7 @@ export default function SettingsClient({ initialFields, initialCategories, initi
                    </div>
                 </label>
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', padding: '0.8rem', background: 'white', borderRadius: '6px', border: '1px solid #fecaca' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', padding: '0.8rem', background: 'var(--card-bg)', borderRadius: '6px', border: '1px solid #fecaca' }}>
                    <input type="checkbox" checked={wipeOpts.wipeAssets} onChange={e => setWipeOpts({...wipeOpts, wipeAssets: e.target.checked})} style={{ width: '1.2rem', height: '1.2rem', accentColor: '#ef4444' }} />
                    <div>
                      <strong style={{ display: 'block', color: '#991b1b' }}>Wipe Master Assets (Customers, Active Services, Port Topologies)</strong>
@@ -470,7 +470,7 @@ export default function SettingsClient({ initialFields, initialCategories, initi
                    </div>
                 </label>
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', padding: '0.8rem', background: 'white', borderRadius: '6px', border: '1px solid #fecaca' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', padding: '0.8rem', background: 'var(--card-bg)', borderRadius: '6px', border: '1px solid #fecaca' }}>
                    <input type="checkbox" checked={wipeOpts.wipeUsers} onChange={e => setWipeOpts({...wipeOpts, wipeUsers: e.target.checked})} style={{ width: '1.2rem', height: '1.2rem', accentColor: '#ef4444' }} />
                    <div>
                      <strong style={{ display: 'block', color: '#991b1b' }}>Wipe Human Resources (Users database EXCEPT your own Admin account)</strong>

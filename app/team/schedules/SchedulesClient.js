@@ -162,7 +162,7 @@ export default function SchedulesClient({ initialShiftTypes, users, locations, c
                 <tbody>
                   {Object.values(gridData).map(row => (
                     <tr key={row.user.id}>
-                      <td style={{ padding: '0.75rem', border: '1px solid #cbd5e1', textAlign: 'left', fontWeight: 'bold', background: 'white', position: 'sticky', left: 0 }}>
+                      <td style={{ padding: '0.75rem', border: '1px solid var(--border-color)', textAlign: 'left', fontWeight: 'bold', background: 'var(--table-header-bg)', position: 'sticky', left: 0 }}>
                         {row.user.name || row.user.email} <br />
                         <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 'normal' }}>{row.user.location?.city || 'No Location'}</span>
                       </td>

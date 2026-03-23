@@ -137,7 +137,7 @@ export default function TeamAccessManager({ users, roles, departments }) {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button onClick={() => setUserPage(p => Math.max(1, p - 1))} disabled={userPage === 1} style={{ padding: '0.5rem 1rem', background: userPage > 1 ? 'white' : '#f1f5f9', color: userPage > 1 ? '#3b82f6' : '#94a3b8', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: userPage > 1 ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>&laquo; Prev</button>
-                  <span style={{ padding: '0.5rem 1rem', background: 'white', border: '1px solid #cbd5e1', borderRadius: '4px', fontWeight: 'bold' }}>Page {userPage}</span>
+                  <span style={{ padding: '0.5rem 1rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '4px', fontWeight: 'bold' }}>Page {userPage}</span>
                   <button onClick={() => setUserPage(p => Math.min(Math.ceil(filteredUsers.length / userPageSize), p + 1))} disabled={userPage >= Math.ceil(filteredUsers.length / userPageSize)} style={{ padding: '0.5rem 1rem', background: userPage < Math.ceil(filteredUsers.length / userPageSize) ? 'white' : '#f1f5f9', color: userPage < Math.ceil(filteredUsers.length / userPageSize) ? '#3b82f6' : '#94a3b8', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: userPage < Math.ceil(filteredUsers.length / userPageSize) ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>Next &raquo;</button>
                 </div>
               </div>
