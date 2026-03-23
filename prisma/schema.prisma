@@ -55,6 +55,7 @@ model User {
   actionItems       ActionItem[]
   schedulePreference UserSchedulePreference?
   schedules         ShiftSchedule[]
+  articles          KnowledgeArticle[]
 }
 
 model Ticket {
@@ -87,6 +88,7 @@ model Ticket {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   resolvedAt   DateTime?
+  services     Service[]
 }
 
 model DailyReport {
@@ -233,4 +235,82 @@ model ShiftSchedule {
   shiftType   ShiftType? @relation(fields: [shiftTypeId], references: [id])
   
   @@unique([userId, date])
+}
+
+// ==========================================
+// Phase 32: Knowledge Base
+// ==========================================
+
+model KnowledgeCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  icon        String?
+  articles    KnowledgeArticle[]
+}
+
+model KnowledgeArticle {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String   @db.Text
+  categoryId  Int
+  category    KnowledgeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  authorId    Int
+  author      User     @relation(fields: [authorId], references: [id])
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ==========================================
+// Phase 33: Telecom Asset Management
+// ==========================================
+
+model Customer {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  contactEmail String?
+  contactPhone String?
+  services     Service[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ServiceTemplate {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  fields      Json      @default("[]") // Defines dynamic schema fields
+  active      Boolean   @default(true)
+  services    Service[]
+}
+
+model Service {
+  id           Int        @id @default(autoincrement())
+  customerId   Int
+  customer     Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  templateId   Int
+  template     ServiceTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  name         String
+  status       String     @default("Active")
+  customData   Json?      // Stores actual field values mapped to Template
+  monthlyCost  Decimal?
+  currency     String     @default("IDR")
+  contractEnd  DateTime?
+  hops         CircuitHop[]
+  tickets      Ticket[]   // M:N Relation with Tickets
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model CircuitHop {
+  id          Int      @id @default(autoincrement())
+  serviceId   Int
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  orderIndex  Int      @default(0)
+  location    String
+  deviceName  String
+  portName    String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

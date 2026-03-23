@@ -12,6 +12,8 @@ export default async function NewTicketPage() {
   const categories = await prisma.jobCategory.findMany({ where: { active: true }, orderBy: { name: 'asc' } });
   // Evaluate the dynamic components globally set by operations logic
   const customFields = await prisma.customField.findMany({ where: { active: true }, orderBy: { id: 'asc' } });
+  const services = await prisma.service.findMany({ include: { customer: true }, orderBy: { name: 'asc' } });
+  const serviceTemplates = await prisma.serviceTemplate.findMany({ orderBy: { name: 'asc' } });
   
   return (
     <main className="container">
@@ -20,7 +22,7 @@ export default async function NewTicketPage() {
         <p>Create a trackable operational ticket for your related sub-department.</p>
       </header>
       
-      <TicketForm departments={departments} categories={categories} customFields={customFields} />
+      <TicketForm departments={departments} categories={categories} customFields={customFields} services={services} serviceTemplates={serviceTemplates} />
     </main>
   );
 }

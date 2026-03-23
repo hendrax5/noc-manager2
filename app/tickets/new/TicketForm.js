@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function TicketForm({ departments, categories, customFields }) {
+export default function TicketForm({ departments, categories, customFields, services, serviceTemplates }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [customData, setCustomData] = useState({});
@@ -17,6 +17,7 @@ export default function TicketForm({ departments, categories, customFields }) {
   });
   const [file, setFile] = useState(null);
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
+  const [selectedServiceIds, setSelectedServiceIds] = useState([]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,7 +44,7 @@ export default function TicketForm({ departments, categories, customFields }) {
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...formData, customData, attachmentUrl, attachmentName })
+      body: JSON.stringify({ ...formData, customData, attachmentUrl, attachmentName, serviceIds: selectedServiceIds })
     });
 
     if (res.ok) {
@@ -75,7 +76,10 @@ export default function TicketForm({ departments, categories, customFields }) {
           {field.type === 'select' && (
             <select style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'white' }} required={field.required} value={customData[field.name] || ''} onChange={e => setCustomData({...customData, [field.name]: e.target.value})}>
               <option value="">-- Select --</option>
-              {field.options?.split(',').map(opt => <option key={opt.trim()} value={opt.trim()}>{opt.trim()}</option>)}
+              {(field.options === '@ServiceTemplates' 
+                  ? (serviceTemplates || []).map(st => st.name) 
+                  : field.options?.split(',').map(s => s.trim()) || []
+               ).map(opt => <option key={opt} value={opt}>{opt}</option>)}
             </select>
           )}
         </div>
@@ -173,6 +177,29 @@ export default function TicketForm({ departments, categories, customFields }) {
       </div>
 
       {renderCustomFields('below_department')}
+
+      <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+        <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Impacting Services (Optional Link)</label>
+        <div style={{ background: '#f8fafc', padding: '1rem', border: '1px solid #cbd5e1', borderRadius: '6px', maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+           {services?.map(s => (
+             <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: '#334155' }}>
+               <input 
+                 type="checkbox" 
+                 checked={selectedServiceIds.includes(s.id)}
+                 onChange={e => {
+                   if (e.target.checked) setSelectedServiceIds([...selectedServiceIds, s.id]);
+                   else setSelectedServiceIds(selectedServiceIds.filter(id => id !== s.id));
+                 }}
+                 style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
+               />
+               <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>(ID: {s.id})</span>
+             </label>
+           ))}
+           {(!services || services.length === 0) && (
+              <div style={{ fontSize: '0.85rem', color: '#64748b' }}>No active services found in Inventory.</div>
+           )}
+        </div>
+      </div>
 
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Job Category (Optional)</label>

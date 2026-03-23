@@ -1,12 +1,27 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-export default function SettingsClient({ initialFields, initialCategories }) {
+export default function SettingsClient({ initialFields, initialCategories, initialConfig }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("custom_fields");
   const [fields, setFields] = useState(initialFields);
   const [categories, setCategories] = useState(initialCategories || []);
+  
+  const [branding, setBranding] = useState(initialConfig || {
+    appName: "NOC Manager",
+    loginTitle: "Welcome",
+    loginSubtitle: "Sign in"
+  });
+  
+  const [wipeOpts, setWipeOpts] = useState({
+    wipeTransactional: true,
+    wipeAssets: false,
+    wipeUsers: false
+  });
+  
+  const [isRestoring, setIsRestoring] = useState(false);
+  const fileInputRef = useRef(null);
   
   const [newField, setNewField] = useState({ name: "", type: "text", options: "", position: "bottom", required: false });
   const [newCat, setNewCat] = useState({ name: "", score: "" });
@@ -90,6 +105,79 @@ export default function SettingsClient({ initialFields, initialCategories }) {
       setCategories(categories.map(c => c.id === id ? updated : c));
       setEditingCategoryId(null);
       router.refresh();
+    }
+  };
+
+  const handleSaveBranding = async (e) => {
+    e.preventDefault();
+    const res = await fetch("/api/settings/branding", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(branding)
+    });
+    if (res.ok) {
+      alert("Branding configuration updated successfully!");
+      router.refresh();
+    }
+  };
+
+  const handleBackup = () => {
+    window.location.href = "/api/settings/database/backup";
+  };
+
+  const handleRestoreUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!confirm("CRITICAL WARNING: Restoring from a backup will DESTROY all current database contents and replace them precisely with the JSON snapshot! Are you absolutely sure?")) {
+      e.target.value = "";
+      return;
+    }
+
+    setIsRestoring(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const backupStr = event.target.result;
+      try {
+        const res = await fetch("/api/settings/database/restore", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ backupStr })
+        });
+        if (res.ok) {
+          alert("Database Restoration Completed Successfully! The system will now reload.");
+          window.location.href = "/";
+        } else {
+          const err = await res.json();
+          alert("Restore Failed: " + err.error);
+        }
+      } catch (err) {
+        alert("Restore Crash: " + err.message);
+      }
+      setIsRestoring(false);
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  };
+
+  const handleWipeDatabase = async () => {
+    const confirmation = prompt(`WARNING: This is a DESTRUCTIVE operation!\n\nOptions selected:\n- Transactions/Tickets: ${wipeOpts.wipeTransactional}\n- Asset Topologies:     ${wipeOpts.wipeAssets}\n- User Database:        ${wipeOpts.wipeUsers}\n\nPlease type "CONFIRM" exactly to permanently DESTROY selected records.`);
+    if (confirmation !== "CONFIRM") {
+      alert("Database Wipe Aborted. Incorrect confirmation phrase.");
+      return;
+    }
+    
+    try {
+       const res = await fetch("/api/settings/database/wipe", {
+         method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify(wipeOpts)
+       });
+       if (res.ok) {
+         alert("Database Wipe Completed Successfully! You will be redirected.");
+         window.location.href = "/dashboard";
+       } else {
+         const err = await res.json();
+         alert("Wipe Failed: " + err.error);
+       }
+    } catch (e) {
+       console.error("Wipe crash", e);
     }
   };
 
@@ -306,8 +394,99 @@ export default function SettingsClient({ initialFields, initialCategories }) {
         )}
 
         {activeTab === 'preferences' && (
-          <div style={{ textAlign: 'center', padding: '4rem', color: '#64748b' }}>
-            <p>This settings module segment is strictly locked in the prototype phase.</p>
+          <div>
+            <div style={{ marginBottom: '2rem' }}>
+              <h2 style={{ color: 'var(--heading-color)', marginBottom: '0.2rem' }}>Application Branding (White-labeling)</h2>
+              <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Customize text artifacts rendering natively across standard client views.</p>
+              
+              <form onSubmit={handleSaveBranding} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.5rem', marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'revert', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem', fontWeight: 'bold' }}>Dashboard App Name (Sidebar Header)</label>
+                    <input type="text" value={branding.appName} onChange={e => setBranding({...branding, appName: e.target.value})} style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)' }} required />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem', fontWeight: 'bold' }}>Login Panel Title</label>
+                    <input type="text" value={branding.loginTitle} onChange={e => setBranding({...branding, loginTitle: e.target.value})} style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)' }} required />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem', fontWeight: 'bold' }}>Login Panel Subtitle</label>
+                    <input type="text" value={branding.loginSubtitle} onChange={e => setBranding({...branding, loginSubtitle: e.target.value})} style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)' }} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '0.5rem' }}>
+                   <button type="submit" className="primary-btn" style={{ background: '#3b82f6', padding: '0.6rem 2rem' }}>Apply Branding Config</button>
+                </div>
+              </form>
+            </div>
+
+            <div style={{ marginTop: '3rem', borderTop: '2px dashed #f87171', paddingTop: '2rem' }}>
+              <h2 style={{ color: '#ef4444', marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '1.2rem' }}>☢️</span> System Core Wipes & Restorations
+              </h2>
+              <p style={{ color: '#b91c1c', fontSize: '0.9rem', marginBottom: '1.5rem', fontWeight: 'bold' }}>Destructive Operations. Data erased via these functions CANNOT be mathematically recovered.</p>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 0.5rem 0', color: '#166534' }}>Export Database (Backup)</h3>
+                    <p style={{ color: '#15803d', fontSize: '0.85rem' }}>Download a complete pure JSON snapshot of the entire operational PostgreSQL database, universally portable.</p>
+                  </div>
+                  <button onClick={handleBackup} style={{ background: '#22c55e', color: 'white', fontWeight: 'bold', padding: '0.8rem 2rem', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '1rem', marginTop: '1rem', boxShadow: '0 4px 6px -1px rgba(34, 197, 94, 0.4)' }}>
+                    Download Schema & Data (.json)
+                  </button>
+                </div>
+                
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e3a8a' }}>Import Database (Restore)</h3>
+                    <p style={{ color: '#1d4ed8', fontSize: '0.85rem' }}>Upload a `.json` backup. This will <strong style={{color:'#dc2626'}}>DESTROY</strong> the current DB schema and inject the JSON payload strictly mapping original Sequence IDs.</p>
+                  </div>
+                  <div>
+                    <input type="file" accept=".json" style={{ display: 'none' }} ref={fileInputRef} onChange={handleRestoreUpload} />
+                    <button onClick={() => fileInputRef.current?.click()} disabled={isRestoring} style={{ width: '100%', background: '#3b82f6', color: 'white', fontWeight: 'bold', padding: '0.8rem 2rem', border: 'none', borderRadius: '6px', cursor: isRestoring ? 'wait' : 'pointer', fontSize: '1rem', marginTop: '1rem', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.4)', opacity: isRestoring ? 0.7 : 1 }}>
+                      {isRestoring ? 'Injecting Nodes...' : 'Upload & Restore (.json)'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                 <h3 style={{ margin: 0, color: '#991b1b', borderBottom: '1px solid #fecaca', paddingBottom: '0.5rem' }}>Manual Factory Reset Selection</h3>
+                
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', padding: '0.8rem', background: 'white', borderRadius: '6px', border: '1px solid #fecaca' }}>
+                   <input type="checkbox" checked={wipeOpts.wipeTransactional} onChange={e => setWipeOpts({...wipeOpts, wipeTransactional: e.target.checked})} style={{ width: '1.2rem', height: '1.2rem', accentColor: '#ef4444' }} />
+                   <div>
+                     <strong style={{ display: 'block', color: '#991b1b' }}>Wipe Transactional Data (Tickets, Reports, Meetings & Logs)</strong>
+                     <span style={{ fontSize: '0.8rem', color: '#dc2626' }}>Destroys all history related to incidents and communications.</span>
+                   </div>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', padding: '0.8rem', background: 'white', borderRadius: '6px', border: '1px solid #fecaca' }}>
+                   <input type="checkbox" checked={wipeOpts.wipeAssets} onChange={e => setWipeOpts({...wipeOpts, wipeAssets: e.target.checked})} style={{ width: '1.2rem', height: '1.2rem', accentColor: '#ef4444' }} />
+                   <div>
+                     <strong style={{ display: 'block', color: '#991b1b' }}>Wipe Master Assets (Customers, Active Services, Port Topologies)</strong>
+                     <span style={{ fontSize: '0.8rem', color: '#dc2626' }}>Destroys established inventory topologies completely.</span>
+                   </div>
+                </label>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', cursor: 'pointer', padding: '0.8rem', background: 'white', borderRadius: '6px', border: '1px solid #fecaca' }}>
+                   <input type="checkbox" checked={wipeOpts.wipeUsers} onChange={e => setWipeOpts({...wipeOpts, wipeUsers: e.target.checked})} style={{ width: '1.2rem', height: '1.2rem', accentColor: '#ef4444' }} />
+                   <div>
+                     <strong style={{ display: 'block', color: '#991b1b' }}>Wipe Human Resources (Users database EXCEPT your own Admin account)</strong>
+                     <span style={{ fontSize: '0.8rem', color: '#dc2626' }}>Disconnects all staffs. Retains structural roles/departments.</span>
+                   </div>
+                </label>
+
+                <div style={{ marginTop: '1rem', borderTop: '1px solid #fca5a5', paddingTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                   <p style={{ fontSize: '0.85rem', color: '#7f1d1d', margin: 0, flex: 1 }}>Execute deletion matrix by typing confirmation passphrase natively mapped in backend.</p>
+                   <button onClick={handleWipeDatabase} style={{ background: '#dc2626', color: 'white', fontWeight: 'bold', padding: '0.8rem 2rem', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '1.05rem', boxShadow: '0 4px 6px -1px rgba(220, 38, 38, 0.4)' }}>
+                      DESTROY SELECTED
+                   </button>
+                </div>
+
+              </div>
+            </div>
           </div>
         )}
       </div>

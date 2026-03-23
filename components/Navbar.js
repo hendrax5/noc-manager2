@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useTheme } from "./ThemeProvider";
 
-export default function Navbar() {
+export default function Navbar({ appName = "NOC Management" }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
 
@@ -18,7 +18,7 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <div className="nav-brand">NOC Management</div>
+      <div className="nav-brand">{appName}</div>
       {session && (
         <div className="nav-links" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
           <Link href="/dashboard" className={pathname === "/dashboard" ? "active" : ""}>Dashboard</Link>
@@ -27,6 +27,8 @@ export default function Navbar() {
             <Link href="/reports" className={pathname.startsWith("/reports") ? "active" : ""}>Reports</Link>
           )}
           <Link href="/meetings" className={pathname.startsWith("/meetings") ? "active" : ""}>Meetings</Link>
+          <Link href="/knowledge" className={pathname.startsWith("/knowledge") ? "active" : ""}>Knowledge</Link>
+          <Link href="/assets" className={pathname.startsWith("/assets") ? "active" : ""}>Assets</Link>
           {session.user?.role === 'Admin' && (
             <>
               <Link href="/team" className={pathname === "/team" ? "active" : ""}>Team</Link>

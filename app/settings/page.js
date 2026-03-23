@@ -3,6 +3,7 @@ import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import SettingsClient from "./SettingsClient";
+import { getAppConfig } from "@/lib/config";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -21,7 +22,11 @@ export default async function SettingsPage() {
         <p>Customize dynamic ticket submission forms conforming to explicit NOC metrics.</p>
       </header>
 
-      <SettingsClient initialFields={customFields} initialCategories={jobCategories} />
+      <SettingsClient 
+        initialFields={customFields} 
+        initialCategories={jobCategories} 
+        initialConfig={getAppConfig()} 
+      />
     </main>
   );
 }

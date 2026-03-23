@@ -19,7 +19,7 @@ export async function POST(req) {
     const userId = session?.user?.id ? parseInt(session.user.id) : null;
 
     const body = await req.json();
-    const { title, description, priority, departmentId, assigneeId, jobCategoryId, customData, attachmentUrl, attachmentName, enableSla, slaTimerMins } = body;
+    const { title, description, priority, departmentId, assigneeId, jobCategoryId, customData, attachmentUrl, attachmentName, enableSla, slaTimerMins, serviceIds } = body;
         
     // Auto assignment routing logic (Least Busy Round-Robin)
     let finalAssigneeId = assigneeId ? parseInt(assigneeId) : null;
@@ -67,6 +67,12 @@ export async function POST(req) {
         create: { action: "Ticket systemically instantiated" + (finalAssigneeId ? ` & auto-assigned to ID ${finalAssigneeId}` : ''), actorId: userId }
       }
     };
+
+    if (serviceIds && serviceIds.length > 0) {
+      ticketData.services = {
+        connect: serviceIds.map(id => ({ id: parseInt(id) }))
+      };
+    }
 
     // Safely nest attachments onto relational write block
     if (attachmentUrl && userId) {

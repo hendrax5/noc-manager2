@@ -27,7 +27,7 @@ function SearchableSelect({ options, value, onChange, disabled, placeholder }) {
   const filteredOptions = options.filter(o => o.label.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div style={{ position: 'relative', width: '100%' }}>
+    <div style={{ position: 'relative', width: '100%', zIndex: isOpen ? 50 : 1 }}>
       <input 
         type="text" 
         style={{ width: '100%', textOverflow: 'ellipsis', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: disabled ? 'var(--hover-bg)' : 'var(--input-bg)', color: value ? 'var(--heading-color)' : 'var(--text-color)', fontWeight: '600', cursor: disabled ? 'not-allowed' : 'pointer', fontSize: '0.85rem' }} 
@@ -54,7 +54,7 @@ function SearchableSelect({ options, value, onChange, disabled, placeholder }) {
   );
 }
 
-export default function TicketDetailClient({ ticket, departments, users, jobCategories, customFields, canModifyTicket, currentUser }) {
+export default function TicketDetailClient({ ticket, departments, users, jobCategories, customFields, canModifyTicket, currentUser, serviceTemplates }) {
   const router = useRouter();
   
   const currentUserObj = currentUser || {};
@@ -88,6 +88,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const [submitAction, setSubmitAction] = useState('reply');
   const [showSubmitDropdown, setShowSubmitDropdown] = useState(false);
   const [slaLoading, setSlaLoading] = useState(false);
+  
   const [mounted, setMounted] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
@@ -264,16 +265,15 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                               onChange={e => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: e.target.value }})}
                             />
                           ) : f.type === 'select' ? (
-                            <select 
-                              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white', color: '#1e293b', outline: 'none' }}
+                            <SearchableSelect 
+                              options={(f.options ? (function(){
+                                if (f.options === '@ServiceTemplates') return (serviceTemplates || []).map(st => ({ value: st.name, label: st.name }));
+                                try { return JSON.parse(f.options); } catch(e) { return f.options.split(',').map(s=>({value: s.trim(), label: s.trim()})); }
+                              })() : [])}
                               value={formData.customData?.[f.name] || ''}
-                              onChange={e => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: e.target.value }})}
-                            >
-                              <option value="">-- Select --</option>
-                              {f.options && (function(){
-                                try { return JSON.parse(f.options); } catch(e) { return f.options.split(',').map(s=>s.trim()); }
-                              })().map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
+                              onChange={val => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: val }})}
+                              placeholder={`-- Select ${f.name} --`}
+                            />
                           ) : (
                             <input 
                               type={f.type === 'date' ? 'date' : 'text'}
@@ -405,17 +405,16 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                         required
                       />
                     ) : f.type === 'select' ? (
-                      <select 
-                        style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--heading-color)', outline: 'none' }}
+                      <SearchableSelect 
+                        options={(f.options ? (function(){
+                          if (f.options === '@ServiceTemplates') return (serviceTemplates || []).map(st => ({ value: st.name, label: st.name }));
+                          try { return JSON.parse(f.options); } catch(e) { return f.options.split(',').map(s=>({ value: s.trim(), label: s.trim() })); }
+                        })() : [])}
                         value={replyCustomData[f.name] || ''}
-                        onChange={e => setReplyCustomData({ ...replyCustomData, [f.name]: e.target.value })}
+                        onChange={val => setReplyCustomData({ ...replyCustomData, [f.name]: val })}
+                        placeholder={`-- Select ${f.name} --`}
                         required
-                      >
-                        <option value="">-- Select --</option>
-                        {f.options && (function(){
-                          try { return JSON.parse(f.options); } catch(e) { return f.options.split(',').map(s=>s.trim()); }
-                        })().map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                      </select>
+                      />
                     ) : (
                       <input 
                         type={f.type === 'date' ? 'date' : 'text'}
@@ -430,14 +429,18 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               </div>
             )}
 
-            <textarea 
-              rows="6" 
-              placeholder="Type your technical response here..." 
-              style={{ width: '100%', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'inherit', boxSizing: 'border-box', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.95rem' }}
-              value={commentText}
-              onChange={e => setCommentText(e.target.value)}
-              required={!file && visibleCustomFieldIds.length === 0}
-            ></textarea>
+            {/* Knowledge Base search removed by user request */}
+
+            <div style={{ position: 'relative' }}>
+              <textarea 
+                rows="6" 
+                placeholder="Type your technical response here..." 
+                style={{ width: '100%', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'inherit', boxSizing: 'border-box', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.95rem' }}
+                value={commentText}
+                onChange={e => setCommentText(e.target.value)}
+                required={!file && visibleCustomFieldIds.length === 0}
+              ></textarea>
+            </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--input-bg)', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-color)', minWidth: '100px' }}>Attachment:</label>
@@ -535,9 +538,13 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
              
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                <label style={{ color: 'var(--text-color)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Department</label>
-               <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontWeight: '500', cursor: 'pointer', fontSize: '0.85rem', outline: 'none' }} value={formData.departmentId} onChange={e => triggerAutoSave('departmentId', e.target.value)} disabled={!canModifyTicket}>
-                 {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-               </select>
+               <SearchableSelect 
+                  options={(departments || []).map(d => ({ value: d.id, label: d.name }))} 
+                  value={formData.departmentId} 
+                  onChange={val => triggerAutoSave('departmentId', val)} 
+                  disabled={!canModifyTicket} 
+                  placeholder="-- Select Department --" 
+                />
             </div>
 
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
@@ -554,7 +561,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                <label style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Job Phase Category</label>
                <SearchableSelect 
-                 options={(jobCategories || []).map(c => ({ value: c.id, label: `${c.name} (+${c.score} pt)` }))} 
+                 options={(jobCategories || []).map(c => ({ value: c.id, label: isAdminOrManager ? `${c.name} (+${c.score} pt)` : c.name }))} 
                  value={formData.jobCategoryId} 
                  onChange={val => triggerAutoSave('jobCategoryId', val)} 
                  disabled={!canModifyTicket} 
@@ -592,6 +599,34 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
         </div>
 
 
+
+          {ticket.services && ticket.services.length > 0 && (
+            <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--primary-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Network Topology (Impacted)</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {ticket.services.map(srv => (
+                  <div key={srv.id} style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ fontWeight: 'bold', color: 'var(--heading-color)', marginBottom: '0.2rem', fontSize: '0.9rem' }}>{srv.customer?.name}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', marginBottom: '0.8rem' }}>{srv.name}</div>
+                    
+                    {srv.hops && srv.hops.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderLeft: '2px solid var(--primary-color)', paddingLeft: '0.8rem', marginLeft: '0.5rem', position: 'relative' }}>
+                        {srv.hops.map((hop, i) => (
+                          <div key={hop.id} style={{ position: 'relative', background: 'var(--input-bg)', padding: '0.5rem 0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ position: 'absolute', left: '-1.15rem', top: '10px', background: 'var(--card-bg)', border: '2px solid var(--primary-color)', width: '10px', height: '10px', borderRadius: '50%' }}></div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--heading-color)' }}>{hop.location}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-color)', fontFamily: 'monospace' }}>{hop.deviceName} • {hop.portName}</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-color)' }}>No routing hops mapped.</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
         <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '0.9rem', color: 'var(--heading-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
