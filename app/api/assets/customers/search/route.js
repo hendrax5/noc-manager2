@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request) {
   try {
@@ -19,8 +19,8 @@ export async function GET(request) {
       where: {
         OR: [
           { name: { contains: q, mode: 'insensitive' } },
-          { email: { contains: q, mode: 'insensitive' } },
-          { cid: { contains: q, mode: 'insensitive' } }
+          { contactEmail: { contains: q, mode: 'insensitive' } },
+          { contactPhone: { contains: q, mode: 'insensitive' } }
         ]
       },
       take: 15,
@@ -30,7 +30,7 @@ export async function GET(request) {
     // Map to a format easily parsed by our Select Component
     const results = customers.map(c => ({
       value: c.name,
-      label: c.cid ? `[${c.cid}] ${c.name}` : c.name
+      label: c.name
     }));
 
     return NextResponse.json(results);

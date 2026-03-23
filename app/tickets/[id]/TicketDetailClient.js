@@ -264,7 +264,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                               value={formData.customData?.[f.name] || ''}
                               onChange={e => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: e.target.value }})}
                             />
-                          ) : f.type === 'select' && f.options === '@Customers' ? (
+                          ) : f.type === 'select' && f.options?.trim() === '@Customers' ? (
                             isEditing ? (
                               <AsyncSearchSelect
                                 value={formData.customData?.[f.name] || ''}

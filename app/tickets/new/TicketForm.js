@@ -74,7 +74,7 @@ export default function TicketForm({ departments, categories, customFields, serv
           {field.type === 'textarea' && (
             <textarea rows="3" style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', resize: 'vertical', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customData[field.name] || ''} onChange={e => setCustomData({...customData, [field.name]: e.target.value})}></textarea>
           )}
-          {field.type === 'select' && field.options === '@Customers' ? (
+          {field.type === 'select' && field.options?.trim() === '@Customers' ? (
             <AsyncSearchSelect
               value={customData[field.name] || ''}
               onChange={(val) => setCustomData({...customData, [field.name]: val})}
