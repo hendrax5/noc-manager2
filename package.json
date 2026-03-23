@@ -1,7 +1,13 @@
 {
-  "name": "noc-ticketing",
-  "version": "1.1.0",
-  "private": true,
+  "name": "@hendrax5/noc-manager2",
+  "version": "1.2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hendrax5/noc-manager2.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
