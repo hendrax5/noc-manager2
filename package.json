@@ -1,0 +1,25 @@
+{
+  "name": "noc-ticketing",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "next-auth": "^4.24.7",
+    "@prisma/client": "^5.14.0",
+    "pg": "^8.11.5",
+    "recharts": "latest"
+  },
+  "devDependencies": {
+    "prisma": "^5.14.0",
+    "eslint": "latest",
+    "eslint-config-next": "latest"
+  }
+}

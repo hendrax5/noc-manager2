@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+}
+
+model Department {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  locations Location[]
+  users     User[]
+  tickets   Ticket[]
+  actionItems ActionItem[]
+}
+
+model Location {
+  id           Int        @id @default(autoincrement())
+  city         String
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+  users        User[]
+}
+
+model User {
+  id           Int         @id @default(autoincrement())
+  email        String      @unique
+  name         String?
+  password     String      @default("password123")
+  roleId       Int
+  role         Role        @relation(fields: [roleId], references: [id])
+  departmentId Int
+  department   Department  @relation(fields: [departmentId], references: [id])
+  locationId   Int?
+  location     Location?   @relation(fields: [locationId], references: [id])
+  tickets      Ticket[]    @relation("AssignedUser")
+  reports      DailyReport[]
+  comments     Comment[]
+  historyLogs  TicketHistory[]
+  attachments  Attachment[]
+  meetingsOrganized Meeting[] @relation("MeetingOrganizer")
+  meetingsAttending Meeting[] @relation("MeetingAttendees")
+  presentSessions   MeetingSession[] @relation("SessionPresentAttendees")
+  meetingSessions   MeetingSession[]
+  actionItems       ActionItem[]
+}
+
+model Ticket {
+  id           Int        @id @default(autoincrement())
+  trackingId   String?    @unique @default(uuid())
+  title        String
+  description  String
+  status       String     @default("New")
+  customData   Json?
+  priority     String     @default("Medium")
+  departmentId Int
+  department   Department @relation(fields: [departmentId], references: [id])
+  assigneeId   Int?
+  assignee     User?      @relation("AssignedUser", fields: [assigneeId], references: [id])
+  jobCategoryId Int?
+  jobCategory  JobCategory? @relation(fields: [jobCategoryId], references: [id])
+  awardedScore Int?
+  comments     Comment[]
+  historyLogs  TicketHistory[]
+  attachments  Attachment[]
+  meetings     Meeting[]
+  actionItem   ActionItem?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model DailyReport {
+  id        Int      @id @default(autoincrement())
+  content   String
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Meeting {
+  id            Int      @id @default(autoincrement())
+  title         String
+  agenda        String?
+  problems      String?
+  solutions     String?
+  status        String   @default("Scheduled") 
+  scheduledAt   DateTime
+  organizedById Int?
+  organizedBy   User?    @relation("MeetingOrganizer", fields: [organizedById], references: [id])
+  attendees     User[]   @relation("MeetingAttendees")
+  sessions      MeetingSession[]
+  actionItems   ActionItem[]
+  discussedTickets Ticket[]
+  createdAt     DateTime @default(now())
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  text      String
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  attachments Attachment[]
+  createdAt DateTime @default(now())
+}
+
+model CustomField {
+  id       Int     @id @default(autoincrement())
+  name     String
+  type     String  @default("text") 
+  options  String? 
+  required Boolean @default(false)
+  active   Boolean @default(true)
+  position String  @default("bottom")
+}
+
+model TicketHistory {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  action    String   
+  actorId   Int?     
+  actor     User?    @relation(fields: [actorId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Attachment {
+  id         Int      @id @default(autoincrement())
+  filename   String
+  url        String
+  ticketId   Int?
+  ticket     Ticket?  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  commentId  Int?
+  comment    Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  uploadedBy Int
+  uploader   User     @relation(fields: [uploadedBy], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model JobCategory {
+  id       Int      @id @default(autoincrement())
+  name     String   @unique
+  score    Int      @default(0)
+  active   Boolean  @default(true)
+  tickets  Ticket[]
+}
+
+model ActionItem {
+  id           Int      @id @default(autoincrement())
+  task         String
+  status       String   @default("Pending") 
+  meetingId    Int
+  meeting      Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meetingSessionId Int?
+  meetingSession   MeetingSession? @relation(fields: [meetingSessionId], references: [id], onDelete: Cascade)
+  assigneeId   Int?
+  assignee     User?    @relation(fields: [assigneeId], references: [id])
+  departmentId Int?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  linkedTicketId Int?      @unique
+  linkedTicket   Ticket?   @relation(fields: [linkedTicketId], references: [id])
+  dueDate      DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model MeetingSession {
+  id        Int      @id @default(autoincrement())
+  meetingId Int
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  title     String?
+  scheduledFor DateTime?
+  content   String?  @db.Text
+  authorId  Int      
+  author    User     @relation(fields: [authorId], references: [id])
+  presentAttendees User[] @relation("SessionPresentAttendees")
+  actionItems ActionItem[]
+  createdAt DateTime @default(now())
+}
