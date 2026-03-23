@@ -1,6 +1,7 @@
 name: Publish to GitHub Packages (NPM & Docker)
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
   push:
