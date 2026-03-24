@@ -141,6 +141,17 @@ export default function TicketForm({ departments, categories, customFields, serv
       )}
 
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+        <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Customer / Reporter Name</label>
+        <input 
+          type="text" 
+          placeholder="e.g. Yayasan WFF Indonesia or BPS Pusat..."
+          value={customData["Customer Name"] || ''} 
+          onChange={e => setCustomData({...customData, "Customer Name": e.target.value})} 
+          style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '1rem' }}
+        />
+      </div>
+
+      <div className="form-group" style={{ gridColumn: '1 / -1' }}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Subject</label>
         <input 
           type="text" 

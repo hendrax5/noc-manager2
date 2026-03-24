@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: postgrespassword
       POSTGRES_DB: nocticketing
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - noc_db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
@@ -26,4 +26,4 @@ services:
       - db
 
 volumes:
-  pgdata:
+  noc_db_data:

@@ -17,6 +17,7 @@ export default async function TicketDetailsPage({ params }) {
       assignee: true, 
       attachments: true,
       actionItem: { include: { meeting: true } },
+      services: { include: { customer: true } },
       historyLogs: { include: { actor: true }, orderBy: { createdAt: 'desc' } },
       comments: { include: { author: true, attachments: true }, orderBy: { createdAt: 'asc' } }
     }

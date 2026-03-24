@@ -1,10 +1,11 @@
+import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import SearchInput from "./SearchInput";
 import TicketQuickActions from "./TicketQuickActions";
+import TicketAdvancedFilter from "./TicketAdvancedFilter";
 import Pagination from "@/components/Pagination";
 
 export default async function TicketsPage({ searchParams }) {
@@ -19,9 +20,10 @@ export default async function TicketsPage({ searchParams }) {
   const isCS = user.department?.includes('CS') || user.department?.toLowerCase().includes('customer');
   const canViewAll = user.role === 'Admin' || user.role === 'Manager' || isCS;
 
-  const tab = resolvedParams?.tab || 'needs_attention';
-
+  const statusesParam = resolvedParams?.statuses;
+  const assignmentParam = resolvedParams?.assignment || "all";
   const dateParam = resolvedParams?.date || "";
+  const tab = resolvedParams?.tab || "";
 
   const filters = [];
   
@@ -33,6 +35,14 @@ export default async function TicketsPage({ searchParams }) {
   
   if (!canViewAll) {
     filters.push({ assigneeId: user.id });
+  } else {
+    if (assignmentParam === 'me') {
+      filters.push({ assigneeId: user.id });
+    } else if (assignmentParam === 'unassigned') {
+      filters.push({ assigneeId: null });
+    } else if (assignmentParam === 'others') {
+      filters.push({ assigneeId: { not: null }, NOT: { assigneeId: user.id } });
+    }
   }
 
   if (q) {
@@ -41,22 +51,22 @@ export default async function TicketsPage({ searchParams }) {
         { trackingId: { contains: q, mode: 'insensitive' } },
         { title: { contains: q, mode: 'insensitive' } },
         { assignee: { name: { contains: q, mode: 'insensitive' } } },
-        { assignee: { email: { contains: q, mode: 'insensitive' } } }
+        { assignee: { email: { contains: q, mode: 'insensitive' } } },
+        { description: { contains: q, mode: 'insensitive' } }
       ]
     });
   }
 
-  if (tab === 'needs_attention') {
-    filters.push({
-      OR: [
-        { status: 'New' },
-        { status: 'Open' },
-        { assigneeId: null }
-      ]
-    });
+  if (statusesParam) {
+    const statusArray = statusesParam.split(',');
+    filters.push({ status: { in: statusArray } });
+  } else if (!resolvedParams?.statuses && !resolvedParams?.tab) {
+    // default statuses
+    filters.push({ status: { in: ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold'] } });
+  } else if (tab === 'needs_attention') {
+    filters.push({ OR: [{ status: 'New' }, { status: 'Open' }, { assigneeId: null }] });
   } else if (tab === 'in_progress') {
-    filters.push({ status: { notIn: ['New', 'Resolved', 'Closed'] } });
-    filters.push({ assigneeId: { not: null } });
+    filters.push({ status: { notIn: ['New', 'Resolved', 'Closed'] }, assigneeId: { not: null } });
   } else if (tab === 'expiring') {
     filters.push({ status: { notIn: ['Resolved', 'Closed'] } });
   } else if (tab === 'resolved') {
@@ -72,7 +82,7 @@ export default async function TicketsPage({ searchParams }) {
     prisma.ticket.count({ where: whereClause }),
     prisma.ticket.findMany({
       where: whereClause,
-      include: { department: true, assignee: true },
+      include: { department: true, assignee: true, services: { include: { customer: true } } },
       take: tab === 'expiring' ? undefined : pageSize,
       skip: tab === 'expiring' ? undefined : (page - 1) * pageSize,
       orderBy: [
@@ -129,30 +139,15 @@ export default async function TicketsPage({ searchParams }) {
         </div>
       </header>
 
-      <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '2px solid #e2e8f0', marginBottom: '1.5rem', paddingBottom: '0.75rem', overflowX: 'auto' }}>
-        <Link href="?tab=needs_attention" style={{ textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', color: tab === 'needs_attention' ? '#ef4444' : 'var(--text-color)', borderBottom: tab === 'needs_attention' ? '3px solid #ef4444' : 'none', paddingBottom: '0.75rem', marginBottom: '-0.9rem' }}>
-          🔴 Attention
-        </Link>
-        <Link href="?tab=in_progress" style={{ textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', color: tab === 'in_progress' ? '#f59e0b' : 'var(--text-color)', borderBottom: tab === 'in_progress' ? '3px solid #f59e0b' : 'none', paddingBottom: '0.75rem', marginBottom: '-0.9rem' }}>
-          🟡 Progress
-        </Link>
-        <Link href="?tab=expiring" style={{ textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', color: tab === 'expiring' ? '#d946ef' : 'var(--text-color)', borderBottom: tab === 'expiring' ? '3px solid #d946ef' : 'none', paddingBottom: '0.75rem', marginBottom: '-0.9rem' }}>
-          ⏳ Expiring
-        </Link>
-        <Link href="?tab=resolved" style={{ textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', color: tab === 'resolved' ? '#10b981' : 'var(--text-color)', borderBottom: tab === 'resolved' ? '3px solid #10b981' : 'none', paddingBottom: '0.75rem', marginBottom: '-0.9rem' }}>
-          🟢 Resolved
-        </Link>
-        <Link href="?tab=all" style={{ textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', color: tab === 'all' ? 'var(--heading-color)' : 'var(--text-color)', borderBottom: tab === 'all' ? '3px solid var(--heading-color)' : 'none', paddingBottom: '0.75rem', marginBottom: '-0.9rem' }}>
-          ⚪ All Tickets
-        </Link>
-      </div>
-
-      <SearchInput defaultQuery={q} />
+      <Suspense fallback={<div style={{ padding: '1.5rem', marginBottom: '1.5rem', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>Loading filters...</div>}>
+        <TicketAdvancedFilter />
+      </Suspense>
 
       <table className="data-table">
         <thead>
           <tr>
             <th>Tracking ID</th>
+            <th>Name</th>
             <th>Subject</th>
             <th>Status</th>
             <th>Priority</th>
@@ -163,7 +158,7 @@ export default async function TicketsPage({ searchParams }) {
         </thead>
         <tbody>
           {tickets.length === 0 && (
-            <tr><td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>No tickets found matching your query.</td></tr>
+            <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>No tickets found matching your filters.</td></tr>
           )}
           {tickets.map(t => {
             const isCritical = t.priority === 'Critical';
@@ -183,9 +178,22 @@ export default async function TicketsPage({ searchParams }) {
             else if (hasPings && t.status !== 'Resolved') rowClass = "ticket-row-warning";
             else if (expiryDateStr && t.status !== 'Resolved' && new Date(expiryDateStr) < new Date()) rowClass = "ticket-row-expired";
             
+            let extractedName = "-";
+            const reporterMatch = t.description?.match(/\[Original Reporter: (.*?) -/);
+            if (reporterMatch) {
+              extractedName = reporterMatch[1];
+            } else if (t.services && t.services.length > 0 && t.services[0].customer) {
+              extractedName = t.services[0].customer.name;
+            } else if (t.customData && typeof t.customData === 'object' && t.customData["Customer Name"]) {
+               extractedName = t.customData["Customer Name"];
+            }
+
             return (
               <tr key={t.id} className={rowClass}>
                 <td style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{t.trackingId}</td>
+                <td>
+                  <span style={{ fontWeight: '600', color: '#334155', fontSize: '0.9rem' }}>{extractedName}</span>
+                </td>
                 <td style={{ fontWeight: '600' }}>
                   <Link href={`/tickets/${t.id}`} style={{color: 'var(--primary-color)'}}>
                     {t.title}

@@ -240,10 +240,27 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             </div>
           )}
           
-          <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
-            <span>Contact: <strong>{ticket.assignee?.name || ticket.assignee?.email || 'NOC Operator'}</strong></span>
-            <span>• <span>{mounted ? new Date(ticket.createdAt).toLocaleString('en-CA') : '...'}</span></span>
-          </div>
+          {(() => {
+            let extractedName = "Unknown Reporter";
+            const reporterMatch = ticket.description?.match(/\[Original Reporter: (.*?) -/);
+            if (reporterMatch) {
+              extractedName = reporterMatch[1];
+            } else if (ticket.services && ticket.services.length > 0 && ticket.services[0].customer) {
+              extractedName = ticket.services[0].customer.name;
+            } else if (ticket.customData && typeof ticket.customData === 'object' && ticket.customData["Customer Name"]) {
+               extractedName = ticket.customData["Customer Name"];
+            }
+
+            return (
+              <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f8fafc', padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>
+                  👤 <strong>{extractedName}</strong>
+                </span>
+                <span>Handling Tech: <strong>{ticket.assignee?.name || ticket.assignee?.email || 'Unassigned'}</strong></span>
+                <span>• <span>{mounted ? new Date(ticket.createdAt).toLocaleString('en-CA', { hour: '2-digit', minute: '2-digit' }) : '...'}</span></span>
+              </div>
+            );
+          })()}
           
           <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.7', color: 'var(--text-color)', fontSize: '0.95rem' }}>
             <p style={{ margin: '0 0 1rem 0' }}>Dear NOC,</p>

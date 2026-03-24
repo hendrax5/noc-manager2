@@ -29,6 +29,7 @@ export default function Navbar({ appName = "NOC Management" }) {
         <div className={`nav-links ${isMobileMenuOpen ? 'open' : ''}`} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
           <Link href="/dashboard" className={pathname === "/dashboard" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
           <Link href="/tickets" className={pathname.startsWith("/tickets") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Tickets</Link>
+          <Link href="/meetings" className={pathname.startsWith("/meetings") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Meetings</Link>
           {/* Resources Dropdown */}
           <div className="nav-dropdown">
             <button className={`nav-dropdown-btn ${(pathname.startsWith("/knowledge") || pathname.startsWith("/assets")) ? "active" : ""}`}>
