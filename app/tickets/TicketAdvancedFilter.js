@@ -42,6 +42,19 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
     router.push(`/tickets?${params.toString()}`);
   };
 
+  const handleCompanyChange = (val) => {
+    setCompanyParam(val);
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (statuses.length > 0) params.set('statuses', statuses.join(','));
+    if (assignments.length > 0 && assignments.length < 3) params.set('assignments', assignments.join(','));
+    if (allDepts) params.set('all_depts', 'true');
+    if (val) params.set('company', val);
+    if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
+    
+    router.push(`/tickets?${params.toString()}`);
+  };
+
   const clearAll = () => {
     setQ("");
     setStatuses(['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold']);
@@ -125,7 +138,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <select 
                 value={companyParam} 
-                onChange={(e) => setCompanyParam(e.target.value)}
+                onChange={(e) => handleCompanyChange(e.target.value)}
                 style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem', color: '#334155', outline: 'none' }}
               >
                 <option value="">-- All Companies --</option>
