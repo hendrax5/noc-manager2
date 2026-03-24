@@ -68,8 +68,8 @@ export default function TicketForm({ departments, categories, customFields, serv
           <label style={{ display: 'block', color: '#475569', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
             {field.name} {field.required && <span style={{color: '#ef4444'}}>*</span>}
           </label>
-          {field.type === 'text' && (
-            <input type="text" style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customDataState[field.name] || ''} onChange={e => setCustomDataState({...customDataState, [field.name]: e.target.value})} />
+          {(field.type === 'text' || field.type === 'date') && (
+            <input type={field.type} style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customDataState[field.name] || ''} onChange={e => setCustomDataState({...customDataState, [field.name]: e.target.value})} />
           )}
           {field.type === 'textarea' && (
             <textarea rows="3" style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', resize: 'vertical', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customDataState[field.name] || ''} onChange={e => setCustomDataState({...customDataState, [field.name]: e.target.value})}></textarea>
