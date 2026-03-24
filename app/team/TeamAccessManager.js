@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import UserTableClient from "./UserTableClient";
 
-export default function TeamAccessManager({ users, roles, departments }) {
+export default function TeamAccessManager({ users, roles, departments, companies = ["ION", "SDC", "Sistercompany"], initialDeptMap = {} }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("users");
   const [newRole, setNewRole] = useState("");
@@ -21,6 +21,8 @@ export default function TeamAccessManager({ users, roles, departments }) {
 
   const [editingDeptId, setEditingDeptId] = useState(null);
   const [editDeptName, setEditDeptName] = useState("");
+  const [editDeptCompany, setEditDeptCompany] = useState("");
+  const [deptCompanyMap, setDeptCompanyMap] = useState(initialDeptMap);
 
   const handleAddRole = async (e) => {
     e.preventDefault();
@@ -70,10 +72,19 @@ export default function TeamAccessManager({ users, roles, departments }) {
   const handleEditDept = (dept) => {
     setEditingDeptId(dept.id);
     setEditDeptName(dept.name);
+    setEditDeptCompany(deptCompanyMap[dept.id] || "");
   };
   const handleSaveDept = async (id) => {
     if (!editDeptName.trim()) return;
     await fetch(`/api/departments/${id}`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ name: editDeptName }) });
+    
+    // Save Routing Map
+    const resMap = await fetch(`/api/settings/dept-routing`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ departmentId: String(id), companyName: editDeptCompany }) });
+    if(resMap.ok) {
+       const mappedData = await resMap.json();
+       setDeptCompanyMap(mappedData.deptCompanyMap);
+    }
+
     setEditingDeptId(null);
     router.refresh();
   };
@@ -204,7 +215,13 @@ export default function TeamAccessManager({ users, roles, departments }) {
                 if (editingDeptId === d.id) {
                   return (
                     <li key={d.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <input type="text" value={editDeptName} onChange={e => setEditDeptName(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', flex: 1, marginRight: '1rem' }} />
+                      <div style={{ display: 'flex', flex: 1, gap: '1rem', marginRight: '1rem' }}>
+                        <input type="text" value={editDeptName} onChange={e => setEditDeptName(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', flex: 1 }} />
+                        <select value={editDeptCompany} onChange={e => setEditDeptCompany(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', width: '220px' }}>
+                          <option value="">-- No Auto Routing --</option>
+                          {companies.map((c, i) => <option key={i} value={c}>{c}</option>)}
+                        </select>
+                      </div>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <button onClick={() => handleSaveDept(d.id)} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Save</button>
                         <button onClick={() => setEditingDeptId(null)} style={{ background: '#64748b', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>
@@ -214,7 +231,14 @@ export default function TeamAccessManager({ users, roles, departments }) {
                 }
                 return (
                   <li key={d.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <strong>{d.name}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <strong>{d.name}</strong>
+                      {deptCompanyMap[d.id] && (
+                        <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#1e40af', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #bfdbfe', fontWeight: 'bold' }}>
+                           🏢 Default: {deptCompanyMap[d.id]}
+                        </span>
+                      )}
+                    </div>
                     <div>
                         <select defaultValue="" onChange={(e) => {
                           if (e.target.value === 'edit') handleEditDept(d);

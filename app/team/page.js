@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import TeamAccessManager from "./TeamAccessManager";
 
+import { getAppConfig } from "@/lib/config";
+
 export default async function TeamPage() {
   const session = await getServerSession(authOptions);
   
@@ -13,8 +15,12 @@ export default async function TeamPage() {
   }
 
   const users = await prisma.user.findMany({ include: { role: true, department: true }, orderBy: { id: 'asc' } });
-  const departments = await prisma.department.findMany();
+  const departments = await prisma.department.findMany({ orderBy: { id: 'asc' } });
   const roles = await prisma.role.findMany();
+
+  const config = getAppConfig();
+  const companies = config.companyNames ? config.companyNames.split(',').map(s => s.trim()) : ["ION", "SDC", "Sistercompany"];
+  const initialDeptMap = config.deptCompanyMap || {};
 
   return (
     <main className="container">
@@ -28,7 +34,7 @@ export default async function TeamPage() {
         <Link href="/team/schedules" style={{ padding: '0.75rem 1.5rem', textDecoration: 'none', color: '#64748b', fontWeight: '500' }}>Shift Schedules</Link>
       </div>
 
-      <TeamAccessManager users={users} roles={roles} departments={departments} />
+      <TeamAccessManager users={users} roles={roles} departments={departments} companies={companies} initialDeptMap={initialDeptMap} />
     </main>
   );
 }

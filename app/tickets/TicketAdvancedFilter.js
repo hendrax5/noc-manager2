@@ -2,7 +2,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
-export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Sistercompany"] }) {
+export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Sistercompany"], initialCompanyParam = "" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -10,7 +10,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
   const [statuses, setStatuses] = useState(searchParams.get('statuses') ? searchParams.get('statuses').split(',') : ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold']); // default
   const [assignments, setAssignments] = useState(searchParams.get('assignments') ? searchParams.get('assignments').split(',') : ['me', 'unassigned']); // me, others, unassigned
   const [allDepts, setAllDepts] = useState(searchParams.get('all_depts') === 'true'); // Show all departments toggle
-  const [companyParam, setCompanyParam] = useState(searchParams.get('company') || ""); // Company Routing Filter
+  const [companyParam, setCompanyParam] = useState(searchParams.get('company') !== null ? searchParams.get('company') : initialCompanyParam); // Company Routing Filter
 
   const ALL_STATUSES = ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Resolved', 'Closed'];
 

@@ -16,6 +16,7 @@ export default async function TicketsPage({ searchParams }) {
 
   const config = getAppConfig();
   const companies = config.companyNames ? config.companyNames.split(',').map(s => s.trim()) : ["ION", "SDC", "Sistercompany"];
+  const deptCompanyMap = config.deptCompanyMap || {};
 
   const { user } = session;
   const resolvedParams = await searchParams;
@@ -27,7 +28,8 @@ export default async function TicketsPage({ searchParams }) {
   const statusesParam = resolvedParams?.statuses;
   const assignmentsParam = resolvedParams?.assignments || "me,unassigned";
   const allDeptsParam = resolvedParams?.all_depts === 'true';
-  const companyParam = resolvedParams?.company || "";
+  const mappedDefaultCompany = deptCompanyMap[user.departmentId] || "";
+  const companyParam = resolvedParams?.company !== undefined ? resolvedParams.company : mappedDefaultCompany;
   const dateParam = resolvedParams?.date || "";
   const tab = resolvedParams?.tab || "";
 
@@ -168,7 +170,7 @@ export default async function TicketsPage({ searchParams }) {
       </header>
 
       <Suspense fallback={<div style={{ padding: '1.5rem', marginBottom: '1.5rem', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>Loading filters...</div>}>
-        <TicketAdvancedFilter companies={companies} />
+        <TicketAdvancedFilter companies={companies} initialCompanyParam={companyParam} />
       </Suspense>
 
       <table className="data-table">
