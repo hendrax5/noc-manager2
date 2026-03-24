@@ -75,7 +75,20 @@ export async function POST(req) {
     // Assets & Base Elements
     if (data.Customer?.length) await prisma.customer.createMany({ data: data.Customer });
     if (data.ServiceTemplate?.length) await prisma.serviceTemplate.createMany({ data: data.ServiceTemplate });
-    if (data.KnowledgeCategory?.length) await prisma.knowledgeCategory.createMany({ data: data.KnowledgeCategory });
+    if (data.KnowledgeCategory?.length) {
+      await prisma.knowledgeCategory.createMany({ data: data.KnowledgeCategory });
+    } else if (data.KnowledgeArticle?.length) {
+      console.warn("Legacy Backup Detected: Missing KnowledgeCategory. Generating synthetic categories to preserve relations.");
+      const uniqueCategoryIds = [...new Set(data.KnowledgeArticle.map(a => a.categoryId))];
+      await prisma.knowledgeCategory.createMany({
+        data: uniqueCategoryIds.map(id => ({
+          id,
+          name: `Restored Category ${id}`,
+          description: 'Auto-generated for legacy backup compatibility',
+        }))
+      });
+    }
+
     if (data.KnowledgeArticle?.length) await prisma.knowledgeArticle.createMany({ data: data.KnowledgeArticle });
 
     // Services
