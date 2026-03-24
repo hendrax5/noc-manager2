@@ -74,19 +74,20 @@ export async function POST(req) {
     }
 
     // Secondary Meta
-    if (data.JobCategory?.length) await prisma.jobCategory.createMany({ data: data.JobCategory });
-    if (data.CustomField?.length) await prisma.customField.createMany({ data: data.CustomField });
-    if (data.Location?.length) await prisma.location.createMany({ data: data.Location });
+    if (data.JobCategory?.length) await prisma.jobCategory.createMany({ data: data.JobCategory, skipDuplicates: true });
+    if (data.CustomField?.length) await prisma.customField.createMany({ data: data.CustomField, skipDuplicates: true });
+    if (data.Location?.length) await prisma.location.createMany({ data: data.Location, skipDuplicates: true });
 
-    // Users (exclude current Admin since already exists)
-    const otherUsers = (data.User || []).filter(u => u.id !== parseInt(session.user.id));
-    if (otherUsers.length) await prisma.user.createMany({ data: otherUsers, skipDuplicates: true });
+    // Users — use individual upserts so ALL user IDs are guaranteed to exist for downstream FK refs
+    for (const u of (data.User || [])) {
+      await prisma.user.upsert({ where: { id: u.id }, update: {}, create: u });
+    }
 
     // Assets & Base Elements
-    if (data.Customer?.length) await prisma.customer.createMany({ data: data.Customer });
-    if (data.ServiceTemplate?.length) await prisma.serviceTemplate.createMany({ data: data.ServiceTemplate });
+    if (data.Customer?.length) await prisma.customer.createMany({ data: data.Customer, skipDuplicates: true });
+    if (data.ServiceTemplate?.length) await prisma.serviceTemplate.createMany({ data: data.ServiceTemplate, skipDuplicates: true });
     if (data.KnowledgeCategory?.length) {
-      await prisma.knowledgeCategory.createMany({ data: data.KnowledgeCategory });
+      await prisma.knowledgeCategory.createMany({ data: data.KnowledgeCategory, skipDuplicates: true });
     } else if (data.KnowledgeArticle?.length) {
       console.warn("Legacy Backup Detected: Missing KnowledgeCategory. Generating synthetic categories to preserve relations.");
       const uniqueCategoryIds = [...new Set(data.KnowledgeArticle.map(a => a.categoryId))];
@@ -95,31 +96,32 @@ export async function POST(req) {
           id,
           name: `Restored Category ${id}`,
           description: 'Auto-generated for legacy backup compatibility',
-        }))
+        })),
+        skipDuplicates: true
       });
     }
 
-    if (data.KnowledgeArticle?.length) await prisma.knowledgeArticle.createMany({ data: data.KnowledgeArticle });
+    if (data.KnowledgeArticle?.length) await prisma.knowledgeArticle.createMany({ data: data.KnowledgeArticle, skipDuplicates: true });
 
     // Services
-    if (data.Service?.length) await prisma.service.createMany({ data: data.Service });
+    if (data.Service?.length) await prisma.service.createMany({ data: data.Service, skipDuplicates: true });
     
     // Tickets
-    if (data.Ticket?.length) await prisma.ticket.createMany({ data: data.Ticket });
+    if (data.Ticket?.length) await prisma.ticket.createMany({ data: data.Ticket, skipDuplicates: true });
 
     // Relational ticket dependencies
-    if (data.CircuitHop?.length) await prisma.circuitHop.createMany({ data: data.CircuitHop });
-    if (data.Comment?.length) await prisma.comment.createMany({ data: data.Comment });
-    if (data.Attachment?.length) await prisma.attachment.createMany({ data: data.Attachment });
-    if (data.TicketHistory?.length) await prisma.ticketHistory.createMany({ data: data.TicketHistory });
-    if (data.ActionItem?.length) await prisma.actionItem.createMany({ data: data.ActionItem });
+    if (data.CircuitHop?.length) await prisma.circuitHop.createMany({ data: data.CircuitHop, skipDuplicates: true });
+    if (data.Comment?.length) await prisma.comment.createMany({ data: data.Comment, skipDuplicates: true });
+    if (data.Attachment?.length) await prisma.attachment.createMany({ data: data.Attachment, skipDuplicates: true });
+    if (data.TicketHistory?.length) await prisma.ticketHistory.createMany({ data: data.TicketHistory, skipDuplicates: true });
+    if (data.ActionItem?.length) await prisma.actionItem.createMany({ data: data.ActionItem, skipDuplicates: true });
 
     // Reports and Meetings
-    if (data.Meeting?.length) await prisma.meeting.createMany({ data: data.Meeting });
-    if (data.MeetingSession?.length) await prisma.meetingSession.createMany({ data: data.MeetingSession });
-    if (data.DailyReport?.length) await prisma.dailyReport.createMany({ data: data.DailyReport });
-    if (data.ShiftSchedule?.length) await prisma.shiftSchedule.createMany({ data: data.ShiftSchedule });
-    if (data.UserSchedulePreference?.length) await prisma.userSchedulePreference.createMany({ data: data.UserSchedulePreference });
+    if (data.Meeting?.length) await prisma.meeting.createMany({ data: data.Meeting, skipDuplicates: true });
+    if (data.MeetingSession?.length) await prisma.meetingSession.createMany({ data: data.MeetingSession, skipDuplicates: true });
+    if (data.DailyReport?.length) await prisma.dailyReport.createMany({ data: data.DailyReport, skipDuplicates: true });
+    if (data.ShiftSchedule?.length) await prisma.shiftSchedule.createMany({ data: data.ShiftSchedule, skipDuplicates: true });
+    if (data.UserSchedulePreference?.length) await prisma.userSchedulePreference.createMany({ data: data.UserSchedulePreference, skipDuplicates: true });
 
     console.log("JSON injection completed. Rebuilding internal Postgres sequences...");
 
