@@ -207,7 +207,17 @@ export default async function TicketsPage({ searchParams }) {
               <tr key={t.id} className={rowClass}>
                 <td style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{t.trackingId}</td>
                 <td>
-                  <span style={{ fontWeight: '600', color: '#334155', fontSize: '0.9rem' }}>{extractedName}</span>
+                  <span style={{ fontWeight: '600', color: '#334155', fontSize: '0.9rem', display: 'block' }}>{extractedName}</span>
+                  {t.customData && t.customData["Order Origin"] && (
+                    <span style={{ display: 'inline-block', fontSize: '0.7rem', color: '#991b1b', background: '#fef2f2', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid #fecaca', fontWeight: 'bold', marginTop: '0.2rem', marginRight: '0.2rem' }} title="Order Origin">
+                      🏢 {t.customData["Order Origin"]}
+                    </span>
+                  )}
+                  {t.customData && t.customData["Executing Vendor"] && (
+                    <span style={{ display: 'inline-block', fontSize: '0.7rem', color: '#1e40af', background: '#eff6ff', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid #bfdbfe', fontWeight: 'bold', marginTop: '0.2rem' }} title="Executing Vendor">
+                      🛠️ {t.customData["Executing Vendor"]}
+                    </span>
+                  )}
                 </td>
                 <td style={{ fontWeight: '600' }}>
                   <Link href={`/tickets/${t.id}`} style={{color: 'var(--primary-color)'}}>

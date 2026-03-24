@@ -256,6 +256,16 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f8fafc', padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>
                   👤 <strong>{extractedName}</strong>
                 </span>
+                {ticket.customData && ticket.customData["Order Origin"] && (
+                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#fef2f2', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid #fecaca', color: '#991b1b', fontSize: '0.8rem', fontWeight: 'bold' }} title="Order Origin (Selling Company)">
+                     🏢 {ticket.customData["Order Origin"]}
+                   </span>
+                )}
+                {ticket.customData && ticket.customData["Executing Vendor"] && (
+                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#eff6ff', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid #bfdbfe', color: '#1e40af', fontSize: '0.8rem', fontWeight: 'bold' }} title="Executing Vendor">
+                     🛠️ {ticket.customData["Executing Vendor"]}
+                   </span>
+                )}
                 <span>Handling Tech: <strong>{ticket.assignee?.name || ticket.assignee?.email || 'Unassigned'}</strong></span>
                 <span>• <span>{mounted ? new Date(ticket.createdAt).toLocaleString('en-CA', { hour: '2-digit', minute: '2-digit' }) : '...'}</span></span>
               </div>

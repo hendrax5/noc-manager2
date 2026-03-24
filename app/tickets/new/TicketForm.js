@@ -151,6 +151,41 @@ export default function TicketForm({ departments, categories, customFields, serv
         />
       </div>
 
+      <div className="form-group" style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', background: '#f1f5f9', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+        <div>
+          <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            🏢 Order Origin (Company)
+          </label>
+          <select 
+            value={customData["Order Origin"] || ''} 
+            onChange={e => setCustomData({...customData, "Order Origin": e.target.value})} 
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.95rem' }}
+          >
+            <option value="">-- Main Company (Default) --</option>
+            <option value="ION">ION</option>
+            <option value="SDC">SDC</option>
+            <option value="Sistercompany">Sistercompany</option>
+          </select>
+          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Entitas komersial penerima order asli.</p>
+        </div>
+        <div>
+          <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            🛠️ Executing Vendor
+          </label>
+          <select 
+            value={customData["Executing Vendor"] || ''} 
+            onChange={e => setCustomData({...customData, "Executing Vendor": e.target.value})} 
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.95rem' }}
+          >
+            <option value="">-- Internal Team (Default) --</option>
+            <option value="ION">ION</option>
+            <option value="SDC">SDC</option>
+            <option value="Sistercompany">Sistercompany</option>
+          </select>
+          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Unit teknis yang mengeksekusi tiket ini.</p>
+        </div>
+      </div>
+
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Subject</label>
         <input 
