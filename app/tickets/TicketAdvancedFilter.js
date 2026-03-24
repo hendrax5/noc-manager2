@@ -2,7 +2,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
-export default function TicketAdvancedFilter() {
+export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Sistercompany"] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -129,9 +129,7 @@ export default function TicketAdvancedFilter() {
                 style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem', color: '#334155', outline: 'none' }}
               >
                 <option value="">-- All Companies --</option>
-                <option value="ION">ION</option>
-                <option value="SDC">SDC</option>
-                <option value="Sistercompany">Sistercompany</option>
+                {companies.map((c, i) => <option key={`filter-${i}`} value={c}>{c}</option>)}
               </select>
            </div>
         </div>

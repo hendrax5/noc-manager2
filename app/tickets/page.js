@@ -7,11 +7,15 @@ import { redirect } from "next/navigation";
 import TicketQuickActions from "./TicketQuickActions";
 import TicketAdvancedFilter from "./TicketAdvancedFilter";
 import Pagination from "@/components/Pagination";
+import { getAppConfig } from "@/lib/config";
 
 export default async function TicketsPage({ searchParams }) {
   const session = await getServerSession(authOptions);
   
   if (!session) redirect('/login');
+
+  const config = getAppConfig();
+  const companies = config.companyNames ? config.companyNames.split(',').map(s => s.trim()) : ["ION", "SDC", "Sistercompany"];
 
   const { user } = session;
   const resolvedParams = await searchParams;
@@ -164,7 +168,7 @@ export default async function TicketsPage({ searchParams }) {
       </header>
 
       <Suspense fallback={<div style={{ padding: '1.5rem', marginBottom: '1.5rem', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>Loading filters...</div>}>
-        <TicketAdvancedFilter />
+        <TicketAdvancedFilter companies={companies} />
       </Suspense>
 
       <table className="data-table">

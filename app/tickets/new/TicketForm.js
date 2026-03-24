@@ -3,10 +3,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
 
-export default function TicketForm({ departments, categories, customFields, services, serviceTemplates }) {
+export default function TicketForm({ departments, categories, customFields, services, serviceTemplates, companies = ["ION", "SDC", "Sistercompany"] }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [customData, setCustomData] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customDataState, setCustomDataState] = useState({});
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -22,7 +22,7 @@ export default function TicketForm({ departments, categories, customFields, serv
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setIsSubmitting(true);
 
     let attachmentUrl = null;
     let attachmentName = null;
@@ -37,7 +37,7 @@ export default function TicketForm({ departments, categories, customFields, serv
         attachmentName = json.filename;
       } else {
         alert("File upload failed.");
-        setLoading(false);
+        setIsSubmitting(false);
         return;
       }
     }
@@ -45,7 +45,7 @@ export default function TicketForm({ departments, categories, customFields, serv
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...formData, customData, attachmentUrl, attachmentName, serviceIds: selectedServiceIds })
+      body: JSON.stringify({ ...formData, customData: customDataState, attachmentUrl, attachmentName, serviceIds: selectedServiceIds })
     });
 
     if (res.ok) {
@@ -54,7 +54,7 @@ export default function TicketForm({ departments, categories, customFields, serv
     } else {
       alert("Failed to create ticket.");
     }
-    setLoading(false);
+    setIsSubmitting(false);
   };
 
   const renderCustomFieldWithChildren = (field) => {
@@ -69,21 +69,21 @@ export default function TicketForm({ departments, categories, customFields, serv
             {field.name} {field.required && <span style={{color: '#ef4444'}}>*</span>}
           </label>
           {field.type === 'text' && (
-            <input type="text" style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customData[field.name] || ''} onChange={e => setCustomData({...customData, [field.name]: e.target.value})} />
+            <input type="text" style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customDataState[field.name] || ''} onChange={e => setCustomDataState({...customDataState, [field.name]: e.target.value})} />
           )}
           {field.type === 'textarea' && (
-            <textarea rows="3" style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', resize: 'vertical', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customData[field.name] || ''} onChange={e => setCustomData({...customData, [field.name]: e.target.value})}></textarea>
+            <textarea rows="3" style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', resize: 'vertical', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customDataState[field.name] || ''} onChange={e => setCustomDataState({...customDataState, [field.name]: e.target.value})}></textarea>
           )}
           {field.type === 'select' && field.options?.trim() === '@Customers' ? (
             <AsyncSearchSelect
-              value={customData[field.name] || ''}
-              onChange={(val) => setCustomData({...customData, [field.name]: val})}
+              value={customDataState[field.name] || ''}
+              onChange={(val) => setCustomDataState({...customDataState, [field.name]: val})}
               placeholder="Search Customer ID/Name (Min 3 chars)..."
               apiRoute="/api/assets/customers/search"
               disabled={false}
             />
           ) : field.type === 'select' && (
-            <select style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customData[field.name] || ''} onChange={e => setCustomData({...customData, [field.name]: e.target.value})}>
+            <select style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }} required={field.required} value={customDataState[field.name] || ''} onChange={e => setCustomDataState({...customDataState, [field.name]: e.target.value})}>
               <option value="">-- Select --</option>
               {(field.options === '@ServiceTemplates' 
                   ? (serviceTemplates || []).map(st => st.name) 
@@ -145,8 +145,8 @@ export default function TicketForm({ departments, categories, customFields, serv
         <input 
           type="text" 
           placeholder="e.g. Yayasan WFF Indonesia or BPS Pusat..."
-          value={customData["Customer Name"] || ''} 
-          onChange={e => setCustomData({...customData, "Customer Name": e.target.value})} 
+          value={customDataState["Customer Name"] || ''} 
+          onChange={e => setCustomDataState({...customDataState, "Customer Name": e.target.value})} 
           style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '1rem' }}
         />
       </div>
@@ -156,32 +156,28 @@ export default function TicketForm({ departments, categories, customFields, serv
           <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             🏢 Order Origin (Company)
           </label>
-          <select 
-            value={customData["Order Origin"] || ''} 
-            onChange={e => setCustomData({...customData, "Order Origin": e.target.value})} 
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.95rem' }}
-          >
-            <option value="">-- Main Company (Default) --</option>
-            <option value="ION">ION</option>
-            <option value="SDC">SDC</option>
-            <option value="Sistercompany">Sistercompany</option>
-          </select>
+              <select 
+                value={customDataState["Order Origin"] || ""} 
+                onChange={(e) => setCustomDataState({...customDataState, "Order Origin": e.target.value})}
+                style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', color: '#334155' }}
+              >
+                <option value="">-- General / Non-Group --</option>
+                {companies.map((c, i) => <option key={`origin-${i}`} value={c}>{c}</option>)}
+              </select>
           <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Entitas komersial penerima order asli.</p>
         </div>
         <div>
           <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             🛠️ Executing Vendor
           </label>
-          <select 
-            value={customData["Executing Vendor"] || ''} 
-            onChange={e => setCustomData({...customData, "Executing Vendor": e.target.value})} 
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.95rem' }}
-          >
-            <option value="">-- Internal Team (Default) --</option>
-            <option value="ION">ION</option>
-            <option value="SDC">SDC</option>
-            <option value="Sistercompany">Sistercompany</option>
-          </select>
+              <select 
+                value={customDataState["Executing Vendor"] || ""} 
+                onChange={(e) => setCustomDataState({...customDataState, "Executing Vendor": e.target.value})}
+                style={{ width: '100%', padding: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', color: '#334155' }}
+              >
+                <option value="">-- Self Executed / Non-Group --</option>
+                {companies.map((c, i) => <option key={`vendor-${i}`} value={c}>{c}</option>)}
+              </select>
           <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Unit teknis yang mengeksekusi tiket ini.</p>
         </div>
       </div>

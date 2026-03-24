@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 
+import { getAppConfig } from "@/lib/config";
+
 export default async function NewTicketPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
@@ -15,6 +17,9 @@ export default async function NewTicketPage() {
   const services = await prisma.service.findMany({ include: { customer: true }, orderBy: { name: 'asc' } });
   const serviceTemplates = await prisma.serviceTemplate.findMany({ orderBy: { name: 'asc' } });
   
+  const config = getAppConfig();
+  const companies = config.companyNames ? config.companyNames.split(',').map(s => s.trim()) : ["ION", "SDC", "Sistercompany"];
+  
   return (
     <main className="container">
       <header className="page-header">
@@ -22,7 +27,7 @@ export default async function NewTicketPage() {
         <p>Create a trackable operational ticket for your related sub-department.</p>
       </header>
       
-      <TicketForm departments={departments} categories={categories} customFields={customFields} services={services} serviceTemplates={serviceTemplates} />
+      <TicketForm departments={departments} categories={categories} customFields={customFields} services={services} serviceTemplates={serviceTemplates} companies={companies} />
     </main>
   );
 }
