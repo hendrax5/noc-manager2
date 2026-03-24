@@ -7,10 +7,13 @@ import Link from "next/link";
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
-  // Role based filtering
-  const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
-  const canViewAll = session?.user?.role === 'Admin' || session?.user?.role === 'Manager' || isCS;
-  const scope = canViewAll ? {} : { assigneeId: session?.user?.id };
+  // Scope Isolation (Tickets assigned to user or their department)
+  const scope = {
+    OR: [
+      { assigneeId: parseInt(session?.user?.id) },
+      { departmentId: parseInt(session?.user?.departmentId) || -1 }
+    ]
+  };
 
   // Fetch metrics
   const totalNewTickets = await prisma.ticket.count({ where: { ...scope, status: 'New' } });
@@ -41,18 +44,14 @@ export default async function DashboardPage() {
     m: avgTtrMins % 60
   };
 
-  // Fetch pending Action Items
-  const pendingActionItems = await prisma.actionItem.findMany({
+  // Fetch pending Open Tickets specifically allocated to them
+  const myOpenTickets = await prisma.ticket.findMany({
     where: {
-      status: 'Pending',
-      OR: [
-        { assigneeId: parseInt(session?.user?.id) },
-        { departmentId: parseInt(session?.user?.departmentId) }
-      ]
+      assigneeId: parseInt(session?.user?.id),
+      status: { notIn: ['Resolved', 'Closed'] }
     },
-    include: { meeting: { select: { id: true, title: true } } },
-    orderBy: { createdAt: 'desc' },
-    take: 4
+    orderBy: { updatedAt: 'desc' },
+    take: 5
   });
 
   // Fetch My Upcoming Shifts (Next 7 days)
@@ -194,23 +193,38 @@ export default async function DashboardPage() {
             <h2 className="text-dark" style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{fontSize: '1.3rem'}}>🎯</span> My Follow-Ups</h2>
           </div>
           
-          {pendingActionItems.length === 0 ? (
+          {myOpenTickets.length === 0 ? (
             <div className="bg-light-stripe" style={{ padding: '2rem 1rem', textAlign: 'center', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
                <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>☕</span>
-               <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: 0 }}>You have no pending assignments. You're all caught up!</p>
+               <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: 0 }}>You have no open tickets assigned to you. You're all caught up!</p>
             </div>
           ) : (
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {pendingActionItems.map(item => (
-                <li key={item.id} className="hover-bg bg-light-stripe" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', transition: 'all 0.2s', borderLeft: '3px solid #fcd34d' }}>
+              {myOpenTickets.map(ticket => {
+                let extractedName = "Unknown";
+                const reporterMatch = ticket.description?.match(/\[Original Reporter: (.*?) -/);
+                if (reporterMatch) {
+                  extractedName = reporterMatch[1];
+                } else if (ticket.services && ticket.services.length > 0 && ticket.services[0].customer) {
+                  extractedName = ticket.services[0].customer.name;
+                } else if (ticket.customData && typeof ticket.customData === 'object' && ticket.customData["Customer Name"]) {
+                   extractedName = ticket.customData["Customer Name"];
+                }
+
+                return (
+                <li key={ticket.id} className="hover-bg bg-light-stripe" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', transition: 'all 0.2s', borderLeft: '3px solid #3b82f6' }}>
                   <div>
-                    <p className="text-dark" style={{ margin: '0 0 0.25rem 0', fontWeight: 'bold', fontSize: '0.95rem' }}>{item.task}</p>
+                    <Link href={`/tickets/${ticket.id}`} style={{ textDecoration: 'none' }}>
+                      <p className="text-dark" style={{ margin: '0 0 0.25rem 0', fontWeight: 'bold', fontSize: '0.95rem' }}>{extractedName} - {ticket.title}</p>
+                    </Link>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      📋 From: <Link href={`/meetings/${item.meeting.id}`} style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: '500' }}>{item.meeting.title}</Link>
+                      📋 Status: <strong style={{ color: ticket.status === 'New' ? '#ef4444' : '#f59e0b' }}>{ticket.status}</strong> 
+                      • Last updated: {new Date(ticket.updatedAt).toLocaleDateString()}
                     </span>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </div>

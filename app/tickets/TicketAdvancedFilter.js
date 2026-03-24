@@ -8,10 +8,16 @@ export default function TicketAdvancedFilter() {
 
   const [q, setQ] = useState(searchParams.get('q') || "");
   const [statuses, setStatuses] = useState(searchParams.get('statuses') ? searchParams.get('statuses').split(',') : ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold']); // default
-  const [assignment, setAssignment] = useState(searchParams.get('assignment') || "all"); // me, others, unassigned, all
+  const [assignments, setAssignments] = useState(searchParams.get('assignments') ? searchParams.get('assignments').split(',') : ['me', 'unassigned']); // me, others, unassigned
   const [allDepts, setAllDepts] = useState(searchParams.get('all_depts') === 'true'); // Show all departments toggle
 
   const ALL_STATUSES = ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Resolved', 'Closed'];
+
+  const toggleAssignment = (val) => {
+    setAssignments(prev => 
+      prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val]
+    );
+  };
 
   const toggleStatus = (st) => {
     if (statuses.includes(st)) {
@@ -26,7 +32,7 @@ export default function TicketAdvancedFilter() {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (statuses.length > 0) params.set('statuses', statuses.join(','));
-    if (assignment !== 'all') params.set('assignment', assignment);
+    if (assignments.length > 0 && assignments.length < 3) params.set('assignments', assignments.join(','));
     if (allDepts) params.set('all_depts', 'true');
     if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
     
@@ -37,7 +43,7 @@ export default function TicketAdvancedFilter() {
   const clearAll = () => {
     setQ("");
     setStatuses(['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold']);
-    setAssignment('all');
+    setAssignments(['me', 'unassigned']);
     setAllDepts(false);
     
     // Keep the limit if active
@@ -81,19 +87,15 @@ export default function TicketAdvancedFilter() {
            <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e293b', fontSize: '0.95rem' }}>Assignment:</h4>
            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: '#334155' }}>
-                <input type="radio" name="assignment" checked={assignment === 'all'} onChange={() => setAssignment('all')} />
-                Any
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: '#334155' }}>
-                <input type="radio" name="assignment" checked={assignment === 'me'} onChange={() => setAssignment('me')} />
+                <input type="checkbox" checked={assignments.includes('me')} onChange={() => toggleAssignment('me')} style={{ width: '1.2rem', height: '1.2rem', accentColor: '#3b82f6' }} />
                 Assigned to me
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: '#334155' }}>
-                <input type="radio" name="assignment" checked={assignment === 'unassigned'} onChange={() => setAssignment('unassigned')} />
-                Unassigned
+                <input type="checkbox" checked={assignments.includes('unassigned')} onChange={() => toggleAssignment('unassigned')} style={{ width: '1.2rem', height: '1.2rem', accentColor: '#3b82f6' }} />
+                Unassigned in queue
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: '#334155' }}>
-                <input type="radio" name="assignment" checked={assignment === 'others'} onChange={() => setAssignment('others')} />
+                <input type="checkbox" checked={assignments.includes('others')} onChange={() => toggleAssignment('others')} style={{ width: '1.2rem', height: '1.2rem', accentColor: '#3b82f6' }} />
                 Assigned to others
               </label>
            </div>

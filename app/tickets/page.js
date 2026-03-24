@@ -21,7 +21,7 @@ export default async function TicketsPage({ searchParams }) {
   const canViewAll = user.role === 'Admin' || user.role === 'Manager' || isCS;
 
   const statusesParam = resolvedParams?.statuses;
-  const assignmentParam = resolvedParams?.assignment || "all";
+  const assignmentsParam = resolvedParams?.assignments || "me,unassigned";
   const allDeptsParam = resolvedParams?.all_depts === 'true';
   const dateParam = resolvedParams?.date || "";
   const tab = resolvedParams?.tab || "";
@@ -42,19 +42,22 @@ export default async function TicketsPage({ searchParams }) {
     filters.push({
       OR: [
         { assigneeId: user.id }, // Explicitly assigned
-        { departmentId: user.departmentId }, // Belongs to user's department
+        { departmentId: user.departmentId || -1 }, // Belongs to user's department (Admin fallback)
         { historyLogs: { some: { actorId: user.id } } } // User interacted with it previously
       ]
     });
   }
   
-  // Assignment Radio Button Filters
-  if (assignmentParam === 'me') {
-    filters.push({ assigneeId: user.id });
-  } else if (assignmentParam === 'unassigned') {
-    filters.push({ assigneeId: null });
-  } else if (assignmentParam === 'others') {
-    filters.push({ assigneeId: { not: null }, NOT: { assigneeId: user.id } });
+  // Assignment Checkbox Filters
+  const assignments = assignmentsParam ? assignmentsParam.split(',') : [];
+  if (assignments.length > 0 && assignments.length < 3) {
+    const assignFilters = [];
+    if (assignments.includes('me')) assignFilters.push({ assigneeId: user.id });
+    if (assignments.includes('unassigned')) assignFilters.push({ assigneeId: null });
+    if (assignments.includes('others')) assignFilters.push({ assigneeId: { not: null }, NOT: { assigneeId: user.id } });
+    if (assignFilters.length > 0) {
+      filters.push({ OR: assignFilters });
+    }
   }
 
   if (q) {
