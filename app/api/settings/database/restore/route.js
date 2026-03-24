@@ -33,6 +33,7 @@ export async function POST(req) {
     await prisma.shiftSchedule.deleteMany();
     await prisma.userSchedulePreference.deleteMany();
     await prisma.knowledgeArticle.deleteMany();
+    await prisma.knowledgeCategory.deleteMany();
 
     await prisma.customer.deleteMany();
     await prisma.serviceTemplate.deleteMany();
@@ -74,6 +75,7 @@ export async function POST(req) {
     // Assets & Base Elements
     if (data.Customer?.length) await prisma.customer.createMany({ data: data.Customer });
     if (data.ServiceTemplate?.length) await prisma.serviceTemplate.createMany({ data: data.ServiceTemplate });
+    if (data.KnowledgeCategory?.length) await prisma.knowledgeCategory.createMany({ data: data.KnowledgeCategory });
     if (data.KnowledgeArticle?.length) await prisma.knowledgeArticle.createMany({ data: data.KnowledgeArticle });
 
     // Services
@@ -101,7 +103,7 @@ export async function POST(req) {
     // 3. PostgreSQL Sequence ID Reset logic
     // Because Prisma createMany with explicit IDs does not advance the native PostgreSQL sequences,
     // we MUST manually resynchronize the sequences to MAX(id) + 1, otherwise next native insert fails!
-    const tables = ['Role', 'Department', 'JobCategory', 'CustomField', 'Location', 'User', 'Customer', 'ServiceTemplate', 'Service', 'Ticket', 'CircuitHop', 'Comment', 'Attachment', 'TicketHistory', 'ActionItem', 'Meeting', 'MeetingSession', 'DailyReport', 'ShiftSchedule', 'UserSchedulePreference', 'KnowledgeArticle'];
+    const tables = ['Role', 'Department', 'JobCategory', 'CustomField', 'Location', 'User', 'Customer', 'ServiceTemplate', 'Service', 'Ticket', 'CircuitHop', 'Comment', 'Attachment', 'TicketHistory', 'ActionItem', 'Meeting', 'MeetingSession', 'DailyReport', 'ShiftSchedule', 'UserSchedulePreference', 'KnowledgeCategory', 'KnowledgeArticle'];
     
     for (const tbl of tables) {
       try {

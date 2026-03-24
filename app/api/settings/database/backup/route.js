@@ -34,6 +34,7 @@ export async function GET() {
         DailyReport: await prisma.dailyReport.findMany(),
         ShiftSchedule: await prisma.shiftSchedule.findMany(),
         UserSchedulePreference: await prisma.userSchedulePreference.findMany(),
+        KnowledgeCategory: await prisma.knowledgeCategory.findMany(),
         KnowledgeArticle: await prisma.knowledgeArticle.findMany(),
       }
     };
