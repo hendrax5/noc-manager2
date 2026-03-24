@@ -92,7 +92,10 @@ export default function Navbar({ appName = "NOC Management" }) {
                   <Link href="/profile" onClick={() => setShowProfileMenu(false)} style={{ padding: '0.75rem 1rem', textDecoration: 'none', color: '#334155', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '6px', fontSize: '0.95rem' }} onMouseEnter={(e)=>e.currentTarget.style.background='#f1f5f9'} onMouseLeave={(e)=>e.currentTarget.style.background='transparent'}>
                     ⚙️ Account Settings
                   </Link>
-                  <button onClick={() => signOut({ callbackUrl: '/login' })} style={{ padding: '0.75rem 1rem', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444', fontWeight: 'bold', width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '6px', marginTop: '0.2rem', fontSize: '0.95rem' }} onMouseEnter={(e)=>e.currentTarget.style.background='#fef2f2'} onMouseLeave={(e)=>e.currentTarget.style.background='transparent'}>
+                  <button onClick={() => {
+                      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                      signOut({ callbackUrl: `${baseUrl}/login` });
+                  }} style={{ padding: '0.75rem 1rem', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444', fontWeight: 'bold', width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', borderRadius: '6px', marginTop: '0.2rem', fontSize: '0.95rem' }} onMouseEnter={(e)=>e.currentTarget.style.background='#fef2f2'} onMouseLeave={(e)=>e.currentTarget.style.background='transparent'}>
                     🚪 Log Out
                   </button>
                 </div>
