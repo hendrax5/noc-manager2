@@ -8,18 +8,20 @@ export async function GET() {
     if (existing) return NextResponse.json({ message: 'Already seeded' });
 
     // Seed Data Basic Role
-    const adminRole = await prisma.role.create({ data: { name: 'Admin' } });
-    await prisma.role.create({ data: { name: 'Manager' } });
-    await prisma.role.create({ data: { name: 'Staff' } });
+    const adminRole = await prisma.role.upsert({ where: { name: 'Admin' }, update: {}, create: { name: 'Admin' } });
+    await prisma.role.upsert({ where: { name: 'Manager' }, update: {}, create: { name: 'Manager' } });
+    await prisma.role.upsert({ where: { name: 'Staff' }, update: {}, create: { name: 'Staff' } });
 
     // Seed Data Basic Department
-    const deptNocCore = await prisma.department.create({ data: { name: 'NOC Core' } });
-    await prisma.department.create({ data: { name: 'NOC Datacenter' } });
-    await prisma.department.create({ data: { name: 'CS' } });
+    const deptNocCore = await prisma.department.upsert({ where: { name: 'NOC Core' }, update: {}, create: { name: 'NOC Core' } });
+    await prisma.department.upsert({ where: { name: 'NOC Datacenter' }, update: {}, create: { name: 'NOC Datacenter' } });
+    await prisma.department.upsert({ where: { name: 'CS' }, update: {}, create: { name: 'CS' } });
 
     // Seed Admin User
-    const adminUser = await prisma.user.create({
-      data: {
+    const adminUser = await prisma.user.upsert({
+      where: { email: 'admin@noc.com' },
+      update: {},
+      create: {
         email: 'admin@noc.com',
         name: 'Super Admin',
         password: 'admin',
