@@ -23,8 +23,7 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/nocticketing?schema=public
-      - NEXTAUTH_SECRET=my_super_secret_key_123
-      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-my_super_secret_key_123}
     volumes:
       - .:/app
       - /app/node_modules
