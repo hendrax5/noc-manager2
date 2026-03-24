@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: nocticketing
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/nocticketing?schema=public
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-my_super_secret_key_123}
+      - HOSTNAME=0.0.0.0
+    # PERHATIKAN: Command di bawah ini menggunakan BUILD dan START (Production Mode)
+    command: sh -c "sleep 3 && npx prisma db push --accept-data-loss && npm run build && npm start"
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
