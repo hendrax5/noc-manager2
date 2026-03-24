@@ -4,7 +4,8 @@ import path from 'path';
 
 export async function GET(req, { params }) {
   try {
-    const slug = await params.path; 
+    const resolvedParams = await params;
+    const slug = resolvedParams.path; 
     if (!slug || slug.length === 0) {
       return NextResponse.json({ error: 'File path required' }, { status: 400 });
     }
