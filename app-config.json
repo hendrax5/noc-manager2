@@ -1,7 +1,7 @@
 {
-  "appName": "NOC Manager",
-  "loginTitle": "Welcome to NOC Manager",
-  "loginSubtitle": "Sign in to access your dashboard",
+  "appName": "ION NOC Manager",
+  "loginTitle": "Welcome to ION NOC Manager",
+  "loginSubtitle": "Sign in to access your ION NOC Manager",
   "sidebarLogoText": "NOC",
   "primaryColor": "#0f172a"
 }

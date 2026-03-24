@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    allowedDevOrigins: ['*'],
-  },
+  allowedDevOrigins: ['192.169.255.3', 'localhost'],
 };
 export default nextConfig;

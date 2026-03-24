@@ -28,11 +28,7 @@ export function ThemeProvider({ children }) {
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {!mounted ? (
-        <div style={{ visibility: 'hidden' }}>{children}</div>
-      ) : (
-        children
-      )}
+      {children}
     </ThemeContext.Provider>
   );
 }
