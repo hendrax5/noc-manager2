@@ -80,7 +80,7 @@ export async function POST(req) {
 
     // Users (exclude current Admin since already exists)
     const otherUsers = (data.User || []).filter(u => u.id !== parseInt(session.user.id));
-    if (otherUsers.length) await prisma.user.createMany({ data: otherUsers });
+    if (otherUsers.length) await prisma.user.createMany({ data: otherUsers, skipDuplicates: true });
 
     // Assets & Base Elements
     if (data.Customer?.length) await prisma.customer.createMany({ data: data.Customer });
