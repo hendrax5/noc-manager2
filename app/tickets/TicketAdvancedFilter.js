@@ -10,6 +10,7 @@ export default function TicketAdvancedFilter() {
   const [statuses, setStatuses] = useState(searchParams.get('statuses') ? searchParams.get('statuses').split(',') : ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold']); // default
   const [assignments, setAssignments] = useState(searchParams.get('assignments') ? searchParams.get('assignments').split(',') : ['me', 'unassigned']); // me, others, unassigned
   const [allDepts, setAllDepts] = useState(searchParams.get('all_depts') === 'true'); // Show all departments toggle
+  const [companyParam, setCompanyParam] = useState(searchParams.get('company') || ""); // Company Routing Filter
 
   const ALL_STATUSES = ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Resolved', 'Closed'];
 
@@ -34,6 +35,7 @@ export default function TicketAdvancedFilter() {
     if (statuses.length > 0) params.set('statuses', statuses.join(','));
     if (assignments.length > 0 && assignments.length < 3) params.set('assignments', assignments.join(','));
     if (allDepts) params.set('all_depts', 'true');
+    if (companyParam) params.set('company', companyParam);
     if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
     
     // Maintain page logic if possible or reset to 1
@@ -45,6 +47,7 @@ export default function TicketAdvancedFilter() {
     setStatuses(['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold']);
     setAssignments(['me', 'unassigned']);
     setAllDepts(false);
+    setCompanyParam("");
     
     // Keep the limit if active
     const params = new URLSearchParams();
@@ -113,6 +116,23 @@ export default function TicketAdvancedFilter() {
                 <input type="radio" name="visibility" checked={allDepts} onChange={() => setAllDepts(true)} />
                 Show All Departments
               </label>
+           </div>
+        </div>
+
+        {/* Company Identity Filter */}
+        <div>
+           <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e293b', fontSize: '0.95rem' }}>Company Routing:</h4>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <select 
+                value={companyParam} 
+                onChange={(e) => setCompanyParam(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem', color: '#334155', outline: 'none' }}
+              >
+                <option value="">-- All Companies --</option>
+                <option value="ION">ION</option>
+                <option value="SDC">SDC</option>
+                <option value="Sistercompany">Sistercompany</option>
+              </select>
            </div>
         </div>
 

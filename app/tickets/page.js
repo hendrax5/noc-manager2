@@ -23,10 +23,19 @@ export default async function TicketsPage({ searchParams }) {
   const statusesParam = resolvedParams?.statuses;
   const assignmentsParam = resolvedParams?.assignments || "me,unassigned";
   const allDeptsParam = resolvedParams?.all_depts === 'true';
+  const companyParam = resolvedParams?.company || "";
   const dateParam = resolvedParams?.date || "";
   const tab = resolvedParams?.tab || "";
 
   const filters = [];
+  
+  if (companyParam) {
+    filters.push({
+      customData: {
+        string_contains: companyParam
+      }
+    });
+  }
   
   if (dateParam === 'today') {
     const today = new Date();
