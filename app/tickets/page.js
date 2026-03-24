@@ -22,6 +22,7 @@ export default async function TicketsPage({ searchParams }) {
 
   const statusesParam = resolvedParams?.statuses;
   const assignmentParam = resolvedParams?.assignment || "all";
+  const allDeptsParam = resolvedParams?.all_depts === 'true';
   const dateParam = resolvedParams?.date || "";
   const tab = resolvedParams?.tab || "";
 
@@ -32,17 +33,28 @@ export default async function TicketsPage({ searchParams }) {
     today.setHours(0,0,0,0);
     filters.push({ updatedAt: { gte: today } });
   }
+
+  // Determine if we should isolate by Department
+  // Applying isolation to everyone by default, regardless of role, as requested
+  const shouldIsolateDepartment = !allDeptsParam;
+
+  if (shouldIsolateDepartment) {
+    filters.push({
+      OR: [
+        { assigneeId: user.id }, // Explicitly assigned
+        { departmentId: user.departmentId }, // Belongs to user's department
+        { historyLogs: { some: { actorId: user.id } } } // User interacted with it previously
+      ]
+    });
+  }
   
-  if (!canViewAll) {
+  // Assignment Radio Button Filters
+  if (assignmentParam === 'me') {
     filters.push({ assigneeId: user.id });
-  } else {
-    if (assignmentParam === 'me') {
-      filters.push({ assigneeId: user.id });
-    } else if (assignmentParam === 'unassigned') {
-      filters.push({ assigneeId: null });
-    } else if (assignmentParam === 'others') {
-      filters.push({ assigneeId: { not: null }, NOT: { assigneeId: user.id } });
-    }
+  } else if (assignmentParam === 'unassigned') {
+    filters.push({ assigneeId: null });
+  } else if (assignmentParam === 'others') {
+    filters.push({ assigneeId: { not: null }, NOT: { assigneeId: user.id } });
   }
 
   if (q) {
@@ -76,7 +88,7 @@ export default async function TicketsPage({ searchParams }) {
   const whereClause = filters.length > 0 ? { AND: filters } : {};
 
   const page = parseInt(resolvedParams?.page) || 1;
-  const pageSize = 6; // Compressed zero-scroll bounds
+  const pageSize = parseInt(resolvedParams?.limit) || 6;
 
   let [totalTickets, tickets] = await Promise.all([
     prisma.ticket.count({ where: whereClause }),

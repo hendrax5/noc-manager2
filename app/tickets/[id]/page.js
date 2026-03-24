@@ -32,11 +32,7 @@ export default async function TicketDetailsPage({ params }) {
   }
 
   const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
-  const canView = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || ticket.assigneeId === session.user.id;
-
-  if (!canView) {
-    return <main className="container"><h1>Access Denied</h1></main>;
-  }
+  const canView = true; // All authenticated staff can view any ticket if they have the link or use 'Show All'
 
   // Pre-fetch departments and users for re-assignment
   const departments = await prisma.department.findMany();

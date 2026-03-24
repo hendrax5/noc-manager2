@@ -9,6 +9,7 @@ export default function TicketAdvancedFilter() {
   const [q, setQ] = useState(searchParams.get('q') || "");
   const [statuses, setStatuses] = useState(searchParams.get('statuses') ? searchParams.get('statuses').split(',') : ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold']); // default
   const [assignment, setAssignment] = useState(searchParams.get('assignment') || "all"); // me, others, unassigned, all
+  const [allDepts, setAllDepts] = useState(searchParams.get('all_depts') === 'true'); // Show all departments toggle
 
   const ALL_STATUSES = ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Resolved', 'Closed'];
 
@@ -26,6 +27,8 @@ export default function TicketAdvancedFilter() {
     if (q) params.set('q', q);
     if (statuses.length > 0) params.set('statuses', statuses.join(','));
     if (assignment !== 'all') params.set('assignment', assignment);
+    if (allDepts) params.set('all_depts', 'true');
+    if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
     
     // Maintain page logic if possible or reset to 1
     router.push(`/tickets?${params.toString()}`);
@@ -35,13 +38,19 @@ export default function TicketAdvancedFilter() {
     setQ("");
     setStatuses(['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold']);
     setAssignment('all');
-    router.push(`/tickets`);
+    setAllDepts(false);
+    
+    // Keep the limit if active
+    const params = new URLSearchParams();
+    if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
+    
+    router.push(params.toString() ? `/tickets?${params.toString()}` : `/tickets`);
   };
 
   return (
     <div style={{ background: 'var(--card-bg)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', marginBottom: '1.5rem' }}>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '1.5rem' }}>
         
         {/* Status Filter */}
         <div>
@@ -89,6 +98,22 @@ export default function TicketAdvancedFilter() {
               </label>
            </div>
         </div>
+
+        {/* Visibility Filter */}
+        <div>
+           <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e293b', fontSize: '0.95rem' }}>Department Visibility:</h4>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: '#334155' }}>
+                <input type="radio" name="visibility" checked={!allDepts} onChange={() => setAllDepts(false)} />
+                My Department Only
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: '#334155' }}>
+                <input type="radio" name="visibility" checked={allDepts} onChange={() => setAllDepts(true)} />
+                Show All Departments
+              </label>
+           </div>
+        </div>
+
       </div>
 
       <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem' }}>
