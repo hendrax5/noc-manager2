@@ -35,9 +35,9 @@ export async function POST(req) {
     // Write Binary stream to Local Container Volume
     await writeFile(filePath, buffer);
     
-    // Broadcast public url mapped
+    // Broadcast public url mapped explicitly bypassing Next.js static cache
     return NextResponse.json({ 
-      url: `/uploads/${uniqueName}`, 
+      url: `/api/uploads/${uniqueName}`, 
       filename: file.name 
     }, { status: 201 });
     

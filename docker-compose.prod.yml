@@ -24,6 +24,9 @@ services:
     command: sh -c "sleep 3 && npx prisma db push --accept-data-loss && npm run build && npm start"
     depends_on:
       - db
+    volumes:
+      - noc_uploads:/app/public/uploads
 
 volumes:
   noc_db_data:
+  noc_uploads:

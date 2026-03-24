@@ -10,12 +10,22 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { backupStr } = await req.json();
+    const backupStr = await req.text();
     if (!backupStr) throw new Error("No payload provided");
     
-    const parsed = JSON.parse(backupStr);
-    const data = parsed.data;
-    if (!data) throw new Error("Invalid backup format");
+    let parsed;
+    try {
+      parsed = JSON.parse(backupStr);
+      // Fallback for older versions that wrapped output
+      if (parsed.backupStr && typeof parsed.backupStr === 'string') {
+        parsed = JSON.parse(parsed.backupStr);
+      }
+    } catch(e) {
+      throw new Error("Payload Parsing Failed: Ensure the uploaded file is a valid JSON Snapshot.");
+    }
+    
+    const data = parsed.data || parsed;
+    if (!data || typeof data !== 'object') throw new Error("Invalid backup format: Malformed Root Node");
 
     console.log("Starting DB Full Restore Process...");
 

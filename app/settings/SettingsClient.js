@@ -139,8 +139,8 @@ export default function SettingsClient({ initialFields, initialCategories, initi
       try {
         const res = await fetch("/api/settings/database/restore", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ backupStr })
+          headers: { "Content-Type": "text/plain" },
+          body: backupStr
         });
         if (res.ok) {
           alert("Database Restoration Completed Successfully! The system will now reload.");
