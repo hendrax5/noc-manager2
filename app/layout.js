@@ -2,6 +2,7 @@ import './globals.css';
 import { AuthProvider } from '../components/AuthProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
 import Navbar from '../components/Navbar';
+import SlaAudioAlarm from '../components/SlaAudioAlarm';
 import { getAppConfig } from '@/lib/config';
 
 export async function generateMetadata() {
@@ -20,6 +21,7 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           <AuthProvider>
             <Navbar appName={config.appName} />
+            <SlaAudioAlarm />
             {children}
           </AuthProvider>
         </ThemeProvider>

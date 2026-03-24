@@ -101,6 +101,8 @@ export default async function TicketsPage({ searchParams }) {
     filters.push({ status: { notIn: ['Resolved', 'Closed'] } });
   } else if (tab === 'resolved') {
     filters.push({ status: { in: ['Resolved', 'Closed'] } });
+  } else if (tab === 'cs_radar') {
+    filters.push({ enableSla: true, status: { notIn: ['Resolved', 'Closed'] } });
   }
 
   const whereClause = filters.length > 0 ? { AND: filters } : {};
@@ -168,6 +170,18 @@ export default async function TicketsPage({ searchParams }) {
           <Link href="/tickets/new" className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>+ New Ticket</Link>
         </div>
       </header>
+
+      {/* Dynamic Views / Status Tabs */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', overflowX: 'auto' }}>
+         <Link href="/tickets" style={{ padding: '0.5rem 1rem', textDecoration: 'none', color: !tab ? 'var(--primary-color)' : '#64748b', fontWeight: !tab ? 'bold' : '500', borderBottom: !tab ? '3px solid var(--primary-color)' : 'none', marginBottom: '-9px' }}>
+            All Active View
+         </Link>
+         {(isCS || user.role === 'Admin' || user.role === 'Manager') && (
+           <Link href="/tickets?tab=cs_radar" style={{ padding: '0.5rem 1rem', textDecoration: 'none', color: tab === 'cs_radar' ? '#ef4444' : '#64748b', fontWeight: tab === 'cs_radar' ? 'bold' : '500', borderBottom: tab === 'cs_radar' ? '3px solid #ef4444' : 'none', marginBottom: '-9px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              📡 CS SLA Radar
+           </Link>
+         )}
+      </div>
 
       <Suspense fallback={<div style={{ padding: '1.5rem', marginBottom: '1.5rem', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>Loading filters...</div>}>
         <TicketAdvancedFilter companies={companies} initialCompanyParam={companyParam} />
