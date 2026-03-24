@@ -299,8 +299,8 @@ export default function TicketForm({ departments, categories, customFields, serv
       </div>
 
       <div style={{ gridColumn: '1 / -1', marginTop: '1.5rem' }}>
-        <button type="submit" className="primary-btn" disabled={loading} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', background: '#2563eb' }}>
-          {loading ? 'Submitting Pipeline...' : 'Create Support Ticket'}
+        <button type="submit" className="primary-btn" disabled={isSubmitting} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', background: '#2563eb' }}>
+          {isSubmitting ? 'Submitting Pipeline...' : 'Create Support Ticket'}
         </button>
       </div>
     </form>
