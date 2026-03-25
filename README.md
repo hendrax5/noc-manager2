@@ -31,9 +31,9 @@ This release focuses on heavily expanding Administrative control, optimizing mas
 1. Clone repository
 2. Populate `.env`:
    ```bash
-   DATABASE_URL="postgresql://user:pass@host/db"
-   NEXTAUTH_URL="http://localhost:3000"
-   NEXTAUTH_SECRET="long_random_string"
+DATABASE_URL="postgresql://postgres:postgrespassword@db:5432/nocticketing?schema=public"
+NEXTAUTH_SECRET="my_super_secret_key_123"
+NEXTAUTH_URL=http://tiket.contoh.com:3000
    ```
 3. Run migrations and dev server:
    ```bash
