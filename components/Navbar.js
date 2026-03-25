@@ -13,7 +13,11 @@ export default function Navbar({ appName = "NOC Management" }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  if (status === "loading") return null;
+  if (status === "loading") return (
+    <nav className="navbar">
+      <div className="nav-brand">{appName}</div>
+    </nav>
+  );
   // Jangan render navbar jika tidak ada session dan sedang di halaman login
   if (!session && pathname === "/login") return null;
 
