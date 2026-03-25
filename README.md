@@ -33,7 +33,7 @@ This release focuses on heavily expanding Administrative control, optimizing mas
    ```bash
 DATABASE_URL="postgresql://postgres:postgrespassword@db:5432/nocticketing?schema=public"
 NEXTAUTH_SECRET="my_super_secret_key_123"
-NEXTAUTH_URL=http://tiket.contoh.com:3000
+NEXTAUTH_URL="http://tiket.contoh.com:3000"
    ```
 3. Run migrations and dev server:
    ```bash
