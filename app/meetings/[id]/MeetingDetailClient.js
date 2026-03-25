@@ -47,19 +47,31 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
   const handleCreateSession = async (e) => {
     e.preventDefault();
     if (!newSessionTitle || !newSessionDate) return;
+
+    // Validate the date before sending
+    const parsedDate = new Date(newSessionDate);
+    if (isNaN(parsedDate.getTime())) {
+      alert("Invalid date selected. Please re-enter the session date.");
+      return;
+    }
+
     setIsAddingSession(true);
     const res = await fetch(`/api/meetings/${meeting.id}/sessions`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: newSessionTitle, scheduledFor: newSessionDate, content: "" })
+      body: JSON.stringify({ title: newSessionTitle, scheduledFor: parsedDate.toISOString(), content: "" })
     });
     if (res.ok) {
       const addedSession = await res.json();
       setMeeting(prev => ({ ...prev, sessions: [...(prev.sessions || []), addedSession] }));
       setNewSessionTitle("");
       setNewSessionDate("");
+    } else {
+      const err = await res.json().catch(() => ({}));
+      alert("Failed to create session: " + (err.error || "Unknown error"));
     }
     setIsAddingSession(false);
   };
+
 
   const handleToggleAttendance = async (sessionId, userId, isPresent) => {
     const session = meeting.sessions.find(s => s.id === sessionId);

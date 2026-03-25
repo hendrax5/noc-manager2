@@ -12,19 +12,35 @@ export async function POST(req, { params }) {
     const body = await req.json();
     const { title, scheduledFor, content } = body;
 
+    // Validate date
+    let scheduledForDate = undefined;
+    if (scheduledFor) {
+      scheduledForDate = new Date(scheduledFor);
+      if (isNaN(scheduledForDate.getTime())) {
+        return NextResponse.json({ error: "Invalid scheduledFor date provided" }, { status: 400 });
+      }
+    }
+
+    // Validate authorId
+    const authorId = parseInt(session.user.id);
+    if (isNaN(authorId)) {
+      return NextResponse.json({ error: "Invalid user session" }, { status: 401 });
+    }
+
     const newSession = await prisma.meetingSession.create({
       data: {
         title,
-        scheduledFor: scheduledFor ? new Date(scheduledFor) : undefined,
+        scheduledFor: scheduledForDate,
         content: content || "",
         meetingId: parseInt(resolvedParams.id),
-        authorId: parseInt(session.user.id)
+        authorId
       },
       include: { author: true, presentAttendees: true, actionItems: true }
     });
 
     return NextResponse.json(newSession, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("POST /sessions error:", error);
+    return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
   }
 }
