@@ -37,6 +37,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
     if (allDepts) params.set('all_depts', 'true');
     if (companyParam) params.set('company', companyParam);
     if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
+    if (searchParams.get('tab')) params.set('tab', searchParams.get('tab'));
     
     // Maintain page logic if possible or reset to 1
     router.push(`/tickets?${params.toString()}`);
@@ -51,6 +52,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
     if (allDepts) params.set('all_depts', 'true');
     if (val) params.set('company', val);
     if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
+    if (searchParams.get('tab')) params.set('tab', searchParams.get('tab'));
     
     router.push(`/tickets?${params.toString()}`);
   };
@@ -62,9 +64,10 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
     setAllDepts(false);
     setCompanyParam("");
     
-    // Keep the limit if active
+    // Keep the limit and tab if active
     const params = new URLSearchParams();
     if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
+    if (searchParams.get('tab')) params.set('tab', searchParams.get('tab'));
     
     router.push(params.toString() ? `/tickets?${params.toString()}` : `/tickets`);
   };
