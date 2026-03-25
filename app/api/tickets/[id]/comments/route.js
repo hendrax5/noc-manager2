@@ -28,7 +28,7 @@ export async function POST(req, { params }) {
 
     const comment = await prisma.comment.create({ data: commentData });
 
-    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { assigneeId: true, status: true, department: true, customData: true } });
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { assigneeId: true, status: true, department: true, customData: true, enableSla: true, slaTimerMins: true } });
     
     let newStatus = ticket.status;
     let transitionReason = "Reply appended to thread";
@@ -89,13 +89,19 @@ export async function POST(req, { params }) {
       resetJobCategory = true; // Force operators to select the next Job Phase explicitly
     }
 
-    if (newStatus !== ticket.status || newAssigneeId !== ticket.assigneeId || resetJobCategory) {
+    let nextSlaDeadlineUpdate = undefined;
+    if (ticket.enableSla && ticket.slaTimerMins) {
+       nextSlaDeadlineUpdate = new Date(Date.now() + ticket.slaTimerMins * 60000);
+    }
+
+    if (newStatus !== ticket.status || newAssigneeId !== ticket.assigneeId || resetJobCategory || nextSlaDeadlineUpdate) {
       await prisma.ticket.update({ 
         where: { id: ticketId }, 
         data: { 
           status: newStatus, 
           assigneeId: newAssigneeId,
-          ...(resetJobCategory && { jobCategoryId: null })
+          ...(resetJobCategory && { jobCategoryId: null }),
+          ...(nextSlaDeadlineUpdate && { nextSlaDeadline: nextSlaDeadlineUpdate })
         } 
       });
     }

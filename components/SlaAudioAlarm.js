@@ -1,10 +1,15 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function SlaAudioAlarm() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [isAlerting, setIsAlerting] = useState(false);
+  const [breachingTickets, setBreachingTickets] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
   const audioContextRef = useRef(null);
   
   // Create an artificial beep using the Web Audio API (No MP3 file required)
@@ -52,6 +57,29 @@ export default function SlaAudioAlarm() {
     }
   };
 
+  const checkSlaTicks = async () => {
+    try {
+      const res = await fetch('/api/tickets/sla-alert');
+      if (res.ok) {
+         const data = await res.json();
+         if (data.triggerAlarm) {
+           setIsAlerting(true);
+           setBreachingTickets(data.tickets || []);
+           // Only play beep if we have tickets, to avoid phantom beeps
+           if (data.tickets && data.tickets.length > 0) {
+             playBeep();
+           }
+         } else {
+           setIsAlerting(false);
+           setBreachingTickets([]);
+           setIsOpen(false);
+         }
+      }
+    } catch (err) {
+      console.warn("SLA alarm ping failed", err);
+    }
+  };
+
   useEffect(() => {
     if (!session || !session.user) return;
     
@@ -66,23 +94,6 @@ export default function SlaAudioAlarm() {
                              
     if (!isTargetAudience) return;
 
-    const checkSlaTicks = async () => {
-      try {
-        const res = await fetch('/api/tickets/sla-alert');
-        if (res.ok) {
-           const data = await res.json();
-           if (data.triggerAlarm) {
-             setIsAlerting(true);
-             playBeep();
-           } else {
-             setIsAlerting(false);
-           }
-        }
-      } catch (err) {
-        console.warn("SLA alarm ping failed", err);
-      }
-    };
-
     // Run check every 60 seconds
     const interval = setInterval(checkSlaTicks, 60000);
     
@@ -92,13 +103,65 @@ export default function SlaAudioAlarm() {
     return () => clearInterval(interval);
   }, [session]);
 
-  // Optional: Visual indicator could be rendered here, but Audio is the main feature.
-  // Rendering null so this component is fully invisible.
-  if(!isAlerting) return null;
+  const handleSnooze = async (ticketId) => {
+    try {
+       const res = await fetch(`/api/tickets/${ticketId}/sla/snooze`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ minutes: 15 })
+       });
+       
+       if (res.ok) {
+          // Refresh list locally
+          checkSlaTicks();
+          router.refresh();
+       } else {
+          alert("Failed to snooze SLA.");
+       }
+    } catch (error) {
+       console.error(error);
+       alert("Error occurred while snoozing.");
+    }
+  };
+
+  if(!isAlerting || breachingTickets.length === 0) return null;
   
   return (
-    <div style={{ position: 'fixed', bottom: '1rem', right: '1rem', background: '#ef4444', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 'bold', zIndex: 9999, boxShadow: '0 4px 6px rgba(0,0,0,0.1)', pointerEvents: 'none', animation: 'pulse 2s infinite' }}>
-      🚨 SLA Alarm Triggered
+    <div style={{ position: 'fixed', bottom: '1rem', right: '1rem', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+      
+      {isOpen && (
+        <div style={{ marginBottom: '0.5rem', background: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', width: '320px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', color: '#1f2937' }}>
+          <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>Breaching Tickets</h4>
+          <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+            {breachingTickets.map(ticket => (
+              <div key={ticket.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', fontSize: '0.8rem', padding: '0.4rem', background: '#f9fafb', borderRadius: '4px' }}>
+                <div style={{ flex: 1, marginRight: '0.5rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <Link href={`/tickets/${ticket.id}`} style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 'bold' }}>
+                    {ticket.trackingId}
+                  </Link>
+                  <div style={{ fontSize: '0.7rem', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {ticket.title}
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleSnooze(ticket.id)}
+                  style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.3rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}
+                >
+                  Snooze 15m
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        style={{ background: '#ef4444', color: 'white', padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', animation: isOpen ? 'none' : 'pulse 2s infinite', display: 'flex', alignItems: 'center', gap: '8px' }}
+      >
+        🚨 SLA Alarm Triggered ({breachingTickets.length})
+      </div>
+
     </div>
   );
 }

@@ -22,19 +22,26 @@ export async function GET(req) {
     // Look for SLA tickets where nextSlaDeadline is <= NOW + 2 minutes
     const twoMinutesFromNow = new Date(Date.now() + 2 * 60000);
 
-    const expiringTicketsCount = await prisma.ticket.count({
+    const expiringTickets = await prisma.ticket.findMany({
       where: {
         enableSla: true,
         status: { notIn: ['Resolved', 'Closed'] },
         nextSlaDeadline: {
           lte: twoMinutesFromNow
         }
+      },
+      select: {
+        id: true,
+        trackingId: true,
+        title: true,
+        nextSlaDeadline: true
       }
     });
 
     return NextResponse.json({
-      triggerAlarm: expiringTicketsCount > 0,
-      count: expiringTicketsCount
+      triggerAlarm: expiringTickets.length > 0,
+      count: expiringTickets.length,
+      tickets: expiringTickets
     });
 
   } catch (error) {
