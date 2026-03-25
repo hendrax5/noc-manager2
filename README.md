@@ -26,20 +26,34 @@ This release focuses on heavily expanding Administrative control, optimizing mas
 - Auto-generates lightweight `Dockerfile` matrix bindings explicitly pushing `ghcr.io/hendrax5/noc-manager2:latest` natively.
 - Deploys localized App scopes directly into GitHub NPM Packages seamlessly.
 
-## Getting Started
+## 🚀 Instalasi & Deployment (Production)
 
-1. Clone repository
-2. Populate `.env`:
+Pastikan Server Anda sudah terinstall **Docker** dan **Docker Compose**.
+
+1. Clone repository ini:
    ```bash
-DATABASE_URL="postgresql://postgres:postgrespassword@db:5432/nocticketing?schema=public"
-NEXTAUTH_SECRET="my_super_secret_key_123"
-NEXTAUTH_URL="http://tiket.contoh.com:3000"
+   git clone https://github.com/hendrax5/noc-manager2.git
+   cd noc-manager2
    ```
-3. Run migrations and dev server:
+
+2. Buat file `.env` di root folder dengan konfigurasi riil (Ubah *Secret* jika perlu):
    ```bash
-   npx prisma db push
-   npm run dev
+   DATABASE_URL="postgresql://postgres:postgrespassword@db:5432/nocticketing?schema=public"
+   NEXTAUTH_SECRET="my_super_secret_key_123"
+   NEXTAUTH_URL="http://tiket.contoh.com"
    ```
+
+3. Jalankan Docker Compose untuk mode *Production* (Otomatis mereplikasi skema, membangun *build*, dan menjalankan server):
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d --build
+   ```
+
+4. Akses aplikasi melalui browser di **http://tiket.contoh.com** (Pastikan mapping DNS/Hosts file Anda sudah mengarah ke IP *Server* ini).
+
+## 🛠 Info Volume & Backup
+Sistem menggunakan Persistent Volumes Docker untuk menghindari hilangnya data saat container di-*restart*:
+- **Database:** `noc_db_data`
+- **Uploads/File Attachments:** `noc_uploads` (Ter-mapping ke `/app/public/uploads`)
 
 ## License
 Proprietary / Internal Use Only.
