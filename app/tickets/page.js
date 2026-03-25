@@ -26,7 +26,7 @@ export default async function TicketsPage({ searchParams }) {
   const canViewAll = user.role === 'Admin' || user.role === 'Manager' || isCS;
 
   const statusesParam = resolvedParams?.statuses;
-  const assignmentsParam = resolvedParams?.assignments || "me,unassigned";
+  const assignmentsParam = resolvedParams?.assignments || "me,unassigned,others";
   const allDeptsParam = resolvedParams?.all_depts === 'true';
   const mappedDefaultCompany = deptCompanyMap[user.departmentId] || "";
   const companyParam = resolvedParams?.company !== undefined ? resolvedParams.company : mappedDefaultCompany;
@@ -35,7 +35,7 @@ export default async function TicketsPage({ searchParams }) {
 
   const filters = [];
   
-  if (companyParam) {
+  if (companyParam && !allDeptsParam && !q) {
     filters.push({
       customData: {
         string_contains: companyParam
