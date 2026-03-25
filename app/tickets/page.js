@@ -101,8 +101,15 @@ export default async function TicketsPage({ searchParams }) {
     filters.push({ status: { notIn: ['Resolved', 'Closed'] } });
   } else if (tab === 'resolved') {
     filters.push({ status: { in: ['Resolved', 'Closed'] } });
-  } else if (tab === 'cs_radar') {
-    filters.push({ enableSla: true, status: { notIn: ['Resolved', 'Closed'] } });
+  }
+  
+  // Independent Tab Filters
+  if (tab === 'cs_radar') {
+    filters.push({ enableSla: true });
+    // If user didn't explicitly check status boxes, default to active ones
+    if (!statusesParam) {
+      filters.push({ status: { notIn: ['Resolved', 'Closed'] } });
+    }
   }
 
   const whereClause = filters.length > 0 ? { AND: filters } : {};
