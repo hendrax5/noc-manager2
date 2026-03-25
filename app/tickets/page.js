@@ -92,7 +92,7 @@ export default async function TicketsPage({ searchParams }) {
     filters.push({ status: { in: statusArray } });
   } else if (!resolvedParams?.statuses && !resolvedParams?.tab) {
     // default statuses
-    filters.push({ status: { in: ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold'] } });
+    filters.push({ status: { in: ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Finish'] } });
   } else if (tab === 'needs_attention') {
     filters.push({ OR: [{ status: 'New' }, { status: 'Open' }, { assigneeId: null }] });
   } else if (tab === 'in_progress') {

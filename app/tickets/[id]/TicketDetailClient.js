@@ -181,7 +181,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: commentText, attachmentUrl, attachmentName, actionType, replyCustomData })
     });
     if (res.ok) {
-      const updatedStatus = actionType === 'finish' ? 'Pending CS Confirmation' : 'Auto';
+      const updatedStatus = actionType === 'finish' ? 'Finish' : 'Auto';
       setCommentText(currentUser.signature ? `\n\n${currentUser.signature}` : "");
       setFile(null);
       setReplyCustomData({});
@@ -516,7 +516,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                     </div>
                     <div onClick={() => { setSubmitAction('finish'); setShowSubmitDropdown(false); }} style={{ padding: '0.75rem 1rem', cursor: 'pointer', background: submitAction === 'finish' ? 'var(--hover-bg)' : 'var(--card-bg)', fontWeight: submitAction === 'finish' ? 'bold' : 'normal', fontSize: '0.85rem', color: '#10b981' }}>
                       <div style={{ marginBottom: '0.25rem' }}>Submit & Mark Finished</div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-color)', fontWeight: 'normal' }}>Awaiting CS Confirmation</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-color)', fontWeight: 'normal' }}>Status shifts to Finish</span>
                     </div>
                   </div>
                 )}
@@ -572,7 +572,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                  <option value="New">New</option>
                  <option value="Open">Open</option>
                  <option value="Pending">Pending (Waiting User)</option>
-                 <option value="Pending CS Confirmation">Pending CS Confirmation</option>
+                 <option value="Finish">Finish</option>
                  <option value="Resolved">Resolved</option>
                </select>
              </div>

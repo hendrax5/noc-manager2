@@ -7,12 +7,12 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
   const searchParams = useSearchParams();
 
   const [q, setQ] = useState(searchParams.get('q') || "");
-  const [statuses, setStatuses] = useState(searchParams.get('statuses') ? searchParams.get('statuses').split(',') : ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold']); // default
+  const [statuses, setStatuses] = useState(searchParams.get('statuses') ? searchParams.get('statuses').split(',') : ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Finish']); // default
   const [assignments, setAssignments] = useState(searchParams.get('assignments') ? searchParams.get('assignments').split(',') : ['me', 'unassigned', 'others']); // me, others, unassigned
   const [allDepts, setAllDepts] = useState(searchParams.get('all_depts') === 'true'); // Show all departments toggle
   const [companyParam, setCompanyParam] = useState(searchParams.get('company') !== null ? searchParams.get('company') : initialCompanyParam); // Company Routing Filter
 
-  const ALL_STATUSES = ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Resolved', 'Closed'];
+  const ALL_STATUSES = ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Finish', 'Resolved', 'Closed'];
 
   const toggleAssignment = (val) => {
     setAssignments(prev => 
@@ -59,7 +59,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
 
   const clearAll = () => {
     setQ("");
-    setStatuses(['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold']);
+    setStatuses(['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Finish']);
     setAssignments(['me', 'unassigned']);
     setAllDepts(false);
     setCompanyParam("");

@@ -37,7 +37,7 @@ export async function POST(req, { params }) {
 
     if (ticket.status !== 'Resolved' && ticket.status !== 'Closed') {
       if (body.actionType === 'finish') {
-        newStatus = 'Pending CS Confirmation';
+        newStatus = 'Finish';
         transitionReason = "Marked as Finished, awaiting CS validation";
       } else {
         const isStaffReply = (userId === ticket.assigneeId) || session.user.role === 'Admin' || session.user.role === 'Manager' || session.user.department?.includes('CS');
@@ -49,7 +49,7 @@ export async function POST(req, { params }) {
           transitionReason = "Auto-shifted to Open (Awaiting Staff)";
           
           // Re-route Round Robin if the ticket was previously dormant (Pending)
-          if (ticket.status === 'Pending' || ticket.status === 'Pending CS Confirmation') {
+          if (ticket.status === 'Pending' || ticket.status === 'Finish') {
             const deptUsers = await prisma.user.findMany({ 
               where: { departmentId: ticket.departmentId, role: { name: { not: 'Admin' } } }, 
               select: { id: true } 
