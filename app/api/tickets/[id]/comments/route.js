@@ -90,18 +90,34 @@ export async function POST(req, { params }) {
     }
 
     let nextSlaDeadlineUpdate = undefined;
-    if (ticket.enableSla && ticket.slaTimerMins) {
-       nextSlaDeadlineUpdate = new Date(Date.now() + ticket.slaTimerMins * 60000);
+    let enableSlaUpdate = undefined;
+    let slaMinsUpdate = undefined;
+
+    if (body.replyEnableSla !== undefined) {
+      enableSlaUpdate = body.replyEnableSla;
+      if (body.replyEnableSla && body.replySlaMins) {
+         nextSlaDeadlineUpdate = new Date(Date.now() + body.replySlaMins * 60000);
+         slaMinsUpdate = body.replySlaMins;
+      } else if (!body.replyEnableSla) {
+         nextSlaDeadlineUpdate = null; // Turn off tracker completely
+      }
+    } else {
+      // Original logic fallback if UI does not send the parameter
+      if (ticket.enableSla && ticket.slaTimerMins) {
+         nextSlaDeadlineUpdate = new Date(Date.now() + ticket.slaTimerMins * 60000);
+      }
     }
 
-    if (newStatus !== ticket.status || newAssigneeId !== ticket.assigneeId || resetJobCategory || nextSlaDeadlineUpdate) {
+    if (newStatus !== ticket.status || newAssigneeId !== ticket.assigneeId || resetJobCategory || nextSlaDeadlineUpdate !== undefined || enableSlaUpdate !== undefined) {
       await prisma.ticket.update({ 
         where: { id: ticketId }, 
         data: { 
           status: newStatus, 
           assigneeId: newAssigneeId,
           ...(resetJobCategory && { jobCategoryId: null }),
-          ...(nextSlaDeadlineUpdate && { nextSlaDeadline: nextSlaDeadlineUpdate })
+          ...(nextSlaDeadlineUpdate !== undefined && { nextSlaDeadline: nextSlaDeadlineUpdate }),
+          ...(enableSlaUpdate !== undefined && { enableSla: enableSlaUpdate }),
+          ...(slaMinsUpdate !== undefined && { slaTimerMins: slaMinsUpdate })
         } 
       });
     }

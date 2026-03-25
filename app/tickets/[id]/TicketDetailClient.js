@@ -71,6 +71,10 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const [editingCommentText, setEditingCommentText] = useState("");
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
   const [replyCustomData, setReplyCustomData] = useState({});
+
+  const [replyEnableSla, setReplyEnableSla] = useState(ticket?.enableSla || false);
+  const [replySlaMins, setReplySlaMins] = useState(ticket?.slaTimerMins || 15);
+
   const [formData, setFormData] = useState({
     title: ticket.title,
     description: ticket.description,
@@ -178,7 +182,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     }
 
     const res = await fetch(`/api/tickets/${ticket.id}/comments`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: commentText, attachmentUrl, attachmentName, actionType, replyCustomData })
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: commentText, attachmentUrl, attachmentName, actionType, replyCustomData, replyEnableSla, replySlaMins })
     });
     if (res.ok) {
       const updatedStatus = actionType === 'finish' ? 'Finish' : 'Auto';
@@ -491,6 +495,30 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                 onChange={e => setCommentText(e.target.value)}
                 required={!file && visibleCustomFieldIds.length === 0}
               ></textarea>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b' }}>
+                <input 
+                  type="checkbox" 
+                  checked={replyEnableSla} 
+                  onChange={e => setReplyEnableSla(e.target.checked)} 
+                  style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
+                />
+                Reactivate / Modify External SLA Timer
+              </label>
+              {replyEnableSla && (
+                <div style={{ paddingLeft: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <input 
+                    type="number" 
+                    value={replySlaMins} 
+                    onChange={e => setReplySlaMins(parseInt(e.target.value))} 
+                    min="5" max="1440" 
+                    style={{ padding: '0.5rem', width: '80px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                  <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Minutes (Ticket Original: {ticket?.slaTimerMins || 15}m)</span>
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--input-bg)', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
