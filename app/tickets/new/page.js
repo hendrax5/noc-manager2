@@ -19,7 +19,12 @@ export default async function NewTicketPage() {
   
   const config = getAppConfig();
   const companies = config.companyNames ? config.companyNames.split(',').map(s => s.trim()) : ["ION", "SDC", "Sistercompany"];
+  const deptAutoRouteMap = config.deptAutoRouteMap || {};
   
+  const creatorDeptId = session.user.departmentId;
+  const targetRouteDeptId = creatorDeptId && deptAutoRouteMap[creatorDeptId] ? parseInt(deptAutoRouteMap[creatorDeptId]) : null;
+  const defaultTargetDeptId = targetRouteDeptId || departments[0]?.id;
+
   return (
     <main className="container">
       <header className="page-header">
@@ -27,7 +32,7 @@ export default async function NewTicketPage() {
         <p>Create a trackable operational ticket for your related sub-department.</p>
       </header>
       
-      <TicketForm departments={departments} categories={categories} customFields={customFields} services={services} serviceTemplates={serviceTemplates} companies={companies} />
+      <TicketForm departments={departments} categories={categories} customFields={customFields} services={services} serviceTemplates={serviceTemplates} companies={companies} defaultTargetDeptId={defaultTargetDeptId} />
     </main>
   );
 }

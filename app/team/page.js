@@ -21,6 +21,7 @@ export default async function TeamPage() {
   const config = getAppConfig();
   const companies = config.companyNames ? config.companyNames.split(',').map(s => s.trim()) : ["ION", "SDC", "Sistercompany"];
   const initialDeptMap = config.deptCompanyMap || {};
+  const initialAutoRouteMap = config.deptAutoRouteMap || {};
 
   return (
     <main className="container">
@@ -34,7 +35,7 @@ export default async function TeamPage() {
         <Link href="/team/schedules" style={{ padding: '0.75rem 1.5rem', textDecoration: 'none', color: '#64748b', fontWeight: '500' }}>Shift Schedules</Link>
       </div>
 
-      <TeamAccessManager users={users} roles={roles} departments={departments} companies={companies} initialDeptMap={initialDeptMap} />
+      <TeamAccessManager users={users} roles={roles} departments={departments} companies={companies} initialDeptMap={initialDeptMap} initialAutoRouteMap={initialAutoRouteMap} />
     </main>
   );
 }

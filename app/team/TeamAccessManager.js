@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import UserTableClient from "./UserTableClient";
 
-export default function TeamAccessManager({ users, roles, departments, companies = ["ION", "SDC", "Sistercompany"], initialDeptMap = {} }) {
+export default function TeamAccessManager({ users, roles, departments, companies = ["ION", "SDC", "Sistercompany"], initialDeptMap = {}, initialAutoRouteMap = {} }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("users");
   const [newRole, setNewRole] = useState("");
@@ -22,7 +22,9 @@ export default function TeamAccessManager({ users, roles, departments, companies
   const [editingDeptId, setEditingDeptId] = useState(null);
   const [editDeptName, setEditDeptName] = useState("");
   const [editDeptCompany, setEditDeptCompany] = useState("");
+  const [editDeptAutoRoute, setEditDeptAutoRoute] = useState("");
   const [deptCompanyMap, setDeptCompanyMap] = useState(initialDeptMap);
+  const [deptAutoRouteMap, setDeptAutoRouteMap] = useState(initialAutoRouteMap);
 
   const handleAddRole = async (e) => {
     e.preventDefault();
@@ -73,16 +75,18 @@ export default function TeamAccessManager({ users, roles, departments, companies
     setEditingDeptId(dept.id);
     setEditDeptName(dept.name);
     setEditDeptCompany(deptCompanyMap[dept.id] || "");
+    setEditDeptAutoRoute(deptAutoRouteMap[dept.id] || "");
   };
   const handleSaveDept = async (id) => {
     if (!editDeptName.trim()) return;
     await fetch(`/api/departments/${id}`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ name: editDeptName }) });
     
     // Save Routing Map
-    const resMap = await fetch(`/api/settings/dept-routing`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ departmentId: String(id), companyName: editDeptCompany }) });
+    const resMap = await fetch(`/api/settings/dept-routing`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ departmentId: String(id), companyName: editDeptCompany, targetSupportDeptId: editDeptAutoRoute }) });
     if(resMap.ok) {
        const mappedData = await resMap.json();
        setDeptCompanyMap(mappedData.deptCompanyMap);
+       setDeptAutoRouteMap(mappedData.deptAutoRouteMap || {});
     }
 
     setEditingDeptId(null);
@@ -215,11 +219,15 @@ export default function TeamAccessManager({ users, roles, departments, companies
                 if (editingDeptId === d.id) {
                   return (
                     <li key={d.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', flex: 1, gap: '1rem', marginRight: '1rem' }}>
-                        <input type="text" value={editDeptName} onChange={e => setEditDeptName(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', flex: 1 }} />
-                        <select value={editDeptCompany} onChange={e => setEditDeptCompany(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', width: '220px' }}>
-                          <option value="">-- No Auto Routing --</option>
+                      <div style={{ display: 'flex', flex: 1, gap: '1rem', marginRight: '1rem', flexWrap: 'wrap' }}>
+                        <input type="text" value={editDeptName} onChange={e => setEditDeptName(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '200px' }} placeholder="Dept Name..." />
+                        <select value={editDeptCompany} onChange={e => setEditDeptCompany(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '150px' }}>
+                          <option value="">-- No Configured Company --</option>
                           {companies.map((c, i) => <option key={i} value={c}>{c}</option>)}
+                        </select>
+                        <select value={editDeptAutoRoute} onChange={e => setEditDeptAutoRoute(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '200px' }}>
+                          <option value="">-- No Default Ticket Route --</option>
+                          {departments.map(tDept => <option key={tDept.id} value={tDept.id}>{tDept.name}</option>)}
                         </select>
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -231,11 +239,16 @@ export default function TeamAccessManager({ users, roles, departments, companies
                 }
                 return (
                   <li key={d.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                       <strong>{d.name}</strong>
                       {deptCompanyMap[d.id] && (
                         <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#1e40af', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #bfdbfe', fontWeight: 'bold' }}>
-                           🏢 Default: {deptCompanyMap[d.id]}
+                           🏢 Entity: {deptCompanyMap[d.id]}
+                        </span>
+                      )}
+                      {deptAutoRouteMap[d.id] && (
+                        <span style={{ fontSize: '0.75rem', background: '#fdf4ff', color: '#86198f', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #f5d0fe', fontWeight: 'bold' }}>
+                           🎯 Routes to: {departments.find(x => String(x.id) === String(deptAutoRouteMap[d.id]))?.name || "Unknown"}
                         </span>
                       )}
                     </div>

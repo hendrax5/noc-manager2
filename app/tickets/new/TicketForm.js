@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
 
-export default function TicketForm({ departments, categories, customFields, services, serviceTemplates, companies = ["ION", "SDC", "Sistercompany"] }) {
+export default function TicketForm({ departments, categories, customFields, services, serviceTemplates, companies = ["ION", "SDC", "Sistercompany"], defaultTargetDeptId }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customDataState, setCustomDataState] = useState({});
@@ -11,7 +11,7 @@ export default function TicketForm({ departments, categories, customFields, serv
     title: '',
     description: '',
     priority: 'Medium',
-    departmentId: departments[0]?.id || '',
+    departmentId: defaultTargetDeptId || departments[0]?.id || '',
     jobCategoryId: '',
     enableSla: false,
     slaTimerMins: 15
