@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
 
-export default function TicketForm({ departments, categories, customFields, services, serviceTemplates, companies = ["ION", "SDC", "Sistercompany"], defaultTargetDeptId }) {
+export default function TicketForm({ departments, categories, customFields, services, serviceTemplates, users, companies = ["ION", "SDC", "Sistercompany"], defaultTargetDeptId }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customDataState, setCustomDataState] = useState({});
@@ -12,6 +12,7 @@ export default function TicketForm({ departments, categories, customFields, serv
     description: '',
     priority: 'Medium',
     departmentId: defaultTargetDeptId || departments[0]?.id || '',
+    assigneeId: '',
     jobCategoryId: '',
     enableSla: false,
     slaTimerMins: 15
@@ -228,6 +229,15 @@ export default function TicketForm({ departments, categories, customFields, serv
       </div>
 
       {renderCustomFields('below_department')}
+
+      <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+        <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Assignee (Optional Override)</label>
+        <select value={formData.assigneeId || ''} onChange={e => setFormData({...formData, assigneeId: e.target.value})}>
+          <option value="">-- Let System Auto-Assign (Least Busy) --</option>
+          {users?.filter(u => u.departmentId === parseInt(formData.departmentId)).map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
+        </select>
+        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>If left blank, the system will automatically route to the least busy technician in the selected department.</p>
+      </div>
 
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Impacting Services (Optional Link)</label>

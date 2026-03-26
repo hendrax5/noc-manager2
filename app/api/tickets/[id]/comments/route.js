@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]/route";
+import { getAppConfig } from "@/lib/config";
 
 export async function POST(req, { params }) {
   try {
@@ -132,8 +133,16 @@ export async function POST(req, { params }) {
       });
     }
 
+    const config = getAppConfig();
+    const replyScore = config.ticketReplyScore !== undefined ? parseInt(config.ticketReplyScore) : 1;
+
     await prisma.ticketHistory.create({
-      data: { ticketId, action: transitionReason, actorId: userId }
+      data: { 
+        ticketId, 
+        action: transitionReason, 
+        actorId: userId,
+        awardedScore: replyScore > 0 ? replyScore : null
+      }
     });
 
     return NextResponse.json(comment, { status: 201 });

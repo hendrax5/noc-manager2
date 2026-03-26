@@ -418,6 +418,18 @@ export default function SettingsClient({ initialFields, initialCategories, initi
                     <input type="text" value={branding.companyNames || "ION, SDC, Sistercompany"} onChange={e => setBranding({...branding, companyNames: e.target.value})} style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)' }} placeholder="e.g. ION, SDC, Subsidiary Group" />
                     <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.75rem', color: '#64748b' }}>Defines dropdown options for 'Order Origin' and 'Executing Vendor' when creating or filtering tickets.</p>
                   </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) minmax(200px, 1fr)', gap: '1rem', borderTop: '1px dotted var(--border-color)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem', fontWeight: 'bold' }}>Points for Creating Ticket</label>
+                      <input type="number" value={branding.ticketCreateScore !== undefined ? branding.ticketCreateScore : 1} onChange={e => setBranding({...branding, ticketCreateScore: parseInt(e.target.value) || 0})} style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)' }} />
+                      <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.75rem', color: '#64748b' }}>Automated points awarded to the creator.</p>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem', fontWeight: 'bold' }}>Points for Replying Ticket</label>
+                      <input type="number" value={branding.ticketReplyScore !== undefined ? branding.ticketReplyScore : 1} onChange={e => setBranding({...branding, ticketReplyScore: parseInt(e.target.value) || 0})} style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)' }} />
+                      <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.75rem', color: '#64748b' }}>Automated points awarded per reply.</p>
+                    </div>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '0.5rem' }}>
                    <button type="submit" className="primary-btn" style={{ background: '#3b82f6', padding: '0.6rem 2rem' }}>Apply Branding Config</button>

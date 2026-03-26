@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { getAppConfig } from "@/lib/config";
 
 function generateTrackingId() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -64,7 +65,11 @@ export async function POST(req) {
       slaTimerMins: slaTimerMins ? parseInt(slaTimerMins) : 15,
       nextSlaDeadline: enableSla ? new Date(Date.now() + (slaTimerMins ? parseInt(slaTimerMins) : 15) * 60000) : null,
       historyLogs: {
-        create: { action: "Ticket systemically instantiated" + (finalAssigneeId ? ` & auto-assigned to ID ${finalAssigneeId}` : ''), actorId: userId }
+        create: { 
+          action: "Ticket systemically instantiated" + (finalAssigneeId ? ` & auto-assigned to ID ${finalAssigneeId}` : ''), 
+          actorId: userId,
+          awardedScore: (getAppConfig().ticketCreateScore !== undefined ? parseInt(getAppConfig().ticketCreateScore) : 1) > 0 ? (getAppConfig().ticketCreateScore !== undefined ? parseInt(getAppConfig().ticketCreateScore) : 1) : null
+        }
       }
     };
 
