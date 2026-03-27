@@ -17,6 +17,8 @@ export default async function TicketsPage({ searchParams }) {
   const config = getAppConfig();
   const companies = config.companyNames ? config.companyNames.split(',').map(s => s.trim()) : ["ION", "SDC", "Sistercompany"];
   const deptCompanyMap = config.deptCompanyMap || {};
+  
+  const categories = await prisma.jobCategory.findMany({ select: { id: true, name: true } });
 
   const { user } = session;
   const resolvedParams = await searchParams;
@@ -32,8 +34,13 @@ export default async function TicketsPage({ searchParams }) {
   const companyParam = resolvedParams?.company !== undefined ? resolvedParams.company : mappedDefaultCompany;
   const dateParam = resolvedParams?.date || "";
   const tab = resolvedParams?.tab || "";
+  const categoryParam = resolvedParams?.category || "";
 
   const filters = [];
+  
+  if (categoryParam) {
+    filters.push({ jobCategoryId: parseInt(categoryParam) });
+  }
   
   if (companyParam && !allDeptsParam && !q) {
     filters.push({
@@ -201,7 +208,7 @@ export default async function TicketsPage({ searchParams }) {
       </div>
 
       <Suspense fallback={<div style={{ padding: '1.5rem', marginBottom: '1.5rem', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>Loading filters...</div>}>
-        <TicketAdvancedFilter companies={companies} initialCompanyParam={companyParam} />
+        <TicketAdvancedFilter categories={categories} companies={companies} initialCompanyParam={companyParam} />
       </Suspense>
 
       <table className="data-table">
