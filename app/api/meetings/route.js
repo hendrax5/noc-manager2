@@ -27,7 +27,7 @@ export async function POST(req) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { title, agenda, problems, scheduledAt, attendees } = body;
+    const { title, agenda, problems, scheduledAt, attendees, visibility, permittedDepartmentIds } = body;
     
     let initialSessions = [];
     if (agenda || problems) {
@@ -46,8 +46,12 @@ export async function POST(req) {
         problems,
         scheduledAt: new Date(scheduledAt),
         organizedById: parseInt(session.user.id),
+        visibility: visibility || "Public",
         attendees: attendees?.length > 0 ? {
           connect: attendees.map(id => ({ id: parseInt(id) }))
+        } : undefined,
+        permittedDepartments: visibility === 'Restricted' && permittedDepartmentIds?.length > 0 ? {
+          connect: permittedDepartmentIds.map(id => ({ id: parseInt(id) }))
         } : undefined,
         sessions: initialSessions.length > 0 ? { create: initialSessions } : undefined
       }

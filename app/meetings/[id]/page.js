@@ -16,6 +16,7 @@ export default async function MeetingDetailPage({ params }) {
     include: {
       organizedBy: { select: { id: true, name: true, email: true } },
       attendees: true,
+      permittedDepartments: { select: { id: true } },
       sessions: { 
         include: { author: true, presentAttendees: true, actionItems: { include: { assignee: true, department: true } } }, 
         orderBy: { scheduledFor: 'asc' } 
@@ -25,6 +26,17 @@ export default async function MeetingDetailPage({ params }) {
   });
 
   if (!meeting) redirect('/meetings');
+
+  const userId = parseInt(session.user.id);
+  const userDeptId = parseInt(session.user.departmentId);
+  const isPublic = meeting.visibility === 'Public';
+  const isOrganizer = meeting.organizedById === userId;
+  const isAttendee = meeting.attendees?.some(a => a.id === userId);
+  const isDeptPermitted = meeting.permittedDepartments?.some(d => d.id === userDeptId);
+
+  if (!isPublic && !isOrganizer && !isAttendee && !isDeptPermitted) {
+    redirect('/meetings');
+  }
 
   // Fetch users and departments for the Action Items dropdown
   const users = await prisma.user.findMany({ select: { id: true, name: true, email: true } });

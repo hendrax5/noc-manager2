@@ -13,9 +13,22 @@ export default async function MeetingsPage({ searchParams }) {
   const page = parseInt(resolvedParams?.page) || 1;
   const pageSize = 6;
 
+  const userId = parseInt(session.user.id);
+  const userDeptId = parseInt(session.user.departmentId);
+
+  const authWhere = {
+    OR: [
+      { visibility: "Public" },
+      { organizedById: userId },
+      { attendees: { some: { id: userId } } },
+      { permittedDepartments: { some: { id: userDeptId } } }
+    ]
+  };
+
   const [totalMeetings, meetings] = await Promise.all([
-    prisma.meeting.count(),
+    prisma.meeting.count({ where: authWhere }),
     prisma.meeting.findMany({
+      where: authWhere,
       include: { organizedBy: true, attendees: true },
       orderBy: { scheduledAt: 'desc' },
       take: pageSize,

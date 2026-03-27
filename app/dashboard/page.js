@@ -60,6 +60,22 @@ export default async function DashboardPage() {
   const nextWeek = new Date(today);
   nextWeek.setDate(today.getDate() + 7);
   
+  // Fetch Upcoming Meetings specifically allocated to the logged-in user
+  const myUpcomingMeetings = await prisma.meeting.findMany({
+    where: {
+      scheduledAt: { gte: today },
+      OR: [
+        { organizedById: parseInt(session?.user?.id) },
+        { attendees: { some: { id: parseInt(session?.user?.id) } } },
+        // Also fetch general public meetings if they want, but User asked "jadwal meeting saya" (My Meetings), 
+        // so we strictly filter their explicit assignments.
+      ]
+    },
+    include: { organizedBy: true },
+    orderBy: { scheduledAt: 'asc' },
+    take: 5
+  });
+  
   const myShifts = await prisma.shiftSchedule.findMany({
     where: { 
       userId: parseInt(session?.user?.id),
@@ -263,6 +279,42 @@ export default async function DashboardPage() {
             </ul>
           )}
         </div>
+
+        {/* My Upcoming Meetings */}
+        <div className="bg-white-card" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', position: 'relative' }}>
+          <div style={{ width: '40px', height: '4px', background: '#ec4899', borderRadius: '2px', position: 'absolute', top: 0, left: '1.5rem' }}></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
+             <h2 className="text-dark" style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{fontSize: '1.3rem'}}>🤝</span> Upcoming Syncs</h2>
+             <Link href="/meetings" style={{ fontSize: '0.85rem', color: '#ec4899', textDecoration: 'none', fontWeight: 'bold' }}>View All</Link>
+          </div>
+
+          {myUpcomingMeetings.length === 0 ? (
+            <div className="bg-light-stripe" style={{ padding: '2rem 1rem', textAlign: 'center', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+               <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>📭</span>
+               <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: 0 }}>You have no scheduled meetings on your personal agenda.</p>
+            </div>
+          ) : (
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {myUpcomingMeetings.map(meeting => {
+                 const d = new Date(meeting.scheduledAt);
+                 return (
+                   <li key={meeting.id} className="hover-bg bg-light-stripe" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)', transition: 'all 0.2s', borderLeft: '3px solid #ec4899' }}>
+                     <div>
+                       <Link href={`/meetings/${meeting.id}`} style={{ textDecoration: 'none' }}>
+                         <p className="text-dark" style={{ margin: '0 0 0.25rem 0', fontWeight: 'bold', fontSize: '0.95rem' }}>{meeting.title}</p>
+                       </Link>
+                       <span style={{ fontSize: '0.75rem', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                         📅 {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 
+                         • By {meeting.organizedBy?.name || 'System'}
+                       </span>
+                     </div>
+                   </li>
+                 );
+              })}
+            </ul>
+          )}
+        </div>
+
       </section>
 
       {/* Auto-Report & Charts */}

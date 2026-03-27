@@ -62,6 +62,16 @@ export default async function TicketsPage({ searchParams }) {
       ]
     });
   }
+
+  // Globally Enforce Privacy & Visibility Constraints
+  filters.push({
+    OR: [
+      { visibility: "Public" },
+      { assigneeId: user.id },
+      { historyLogs: { some: { actorId: user.id } } },
+      { permittedDepartments: { some: { id: user.departmentId || -1 } } }
+    ]
+  });
   
   // Assignment Checkbox Filters
   const assignments = assignmentsParam ? assignmentsParam.split(',') : [];

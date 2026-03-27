@@ -15,7 +15,9 @@ export default function TicketForm({ departments, categories, customFields, serv
     assigneeId: '',
     jobCategoryId: '',
     enableSla: false,
-    slaTimerMins: 15
+    slaTimerMins: 15,
+    visibility: "Public",
+    permittedDepartmentIds: []
   });
   const [file, setFile] = useState(null);
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
@@ -238,6 +240,33 @@ export default function TicketForm({ departments, categories, customFields, serv
         </select>
         <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>If left blank, the system will automatically route to the least busy technician in the selected department.</p>
       </div>
+
+      <div className="form-group" style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>
+        <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Ticket Privacy & Visibility</label>
+        <select value={formData.visibility} onChange={e => setFormData({...formData, visibility: e.target.value})} style={{ background: '#f8fafc' }}>
+          <option value="Public">🌐 Public (Visible to assigned department & general staff)</option>
+          <option value="Private">🔒 Private (Strictly visible only to Creator and specifically Assigned User)</option>
+          <option value="Restricted">🏢 Restricted (Visible to Creator, Assignee & explicitly selected Departments)</option>
+        </select>
+      </div>
+
+      {formData.visibility === 'Restricted' && (
+        <div className="form-group" style={{ gridColumn: '1 / -1', background: '#fef2f2', padding: '1rem', borderLeft: '4px solid #ef4444', borderRadius: '6px' }}>
+          <label style={{ fontWeight: 'bold', color: '#b91c1c' }}>Permitted Departments</label>
+          <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: '#7f1d1d' }}>Select which departments can view this Restricted ticket.</p>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+             {departments?.map(dept => (
+               <label key={dept.id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'white', padding: '0.4rem 0.8rem', border: '1px solid #fca5a5', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                 <input type="checkbox" checked={formData.permittedDepartmentIds.includes(dept.id)} onChange={(e) => {
+                    if (e.target.checked) setFormData({...formData, permittedDepartmentIds: [...formData.permittedDepartmentIds, dept.id]});
+                    else setFormData({...formData, permittedDepartmentIds: formData.permittedDepartmentIds.filter(id => id !== dept.id)});
+                 }} />
+                 {dept.name}
+               </label>
+             ))}
+          </div>
+        </div>
+      )}
 
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Impacting Services (Optional Link)</label>

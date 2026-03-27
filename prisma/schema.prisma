@@ -20,6 +20,8 @@ model Department {
   users     User[]
   tickets   Ticket[]
   actionItems ActionItem[]
+  permittedMeetings    Meeting[]    @relation("MeetingPermittedDepartments")
+  permittedTickets     Ticket[]     @relation("TicketPermittedDepartments")
 }
 
 model Location {
@@ -89,6 +91,8 @@ model Ticket {
   updatedAt    DateTime   @updatedAt
   resolvedAt   DateTime?
   services     Service[]
+  visibility           String       @default("Public") 
+  permittedDepartments Department[] @relation("TicketPermittedDepartments")
 }
 
 model DailyReport {
@@ -114,6 +118,8 @@ model Meeting {
   actionItems   ActionItem[]
   discussedTickets Ticket[]
   createdAt     DateTime @default(now())
+  visibility           String       @default("Public")
+  permittedDepartments Department[] @relation("MeetingPermittedDepartments")
 }
 
 model Comment {
