@@ -3,5 +3,8 @@
   "loginTitle": "Welcome to ION NOC Manager",
   "loginSubtitle": "Sign in to access your ION NOC Manager",
   "sidebarLogoText": "NOC",
-  "primaryColor": "#0f172a"
+  "primaryColor": "#0f172a",
+  "deptCompanyMap": {},
+  "deptAutoRouteMap": {},
+  "companyNames": "ION, PRODC, Indotel"
 }

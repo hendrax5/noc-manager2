@@ -19,6 +19,8 @@ export default async function TicketsPage({ searchParams }) {
   const deptCompanyMap = config.deptCompanyMap || {};
   
   const categories = await prisma.jobCategory.findMany({ select: { id: true, name: true } });
+  console.log("====== CATEGORIES FETCHED IN TICKET PAGE ======");
+  console.log(categories);
 
   const { user } = session;
   const resolvedParams = await searchParams;
@@ -45,6 +47,7 @@ export default async function TicketsPage({ searchParams }) {
   if (companyParam && !allDeptsParam && !q) {
     filters.push({
       customData: {
+        path: ['company'],
         string_contains: companyParam
       }
     });
@@ -63,6 +66,7 @@ export default async function TicketsPage({ searchParams }) {
   if (shouldIsolateDepartment) {
     filters.push({
       OR: [
+        { visibility: "Public" }, // Public tickets bypass department isolation
         { assigneeId: user.id }, // Explicitly assigned
         { departmentId: user.departmentId || -1 }, // Belongs to user's department (Admin fallback)
         { historyLogs: { some: { actorId: user.id } } } // User interacted with it previously
@@ -99,7 +103,8 @@ export default async function TicketsPage({ searchParams }) {
         { title: { contains: q, mode: 'insensitive' } },
         { assignee: { name: { contains: q, mode: 'insensitive' } } },
         { assignee: { email: { contains: q, mode: 'insensitive' } } },
-        { description: { contains: q, mode: 'insensitive' } }
+        { description: { contains: q, mode: 'insensitive' } },
+        { customData: { path: ['company'], string_contains: q } }
       ]
     });
   }

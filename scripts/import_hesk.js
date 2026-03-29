@@ -45,23 +45,17 @@ async function main() {
   console.log('✅ Connected to MariaDB Temporary Database!');
 
   // 1. Setup Exact Departments
-  const deptNames = ['NOC Regional Jakarta', 'NOC Regional Semarang', 'NOC Regional Bali'];
-  const createdDepts = {};
-  for (const name of deptNames) {
-    let dept = await prisma.department.findFirst({ where: { name } });
-    if (!dept) {
-      dept = await prisma.department.create({ data: { name } });
-    }
-    createdDepts[name] = dept;
+  let defaultDept = await prisma.department.findFirst({ where: { name: 'General' } });
+  if (!defaultDept) {
+    defaultDept = await prisma.department.create({ data: { name: 'General' } });
   }
-  const defaultDept = createdDepts['NOC Regional Jakarta'];
 
-  let defaultRole = await prisma.role.findFirst({ where: { name: 'NOC General' } });
+  let defaultRole = await prisma.role.findFirst({ where: { name: 'Staff' } });
   if (!defaultRole) {
-    defaultRole = await prisma.role.create({ data: { name: 'NOC General' } });
+    defaultRole = await prisma.role.create({ data: { name: 'Staff' } });
   }
 
-  const defaultPassword = await bcrypt.hash('password123', 10);
+  const defaultPassword = await bcrypt.hash('213', 10);
 
   // 2. MIGRATE CATEGORIES
   console.log('📥 Migrating Categories...');
@@ -125,6 +119,7 @@ async function main() {
         createdAt: t.dt,
         updatedAt: t.lastchange,
         resolvedAt: t.closedat || (t.status === 3 ? t.lastchange : null),
+        customData: { company: 'ION' },
       },
     });
     ticketsMigrated++;
