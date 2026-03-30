@@ -20,7 +20,7 @@ export async function POST(req) {
     const userId = session?.user?.id ? parseInt(session.user.id) : null;
 
     const body = await req.json();
-    const { title, description, priority, departmentId, assigneeId, jobCategoryId, customData, attachmentUrl, attachmentName, enableSla, slaTimerMins, serviceIds, visibility, permittedDepartmentIds } = body;
+    const { title, description, priority, departmentId, assigneeId, jobCategoryId, customData, attachmentUrl, attachmentName, enableSla, slaTimerMins, serviceIds, visibility, permittedDepartmentIds, rfs } = body;
         
     // Auto assignment routing logic (Least Busy Round-Robin)
     let finalAssigneeId = assigneeId ? parseInt(assigneeId) : null;
@@ -61,6 +61,7 @@ export async function POST(req) {
       jobCategoryId: jobCategoryId ? parseInt(jobCategoryId) : null,
       assigneeId: finalAssigneeId,
       status: "New",
+      rfs: rfs ? new Date(rfs) : null,
       visibility: visibility || "Public",
       permittedDepartments: visibility === 'Restricted' && permittedDepartmentIds?.length > 0 ? {
         connect: permittedDepartmentIds.map(id => ({ id: parseInt(id) }))

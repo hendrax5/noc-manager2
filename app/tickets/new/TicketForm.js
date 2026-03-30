@@ -17,7 +17,8 @@ export default function TicketForm({ departments, categories, customFields, serv
     enableSla: false,
     slaTimerMins: 15,
     visibility: "Public",
-    permittedDepartmentIds: []
+    permittedDepartmentIds: [],
+    rfs: ""
   });
   const [file, setFile] = useState(null);
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
@@ -48,7 +49,14 @@ export default function TicketForm({ departments, categories, customFields, serv
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...formData, customData: customDataState, attachmentUrl, attachmentName, serviceIds: selectedServiceIds })
+      body: JSON.stringify({ 
+        ...formData, 
+        rfs: formData.rfs ? new Date(formData.rfs).toISOString() : null,
+        customData: customDataState, 
+        attachmentUrl, 
+        attachmentName, 
+        serviceIds: selectedServiceIds 
+      })
     });
 
     if (res.ok) {
@@ -239,6 +247,17 @@ export default function TicketForm({ departments, categories, customFields, serv
           {users?.filter(u => u.departmentId === parseInt(formData.departmentId)).map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
         </select>
         <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>If left blank, the system will automatically route to the least busy technician in the selected department.</p>
+      </div>
+
+      <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+        <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>RFS Target (Ready For Service)</label>
+        <input 
+          type="datetime-local" 
+          value={formData.rfs || ''} 
+          onChange={e => setFormData({...formData, rfs: e.target.value})} 
+          style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '1rem', background: '#f8fafc' }}
+        />
+        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Opsional. Tanggal target penyerahan masalah atau instalasi layanan.</p>
       </div>
 
       <div className="form-group" style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>

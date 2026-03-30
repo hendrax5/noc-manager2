@@ -93,6 +93,8 @@ model Ticket {
   services     Service[]
   visibility           String       @default("Public") 
   permittedDepartments Department[] @relation("TicketPermittedDepartments")
+  rfs                  DateTime?
+  deletedAt            DateTime?
 }
 
 model DailyReport {
@@ -131,6 +133,7 @@ model Comment {
   author    User     @relation(fields: [authorId], references: [id])
   attachments Attachment[]
   createdAt DateTime @default(now())
+  deletedAt DateTime?
 }
 
 model CustomField {

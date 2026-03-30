@@ -12,6 +12,13 @@ export default function SlaAudioAlarm() {
   const [isOpen, setIsOpen] = useState(false);
   const audioContextRef = useRef(null);
   
+  // Strict CS Isolation
+  if (session && session.user) {
+    const userDept = session.user.department || "";
+    const isCS = userDept.toLowerCase().includes('cs') || userDept.toLowerCase().includes('customer');
+    if (!isCS) return null;
+  }
+  
   // Create an artificial beep using the Web Audio API (No MP3 file required)
   const playBeep = () => {
     try {
@@ -83,17 +90,7 @@ export default function SlaAudioAlarm() {
   useEffect(() => {
     if (!session || !session.user) return;
     
-    const userRole = session.user.role;
-    const userDept = session.user.department || "";
-    
-    // Only mount interval loop for Customer Service, Managers, and Admins
-    const isTargetAudience = userDept.toLowerCase().includes('cs') || 
-                             userDept.toLowerCase().includes('customer') || 
-                             userRole === 'Admin' || 
-                             userRole === 'Manager';
-                             
-    if (!isTargetAudience) return;
-
+    // Mount interval loop
     // Run check every 60 seconds
     const interval = setInterval(checkSlaTicks, 60000);
     

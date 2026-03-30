@@ -10,6 +10,7 @@ export async function PATCH(req, { params }) {
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
     const body = await req.json();
+    const isAdministrasi = session?.user?.department?.toLowerCase() === 'administrasi' || session?.user?.department?.toLowerCase().includes('admin');
     
     // Evaluate exact permutations requiring audit snapshots
     const oldTicket = await prisma.ticket.findUnique({ where: { id } });
@@ -50,6 +51,17 @@ export async function PATCH(req, { params }) {
       jobCategoryId: body.jobCategoryId ? parseInt(body.jobCategoryId) : oldTicket.jobCategoryId,
       ...(body.customData && { customData: body.customData })
     };
+
+    if (body.rfs !== undefined) {
+      if (!isAdministrasi) return NextResponse.json({ error: "Only Administrasi can modify RFS targets." }, { status: 403 });
+      const newRfs = body.rfs ? new Date(body.rfs) : null;
+      const oldRfsStr = oldTicket.rfs ? new Date(oldTicket.rfs).toISOString() : null;
+      const newRfsStr = newRfs ? newRfs.toISOString() : null;
+      if (oldRfsStr !== newRfsStr) {
+        logs.push({ action: `RFS Target Deadline shifted to [ ${newRfs ? newRfs.toLocaleString('en-CA') : 'Cleared'} ]`, actorId: userId });
+        ticketData.rfs = newRfs;
+      }
+    }
 
     if (body.status === 'Resolved') {
       const explicitCategoryId = body.jobCategoryId ? parseInt(body.jobCategoryId) : oldTicket.jobCategoryId;
@@ -107,20 +119,27 @@ export async function PATCH(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user.role !== 'Admin' && session.user.role !== 'Manager')) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    const isAdministrasi = session?.user?.department?.toLowerCase() === 'administrasi' || session?.user?.department?.toLowerCase().includes('admin');
+    if (!session || !isAdministrasi) {
+      return NextResponse.json({ error: "Only Administrasi department can void/delete tickets." }, { status: 403 });
     }
 
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
     
-    // Purge cascades gracefully
-    await prisma.comment.deleteMany({ where: { ticketId: id } });
-    await prisma.attachment.deleteMany({ where: { ticketId: id } });
-    await prisma.ticketHistory.deleteMany({ where: { ticketId: id } });
-    await prisma.ticket.delete({ where: { id } });
+    // Per NOC Blueprint: Soft Deletes (Penghapusan Semu) for Tickets
+    await prisma.ticket.update({
+      where: { id },
+      data: {
+        status: 'Cancelled',
+        deletedAt: new Date(),
+        historyLogs: {
+          create: [{ action: "Ticket Voided (Soft Deleted) manually by Administrasi", actorId: parseInt(session.user.id) }]
+        }
+      }
+    });
 
-    return NextResponse.json({ message: "Deleted" });
+    return NextResponse.json({ message: "Voided" });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

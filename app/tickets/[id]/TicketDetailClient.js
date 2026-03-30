@@ -61,8 +61,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const currentUserId = currentUserObj.id ? parseInt(currentUserObj.id) : null;
 
   const isCreator = ticket.historyLogs && ticket.historyLogs.length > 0 && ticket.historyLogs[ticket.historyLogs.length - 1].actorId === currentUserId;
-  const isAdminOrManager = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager';
-  const showTicketEdit = isCreator || isAdminOrManager;
+  const isAdministrasi = currentUserObj.department?.toLowerCase() === 'administrasi' || currentUserObj.department?.toLowerCase().includes('admin');
+  const showTicketEdit = isAdministrasi;
 
   const [editingTicket, setEditingTicket] = useState(false);
   const [editTitle, setEditTitle] = useState(ticket.title);
@@ -83,7 +83,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     departmentId: ticket.departmentId,
     assigneeId: ticket.assigneeId || "",
     jobCategoryId: ticket.jobCategoryId || "",
-    customData: ticket.customData || {}
+    customData: ticket.customData || {},
+    rfs: ticket.rfs || null
   });
   const [commentText, setCommentText] = useState(currentUser.signature ? `\n\n${currentUser.signature}` : "");
   const [file, setFile] = useState(null);
@@ -155,9 +156,20 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   };
 
   const handleDelete = async () => {
-    if(confirm("DANGER: Are you sure you want to permanently delete this ticket and all tracking logs?")) {
+    if(!isAdministrasi) {
+      alert("Only Administrasi can perform manual Ticket Deletions.");
+      return;
+    }
+    if(confirm("DANGER: Are you sure you want to cancel and void this ticket?")) {
       await fetch(`/api/tickets/${ticket.id}`, { method: "DELETE" });
       router.push("/tickets");
+      router.refresh();
+    }
+  };
+
+  const handleDeleteComment = async (id) => {
+    if(confirm("Hapus komentar ini?")) {
+      await fetch(`/api/tickets/${ticket.id}/comments/${id}`, { method: "DELETE" });
       router.refresh();
     }
   };
@@ -232,6 +244,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                   })()}
                 </div>
               )}
+            </div>
+          )}
+
+          {ticket.rfs && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', background: '#fffbeb', border: '1px solid #fcd34d', padding: '0.4rem 0.8rem', borderRadius: '6px', color: '#b45309', fontWeight: 'bold', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              🎯 Target RFS: {new Date(ticket.rfs).toLocaleString('en-CA')}
             </div>
           )}
 
@@ -384,16 +402,33 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
         </div>
 
-        {ticket.comments?.map(c => (
-          <div key={c.id} style={{ background: 'var(--card-bg)', padding: '1.5rem 2rem', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        {ticket.comments?.map(c => {
+          const isCommentAuthor = c.authorId === currentUserId;
+          const minsSinceCreation = mounted ? (Date.now() - new Date(c.createdAt).getTime()) / 60000 : 0;
+          const within15Mins = minsSinceCreation <= 15;
+          const showCommentControls = isAdministrasi || (isCommentAuthor && within15Mins);
+
+          if (c.deletedAt) {
+             return (
+               <div key={`tombstone-${c.id}`} style={{ background: '#f1f5f9', padding: '1rem 1.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1', color: '#64748b', fontSize: '0.85rem', fontStyle: 'italic', marginBottom: '1rem' }}>
+                 🚫 Pesan ditarik pada {mounted ? new Date(c.deletedAt).toLocaleString('en-CA') : '...'}
+               </div>
+             );
+          }
+
+          return (
+          <div key={c.id} style={{ background: 'var(--card-bg)', padding: '1.5rem 2rem', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', marginBottom: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', paddingBottom: '0.5rem', fontSize: '0.85rem' }}>
               <span style={{ color: 'var(--text-color)' }}>
                 Reply by <strong style={{ color: 'var(--heading-color)' }}>{c.author?.name || c.author?.email}</strong> 
                 <span style={{ marginLeft: '0.5rem' }}>&gt; <span>{mounted ? new Date(c.createdAt).toLocaleString('en-CA') : '...'}</span></span>
               </span>
               <span>
-                {c.authorId === currentUserId && (
-                  <span onClick={() => { setEditingCommentId(c.id); setEditingCommentText(c.text); }} style={{ color: '#0ea5e9', cursor: 'pointer', fontWeight: 'bold' }}>Edit</span>
+                {showCommentControls && (
+                  <>
+                    <span onClick={() => { setEditingCommentId(c.id); setEditingCommentText(c.text); }} style={{ color: '#0ea5e9', cursor: 'pointer', fontWeight: 'bold', marginRight: '1rem' }}>Edit</span>
+                    <span onClick={() => handleDeleteComment(c.id)} style={{ color: '#ef4444', cursor: 'pointer', fontWeight: 'bold' }}>Hapus</span>
+                  </>
                 )}
               </span>
             </div>
@@ -421,8 +456,10 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               </div>
             )}
             
+            
           </div>
-        ))}
+          )})
+        }
 
         <div style={{ background: 'var(--hover-bg)', padding: '2rem', borderRadius: '8px', border: '1px solid var(--border-color)', marginTop: '1rem' }}>
           <form onSubmit={handleCommentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -586,8 +623,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           <button onClick={() => window.print()} className="print-btn" style={{ flex: 1, background: 'var(--card-bg)', color: 'var(--heading-color)', border: '1px solid var(--border-color)', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem' }}>
             <span style={{ fontSize: '1rem' }}>🖨</span> Print
           </button>
-          {canModifyTicket && (
-            <button onClick={handleDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🗑 Delete</button>
+          {isAdministrasi && (
+            <button onClick={handleDelete} title="Soft Delete / Void Ticket" style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🗑 Delete</button>
           )}
         </div>
 
@@ -637,7 +674,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                />
              </div>
              
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                <label style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Job Phase Category</label>
                <SearchableSelect 
                  options={(jobCategories || []).map(c => ({ value: c.id, label: isAdminOrManager ? `${c.name} (+${c.score} pt)` : c.name }))} 
@@ -647,6 +684,18 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                  placeholder="-- Phase Unassigned --" 
                />
              </div>
+             
+             {isAdministrasi && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+               <label style={{ color: '#d97706', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>RFS Target (Admin Override)</label>
+               <input 
+                 type="datetime-local" 
+                 value={formData.rfs ? new Date(new Date(formData.rfs).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ""}
+                 onChange={e => triggerAutoSave('rfs', e.target.value ? new Date(e.target.value).toISOString() : null)}
+                 style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #fcd34d', background: '#fffbeb', color: '#92400e', fontSize: '0.85rem', outline: 'none', fontWeight: 'bold' }}
+               />
+              </div>
+             )}
           </div>
         </div>
 
