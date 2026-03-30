@@ -52,11 +52,12 @@ export async function PATCH(req, { params }) {
     };
 
     if (body.rfs !== undefined) {
-      if (!isAdministrasi) return NextResponse.json({ error: "Only Administrasi can modify RFS targets." }, { status: 403 });
       const newRfs = body.rfs ? new Date(body.rfs) : null;
       const oldRfsStr = oldTicket.rfs ? new Date(oldTicket.rfs).toISOString() : null;
       const newRfsStr = newRfs ? newRfs.toISOString() : null;
+      
       if (oldRfsStr !== newRfsStr) {
+        if (!isAdministrasi) return NextResponse.json({ error: "Only Administrasi can modify RFS targets." }, { status: 403 });
         logs.push({ action: `RFS Target Deadline shifted to [ ${newRfs ? newRfs.toLocaleString('en-CA') : 'Cleared'} ]`, actorId: userId });
         ticketData.rfs = newRfs;
       }
