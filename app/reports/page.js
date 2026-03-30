@@ -3,6 +3,7 @@ import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Pagination from "@/components/Pagination";
+import LeaderboardFilter from "./LeaderboardFilter";
 
 export default async function ReportsPage({ searchParams }) {
   const session = await getServerSession(authOptions);
@@ -14,10 +15,28 @@ export default async function ReportsPage({ searchParams }) {
   }
 
   const params = await searchParams;
-  const { start, end } = params;
+  const { start, end, range, q, limit } = params;
 
   let dateFilter = undefined;
-  if (start && end) {
+  
+  if (range && range !== 'all') {
+    const now = new Date();
+    let startDate = new Date();
+    startDate.setHours(0,0,0,0); // Today midnight
+
+    if (range === 'weekly') {
+      const day = startDate.getDay();
+      const diff = startDate.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is sunday
+      startDate.setDate(diff); // Monday of current week
+    } else if (range === 'monthly') {
+      startDate.setDate(1); // First day of current month
+    }
+    
+    dateFilter = {
+      gte: startDate,
+      lte: now
+    };
+  } else if (start && end) {
     dateFilter = {
       gte: new Date(`${start}T00:00:00Z`),
       lte: new Date(`${end}T23:59:59Z`)
@@ -84,17 +103,22 @@ export default async function ReportsPage({ searchParams }) {
     else techLeaderboard.push(entry);
   });
 
-  techLeaderboard.sort((a, b) => b.taskPoints - a.taskPoints);
-  csLeaderboard.sort((a, b) => b.csEngagementScore - a.csEngagementScore);
+  // Apply search filter (q)
+  const searchQuery = q ? q.toLowerCase() : "";
+  const filteredCS = searchQuery ? csLeaderboard.filter(l => l.name.toLowerCase().includes(searchQuery)) : csLeaderboard;
+  const filteredTech = searchQuery ? techLeaderboard.filter(l => l.name.toLowerCase().includes(searchQuery)) : techLeaderboard;
+
+  filteredTech.sort((a, b) => b.taskPoints - a.taskPoints);
+  filteredCS.sort((a, b) => b.csEngagementScore - a.csEngagementScore);
 
   const page = parseInt(params?.page) || 1;
-  const pageSize = 5; // Hard limit to ensure zero scroll
+  const pageSize = parseInt(limit) || 10; 
   
-  const totalCS = csLeaderboard.length;
-  const paginatedCS = csLeaderboard.slice((page - 1) * pageSize, page * pageSize);
+  const totalCS = filteredCS.length;
+  const paginatedCS = filteredCS.slice((page - 1) * pageSize, page * pageSize);
   
-  const totalTech = techLeaderboard.length;
-  const paginatedTech = techLeaderboard.slice((page - 1) * pageSize, page * pageSize);
+  const totalTech = filteredTech.length;
+  const paginatedTech = filteredTech.slice((page - 1) * pageSize, page * pageSize);
 
   // Compute Global TTR per Category
   const resolvedTickets = await prisma.ticket.findMany({
@@ -131,6 +155,8 @@ export default async function ReportsPage({ searchParams }) {
         <h1>Performance Leaderboard</h1>
         <p>Automated analytical tracking of resolved tickets and accrued job category points.</p>
       </header>
+      
+      <LeaderboardFilter initialSearch={q} initialRange={range} />
 
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', marginTop: '1rem' }}>
