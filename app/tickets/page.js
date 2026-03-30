@@ -136,6 +136,29 @@ export default async function TicketsPage({ searchParams }) {
 
   const whereClause = filters.length > 0 ? { AND: filters } : {};
 
+  const sortParam = resolvedParams?.sort || "";
+
+  let orderByClause = [];
+  if (sortParam === 'age_asc') {
+    orderByClause = [{ updatedAt: 'asc' }];
+  } else if (sortParam === 'age_desc') {
+    orderByClause = [{ updatedAt: 'desc' }];
+  } else if (sortParam === 'name_asc') {
+    orderByClause = [{ title: 'asc' }];
+  } else if (sortParam === 'name_desc') {
+    orderByClause = [{ title: 'desc' }];
+  } else if (sortParam === 'dept_asc') {
+    orderByClause = [{ department: { name: 'asc' } }];
+  } else if (sortParam === 'dept_desc') {
+    orderByClause = [{ department: { name: 'desc' } }];
+  } else {
+    // Default sorting
+    orderByClause = [
+      { slaBreaches: 'desc' },
+      { updatedAt: 'desc' }
+    ];
+  }
+
   const page = parseInt(resolvedParams?.page) || 1;
   const pageSize = parseInt(resolvedParams?.limit) || 6;
 
@@ -146,10 +169,7 @@ export default async function TicketsPage({ searchParams }) {
       include: { department: true, assignee: true, services: { include: { customer: true } } },
       take: tab === 'expiring' ? undefined : pageSize,
       skip: tab === 'expiring' ? undefined : (page - 1) * pageSize,
-      orderBy: [
-        { slaBreaches: 'desc' },
-        { updatedAt: 'desc' }
-      ]
+      orderBy: orderByClause
     })
   ]);
 
@@ -220,12 +240,24 @@ export default async function TicketsPage({ searchParams }) {
         <thead>
           <tr>
             <th>Tracking ID</th>
-            <th>Name</th>
+            <th style={{ cursor: 'pointer' }}>
+              <Link href={`/tickets?${new URLSearchParams({...resolvedParams, page: 1, sort: sortParam === 'name_asc' ? 'name_desc' : 'name_asc'}).toString()}`} style={{textDecoration:'none', color:'inherit', display:'flex', alignItems:'center', gap:'0.2rem'}}>
+                Name {sortParam === 'name_asc' ? '▲' : sortParam === 'name_desc' ? '▼' : '↕'}
+              </Link>
+            </th>
             <th>Subject</th>
             <th>Status</th>
             <th>Priority</th>
-            <th>Age</th>
-            <th>Department</th>
+            <th style={{ cursor: 'pointer' }}>
+              <Link href={`/tickets?${new URLSearchParams({...resolvedParams, page: 1, sort: sortParam === 'age_asc' ? 'age_desc' : 'age_asc'}).toString()}`} style={{textDecoration:'none', color:'inherit', display:'flex', alignItems:'center', gap:'0.2rem'}}>
+                Age {sortParam === 'age_asc' ? '▲' : sortParam === 'age_desc' ? '▼' : '↕'}
+              </Link>
+            </th>
+            <th style={{ cursor: 'pointer' }}>
+              <Link href={`/tickets?${new URLSearchParams({...resolvedParams, page: 1, sort: sortParam === 'dept_asc' ? 'dept_desc' : 'dept_asc'}).toString()}`} style={{textDecoration:'none', color:'inherit', display:'flex', alignItems:'center', gap:'0.2rem'}}>
+                Department {sortParam === 'dept_asc' ? '▲' : sortParam === 'dept_desc' ? '▼' : '↕'}
+              </Link>
+            </th>
             <th>Assignee</th>
           </tr>
         </thead>
