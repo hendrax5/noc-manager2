@@ -12,13 +12,6 @@ export default function SlaAudioAlarm() {
   const [isOpen, setIsOpen] = useState(false);
   const audioContextRef = useRef(null);
   
-  // Strict CS Isolation
-  if (session && session.user) {
-    const userDept = session.user.department || "";
-    const isCS = userDept.toLowerCase().includes('cs') || userDept.toLowerCase().includes('customer');
-    if (!isCS) return null;
-  }
-  
   // Create an artificial beep using the Web Audio API (No MP3 file required)
   const playBeep = () => {
     try {
@@ -121,7 +114,15 @@ export default function SlaAudioAlarm() {
     }
   };
 
-  if(!isAlerting || breachingTickets.length === 0) return null;
+  // Strict CS Isolation evaluated during render phase safely AFTER all hooks
+  let isCS = false;
+  if (session && session.user) {
+    const userDept = session.user.department || "";
+    isCS = userDept.toLowerCase().includes('cs') || userDept.toLowerCase().includes('customer');
+  }
+
+  // Do not render if not CS, not alerting, or no tickets
+  if (!isCS || !isAlerting || breachingTickets.length === 0) return null;
   
   return (
     <div style={{ position: 'fixed', bottom: '1rem', right: '1rem', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
