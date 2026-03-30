@@ -11,7 +11,8 @@ export async function GET(req) {
     }
 
     const { user } = session;
-    const isCS = user.department?.includes('CS') || user.department?.toLowerCase().includes('customer');
+    const userDept = user.department || "";
+    const isCS = userDept.includes('CS') || userDept.toLowerCase().includes('customer');
     const isAdminOrManager = user.role === 'Admin' || user.role === 'Manager';
 
     // Only allow CS or Admins to poll this endpoint to save DB load

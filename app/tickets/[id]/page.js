@@ -31,7 +31,8 @@ export default async function TicketDetailsPage({ params }) {
     );
   }
 
-  const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
+  const deptString = session.user.department || "";
+  const isCS = deptString.includes('CS') || deptString.toLowerCase().includes('customer');
   const canView = true; // All authenticated staff can view any ticket if they have the link or use 'Show All'
 
   // Pre-fetch departments and users for re-assignment

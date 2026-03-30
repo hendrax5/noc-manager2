@@ -10,9 +10,8 @@ export async function PATCH(req, { params }) {
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
     const body = await req.json();
-    const isAdministrasi = session?.user?.department?.toLowerCase() === 'administrasi' || session?.user?.department?.toLowerCase().includes('admin');
-    
-    // Evaluate exact permutations requiring audit snapshots
+    const userDept = session?.user?.department || "";
+    const isAdministrasi = userDept.toLowerCase() === 'administrasi' || userDept.toLowerCase().includes('admin');
     const oldTicket = await prisma.ticket.findUnique({ where: { id } });
     
     // Prevent same-day Re-Opens from Resolved state
@@ -119,7 +118,8 @@ export async function PATCH(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    const isAdministrasi = session?.user?.department?.toLowerCase() === 'administrasi' || session?.user?.department?.toLowerCase().includes('admin');
+    const userDept = session?.user?.department || "";
+    const isAdministrasi = userDept.toLowerCase() === 'administrasi' || userDept.toLowerCase().includes('admin');
     if (!session || !isAdministrasi) {
       return NextResponse.json({ error: "Only Administrasi department can void/delete tickets." }, { status: 403 });
     }

@@ -17,7 +17,8 @@ export async function PATCH(req, { params }) {
     const comment = await prisma.comment.findUnique({ where: { id: commentId } });
     if (!comment) return NextResponse.json({ error: "Not Found" }, { status: 404 });
 
-    const isAdministrasi = session?.user?.department?.toLowerCase() === 'administrasi' || session?.user?.department?.toLowerCase().includes('admin');
+    const userDept = session?.user?.department || "";
+    const isAdministrasi = userDept.toLowerCase() === 'administrasi' || userDept.toLowerCase().includes('admin');
     const isAuthor = comment.authorId === parseInt(session.user.id);
     const minsSinceCreation = (new Date().getTime() - new Date(comment.createdAt).getTime()) / 60000;
 
@@ -47,7 +48,8 @@ export async function DELETE(req, { params }) {
     const comment = await prisma.comment.findUnique({ where: { id: commentId } });
     if (!comment) return NextResponse.json({ error: "Not Found" }, { status: 404 });
 
-    const isAdministrasi = session?.user?.department?.toLowerCase() === 'administrasi' || session?.user?.department?.toLowerCase().includes('admin');
+    const userDept = session?.user?.department || "";
+    const isAdministrasi = userDept.toLowerCase() === 'administrasi' || userDept.toLowerCase().includes('admin');
     const isAuthor = comment.authorId === parseInt(session.user.id);
     const minsSinceCreation = (new Date().getTime() - new Date(comment.createdAt).getTime()) / 60000;
 
