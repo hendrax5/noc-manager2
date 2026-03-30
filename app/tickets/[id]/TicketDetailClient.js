@@ -59,10 +59,10 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   
   const currentUserObj = currentUser || {};
   const currentUserId = currentUserObj.id ? parseInt(currentUserObj.id) : null;
-
   const isCreator = ticket.historyLogs && ticket.historyLogs.length > 0 && ticket.historyLogs[ticket.historyLogs.length - 1].actorId === currentUserId;
   const userDept = currentUserObj.department || "";
   const isAdministrasi = userDept.toLowerCase() === 'administrasi' || userDept.toLowerCase().includes('admin');
+  const isAdminOrManager = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager';
   const showTicketEdit = isAdministrasi;
 
   const [editingTicket, setEditingTicket] = useState(false);
