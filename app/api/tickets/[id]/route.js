@@ -121,8 +121,9 @@ export async function DELETE(req, { params }) {
     const session = await getServerSession(authOptions);
     const userDept = session?.user?.department || "";
     const isAdministrasi = userDept.toLowerCase() === 'administrasi' || userDept.toLowerCase().includes('admin');
-    if (!session || !isAdministrasi) {
-      return NextResponse.json({ error: "Only Administrasi department can void/delete tickets." }, { status: 403 });
+    const isManager = session?.user?.role === 'Manager';
+    if (!session || (!isAdministrasi && !isManager)) {
+      return NextResponse.json({ error: "Only Administrasi or Manager can void/delete tickets." }, { status: 403 });
     }
 
     const resolvedParams = await params;

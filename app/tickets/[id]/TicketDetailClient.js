@@ -64,7 +64,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const userDept = currentUserObj.department || "";
   const isAdministrasi = userDept.toLowerCase() === 'administrasi' || userDept.toLowerCase().includes('admin');
   const isAdminOrManager = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager';
-  const showTicketEdit = isAdministrasi;
+  const showTicketEdit = isAdministrasi || currentUserObj.role === 'Manager';
 
   const [editingTicket, setEditingTicket] = useState(false);
   const [editTitle, setEditTitle] = useState(ticket.title);
@@ -625,7 +625,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           <button onClick={() => window.print()} className="print-btn" style={{ flex: 1, background: 'var(--card-bg)', color: 'var(--heading-color)', border: '1px solid var(--border-color)', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem' }}>
             <span style={{ fontSize: '1rem' }}>🖨</span> Print
           </button>
-          {isAdministrasi && (
+          {(isAdministrasi || currentUserObj.role === 'Manager') && (
             <button onClick={handleDelete} title="Soft Delete / Void Ticket" style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🗑 Delete</button>
           )}
         </div>

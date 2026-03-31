@@ -15,7 +15,7 @@ export default async function ReportsPage({ searchParams }) {
   }
 
   const params = await searchParams;
-  const { start, end, range, q, limit } = params;
+  const { start, end, range, q, limit, dept } = params;
 
   let dateFilter = undefined;
   
@@ -44,6 +44,9 @@ export default async function ReportsPage({ searchParams }) {
   }
 
   const userQuery = {}; // Admins and Managers see all
+  if (dept && dept !== 'all') {
+    userQuery.departmentId = parseInt(dept);
+  }
 
   const users = await prisma.user.findMany({
     where: userQuery,
@@ -63,6 +66,8 @@ export default async function ReportsPage({ searchParams }) {
       }
     }
   });
+
+  const departments = await prisma.department.findMany({ orderBy: { name: 'asc' } });
 
   const techLeaderboard = [];
   const csLeaderboard = [];
@@ -156,8 +161,7 @@ export default async function ReportsPage({ searchParams }) {
         <p>Automated analytical tracking of resolved tickets and accrued job category points.</p>
       </header>
       
-      <LeaderboardFilter initialSearch={q} initialRange={range} />
-
+      <LeaderboardFilter initialSearch={q} initialRange={range} initialDept={dept} departments={departments} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', marginTop: '1rem' }}>
         <h2 style={{ fontSize: '1.2rem', color: '#0f172a', margin: 0 }}>Global Average TTR by Category</h2>
