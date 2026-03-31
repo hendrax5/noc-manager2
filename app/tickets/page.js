@@ -27,7 +27,8 @@ export default async function TicketsPage({ searchParams }) {
   const q = resolvedParams?.q || "";
 
   const isCS = user.department?.includes('CS') || user.department?.toLowerCase().includes('customer');
-  const canViewAll = user.role === 'Admin' || user.role === 'Manager' || isCS;
+  const isAdministrasi = user.department?.toLowerCase() === 'administrasi' || user.department?.toLowerCase().includes('admin');
+  const canViewAll = user.role === 'Admin' || user.role === 'Manager' || isCS || isAdministrasi;
 
   const statusesParam = resolvedParams?.statuses;
   const assignmentsParam = resolvedParams?.assignments || "me,unassigned,others";
@@ -75,14 +76,16 @@ export default async function TicketsPage({ searchParams }) {
   }
 
   // Globally Enforce Privacy & Visibility Constraints
-  filters.push({
-    OR: [
-      { visibility: "Public" },
-      { assigneeId: user.id },
-      { historyLogs: { some: { actorId: user.id } } },
-      { permittedDepartments: { some: { id: user.departmentId || -1 } } }
-    ]
-  });
+  if (!canViewAll) {
+    filters.push({
+      OR: [
+        { visibility: "Public" },
+        { assigneeId: user.id },
+        { historyLogs: { some: { actorId: user.id } } },
+        { permittedDepartments: { some: { id: user.departmentId || -1 } } }
+      ]
+    });
+  }
   
   // Assignment Checkbox Filters
   const assignments = assignmentsParam ? assignmentsParam.split(',') : [];

@@ -41,7 +41,7 @@ export default async function TicketDetailsPage({ params }) {
   const jobCategories = await prisma.jobCategory.findMany({ where: { active: true } });
   const customFields = await prisma.customField.findMany({ where: { active: true }, orderBy: { id: 'asc' } });
   const serviceTemplates = await prisma.serviceTemplate.findMany({ orderBy: { name: 'asc' } });
-  const canModifyTicket = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS;
+  const canModifyTicket = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || isAdministrasi;
 
   return (
     <main className="container">
