@@ -33,6 +33,7 @@ export default async function TicketDetailsPage({ params }) {
 
   const deptString = session.user.department || "";
   const isCS = deptString.includes('CS') || deptString.toLowerCase().includes('customer');
+  const isAdministrasi = deptString.toLowerCase() === 'administrasi' || deptString.toLowerCase().includes('admin');
   const canView = true; // All authenticated staff can view any ticket if they have the link or use 'Show All'
 
   // Pre-fetch departments and users for re-assignment
