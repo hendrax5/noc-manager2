@@ -9,6 +9,16 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  const [activeTab, setActiveTab] = useState("sessions"); // 'sessions' | 'action-board'
+  const [activeSessionId, setActiveSessionId] = useState(initialMeeting?.sessions?.length > 0 ? initialMeeting.sessions[0].id : null);
+  const [showAddSession, setShowAddSession] = useState(false);
+
+  useEffect(() => {
+    if (!activeSessionId && meeting.sessions?.length > 0) {
+      setActiveSessionId(meeting.sessions[0].id);
+    }
+  }, [meeting.sessions, activeSessionId]);
+
   const [showActions, setShowActions] = useState(false);
   const [isEditingMeeting, setIsEditingMeeting] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -248,13 +258,35 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
         )}
       </header>
 
+      {/* Tabs Navigation */}
+      <div style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid #e2e8f0', marginBottom: '1.5rem', background: 'var(--card-bg)', padding: '0 1rem', borderRadius: '8px 8px 0 0' }}>
+        <button 
+          onClick={() => setActiveTab("sessions")} 
+          style={{ padding: '1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'sessions' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'sessions' ? 'var(--primary-color)' : '#64748b', fontWeight: activeTab === 'sessions' ? 'bold' : '500', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s' }}
+        >
+          ⏱️ Sessions Timeline
+        </button>
+        <button 
+          onClick={() => setActiveTab("action-board")} 
+          style={{ padding: '1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'action-board' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'action-board' ? 'var(--primary-color)' : '#64748b', fontWeight: activeTab === 'action-board' ? 'bold' : '500', cursor: 'pointer', fontSize: '1rem', transition: 'all 0.2s' }}
+        >
+          📋 Check-List & Action Board
+        </button>
+      </div>
+
+      {activeTab === 'sessions' && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         
         {/* Pre-Scheduling Matrix / Add Session Block */}
         {meeting.status !== 'Completed' && (
-          <div className="card" style={{ background: '#f8fafc', border: '1px dashed #cbd5e1' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: '#334155' }}>+ Schedule New Session Block</h3>
-            <form onSubmit={handleCreateSession} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div className="card" style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', transition: 'all 0.3s', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <h3 style={{ margin: 0, color: '#334155', cursor: 'pointer' }} onClick={() => setShowAddSession(!showAddSession)}>
+                 {showAddSession ? '− Hide Planner' : '+ Schedule New Session Block'}
+               </h3>
+            </div>
+            {showAddSession && (
+              <form onSubmit={handleCreateSession} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap', marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
               <div style={{ flex: '1 1 200px' }}>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.25rem', color: '#64748b' }}>Session Title</label>
                 <input 
@@ -280,32 +312,56 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
                 {isAddingSession ? "Creating..." : "Add Session Block"}
               </button>
             </form>
+            )}
           </div>
         )}
 
-        {/* Hierarchical Timeline (Sessions) */}
-        {(!meeting.sessions || meeting.sessions.length === 0) && (
+        {/* Immersive Command Center Layout */}
+        {(!meeting.sessions || meeting.sessions.length === 0) ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontStyle: 'italic', background: '#f8fafc', borderRadius: '8px' }}>
             No sessions scheduled in this megathread yet.
           </div>
-        )}
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1fr) minmax(0, 3fr)', gap: '1.5rem', alignItems: 'flex-start' }}>
+            
+            {/* Left Sidebar: Timeline Selector */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderRight: '1px solid #e2e8f0', paddingRight: '1rem', minHeight: '500px' }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: '#1e293b', fontSize: '1.1rem', paddingLeft: '0.5rem' }}>Agenda Timeline</h3>
+              {meeting.sessions.map((session, index) => (
+                 <div 
+                   key={session.id} 
+                   onClick={() => setActiveSessionId(session.id)}
+                   style={{ 
+                     padding: '1rem', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s',
+                     background: activeSessionId === session.id ? '#eff6ff' : 'transparent',
+                     border: activeSessionId === session.id ? '1px solid #bfdbfe' : '1px solid transparent',
+                     borderLeft: activeSessionId === session.id ? '4px solid #3b82f6' : '4px solid transparent'
+                   }}
+                 >
+                   <div style={{ fontWeight: 'bold', color: activeSessionId === session.id ? '#1e40af' : '#475569', marginBottom: '0.25rem' }}>{session.title || `Session ${index + 1}`}</div>
+                   <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{mounted && session.scheduledFor ? new Date(session.scheduledFor).toLocaleDateString('en-CA') : 'Pending'}</div>
+                 </div>
+              ))}
+            </div>
 
-        {meeting.sessions?.map((session, index) => {
-          const inputs = taskInputs[session.id] || { assigneeType: 'user', generateTicket: true, task: '', assigneeId: '', departmentId: '' };
-          
-          return (
-            <div key={session.id} className="card" style={{ padding: '0', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-              
-              {/* Session Header */}
-              <div style={{ background: '#1e293b', color: 'white', padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h2 style={{ margin: '0 0 0.25rem 0', color: 'white', fontSize: '1.25rem' }}>{session.title || `Session ${index + 1}`}</h2>
-                  <span style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
-                    🗓️ {mounted && session.scheduledFor ? new Date(session.scheduledFor).toLocaleString('en-CA', { dateStyle: 'long', timeStyle: 'short' }) : 'Pending'}
-                    &nbsp; | &nbsp; 👤 {session.author?.name || session.author?.email}
-                  </span>
-                </div>
-              </div>
+            {/* Right Main Area: Active Session Detail */}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {meeting.sessions.filter(s => s.id === activeSessionId).map((session, index) => {
+                const inputs = taskInputs[session.id] || { assigneeType: 'user', generateTicket: true, task: '', assigneeId: '', departmentId: '' };
+                
+                return (
+                  <div key={session.id} className="card" style={{ padding: '0', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                    
+                    {/* Session Header */}
+                    <div style={{ background: '#1e293b', color: 'white', padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h2 style={{ margin: '0 0 0.25rem 0', color: 'white', fontSize: '1.4rem' }}>{session.title || `Session Block`}</h2>
+                        <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>
+                          🗓️ {mounted && session.scheduledFor ? new Date(session.scheduledFor).toLocaleString('en-CA', { dateStyle: 'long', timeStyle: 'short' }) : 'Pending'}
+                          &nbsp; | &nbsp; 👤 Organizer: {session.author?.name || session.author?.email}
+                        </span>
+                      </div>
+                    </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 2fr) minmax(250px, 1fr)', gap: '1px', background: '#e2e8f0' }}>
                 
@@ -455,7 +511,65 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
             </div>
           );
         })}
+            </div>
+          </div>
+        )}
       </div>
+      )}
+
+      {activeTab === 'action-board' && (
+        <div style={{ display: 'flex', gap: '1.5rem', overflowX: 'auto', paddingBottom: '1rem', minHeight: '600px' }}>
+          {(() => {
+            const allTasks = (meeting.sessions || []).flatMap(s => (s.actionItems || []).map(item => ({...item, sessionTitle: s.title})));
+            const pendingTasks = allTasks.filter(t => t.status === 'Pending');
+            const completedTasks = allTasks.filter(t => t.status === 'Completed');
+            return (
+              <>
+                <div style={{ flex: '1 1 300px', minWidth: '300px', background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <h3 style={{ margin: '0 0 1.5rem 0', color: '#1e293b', display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #cbd5e1', paddingBottom: '0.5rem' }}>
+                    <span>⏳ Pending Actions</span>
+                    <span style={{ background: '#e2e8f0', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.8rem' }}>{pendingTasks.length}</span>
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {pendingTasks.map(t => (
+                       <div key={t.id} style={{ background: 'white', padding: '1.25rem', borderRadius: '8px', border: '1px solid #cbd5e1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', cursor: 'pointer', transition: 'transform 0.1s', ':hover': { transform: 'translateY(-2px)' } }}>
+                         <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 'bold' }}>📍 From: {t.sessionTitle || 'Session'}</div>
+                         <p style={{ margin: '0 0 1rem 0', color: '#0f172a', fontWeight: '600', fontSize: '0.95rem', lineHeight: '1.4' }}>{t.task}</p>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.75rem', background: '#e0f2fe', color: '#0369a1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                              Assignee: {t.assignee ? (t.assignee.name || t.assignee.email) : (t.department ? t.department.name : 'Unassigned')}
+                            </span>
+                            <button onClick={() => toggleActionItemStatus(t.meetingSessionId, t.id, t.status)} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer' }}>Mark ✓</button>
+                         </div>
+                       </div>
+                    ))}
+                    {pendingTasks.length === 0 && <p style={{ color: '#94a3b8', fontStyle: 'italic', fontSize: '0.9rem', textAlign: 'center' }}>No pending tasks in any session.</p>}
+                  </div>
+                </div>
+
+                <div style={{ flex: '1 1 300px', minWidth: '300px', background: '#f1f5f9', padding: '1.5rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                  <h3 style={{ margin: '0 0 1.5rem 0', color: '#475569', display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #cbd5e1', paddingBottom: '0.5rem' }}>
+                    <span>✅ Completed</span>
+                    <span style={{ background: '#cbd5e1', color: '#475569', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.8rem' }}>{completedTasks.length}</span>
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {completedTasks.map(t => (
+                       <div key={t.id} style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', border: '1px solid #e2e8f0', opacity: 0.8 }}>
+                         <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem' }}>📍 From: {t.sessionTitle || 'Session'}</div>
+                         <p style={{ margin: '0 0 1rem 0', color: '#64748b', textDecoration: 'line-through', fontSize: '0.95rem' }}>{t.task}</p>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Assignee: {t.assignee ? (t.assignee.name || t.assignee.email) : (t.department ? t.department.name : 'Unassigned')}</span>
+                            <button onClick={() => toggleActionItemStatus(t.meetingSessionId, t.id, t.status)} style={{ background: 'transparent', color: '#64748b', border: '1px solid #cbd5e1', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}>Revert ↩</button>
+                         </div>
+                       </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }
