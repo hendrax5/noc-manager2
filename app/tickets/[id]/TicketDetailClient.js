@@ -315,7 +315,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                               onChange={e => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: e.target.value }})}
                             />
                           ) : f.type === 'select' && f.options?.trim() === '@Customers' ? (
-                            isEditing ? (
+                            editingTicket ? (
                               <AsyncSearchSelect
                                 value={formData.customData?.[f.name] || ''}
                                 onChange={(val) => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: val }})}
@@ -327,7 +327,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                                <span style={{ color: 'var(--text-color)' }}>{ticket.customData?.[f.name] || '-'}</span>
                             )
                           ) : f.type === 'select' && f.options === '@Customers' ? (
-                            isEditing ? (
+                            editingTicket ? (
                               <AsyncSearchSelect
                                 value={formData.customData?.[f.name] || ''}
                                 onChange={(val) => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: val }})}
