@@ -24,7 +24,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isAdmin = session?.user?.role === 'Admin' || session?.user?.role === 'Manager';
+  const isAdmin = true; // Temporary global access override for creating assets/services from 1-Apr Request
 
   return (
     <main className="container">
