@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function ServiceDetailClient({ service, session }) {
   const router = useRouter();
-  const isAdmin = session?.user?.role === 'Admin' || session?.user?.role === 'Manager';
+  const isAdmin = true; // All authenticated users can manage services and topology hops
   const [isEditingHops, setIsEditingHops] = useState(false);
   const [editableHops, setEditableHops] = useState(service.hops || []);
   const [isSaving, setIsSaving] = useState(false);
