@@ -22,7 +22,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user.role !== 'Admin' && session.user.role !== 'Manager')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (!session) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const { name, fields } = await request.json();
     // fields: [{ name: 'BGP ASN', type: 'text' }, { name: 'Speed', type: 'number' }]

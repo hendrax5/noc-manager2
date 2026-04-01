@@ -30,7 +30,7 @@ export async function GET(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user.role !== 'Admin' && session.user.role !== 'Manager')) {
+    if (!session) {
        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -46,7 +46,9 @@ export async function DELETE(request, { params }) {
 export async function PATCH(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user.role !== 'Admin' && session.user.role !== 'Manager')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (!session) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const resolveParams = await params;
     const body = await request.json();
