@@ -2,10 +2,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
-import dynamic from "next/dynamic";
-
-const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
-const MDPreview = dynamic(() => import("@uiw/react-md-editor").then(mod => mod.default.Markdown), { ssr: false });
 
 function linkify(text) {
   if (!text) return "";
@@ -69,6 +65,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const userDeptId = currentUserObj.departmentId ? parseInt(currentUserObj.departmentId) : null;
   const isAdministrasi = userDept.toLowerCase() === 'administrasi' || userDept.toLowerCase().includes('admin');
   const userPerms = currentUserObj.permissions || [];
+  const isSameDept = userDeptId && ticket.departmentId === userDeptId;
   const hasEditPerm = userPerms.includes('ticket.edit_all') || (userPerms.includes('ticket.edit') && isSameDept);
   // Permission-based edit control
   const showTicketEdit = canModifyTicket || isCreator || hasEditPerm;
@@ -307,8 +304,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             <p style={{ margin: '0 0 1rem 0' }}>Dear NOC,</p>
             {editingTicket ? (
               <div>
-                <div data-color-mode="light" style={{ marginBottom: '1rem' }}>
-                  <MDEditor value={editDesc} onChange={val => setEditDesc(val || '')} height={250} preview="edit" />
+                <div style={{ marginBottom: '1rem' }}>
+                  <textarea 
+                    value={editDesc} 
+                    onChange={e => setEditDesc(e.target.value)} 
+                    style={{ width: '100%', height: '250px', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.95rem', resize: 'vertical', fontFamily: 'inherit' }} 
+                  />
                 </div>
                 
                 {customFields?.length > 0 && (
@@ -379,7 +380,9 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               </div>
             ) : (
               <div>
-                <div data-color-mode="light"><MDPreview source={ticket.description || ''} style={{ background: 'transparent', padding: 0 }} /></div>
+                <div style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: 'var(--text-color)' }}>
+                  {ticket.description || ''}
+                </div>
                 
                 {formData.customData && Object.keys(formData.customData).filter(k => formData.customData[k]).length > 0 && (
                   <div style={{ marginTop: '2rem', background: 'var(--hover-bg)', padding: '1.25rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
@@ -445,8 +448,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             </div>
             {editingCommentId === c.id ? (
               <div style={{ padding: '0.5rem 0' }}>
-                <div data-color-mode="light">
-                  <MDEditor value={editingCommentText} onChange={val => setEditingCommentText(val || '')} height={200} preview="edit" />
+                <div>
+                  <textarea 
+                    value={editingCommentText} 
+                    onChange={e => setEditingCommentText(e.target.value)} 
+                    style={{ width: '100%', height: '200px', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.95rem', resize: 'vertical', fontFamily: 'inherit' }} 
+                  />
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                   <button onClick={() => saveCommentEdit(c.id)} style={{ background: '#3b82f6', color: 'white', padding: '0.4rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Update Save</button>
@@ -454,7 +461,9 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                 </div>
               </div>
             ) : (
-              <div data-color-mode="light" style={{ lineHeight: '1.6', fontSize: '0.95rem' }}><MDPreview source={c.text || ''} style={{ background: 'transparent', padding: 0, color: 'var(--text-color)' }} /></div>
+              <div style={{ lineHeight: '1.6', fontSize: '0.95rem', whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: 'var(--text-color)' }}>
+                {c.text || ''}
+              </div>
             )}
             
             {c.attachments && c.attachments.length > 0 && (
@@ -536,13 +545,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
             {/* Knowledge Base search removed by user request */}
 
-            <div data-color-mode="light">
-              <MDEditor 
+            <div>
+              <textarea 
                 value={commentText}
-                onChange={val => setCommentText(val || '')}
-                height={220}
-                preview="edit"
-                textareaProps={{ placeholder: 'Type your technical response here (supports Markdown)...' }}
+                onChange={e => setCommentText(e.target.value)}
+                placeholder="Type your technical response here..."
+                style={{ width: '100%', height: '220px', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.95rem', resize: 'vertical', fontFamily: 'inherit' }}
               />
             </div>
 

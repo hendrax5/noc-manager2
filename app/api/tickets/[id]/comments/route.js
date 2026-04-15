@@ -29,7 +29,7 @@ export async function POST(req, { params }) {
 
     const comment = await prisma.comment.create({ data: commentData });
 
-    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { assigneeId: true, status: true, department: true, customData: true, enableSla: true, slaTimerMins: true } });
+    const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { assigneeId: true, status: true, departmentId: true, department: true, customData: true, enableSla: true, slaTimerMins: true } });
     
     let newStatus = ticket.status;
     let transitionReason = "Reply appended to thread";

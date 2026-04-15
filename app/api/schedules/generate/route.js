@@ -13,7 +13,15 @@ export async function POST(req) {
     const { startDate, endDate, locationId } = await req.json();
     const start = new Date(startDate);
     const end = new Date(endDate);
+
+    if (isNaN(start) || isNaN(end)) {
+      return NextResponse.json({ error: "Invalid start or end date." }, { status: 400 });
+    }
     
+    // Normalize to midnight UTC to prevent local timezone bleeding
+    start.setUTCHours(0, 0, 0, 0);
+    end.setUTCHours(0, 0, 0, 0);
+
     const shiftTypes = await prisma.shiftType.findMany({ where: { active: true }, orderBy: { startTime: 'asc' }});
     if (shiftTypes.length === 0) return NextResponse.json({ error: "No active shift types defined." }, { status: 400 });
 
@@ -29,7 +37,8 @@ export async function POST(req) {
 
     let currentDate = new Date(start);
     while (currentDate <= end) {
-      const dayOfWeek = currentDate.getDay(); // 0 is Sunday
+      // Use getUTCDay() since we are working with normalized UTC dates
+      const dayOfWeek = currentDate.getUTCDay(); // 0 is Sunday
 
       for (const user of users) {
         const pref = user.schedulePreference || { scheduleMode: 'RANDOM', fixedOffDays: '[]' };
@@ -62,18 +71,26 @@ export async function POST(req) {
           shiftTypeId: shiftToAssign
         });
       }
-      currentDate.setDate(currentDate.getDate() + 1);
+      // Increment using UTC to avoid DST boundary hops
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
 
     // Process parallel DB updates scaling mass schedules overriding bounds
-    for (const sched of generatedSchedules) {
-      await prisma.shiftSchedule.upsert({
-        where: {
-          userId_date: { userId: sched.userId, date: sched.date }
-        },
-        update: { shiftTypeId: sched.shiftTypeId },
-        create: sched
-      });
+    // Batch process to prevent connection exhaustion
+    const BATCH_SIZE = 500;
+    for (let i = 0; i < generatedSchedules.length; i += BATCH_SIZE) {
+      const batch = generatedSchedules.slice(i, i + BATCH_SIZE);
+      await prisma.$transaction(
+        batch.map(sched =>
+          prisma.shiftSchedule.upsert({
+            where: {
+              userId_date: { userId: sched.userId, date: sched.date }
+            },
+            update: { shiftTypeId: sched.shiftTypeId },
+            create: sched
+          })
+        )
+      );
     }
 
     return NextResponse.json({ success: true, count: generatedSchedules.length });
