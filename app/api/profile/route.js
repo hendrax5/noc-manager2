@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 export async function PATCH(req) {
   try {
@@ -26,10 +27,17 @@ export async function PATCH(req) {
       if (!currentPassword) {
         return NextResponse.json({ error: "Current password is required to set a new password" }, { status: 400 });
       }
-      if (user.password !== currentPassword) {
+      let isMatch = false;
+      if (user.password && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
+        isMatch = await bcrypt.compare(currentPassword, user.password);
+      } else {
+        isMatch = (user.password === currentPassword);
+      }
+
+      if (!isMatch) {
         return NextResponse.json({ error: "Incorrect current password" }, { status: 401 });
       }
-      updateData.password = newPassword.trim();
+      updateData.password = await bcrypt.hash(newPassword.trim(), 10);
     }
 
     const updatedUser = await prisma.user.update({

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 
 const GROUP_LABELS = {
   tickets: '🎫 Tickets',
@@ -174,7 +174,7 @@ export default function PermissionsTab() {
             </thead>
             <tbody>
               {Object.entries(grouped).map(([group, perms]) => (
-                <>
+                <Fragment key={group}>
                   <tr key={`g-${group}`}>
                     <td colSpan={roles.length + 1} style={{ padding: '0.75rem 1rem', fontWeight: 'bold', fontSize: '0.9rem', background: '#f8fafc', borderTop: '2px solid #e2e8f0', color: '#1e293b' }}>
                       {GROUP_LABELS[group] || group}
@@ -199,7 +199,7 @@ export default function PermissionsTab() {
                       ))}
                     </tr>
                   ))}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>

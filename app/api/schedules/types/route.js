@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.permissions?.includes('settings.manage') && session?.user?.role !== 'Manager') {
+    if (!session?.user?.permissions?.includes('team.schedule')) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -690,7 +690,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                <label style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Job Phase Category</label>
                <SearchableSelect 
-                 options={(jobCategories || []).map(c => ({ value: c.id, label: isAdminOrManager ? `${c.name} (+${c.score} pt)` : c.name }))} 
+                 options={(jobCategories || []).map(c => ({ value: c.id, label: hasEditPerm ? `${c.name} (+${c.score} pt)` : c.name }))} 
                  value={formData.jobCategoryId} 
                  onChange={val => triggerAutoSave('jobCategoryId', val)} 
                  disabled={!canModifyTicket} 

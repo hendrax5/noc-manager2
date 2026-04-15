@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import bcrypt from "bcryptjs";
 
 // GET /api/users?q=search — Search users
 export async function GET(req) {
@@ -58,7 +59,7 @@ export async function POST(req) {
       data: { 
         email, 
         name, 
-        password,
+        password: password ? await bcrypt.hash(password, 10) : undefined,
         roleId: parseInt(roleId), 
         departmentId: parseInt(departmentId) 
       } 

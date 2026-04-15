@@ -6,7 +6,7 @@ import { authOptions } from "../../../auth/[...nextauth]/route";
 export async function PATCH(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.permissions?.includes('settings.manage') && session?.user?.role !== 'Manager') return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!session?.user?.permissions?.includes('team.schedule')) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     
     const resolvedParams = await params;
     const body = await req.json();
@@ -24,7 +24,7 @@ export async function PATCH(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.permissions?.includes('settings.manage') && session?.user?.role !== 'Manager') return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!session?.user?.permissions?.includes('team.schedule')) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     
     const resolvedParams = await params;
     await prisma.shiftType.delete({ where: { id: parseInt(resolvedParams.id) } });

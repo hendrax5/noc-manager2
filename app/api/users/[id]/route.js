@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import bcrypt from "bcryptjs";
 
 export async function PATCH(req, { params }) {
   try {
@@ -36,7 +37,7 @@ export async function PATCH(req, { params }) {
     };
 
     if (body.password) {
-      data.password = body.password;
+      data.password = await bcrypt.hash(body.password, 10);
     }
 
     const user = await prisma.user.update({

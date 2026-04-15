@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { resolvePermissions } from "@/lib/permissions";
+import bcrypt from "bcryptjs";
 
 export const authOptions = {
   trustHost: true,
@@ -23,7 +24,25 @@ export const authOptions = {
 
         if (!user) return null;
         
-        if (user.password === credentials.password.trim()) {
+        let isMatch = false;
+        
+        if (user.password && (user.password.startsWith('$2a$') || user.password.startsWith('$2b$'))) {
+          isMatch = await bcrypt.compare(credentials.password.trim(), user.password);
+        } else if (user.password === credentials.password.trim()) {
+          isMatch = true;
+          // Legacy plain-text match: upgrade to hashed password transparently
+          try {
+            const hashed = await bcrypt.hash(credentials.password.trim(), 10);
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { password: hashed }
+            });
+          } catch (e) {
+             console.error("Hybrid hash upgrade failed:", e);
+          }
+        }
+        
+        if (isMatch) {
           // Resolve permissions from Role defaults + User overrides
           const permissions = await resolvePermissions(user.id);
 
