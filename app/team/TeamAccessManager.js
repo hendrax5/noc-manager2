@@ -54,10 +54,15 @@ export default function TeamAccessManager({ users, roles, departments, companies
 
   const handleAddUser = async (e) => {
     e.preventDefault();
-    await fetch("/api/users", {
+    const res = await fetch("/api/users", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newUser)
     });
-    setNewUser({ ...newUser, name: "", email: "" }); router.refresh();
+    if (res.ok) {
+      setNewUser({ ...newUser, name: "", email: "" }); router.refresh();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to create user.");
+    }
   };
 
   const handleEditRole = (role) => {

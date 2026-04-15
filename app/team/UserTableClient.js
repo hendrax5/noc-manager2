@@ -36,22 +36,34 @@ export default function UserTableClient({ users, roles, departments }) {
     const payload = { ...editForm, roleId: parseInt(editForm.roleId), departmentId: parseInt(editForm.departmentId) };
     if (!payload.password) delete payload.password; 
     
-    await fetch(`/api/users/${uId}`, { 
+    const res = await fetch(`/api/users/${uId}`, { 
       method: "PATCH", 
       headers: { "Content-Type": "application/json" }, 
       body: JSON.stringify(payload) 
     });
     
-    setEditingUserId(null);
-    setLoadingId(null);
-    router.refresh();
+    if (res.ok) {
+      setEditingUserId(null);
+      setLoadingId(null);
+      router.refresh();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Failed to update user.");
+      setLoadingId(null);
+    }
   };
 
   const handleDelete = async (userId) => {
     if (confirm("Are you sure you want to delete this user?")) {
       setLoadingId(userId);
-      await fetch(`/api/users/${userId}`, { method: "DELETE" });
-      setLoadingId(null); router.refresh();
+      const res = await fetch(`/api/users/${userId}`, { method: "DELETE" });
+      if (res.ok) {
+        setLoadingId(null); router.refresh();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete user.");
+        setLoadingId(null);
+      }
     }
   };
 

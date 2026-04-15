@@ -37,7 +37,23 @@ export async function POST(req) {
     const session = await getServerSession(authOptions);
     if (!session || !session.user.permissions?.includes('team.manage')) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
-    const { email, name, password, roleId, departmentId } = await req.json();
+    const body = await req.json();
+    const email = body.email?.toLowerCase();
+    const { name, password, roleId, departmentId } = body;
+
+    if (!email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+
+    // Check for existing user (case-insensitive)
+    const existing = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } }
+    });
+
+    if (existing) {
+      return NextResponse.json({ error: `User with email ${email} already exists.` }, { status: 400 });
+    }
+
     const user = await prisma.user.create({ 
       data: { 
         email, 
