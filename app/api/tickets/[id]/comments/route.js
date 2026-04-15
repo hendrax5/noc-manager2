@@ -84,9 +84,9 @@ export async function POST(req, { params }) {
         }
       }
     } else if (ticket.status === 'Resolved') {
-      // Revival Logic: Ticket was Resolved, but someone replied to it
-      newStatus = 'Open';
-      transitionReason = "Ticket Reactivated from Resolved to Open";
+      // Bug 29: Revival Logic — use 'Reopened' status so it appears in needs_attention tab
+      newStatus = 'Reopened';
+      transitionReason = "Ticket Reopened from Resolved — requires attention";
       resetJobCategory = true; // Force operators to select the next Job Phase explicitly
     }
 

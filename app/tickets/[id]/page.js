@@ -32,9 +32,18 @@ export default async function TicketDetailsPage({ params }) {
   }
 
   const deptString = session.user.department || "";
+  const userDeptId = session.user.departmentId ? parseInt(session.user.departmentId) : null;
   const isCS = deptString.includes('CS') || deptString.toLowerCase().includes('customer');
   const isAdministrasi = deptString.toLowerCase() === 'administrasi' || deptString.toLowerCase().includes('admin');
-  const canView = true; // All authenticated staff can view any ticket if they have the link or use 'Show All'
+  const isSameDept = userDeptId && ticket.departmentId === userDeptId;
+  const isAssignee = ticket.assigneeId === parseInt(session.user.id);
+  const hasInteracted = ticket.historyLogs?.some(log => log.actorId === parseInt(session.user.id));
+  // Bug 27: Enforce department-based access control
+  const canView = session.user.role === 'Admin' || isCS || isSameDept || isAssignee || hasInteracted || ticket.visibility === 'Public';
+
+  if (!canView) {
+    return <main className="container"><h1>Access Denied</h1><p>You do not have permission to view this ticket.</p></main>;
+  }
 
   // Pre-fetch departments and users for re-assignment
   const departments = await prisma.department.findMany();
@@ -42,7 +51,8 @@ export default async function TicketDetailsPage({ params }) {
   const jobCategories = await prisma.jobCategory.findMany({ where: { active: true } });
   const customFields = await prisma.customField.findMany({ where: { active: true }, orderBy: { id: 'asc' } });
   const serviceTemplates = await prisma.serviceTemplate.findMany({ orderBy: { name: 'asc' } });
-  const canModifyTicket = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || isAdministrasi;
+  // Bug 28: Administrasi/Manager can only modify tickets within their own department scope
+  const canModifyTicket = session.user.role === 'Admin' || isCS || (session.user.role === 'Manager' && isSameDept) || (isAdministrasi && isSameDept);
 
   return (
     <main className="container">

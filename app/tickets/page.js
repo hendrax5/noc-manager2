@@ -107,7 +107,8 @@ export default async function TicketsPage({ searchParams }) {
         { assignee: { name: { contains: q, mode: 'insensitive' } } },
         { assignee: { email: { contains: q, mode: 'insensitive' } } },
         { description: { contains: q, mode: 'insensitive' } },
-        { customData: { path: ['company'], string_contains: q } }
+        { customData: { path: ['company'], string_contains: q } },
+        { comments: { some: { text: { contains: q, mode: 'insensitive' } } } }
       ]
     });
   }
@@ -116,10 +117,11 @@ export default async function TicketsPage({ searchParams }) {
     const statusArray = statusesParam.split(',');
     filters.push({ status: { in: statusArray } });
   } else if (!resolvedParams?.statuses && !resolvedParams?.tab) {
-    // default statuses
-    filters.push({ status: { in: ['Pending', 'New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Finish'] } });
+    // Bug 29: Include 'Reopened' in default active statuses
+    filters.push({ status: { in: ['Pending', 'New', 'Open', 'Reopened', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Finish'] } });
   } else if (tab === 'needs_attention') {
-    filters.push({ OR: [{ status: 'Pending' }, { status: 'New' }, { status: 'Open' }, { assigneeId: null }] });
+    // Bug 29: Include 'Reopened' status in needs_attention tab
+    filters.push({ OR: [{ status: 'Pending' }, { status: 'New' }, { status: 'Open' }, { status: 'Reopened' }, { assigneeId: null }] });
   } else if (tab === 'in_progress') {
     filters.push({ status: { notIn: ['New', 'Resolved', 'Closed'] }, assigneeId: { not: null } });
   } else if (tab === 'expiring') {

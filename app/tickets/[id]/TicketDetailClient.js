@@ -2,6 +2,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
+import dynamic from "next/dynamic";
+
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+const MDPreview = dynamic(() => import("@uiw/react-md-editor").then(mod => mod.default.Markdown), { ssr: false });
 
 function linkify(text) {
   if (!text) return "";
@@ -62,9 +66,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const currentUserId = currentUserObj.id ? parseInt(currentUserObj.id) : null;
   const isCreator = ticket.historyLogs && ticket.historyLogs.length > 0 && ticket.historyLogs[ticket.historyLogs.length - 1].actorId === currentUserId;
   const userDept = currentUserObj.department || "";
+  const userDeptId = currentUserObj.departmentId ? parseInt(currentUserObj.departmentId) : null;
   const isAdministrasi = userDept.toLowerCase() === 'administrasi' || userDept.toLowerCase().includes('admin');
   const isAdminOrManager = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager';
-  const showTicketEdit = isAdministrasi || currentUserObj.role === 'Manager';
+  const isSameDept = userDeptId && ticket.departmentId === userDeptId;
+  // Bug 28: Administrasi can only edit tickets within their own department scope
+  const showTicketEdit = currentUserObj.role === 'Admin' || isCreator || (isAdminOrManager && isSameDept) || (isAdministrasi && isSameDept);
 
   const [editingTicket, setEditingTicket] = useState(false);
   const [editTitle, setEditTitle] = useState(ticket.title);
@@ -300,7 +307,9 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             <p style={{ margin: '0 0 1rem 0' }}>Dear NOC,</p>
             {editingTicket ? (
               <div>
-                <textarea rows="8" value={editDesc} onChange={e => setEditDesc(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: 'inherit', marginBottom: '1rem' }} />
+                <div data-color-mode="light" style={{ marginBottom: '1rem' }}>
+                  <MDEditor value={editDesc} onChange={val => setEditDesc(val || '')} height={250} preview="edit" />
+                </div>
                 
                 {customFields?.length > 0 && (
                   <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
@@ -370,7 +379,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               </div>
             ) : (
               <div>
-                <div dangerouslySetInnerHTML={{ __html: linkify(ticket.description) }} />
+                <div data-color-mode="light"><MDPreview source={ticket.description || ''} style={{ background: 'transparent', padding: 0 }} /></div>
                 
                 {formData.customData && Object.keys(formData.customData).filter(k => formData.customData[k]).length > 0 && (
                   <div style={{ marginTop: '2rem', background: 'var(--hover-bg)', padding: '1.25rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
@@ -436,14 +445,16 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             </div>
             {editingCommentId === c.id ? (
               <div style={{ padding: '0.5rem 0' }}>
-                <textarea rows="4" value={editingCommentText} onChange={e => setEditingCommentText(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                <div data-color-mode="light">
+                  <MDEditor value={editingCommentText} onChange={val => setEditingCommentText(val || '')} height={200} preview="edit" />
+                </div>
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                   <button onClick={() => saveCommentEdit(c.id)} style={{ background: '#3b82f6', color: 'white', padding: '0.4rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Update Save</button>
                   <button onClick={() => setEditingCommentId(null)} style={{ background: 'var(--hover-bg)', color: 'var(--heading-color)', padding: '0.4rem 1rem', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
                 </div>
               </div>
             ) : (
-              <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: 'var(--text-color)', fontSize: '0.95rem' }} dangerouslySetInnerHTML={{ __html: linkify(c.text) }} />
+              <div data-color-mode="light" style={{ lineHeight: '1.6', fontSize: '0.95rem' }}><MDPreview source={c.text || ''} style={{ background: 'transparent', padding: 0, color: 'var(--text-color)' }} /></div>
             )}
             
             {c.attachments && c.attachments.length > 0 && (
@@ -525,15 +536,14 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
             {/* Knowledge Base search removed by user request */}
 
-            <div style={{ position: 'relative' }}>
-              <textarea 
-                rows="6" 
-                placeholder="Type your technical response here..." 
-                style={{ width: '100%', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'inherit', boxSizing: 'border-box', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.95rem' }}
+            <div data-color-mode="light">
+              <MDEditor 
                 value={commentText}
-                onChange={e => setCommentText(e.target.value)}
-                required={!file && visibleCustomFieldIds.length === 0}
-              ></textarea>
+                onChange={val => setCommentText(val || '')}
+                height={220}
+                preview="edit"
+                textareaProps={{ placeholder: 'Type your technical response here (supports Markdown)...' }}
+              />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
@@ -638,6 +648,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: formData.status === 'Resolved' ? '#064e3b' : 'var(--input-bg)', color: formData.status === 'Resolved' ? '#34d399' : 'var(--input-text)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem', outline: 'none' }} value={formData.status} onChange={e => triggerAutoSave('status', e.target.value)} disabled={!canModifyTicket}>
                  <option value="New">New</option>
                  <option value="Open">Open</option>
+                 <option value="Reopened">Reopened</option>
                  <option value="Pending">Pending (Waiting User)</option>
                  <option value="Finish">Finish</option>
                  <option value="Resolved">Resolved</option>
