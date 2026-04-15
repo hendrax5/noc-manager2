@@ -21,7 +21,7 @@ export default async function ArticleDetailPage({ params }) {
   if (!article) redirect('/knowledge');
 
   // Authorization check for drafts
-  const isAdminOrManager = session.user.role === 'Admin' || session.user.role === 'Manager';
+  const isAdminOrManager = session.user.permissions?.includes('kb.edit_all');
   if (!article.isPublished && !isAdminOrManager && article.authorId !== session.user.id) {
      redirect('/knowledge');
   }

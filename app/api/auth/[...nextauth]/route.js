@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
+import { resolvePermissions } from "@/lib/permissions";
 
 export const authOptions = {
   trustHost: true,
@@ -23,6 +24,9 @@ export const authOptions = {
         if (!user) return null;
         
         if (user.password === credentials.password.trim()) {
+          // Resolve permissions from Role defaults + User overrides
+          const permissions = await resolvePermissions(user.id);
+
           return { 
             id: user.id, 
             name: user.name, 
@@ -32,7 +36,8 @@ export const authOptions = {
             role: user.role.name,
             department: user.department.name,
             avatarUrl: user.avatarUrl,
-            signature: user.signature
+            signature: user.signature,
+            permissions,
           };
         }
         return null;
@@ -49,6 +54,7 @@ export const authOptions = {
         token.id = user.id;
         token.avatarUrl = user.avatarUrl;
         token.signature = user.signature;
+        token.permissions = user.permissions || [];
       }
       return token;
     },
@@ -61,6 +67,7 @@ export const authOptions = {
         session.user.id = token.id;
         session.user.avatarUrl = token.avatarUrl;
         session.user.signature = token.signature;
+        session.user.permissions = token.permissions || [];
       }
       return session;
     }
@@ -73,3 +80,4 @@ export const authOptions = {
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
+

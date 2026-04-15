@@ -32,7 +32,7 @@ services:
     depends_on:
       - db
     # On start, wait a bit for DB, run Prisma migration, and start dev server
-    command: sh -c "sleep 3 && npx prisma db push --accept-data-loss && npm run dev"
+    command: sh -c "sleep 3 && npx prisma db push --accept-data-loss && node prisma/seed-permissions.js && npm run dev"
     restart: unless-stopped
 
 volumes:

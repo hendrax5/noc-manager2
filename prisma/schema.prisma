@@ -11,6 +11,7 @@ model Role {
   id    Int    @id @default(autoincrement())
   name  String @unique
   users User[]
+  permissions RolePermission[]
 }
 
 model Department {
@@ -58,6 +59,7 @@ model User {
   schedulePreference UserSchedulePreference?
   schedules         ShiftSchedule[]
   articles          KnowledgeArticle[]
+  userPermissions   UserPermission[]
 }
 
 model Ticket {
@@ -323,3 +325,34 @@ model CircuitHop {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// ==========================================
+// RBAC Permission System
+// ==========================================
+
+model Permission {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  label String
+  group String @default("other")
+  rolePermissions RolePermission[]
+  userPermissions UserPermission[]
+}
+
+model RolePermission {
+  roleId       Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId Int
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  @@id([roleId, permissionId])
+}
+
+model UserPermission {
+  userId       Int
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissionId Int
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  granted      Boolean    @default(true)
+  @@id([userId, permissionId])
+}
+

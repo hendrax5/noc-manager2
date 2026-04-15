@@ -11,7 +11,7 @@ export async function GET() {
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'Admin') {
+    if (!session || !session.user.permissions?.includes('settings.manage')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

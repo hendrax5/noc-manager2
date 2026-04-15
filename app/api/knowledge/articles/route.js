@@ -21,8 +21,8 @@ export async function GET(request) {
       ];
     }
     
-    // Admins and Managers can see unpublished articles
-    if (session.user.role === 'Admin' || session.user.role === 'Manager') {
+    // Users with kb.edit_all can see unpublished articles
+    if (session.user.permissions?.includes('kb.edit_all')) {
       delete where.isPublished; 
     }
 

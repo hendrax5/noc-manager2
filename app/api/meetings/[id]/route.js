@@ -56,7 +56,7 @@ export async function PATCH(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (session?.user?.role !== 'Admin') return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!session?.user?.permissions?.includes('settings.manage')) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const resolvedParams = await params;
     await prisma.meeting.delete({ where: { id: parseInt(resolvedParams.id) } });
     return NextResponse.json({ success: true });

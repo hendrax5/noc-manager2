@@ -17,7 +17,7 @@ export default function ArticleDetailClient({ article, session, categories }) {
     setMounted(true);
   }, []);
   
-  const canEdit = session.user.role === 'Admin' || session.user.role === 'Manager' || session.user.id === article.authorId;
+  const canEdit = session.user.permissions?.includes('kb.edit_all') || session.user.id === article.authorId;
 
   const handleDelete = async () => {
     if (!confirm('Are you certain you want to permanently delete this KB Article?')) return;
@@ -73,7 +73,7 @@ export default function ArticleDetailClient({ article, session, categories }) {
           {canEdit && (
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button onClick={() => setIsEditing(true)} className="secondary-btn" style={{ padding: '0.5rem 1rem' }}>Edit Article</button>
-              {(session.user.role === 'Admin' || session.user.role === 'Manager') && (
+              {session.user.permissions?.includes('kb.delete') && (
                 <button onClick={handleDelete} style={{ padding: '0.5rem 1rem', background: 'transparent', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
               )}
             </div>

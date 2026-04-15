@@ -8,7 +8,7 @@ import { getAppConfig } from "@/lib/config";
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
   
-  if (!session || session.user.role !== 'Admin') {
+  if (!session || !session.user.permissions?.includes('settings.manage')) {
     redirect('/dashboard');
   }
 

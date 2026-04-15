@@ -41,7 +41,7 @@ export async function POST(req, { params }) {
         newStatus = 'Finish';
         transitionReason = "Marked as Finished, awaiting CS validation";
       } else {
-        const isStaffReply = (userId === ticket.assigneeId) || session.user.role === 'Admin' || session.user.role === 'Manager' || session.user.department?.includes('CS');
+        const isStaffReply = (userId === ticket.assigneeId) || session.user.permissions?.includes('ticket.edit_all') || session.user.permissions?.includes('ticket.edit');
         if (isStaffReply) {
           newStatus = 'Pending';
           transitionReason = "Auto-shifted to Pending (Awaiting User)";

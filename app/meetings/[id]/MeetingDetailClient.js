@@ -176,8 +176,8 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
     }
   };
 
-  const isAdminOrManager = currentUser.role === 'Admin' || currentUser.role === 'Manager';
-  const isSuperAdmin = currentUser.role === 'Admin';
+  const isAdminOrManager = currentUser.permissions?.includes('meeting.edit');
+  const isSuperAdmin = currentUser.permissions?.includes('settings.manage');
   const isOrganizer = meeting.organizedById === currentUser.id;
   const canFinalize = isAdminOrManager || isOrganizer;
 

@@ -10,7 +10,7 @@ import { getAppConfig } from "@/lib/config";
 export default async function TeamPage() {
   const session = await getServerSession(authOptions);
   
-  if (!session || session.user.role !== 'Admin') {
+  if (!session || !session.user.permissions?.includes('team.manage')) {
     redirect('/dashboard');
   }
 

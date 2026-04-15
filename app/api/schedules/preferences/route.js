@@ -20,7 +20,7 @@ export async function GET() {
 export async function PATCH(req) {
   try {
     const session = await getServerSession(authOptions);
-    if (session?.user?.role !== 'Admin' && session?.user?.role !== 'Manager') return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!session?.user?.permissions?.includes('settings.manage') && session?.user?.role !== 'Manager') return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const body = await req.json();
     const { userId, scheduleMode, fixedShiftId, fixedOffDays } = body;

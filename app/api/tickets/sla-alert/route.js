@@ -13,10 +13,10 @@ export async function GET(req) {
     const { user } = session;
     const userDept = user.department || "";
     const isCS = userDept.includes('CS') || userDept.toLowerCase().includes('customer');
-    const isAdminOrManager = user.role === 'Admin' || user.role === 'Manager';
+    const hasSlaPerm = user.permissions?.includes('ticket.sla');
 
     // Only allow CS or Admins to poll this endpoint to save DB load
-    if (!isCS && !isAdminOrManager) {
+    if (!isCS && !hasSlaPerm) {
       return NextResponse.json({ triggerAlarm: false, count: 0 });
     }
 

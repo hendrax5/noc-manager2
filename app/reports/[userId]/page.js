@@ -56,7 +56,7 @@ export default async function UserReportDetail({ params, searchParams }) {
 
   if (!targetUser) return <main className="container"><h1>User Not Found</h1></main>;
 
-  if (session.user.role !== 'Admin' && session.user.role !== 'Manager') {
+  if (!session.user.permissions?.includes('report.view')) {
     redirect("/dashboard");
   }
 

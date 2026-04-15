@@ -22,7 +22,7 @@ services:
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - HOSTNAME=0.0.0.0
     # PERHATIKAN: Command di bawah ini menggunakan BUILD dan START (Production Mode)
-    command: sh -c "sleep 3 && npx prisma db push --accept-data-loss && npm run build && npm start"
+    command: sh -c "sleep 3 && npx prisma db push --accept-data-loss && node prisma/seed-permissions.js && npm run build && npm start"
     depends_on:
       - db
     volumes:

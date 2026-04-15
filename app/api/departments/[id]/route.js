@@ -6,7 +6,7 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 export async function DELETE(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'Admin') return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!session || !session.user.permissions?.includes('settings.manage')) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
@@ -20,7 +20,7 @@ export async function DELETE(req, { params }) {
 export async function PATCH(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'Admin') return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!session || !session.user.permissions?.includes('settings.manage')) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);

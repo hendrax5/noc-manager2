@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import PermissionsTab from "./PermissionsTab";
 
 export default function SettingsClient({ initialFields, initialCategories, initialConfig }) {
   const router = useRouter();
@@ -184,7 +185,7 @@ export default function SettingsClient({ initialFields, initialCategories, initi
   return (
     <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', background: '#f8fafc' }}>
-        {['custom_fields', 'job_categories', 'preferences'].map(tab => (
+        {['custom_fields', 'job_categories', 'permissions', 'preferences'].map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -505,6 +506,10 @@ export default function SettingsClient({ initialFields, initialCategories, initi
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'permissions' && (
+          <PermissionsTab />
         )}
       </div>
     </div>

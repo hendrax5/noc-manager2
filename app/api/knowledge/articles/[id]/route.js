@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
     });
 
     if (!article) return NextResponse.json({ error: 'Article not found' }, { status: 404 });
-    if (!article.isPublished && session.user.role !== 'Admin' && session.user.role !== 'Manager' && article.authorId !== session.user.id) {
+    if (!article.isPublished && !session.user.permissions?.includes('kb.edit_all') && article.authorId !== session.user.id) {
        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -38,8 +38,8 @@ export async function PATCH(request, { params }) {
     const existing = await prisma.knowledgeArticle.findUnique({ where: { id: parseInt(resolveParams.id) } });
     if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    // Only Author, Manager, or Admin can edit
-    if (session.user.role !== 'Admin' && session.user.role !== 'Manager' && existing.authorId !== session.user.id) {
+    // Only Author or users with kb.edit_all can edit
+    if (!session.user.permissions?.includes('kb.edit_all') && existing.authorId !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -64,7 +64,7 @@ export async function PATCH(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user.role !== 'Admin' && session.user.role !== 'Manager')) {
+    if (!session || !session.user.permissions?.includes('kb.delete')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

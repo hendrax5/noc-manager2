@@ -119,11 +119,8 @@ export async function PATCH(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    const userDept = session?.user?.department || "";
-    const isAdministrasi = userDept.toLowerCase() === 'administrasi' || userDept.toLowerCase().includes('admin');
-    const isManager = session?.user?.role === 'Manager';
-    if (!session || (!isAdministrasi && !isManager)) {
-      return NextResponse.json({ error: "Only Administrasi or Manager can void/delete tickets." }, { status: 403 });
+    if (!session || !session.user?.permissions?.includes('ticket.delete')) {
+      return NextResponse.json({ error: "Insufficient permissions to void/delete tickets." }, { status: 403 });
     }
 
     const resolvedParams = await params;

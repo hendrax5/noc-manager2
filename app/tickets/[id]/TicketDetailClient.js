@@ -68,10 +68,10 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const userDept = currentUserObj.department || "";
   const userDeptId = currentUserObj.departmentId ? parseInt(currentUserObj.departmentId) : null;
   const isAdministrasi = userDept.toLowerCase() === 'administrasi' || userDept.toLowerCase().includes('admin');
-  const isAdminOrManager = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager';
-  const isSameDept = userDeptId && ticket.departmentId === userDeptId;
-  // Bug 28: Administrasi can only edit tickets within their own department scope
-  const showTicketEdit = currentUserObj.role === 'Admin' || isCreator || (isAdminOrManager && isSameDept) || (isAdministrasi && isSameDept);
+  const userPerms = currentUserObj.permissions || [];
+  const hasEditPerm = userPerms.includes('ticket.edit_all') || (userPerms.includes('ticket.edit') && isSameDept);
+  // Permission-based edit control
+  const showTicketEdit = canModifyTicket || isCreator || hasEditPerm;
 
   const [editingTicket, setEditingTicket] = useState(false);
   const [editTitle, setEditTitle] = useState(ticket.title);
@@ -635,7 +635,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           <button onClick={() => window.print()} className="print-btn" style={{ flex: 1, background: 'var(--card-bg)', color: 'var(--heading-color)', border: '1px solid var(--border-color)', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem' }}>
             <span style={{ fontSize: '1rem' }}>🖨</span> Print
           </button>
-          {(isAdministrasi || currentUserObj.role === 'Manager') && (
+          {userPerms.includes('ticket.delete') && (
             <button onClick={handleDelete} title="Soft Delete / Void Ticket" style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🗑 Delete</button>
           )}
         </div>
