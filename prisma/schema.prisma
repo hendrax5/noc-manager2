@@ -60,6 +60,7 @@ model User {
   schedules         ShiftSchedule[]
   articles          KnowledgeArticle[]
   userPermissions   UserPermission[]
+  visitPermitsApproved VisitPermit[] @relation("PermitApprover")
 }
 
 model Ticket {
@@ -283,6 +284,8 @@ model Customer {
   contactEmail String?
   contactPhone String?
   services     Service[]
+  rackEquipments RackEquipment[]
+  crossConnects CrossConnect[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -356,3 +359,88 @@ model UserPermission {
   @@id([userId, permissionId])
 }
 
+// ==========================================
+// Phase 34: Datacenter & Visitor Management System (VMS)
+// ==========================================
+
+model DCSite {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  name        String
+  nocEmail    String?  
+  racks       Rack[]
+  permits     VisitPermit[]
+  crossConnects CrossConnect[]
+  createdAt   DateTime @default(now())
+}
+
+model Rack {
+  id          Int      @id @default(autoincrement())
+  siteId      Int
+  site        DCSite   @relation(fields: [siteId], references: [id])
+  name        String   
+  uCapacity   Int      @default(42)
+  equipments  RackEquipment[]
+  aSideCables CrossConnect[] @relation("CrossConnectSideA")
+  zSideCables CrossConnect[] @relation("CrossConnectSideZ")
+  affectedBy  VendorMaintenance[] @relation("MaintenanceAffectedRacks")
+  createdAt   DateTime @default(now())
+}
+
+model RackEquipment {
+  id          Int      @id @default(autoincrement())
+  rackId      Int
+  rack        Rack     @relation(fields: [rackId], references: [id], onDelete: Cascade)
+  customerId  Int?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  name        String
+  uStart      Int
+  uEnd        Int
+  status      String   @default("Active")
+  createdAt   DateTime @default(now())
+}
+
+model VisitPermit {
+  id          Int      @id @default(autoincrement())
+  siteId      Int
+  site        DCSite   @relation(fields: [siteId], references: [id])
+  companyName String
+  visitorNames String
+  activity    String
+  scheduledAt DateTime
+  checkInAt   DateTime?
+  checkOutAt  DateTime?
+  status      String   @default("Pending") 
+  approvedById Int?
+  approvedBy  User?    @relation("PermitApprover", fields: [approvedById], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model CrossConnect {
+  id              Int      @id @default(autoincrement())
+  siteId          Int
+  site            DCSite   @relation(fields: [siteId], references: [id])
+  customerId      Int?
+  customer        Customer? @relation(fields: [customerId], references: [id])
+  mediaType       String   @default("Singlemode Fiber") 
+  sideARackId     Int
+  sideARack       Rack     @relation("CrossConnectSideA", fields: [sideARackId], references: [id])
+  sideAPort       String
+  sideZRackId     Int
+  sideZRack       Rack     @relation("CrossConnectSideZ", fields: [sideZRackId], references: [id])
+  sideZPort       String
+  status          String   @default("Requested") 
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model VendorMaintenance {
+  id              Int      @id @default(autoincrement())
+  type            String   
+  startTime       DateTime
+  endTime         DateTime?
+  slaDowntimeMins Int      @default(0)
+  affectedRacks   Rack[]   @relation("MaintenanceAffectedRacks")
+  description     String?
+  createdAt       DateTime @default(now())
+}

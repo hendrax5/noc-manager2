@@ -270,19 +270,41 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           
           {(() => {
             let extractedName = "Unknown Reporter";
-            const reporterMatch = ticket.description?.match(/\[Original Reporter: (.*?) -/);
+            const customDataToRead = editingTicket ? formData.customData : ticket.customData;
+            const descToRead = editingTicket ? editDesc : ticket.description;
+
+            const reporterMatch = descToRead?.match(/\[Original Reporter: (.*?) -/);
             if (reporterMatch) {
               extractedName = reporterMatch[1];
+            } else if (customDataToRead && typeof customDataToRead === 'object' && customDataToRead["Customer Name"]) {
+               extractedName = customDataToRead["Customer Name"];
             } else if (ticket.services && ticket.services.length > 0 && ticket.services[0].customer) {
-              extractedName = ticket.services[0].customer.name;
-            } else if (ticket.customData && typeof ticket.customData === 'object' && ticket.customData["Customer Name"]) {
-               extractedName = ticket.customData["Customer Name"];
+               extractedName = ticket.services[0].customer.name;
             }
+
+            const handleNameChange = (e) => {
+               const newName = e.target.value;
+               if (descToRead?.match(/\[Original Reporter: (.*?) -/)) {
+                  setEditDesc(descToRead.replace(/\[Original Reporter: (.*?) -/, `[Original Reporter: ${newName} -`));
+               } else {
+                  setFormData(prev => ({ ...prev, customData: { ...(prev.customData || {}), "Customer Name": newName }}));
+               }
+            };
 
             return (
               <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f8fafc', padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>
-                  👤 <strong>{extractedName}</strong>
+                  👤 
+                  {editingTicket ? (
+                     <input 
+                       value={extractedName === "Unknown Reporter" ? "" : extractedName}
+                       onChange={handleNameChange}
+                       placeholder="Reporter / Customer..."
+                       style={{ border: 'none', background: 'transparent', outline: 'none', fontWeight: 'bold', color: 'inherit', width: '250px', borderBottom: '1px dashed #cbd5e1' }}
+                     />
+                  ) : (
+                     <strong>{extractedName}</strong>
+                  )}
                 </span>
                 {ticket.customData && ticket.customData["Order Origin"] && (
                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#fef2f2', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid #fecaca', color: '#991b1b', fontSize: '0.8rem', fontWeight: 'bold' }} title="Order Origin (Selling Company)">
@@ -380,9 +402,10 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               </div>
             ) : (
               <div>
-                <div style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: 'var(--text-color)' }}>
-                  {ticket.description || ''}
-                </div>
+                <div 
+                  style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: 'var(--text-color)' }}
+                  dangerouslySetInnerHTML={{ __html: linkify(ticket.description || '') }}
+                />
                 
                 {formData.customData && Object.keys(formData.customData).filter(k => formData.customData[k]).length > 0 && (
                   <div style={{ marginTop: '2rem', background: 'var(--hover-bg)', padding: '1.25rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
@@ -461,9 +484,10 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                 </div>
               </div>
             ) : (
-              <div style={{ lineHeight: '1.6', fontSize: '0.95rem', whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: 'var(--text-color)' }}>
-                {c.text || ''}
-              </div>
+              <div 
+                style={{ lineHeight: '1.6', fontSize: '0.95rem', whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: 'var(--text-color)' }}
+                dangerouslySetInnerHTML={{ __html: linkify(c.text || '') }}
+              />
             )}
             
             {c.attachments && c.attachments.length > 0 && (
