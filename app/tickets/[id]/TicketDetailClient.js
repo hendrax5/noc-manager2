@@ -225,9 +225,23 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           {editingTicket ? (
             <input value={editTitle} onChange={e => setEditTitle(e.target.value)} style={{ width: '100%', fontSize: '1.6rem', fontWeight: 'bold', padding: '0.5rem', marginBottom: '1rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
           ) : (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-              <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--heading-color)' }}>
-                {ticket.title}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', width: '100%' }}>
+              <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--heading-color)', flex: 1, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+                {canModifyTicket ? (
+                  <input 
+                    defaultValue={ticket.title}
+                    onBlur={(e) => {
+                      if (e.target.value !== ticket.title && e.target.value.trim() !== "") {
+                        triggerAutoSave('title', e.target.value);
+                      }
+                    }}
+                    onKeyDown={e => e.key === 'Enter' && e.target.blur()}
+                    title="Click to inline-edit Subject"
+                    style={{ background: 'transparent', border: 'none', borderBottom: '1px dashed #cbd5e1', color: 'inherit', outline: 'none', fontWeight: 'inherit', fontSize: 'inherit', width: '100%', maxWidth: '600px' }}
+                  />
+                ) : (
+                  ticket.title
+                )}
                 {ticket.customData && Object.values(ticket.customData).some(val => typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val) && new Date(val) < new Date()) && ticket.status !== 'Resolved' && (
                   <span className="badge" style={{background: '#ef4444', color: 'white', marginLeft: '1rem', verticalAlign: 'middle', fontSize: '0.8rem'}}>⚠️ EXPIRED</span>
                 )}
@@ -291,6 +305,35 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                }
             };
 
+            const handleQuickSaveName = async (e) => {
+               if (!canModifyTicket) return;
+               const newName = e.target.value;
+               if (newName === extractedName || newName.trim() === "") return;
+               
+               let newDesc = ticket.description;
+               const newCustomData = { ...(ticket.customData || {}), "Customer Name": newName };
+
+               if (ticket.description?.match(/\[Original Reporter: (.*?) -/)) {
+                  newDesc = ticket.description.replace(/\[Original Reporter: (.*?) -/, `[Original Reporter: ${newName} -`);
+               }
+
+               const updatedPayload = {
+                 ...formData,
+                 description: newDesc,
+                 customData: newCustomData
+               };
+
+               const res = await fetch(`/api/tickets/${ticket.id}`, {
+                 method: "PATCH",
+                 headers: { "Content-Type": "application/json" },
+                 body: JSON.stringify(updatedPayload)
+               });
+               
+               if (res.ok) {
+                 router.refresh(); 
+               }
+            };
+
             return (
               <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f8fafc', padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>
@@ -301,6 +344,15 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                        onChange={handleNameChange}
                        placeholder="Reporter / Customer..."
                        style={{ border: 'none', background: 'transparent', outline: 'none', fontWeight: 'bold', color: 'inherit', width: '250px', borderBottom: '1px dashed #cbd5e1' }}
+                     />
+                  ) : canModifyTicket ? (
+                     <input 
+                       defaultValue={extractedName === "Unknown Reporter" ? "" : extractedName}
+                       onBlur={handleQuickSaveName}
+                       onKeyDown={e => e.key === 'Enter' && e.target.blur()}
+                       placeholder="Reporter / Customer..."
+                       title="Click to fast-edit Customer Name"
+                       style={{ border: 'none', background: 'transparent', outline: 'none', fontWeight: 'bold', color: 'inherit', minWidth: '250px', borderBottom: '1px dashed #cbd5e1', cursor: 'text' }}
                      />
                   ) : (
                      <strong>{extractedName}</strong>
