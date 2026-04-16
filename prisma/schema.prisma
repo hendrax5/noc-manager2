@@ -94,7 +94,7 @@ model Ticket {
   updatedAt    DateTime   @updatedAt
   resolvedAt   DateTime?
   services     Service[]
-  visibility           String       @default("Public") 
+  visibility           String       @default("Internal") 
   permittedDepartments Department[] @relation("TicketPermittedDepartments")
   rfs                  DateTime?
   deletedAt            DateTime?

@@ -16,7 +16,7 @@ export default function TicketForm({ departments, categories, customFields, serv
     jobCategoryId: '',
     enableSla: false,
     slaTimerMins: 15,
-    visibility: "Public",
+    visibility: "Internal",
     permittedDepartmentIds: [],
     rfs: ""
   });

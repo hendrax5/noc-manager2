@@ -65,6 +65,7 @@ export default async function TicketsPage({ searchParams }) {
   if (shouldIsolateDepartment) {
     filters.push({
       OR: [
+        { visibility: "Public" },
         { assigneeId: user.id }, // Explicitly assigned to user
         { departmentId: user.departmentId || -1 }, // Assigned to user's department
         { historyLogs: { some: { actorId: user.id } } }, // User interacted with it previously

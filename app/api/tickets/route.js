@@ -62,7 +62,7 @@ export async function POST(req) {
       assigneeId: finalAssigneeId,
       status: "New",
       rfs: rfs ? new Date(rfs) : null,
-      visibility: visibility || "Public",
+      visibility: visibility || "Internal",
       permittedDepartments: visibility === 'Restricted' && permittedDepartmentIds?.length > 0 ? {
         connect: permittedDepartmentIds.map(id => ({ id: parseInt(id) }))
       } : undefined,
