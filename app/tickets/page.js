@@ -46,7 +46,7 @@ export default async function TicketsPage({ searchParams }) {
     filters.push({ jobCategoryId: parseInt(categoryParam) });
   }
   
-  if (companyParam && !allDeptsParam && !q) {
+  if (companyParam) {
     filters.push({
       customData: {
         path: ['company'],
