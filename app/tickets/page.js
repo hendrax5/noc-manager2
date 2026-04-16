@@ -6,6 +6,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import TicketQuickActions from "./TicketQuickActions";
 import TicketAdvancedFilter from "./TicketAdvancedFilter";
+import TicketTableClient from "./TicketTableClient";
 import Pagination from "@/components/Pagination";
 import { getAppConfig } from "@/lib/config";
 
@@ -250,113 +251,12 @@ export default async function TicketsPage({ searchParams }) {
         <TicketAdvancedFilter categories={categories} companies={companies} initialCompanyParam={companyParam} />
       </Suspense>
 
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Tracking ID</th>
-            <th style={{ cursor: 'pointer' }}>
-              <Link href={`/tickets?${new URLSearchParams({...resolvedParams, page: 1, sort: sortParam === 'name_asc' ? 'name_desc' : 'name_asc'}).toString()}`} style={{textDecoration:'none', color:'inherit', display:'flex', alignItems:'center', gap:'0.2rem'}}>
-                Name {sortParam === 'name_asc' ? '▲' : sortParam === 'name_desc' ? '▼' : '↕'}
-              </Link>
-            </th>
-            <th>Subject</th>
-            <th>Status</th>
-            <th>Priority</th>
-            <th style={{ cursor: 'pointer' }}>
-              <Link href={`/tickets?${new URLSearchParams({...resolvedParams, page: 1, sort: sortParam === 'age_asc' ? 'age_desc' : 'age_asc'}).toString()}`} style={{textDecoration:'none', color:'inherit', display:'flex', alignItems:'center', gap:'0.2rem'}}>
-                Age {sortParam === 'age_asc' ? '▲' : sortParam === 'age_desc' ? '▼' : '↕'}
-              </Link>
-            </th>
-            <th style={{ cursor: 'pointer' }}>
-              <Link href={`/tickets?${new URLSearchParams({...resolvedParams, page: 1, sort: sortParam === 'dept_asc' ? 'dept_desc' : 'dept_asc'}).toString()}`} style={{textDecoration:'none', color:'inherit', display:'flex', alignItems:'center', gap:'0.2rem'}}>
-                Department {sortParam === 'dept_asc' ? '▲' : sortParam === 'dept_desc' ? '▼' : '↕'}
-              </Link>
-            </th>
-            <th>Assignee</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tickets.length === 0 && (
-            <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>No tickets found matching your filters.</td></tr>
-          )}
-          {tickets.map(t => {
-            const isCritical = t.priority === 'Critical';
-            const hoursIdle = (new Date() - new Date(t.updatedAt)) / 3600000;
-            const isSLA = (t.status === 'New' && hoursIdle > 2) || (isCritical && hoursIdle > 1 && t.status !== 'Resolved');
-            const hasPings = t.slaBreaches > 0;
-            
-            let expiryDateStr = null;
-            if (t.customData && typeof t.customData === 'object') {
-              const expiryVal = Object.values(t.customData).find(val => typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val));
-              if (expiryVal) expiryDateStr = expiryVal;
-            }
-
-            let rowClass = "";
-            if (isSLA) rowClass = "ticket-row-sla";
-            else if (t.slaBreaches > 2 && t.status !== 'Resolved') rowClass = "ticket-row-critical";
-            else if (hasPings && t.status !== 'Resolved') rowClass = "ticket-row-warning";
-            else if (expiryDateStr && t.status !== 'Resolved' && new Date(expiryDateStr) < new Date()) rowClass = "ticket-row-expired";
-            
-            let extractedName = "-";
-            const reporterMatch = t.description?.match(/\[Original Reporter: (.*?) -/);
-            if (reporterMatch) {
-              extractedName = reporterMatch[1];
-            } else if (t.services && t.services.length > 0 && t.services[0].customer) {
-              extractedName = t.services[0].customer.name;
-            } else if (t.customData && typeof t.customData === 'object' && t.customData["Customer Name"]) {
-               extractedName = t.customData["Customer Name"];
-            }
-
-            return (
-              <tr key={t.id} className={rowClass}>
-                <td style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{t.trackingId}</td>
-                <td>
-                  <span style={{ fontWeight: '600', color: '#334155', fontSize: '0.9rem', display: 'block' }}>{extractedName}</span>
-                  {t.customData && t.customData["Order Origin"] && (
-                    <span style={{ display: 'inline-block', fontSize: '0.7rem', color: '#991b1b', background: '#fef2f2', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid #fecaca', fontWeight: 'bold', marginTop: '0.2rem', marginRight: '0.2rem' }} title="Order Origin">
-                      🏢 {t.customData["Order Origin"]}
-                    </span>
-                  )}
-                  {t.customData && t.customData["Executing Vendor"] && (
-                    <span style={{ display: 'inline-block', fontSize: '0.7rem', color: '#1e40af', background: '#eff6ff', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid #bfdbfe', fontWeight: 'bold', marginTop: '0.2rem' }} title="Executing Vendor">
-                      🛠️ {t.customData["Executing Vendor"]}
-                    </span>
-                  )}
-                </td>
-                <td style={{ fontWeight: '600' }}>
-                  <Link href={`/tickets/${t.id}`} style={{color: 'var(--primary-color)'}}>
-                    {t.title}
-                  </Link>
-                  {t.slaBreaches > 0 && t.status !== 'Resolved' && (
-                    <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem', color: 'var(--danger-text, #b91c1c)', fontWeight: 'bold', background: 'var(--danger-bg, #fee2e2)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
-                      🔥 x{t.slaBreaches} CS Pings!
-                    </span>
-                  )}
-                  {expiryDateStr && t.status !== 'Resolved' && (
-                    <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', background: new Date(expiryDateStr) < new Date() ? 'var(--danger-bg, #ef4444)' : 'var(--warning-bg, #d946ef)', color: new Date(expiryDateStr) < new Date() ? 'var(--danger-text, white)' : 'var(--warning-text, white)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
-                      {new Date(expiryDateStr) < new Date() ? '⚠️ EXPIRED' : `⏳ Exp: ${new Date(expiryDateStr).toLocaleDateString()}`}
-                    </span>
-                  )}
-                </td>
-                <td>
-                  <span className="badge" style={{ backgroundColor: t.status === 'Resolved' ? '#10b981' : (t.status === 'New' ? '#ef4444' : '#f59e0b') }}>
-                    {t.status}
-                  </span>
-                </td>
-                <td style={{ fontWeight: isCritical ? 'bold' : 'normal', color: isCritical ? '#ef4444' : 'inherit' }}>{t.priority}</td>
-                <td style={{ color: '#64748b', fontSize: '0.85rem' }}>{timeAgo(t.updatedAt)}</td>
-                <td>{t.department?.name}</td>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {t.assignee?.name || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>}
-                    {canViewAll && <TicketQuickActions ticketId={t.id} isUnassigned={!t.assigneeId} />}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <TicketTableClient 
+        tickets={tickets} 
+        resolvedParams={resolvedParams} 
+        sortParam={sortParam} 
+        canViewAll={user.permissions?.includes('ticket.all')} 
+      />
 
       <Pagination totalCount={totalTickets} pageSize={pageSize} />
     </main>

@@ -28,7 +28,8 @@
     "pg": "^8.11.5",
     "react": "latest",
     "react-dom": "latest",
-    "recharts": "latest"
+    "recharts": "latest",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/mailparser": "^3.4.6",
