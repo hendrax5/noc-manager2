@@ -28,6 +28,7 @@ export default async function TicketsPage({ searchParams }) {
 
   const isCS = user.department?.includes('CS') || user.department?.toLowerCase().includes('customer');
   const isAdministrasi = user.department?.toLowerCase() === 'administrasi' || user.department?.toLowerCase().includes('admin');
+  const isAdministrasiOrTeknis = user.department?.toLowerCase() === 'administrasi' || user.department?.toLowerCase() === 'admin-teknis' || user.department?.toLowerCase().includes('admin');
   const canViewAll = user.permissions?.includes('ticket.view_all');
 
   const statusesParam = resolvedParams?.statuses;
@@ -63,29 +64,36 @@ export default async function TicketsPage({ searchParams }) {
   const shouldIsolateDepartment = !allDeptsParam;
 
   if (shouldIsolateDepartment) {
-    filters.push({
-      OR: [
-        { visibility: "Public" },
-        { assigneeId: user.id }, // Explicitly assigned to user
-        { departmentId: user.departmentId || -1 }, // Assigned to user's department
-        { historyLogs: { some: { actorId: user.id } } }, // User interacted with it previously
-        { historyLogs: { some: { action: "Created", actor: { departmentId: user.departmentId || -1 } } } } // Created by someone in user's department
-      ]
-    });
+    const isolateOr = [
+      { assigneeId: user.id }, // Explicitly assigned to user
+      { departmentId: user.departmentId || -1 }, // Assigned to user's department
+      { historyLogs: { some: { actorId: user.id } } }, // User interacted with it previously
+      { historyLogs: { some: { action: "Created", actor: { departmentId: user.departmentId || -1 } } } } // Created by someone in user's department
+    ];
+    
+    // Only Administrasi and Admin-Teknis want to hide Public tickets from other teams.
+    if (!isAdministrasiOrTeknis) {
+      isolateOr.push({ visibility: "Public" });
+    }
+
+    filters.push({ OR: isolateOr });
   }
 
   // Globally Enforce Privacy & Visibility Constraints
   if (!canViewAll) {
-    filters.push({
-      OR: [
-        { visibility: "Public" },
-        { departmentId: user.departmentId || -1 }, // Can ALWAYS see tickets assigned to their own department
-        { assigneeId: user.id },
-        { historyLogs: { some: { actorId: user.id } } },
-        { historyLogs: { some: { action: "Created", actor: { departmentId: user.departmentId || -1 } } } },
-        { permittedDepartments: { some: { id: user.departmentId || -1 } } }
-      ]
-    });
+    const globalOr = [
+      { departmentId: user.departmentId || -1 }, // Can ALWAYS see tickets assigned to their own department
+      { assigneeId: user.id },
+      { historyLogs: { some: { actorId: user.id } } },
+      { historyLogs: { some: { action: "Created", actor: { departmentId: user.departmentId || -1 } } } },
+      { permittedDepartments: { some: { id: user.departmentId || -1 } } }
+    ];
+
+    if (!isAdministrasiOrTeknis) {
+      globalOr.push({ visibility: "Public" });
+    }
+
+    filters.push({ OR: globalOr });
   }
   
   // Assignment Checkbox Filters
