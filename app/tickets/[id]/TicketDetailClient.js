@@ -19,6 +19,17 @@ function linkify(text) {
   });
 }
 
+const stripHtmlToText = (html) => {
+  if (!html) return '';
+  let text = html.replace(/<br\s*[\/]?>/gi, '\n');
+  text = text.replace(/<\/p>/gi, '\n');
+  text = text.replace(/<p[^>]*>/gi, '');
+  text = text.replace(/&nbsp;/gi, ' ');
+  text = text.replace(/<[^>]+>/gi, '');
+  text = text.replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"');
+  return text;
+};
+
 function SearchableSelect({ options, value, onChange, disabled, placeholder }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -72,7 +83,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
   const [editingTicket, setEditingTicket] = useState(false);
   const [editTitle, setEditTitle] = useState(ticket.title);
-  const [editDesc, setEditDesc] = useState(ticket.description);
+  const [editDesc, setEditDesc] = useState(() => stripHtmlToText(ticket.description));
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
@@ -83,7 +94,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
   const [formData, setFormData] = useState({
     title: ticket.title,
-    description: ticket.description,
+    description: stripHtmlToText(ticket.description),
     status: ticket.status,
     priority: ticket.priority,
     departmentId: ticket.departmentId,
@@ -455,8 +466,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             ) : (
               <div>
                 <div 
-                  style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: 'var(--text-color)' }}
-                  dangerouslySetInnerHTML={{ __html: linkify(ticket.description || '') }}
+                  style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', color: 'var(--text-color)', wordBreak: 'break-word' }}
+                  dangerouslySetInnerHTML={{ __html: linkify(stripHtmlToText(ticket.description)) }}
                 />
                 
                 {formData.customData && Object.keys(formData.customData).filter(k => formData.customData[k]).length > 0 && (
