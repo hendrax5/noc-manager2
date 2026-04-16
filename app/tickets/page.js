@@ -60,17 +60,15 @@ export default async function TicketsPage({ searchParams }) {
     filters.push({ updatedAt: { gte: today } });
   }
 
-  // Determine if we should isolate by Department
-  // Applying isolation to everyone by default, regardless of role, as requested
   const shouldIsolateDepartment = !allDeptsParam;
 
   if (shouldIsolateDepartment) {
     filters.push({
       OR: [
-        { visibility: "Public" }, // Public tickets bypass department isolation
-        { assigneeId: user.id }, // Explicitly assigned
-        { departmentId: user.departmentId || -1 }, // Belongs to user's department (Admin fallback)
-        { historyLogs: { some: { actorId: user.id } } } // User interacted with it previously
+        { assigneeId: user.id }, // Explicitly assigned to user
+        { departmentId: user.departmentId || -1 }, // Assigned to user's department
+        { historyLogs: { some: { actorId: user.id } } }, // User interacted with it previously
+        { historyLogs: { some: { action: "Created", actor: { departmentId: user.departmentId || -1 } } } } // Created by someone in user's department
       ]
     });
   }
@@ -80,8 +78,10 @@ export default async function TicketsPage({ searchParams }) {
     filters.push({
       OR: [
         { visibility: "Public" },
+        { departmentId: user.departmentId || -1 }, // Can ALWAYS see tickets assigned to their own department
         { assigneeId: user.id },
         { historyLogs: { some: { actorId: user.id } } },
+        { historyLogs: { some: { action: "Created", actor: { departmentId: user.departmentId || -1 } } } },
         { permittedDepartments: { some: { id: user.departmentId || -1 } } }
       ]
     });
