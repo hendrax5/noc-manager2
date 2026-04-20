@@ -15,7 +15,13 @@ export default async function DashboardPage() {
     ]
   };
 
-  // Fetch metrics
+  // Date boundaries for MoM Comparison
+  const now = new Date();
+  const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+  // Fetch metrics (Current snapshot for charts)
   const totalNewTickets = await prisma.ticket.count({ where: { ...scope, status: 'New' } });
   const totalWaitingTickets = await prisma.ticket.count({ where: { ...scope, status: 'Waiting Reply' } });
   const totalRepliedTickets = await prisma.ticket.count({ where: { ...scope, status: 'Replied' } });
@@ -28,21 +34,61 @@ export default async function DashboardPage() {
     { status: 'Resolved', count: totalResolvedTickets }
   ];
 
-  // Compute Average TTR (Time to Resolution)
-  const resolvedData = await prisma.ticket.findMany({
-    where: { ...scope, status: 'Resolved' },
+  // MoM Metrics (Global)
+  const createdThisMonth = await prisma.ticket.count({ where: { ...scope, createdAt: { gte: startOfCurrentMonth } } });
+  const createdLastMonth = await prisma.ticket.count({ where: { ...scope, createdAt: { gte: startOfLastMonth, lte: endOfLastMonth } } });
+  
+  const resolvedThisMonth = await prisma.ticket.findMany({
+    where: { ...scope, status: 'Resolved', updatedAt: { gte: startOfCurrentMonth } },
     select: { createdAt: true, updatedAt: true, resolvedAt: true }
   });
-  let totalTtrMs = 0;
-  resolvedData.forEach(t => {
-    const diff = new Date(t.resolvedAt || t.updatedAt).getTime() - new Date(t.createdAt).getTime();
-    if (diff > 0) totalTtrMs += diff;
+  const resolvedLastMonth = await prisma.ticket.findMany({
+    where: { ...scope, status: 'Resolved', updatedAt: { gte: startOfLastMonth, lte: endOfLastMonth } },
+    select: { createdAt: true, updatedAt: true, resolvedAt: true }
   });
-  const avgTtrMins = resolvedData.length > 0 ? Math.round((totalTtrMs / resolvedData.length) / 60000) : 0;
-  const avgTtrObj = {
-    h: Math.floor(avgTtrMins / 60),
-    m: avgTtrMins % 60
+
+  const getAvgTtr = (tickets) => {
+    if (tickets.length === 0) return 0;
+    const total = tickets.reduce((acc, t) => {
+       const diff = new Date(t.resolvedAt || t.updatedAt).getTime() - new Date(t.createdAt).getTime();
+       return acc + (diff > 0 ? diff : 0);
+    }, 0);
+    return Math.round((total / tickets.length) / 60000); // in minutes
   };
+
+  const ttrThisMonth = getAvgTtr(resolvedThisMonth);
+  const ttrLastMonth = getAvgTtr(resolvedLastMonth);
+  const avgTtrObj = { h: Math.floor(ttrThisMonth / 60), m: ttrThisMonth % 60 };
+
+  const calcChange = (current, previous) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+
+  const createdChange = calcChange(createdThisMonth, createdLastMonth);
+  const resolvedChange = calcChange(resolvedThisMonth.length, resolvedLastMonth.length);
+  const ttrChange = calcChange(ttrThisMonth, ttrLastMonth); // Negative is faster (better)
+
+  // Personal MoM & Insights
+  const myResolvedThisMonth = await prisma.ticket.findMany({
+    where: { assigneeId: parseInt(session?.user?.id), status: 'Resolved', updatedAt: { gte: startOfCurrentMonth } },
+    include: { jobCategory: true },
+    orderBy: { updatedAt: 'desc' }
+  });
+  
+  const myResolvedLastMonthCount = await prisma.ticket.count({
+    where: { assigneeId: parseInt(session?.user?.id), status: 'Resolved', updatedAt: { gte: startOfLastMonth, lte: endOfLastMonth } }
+  });
+
+  const myResolvedChange = calcChange(myResolvedThisMonth.length, myResolvedLastMonthCount);
+
+  const myCategoryBreakdown = {};
+  myResolvedThisMonth.forEach(t => {
+    const catName = t.jobCategory?.name || 'Uncategorized';
+    myCategoryBreakdown[catName] = (myCategoryBreakdown[catName] || 0) + 1;
+  });
+  const mySortedCategories = Object.entries(myCategoryBreakdown).sort((a,b) => b[1] - a[1]);
+
 
   // Fetch pending Open Tickets specifically allocated to them
   const myOpenTickets = await prisma.ticket.findMany({
@@ -143,19 +189,24 @@ export default async function DashboardPage() {
       {/* 4 Premium KPI Cards */}
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
         
-        {/* New Tickets Card */}
+        {/* Created This Month Card */}
         <div style={{ padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(225, 29, 72, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-new">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '0.9rem', color: '#be123c', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>New Tickets</h2>
+            <h2 style={{ fontSize: '0.9rem', color: '#be123c', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Incoming (MoM)</h2>
             <div className="icon-bg" style={{ padding: '0.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(225, 29, 72, 0.1)' }}>
               <span style={{ fontSize: '1.2rem', display: 'block', lineHeight: 1 }}>🔥</span>
             </div>
           </div>
-          <p style={{ fontSize: '3.5rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#e11d48', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalNewTickets}</p>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', position: 'relative', zIndex: 2 }}>
+            <p style={{ fontSize: '3.5rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#e11d48', lineHeight: 1 }}>{createdThisMonth}</p>
+            <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: createdChange > 0 ? '#ef4444' : '#10b981', background: createdChange > 0 ? '#fee2e2' : '#d1fae5', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+              {createdChange > 0 ? '▲' : '▼'} {Math.abs(createdChange)}%
+            </span>
+          </div>
           <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', fontSize: '8rem', opacity: 0.05, zIndex: 1, transform: 'rotate(-15deg)' }}>🔥</div>
         </div>
 
-        {/* Pending Card */}
+        {/* Pending Card (Current Snapshot) */}
         <div style={{ padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(217, 119, 6, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-pending">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
             <h2 style={{ fontSize: '0.9rem', color: '#b45309', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Pending Action</h2>
@@ -167,35 +218,134 @@ export default async function DashboardPage() {
           <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', fontSize: '8rem', opacity: 0.05, zIndex: 1, transform: 'rotate(-15deg)' }}>⏳</div>
         </div>
 
-        {/* Resolved Card */}
+        {/* Resolved This Month Card */}
         <div style={{ padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-resolved">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '0.9rem', color: '#15803d', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved</h2>
+            <h2 style={{ fontSize: '0.9rem', color: '#15803d', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved (MoM)</h2>
              <div className="icon-bg" style={{ padding: '0.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.1)' }}>
                 <span style={{ fontSize: '1.2rem', display: 'block', lineHeight: 1 }}>✅</span>
              </div>
           </div>
-          <p style={{ fontSize: '3.5rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#16a34a', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalResolvedTickets}</p>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', position: 'relative', zIndex: 2 }}>
+            <p style={{ fontSize: '3.5rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#16a34a', lineHeight: 1 }}>{resolvedThisMonth.length}</p>
+            <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: resolvedChange >= 0 ? '#10b981' : '#ef4444', background: resolvedChange >= 0 ? '#d1fae5' : '#fee2e2', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+              {resolvedChange >= 0 ? '▲' : '▼'} {Math.abs(resolvedChange)}%
+            </span>
+          </div>
           <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', fontSize: '8rem', opacity: 0.05, zIndex: 1, transform: 'rotate(-15deg)' }}>✅</div>
         </div>
 
-        {/* Average TTR Card */}
+        {/* Average TTR This Month Card */}
         <div style={{ padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-ttr">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '0.9rem', color: '#4338ca', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Average TTR</h2>
+            <h2 style={{ fontSize: '0.9rem', color: '#4338ca', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Monthly TTR (MoM)</h2>
              <div className="icon-bg" style={{ padding: '0.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.1)' }}>
                 <span style={{ fontSize: '1.2rem', display: 'block', lineHeight: 1 }}>⏱️</span>
              </div>
           </div>
-          <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.9rem 0 0 0', color: '#4f46e5', lineHeight: 1, position: 'relative', zIndex: 2 }}>
-            {resolvedData.length === 0 ? 'N/A' : (
-              <>
-                {avgTtrObj.h > 0 && <span style={{letterSpacing: '-2px'}}>{avgTtrObj.h}<span style={{fontSize: '1rem', color: '#818cf8', margin: '0 0.5rem 0 0.1rem', letterSpacing: '0'}}>h</span></span>}
-                <span style={{letterSpacing: '-2px'}}>{avgTtrObj.m}<span style={{fontSize: '1rem', color: '#818cf8', marginLeft: '0.1rem', letterSpacing: '0'}}>m</span></span>
-              </>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', position: 'relative', zIndex: 2 }}>
+            <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.9rem 0 0 0', color: '#4f46e5', lineHeight: 1 }}>
+              {resolvedThisMonth.length === 0 ? 'N/A' : (
+                <>
+                  {avgTtrObj.h > 0 && <span style={{letterSpacing: '-2px'}}>{avgTtrObj.h}<span style={{fontSize: '1rem', color: '#818cf8', margin: '0 0.5rem 0 0.1rem', letterSpacing: '0'}}>h</span></span>}
+                  <span style={{letterSpacing: '-2px'}}>{avgTtrObj.m}<span style={{fontSize: '1rem', color: '#818cf8', marginLeft: '0.1rem', letterSpacing: '0'}}>m</span></span>
+                </>
+              )}
+            </p>
+            {resolvedThisMonth.length > 0 && resolvedLastMonth.length > 0 && (
+              <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: ttrChange <= 0 ? '#10b981' : '#ef4444', background: ttrChange <= 0 ? '#d1fae5' : '#fee2e2', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
+                {ttrChange <= 0 ? '▲' : '▼'} {Math.abs(ttrChange)}%
+              </span>
             )}
-          </p>
+          </div>
           <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', fontSize: '8rem', opacity: 0.03, zIndex: 1, transform: 'rotate(-15deg)' }}>⏱️</div>
+        </div>
+      </section>
+
+      {/* Personal Monthly Wrap-Up Module */}
+      <section style={{ marginBottom: '2.5rem' }}>
+        <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '16px', background: 'var(--card-bg)', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+            <div>
+              <h2 className="text-dark" style={{ margin: 0, fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{fontSize: '1.5rem'}}>🏆</span> My Monthly Wrap-Up
+              </h2>
+              <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: '0.2rem 0 0 0' }}>Your personal performance insights for the current month.</p>
+            </div>
+            
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#0f172a', lineHeight: 1 }}>{myResolvedThisMonth.length}</div>
+              <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>Tickets Closed</div>
+              {myResolvedLastMonthCount > 0 && (
+                <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: myResolvedChange >= 0 ? '#10b981' : '#ef4444', marginTop: '0.25rem' }}>
+                  {myResolvedChange >= 0 ? '▲' : '▼'} {Math.abs(myResolvedChange)}% vs Last Month
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            
+            {/* Category Focus */}
+            <div>
+              <h3 style={{ fontSize: '1.1rem', color: '#1e293b', marginBottom: '1rem', marginTop: 0 }}>Category Focus</h3>
+              {mySortedCategories.length === 0 ? (
+                <div style={{ padding: '1.5rem', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                  <span style={{ fontSize: '1.5rem', opacity: 0.5 }}>📊</span>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: '#64748b' }}>No tickets resolved yet this month.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {mySortedCategories.map(([catName, count], index) => {
+                    // Calculate percentage for progress bar relative to their total
+                    const percent = Math.round((count / myResolvedThisMonth.length) * 100);
+                    // Determine colors based on rank
+                    const colors = index === 0 ? ['#ec4899', '#fdf2f8'] : index === 1 ? ['#3b82f6', '#eff6ff'] : ['#8b5cf6', '#f5f3ff'];
+                    
+                    return (
+                      <div key={catName}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#334155' }}>
+                          <span>{catName}</span>
+                          <span>{count} ({percent}%)</span>
+                        </div>
+                        <div style={{ height: '8px', width: '100%', background: colors[1], borderRadius: '4px', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${percent}%`, background: colors[0], borderRadius: '4px' }}></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Solves */}
+            <div>
+              <h3 style={{ fontSize: '1.1rem', color: '#1e293b', marginBottom: '1rem', marginTop: 0 }}>Recent Solves</h3>
+              {myResolvedThisMonth.length === 0 ? (
+                <div style={{ padding: '1.5rem', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>Waiting for your first wrap-up!</p>
+                </div>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {myResolvedThisMonth.slice(0, 5).map(ticket => (
+                    <li key={ticket.id} className="hover-bg" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', transition: 'all 0.2s' }}>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>
+                        <Link href={`/tickets/${ticket.id}`} style={{ textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', color: '#3b82f6' }}>
+                          {ticket.trackingId}
+                        </Link>
+                        <span style={{ fontSize: '0.85rem', color: '#475569', marginLeft: '0.5rem' }}>{ticket.title}</span>
+                      </div>
+                      <span style={{ fontSize: '0.7rem', fontWeight: 'bold', padding: '0.2rem 0.5rem', background: '#f1f5f9', color: '#64748b', borderRadius: '4px' }}>
+                        {ticket.jobCategory?.name || 'Uncategorized'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+          </div>
         </div>
       </section>
 
