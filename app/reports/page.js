@@ -54,7 +54,7 @@ export default async function ReportsPage({ searchParams }) {
       department: true,
       tickets: {
         where: { status: 'Resolved', awardedScore: { not: null }, ...(dateFilter && { createdAt: dateFilter }) },
-        select: { awardedScore: true }
+        select: { awardedScore: true, jobCategory: { select: { name: true } } }
       },
       comments: { 
         where: { ...(dateFilter && { createdAt: dateFilter }) },
@@ -80,6 +80,13 @@ export default async function ReportsPage({ searchParams }) {
     const ledgerTaskPoints = u.historyLogs.reduce((sum, h) => sum + (h.awardedScore || 0), 0);
     const taskPoints = legacyTaskPoints + ledgerTaskPoints;
     
+    // Category breakdown logic
+    const categoryBreakdown = {};
+    u.tickets.forEach(t => {
+      const catName = t.jobCategory?.name || 'Uncategorized';
+      categoryBreakdown[catName] = (categoryBreakdown[catName] || 0) + 1;
+    });
+
     // CS metrics
     let createdCount = 0;
     let statusActionsCount = 0;
@@ -101,7 +108,8 @@ export default async function ReportsPage({ searchParams }) {
       createdCount,
       replyCount,
       statusActionsCount,
-      csEngagementScore
+      csEngagementScore,
+      categoryBreakdown
     };
 
     if (isCS) csLeaderboard.push(entry);
@@ -258,9 +266,36 @@ export default async function ReportsPage({ searchParams }) {
                     <td style={{ fontWeight: '600', fontSize: '0.9rem' }}>
                       <a href={`/reports/${l.id}`} style={{ color: 'var(--primary-color)', textDecoration: 'none' }}>{l.name}</a>
                       <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{l.department}</div>
+                      
+                      {/* Job Category Breakdown Badges */}
+                      {Object.keys(l.categoryBreakdown || {}).length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.4rem' }}>
+                          {Object.entries(l.categoryBreakdown).map(([catName, count]) => (
+                            <span 
+                              key={catName} 
+                              title={`${count} tickets resolved in ${catName}`}
+                              style={{ 
+                                fontSize: '0.7rem', 
+                                padding: '0.15rem 0.4rem', 
+                                borderRadius: '99px', 
+                                backgroundColor: '#f1f5f9', 
+                                color: '#475569', 
+                                border: '1px solid #e2e8f0',
+                                fontWeight: '500',
+                                cursor: 'help',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.2rem'
+                              }}
+                            >
+                              {catName}: <span style={{fontWeight: '700', color: '#0f172a'}}>{count}</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </td>
-                    <td style={{ textAlign: 'right', fontWeight: '500' }}>{l.resolvedCount }</td>
-                    <td style={{ textAlign: 'right', fontWeight: '800', color: '#10b981', fontSize: '1rem' }}>{l.taskPoints}</td>
+                    <td style={{ textAlign: 'right', fontWeight: '500', verticalAlign: 'top' }}>{l.resolvedCount }</td>
+                    <td style={{ textAlign: 'right', fontWeight: '800', color: '#10b981', fontSize: '1rem', verticalAlign: 'top' }}>{l.taskPoints}</td>
                   </tr>
                 )})}
               </tbody>
