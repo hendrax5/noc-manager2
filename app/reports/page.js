@@ -53,7 +53,7 @@ export default async function ReportsPage({ searchParams }) {
     include: {
       department: true,
       tickets: {
-        where: { status: 'Resolved', awardedScore: { not: null }, ...(dateFilter && { createdAt: dateFilter }) },
+        where: { status: 'Resolved', ...(dateFilter && { createdAt: dateFilter }) },
         select: { awardedScore: true, jobCategory: { select: { name: true } } }
       },
       comments: { 
