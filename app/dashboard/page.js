@@ -2,9 +2,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import DashboardCharts from "./DashboardCharts";
+import DashboardFilter from "./DashboardFilter";
 import Link from "next/link";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }) {
   const session = await getServerSession(authOptions);
 
   // Scope Isolation (Tickets assigned to user or their department)
@@ -15,11 +16,39 @@ export default async function DashboardPage() {
     ]
   };
 
-  // Date boundaries for MoM Comparison
+  // Dynamic Date Boundaries
+  const range = searchParams?.range || 'weekly';
   const now = new Date();
-  const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+  let startOfCurrent, startOfPrevious, endOfPrevious, rangeLabel, rangeTitle;
+
+  if (range === 'daily') {
+    startOfCurrent = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    startOfPrevious = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    endOfPrevious = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+    rangeLabel = 'DoD';
+    rangeTitle = 'Daily';
+  } else if (range === 'monthly') {
+    startOfCurrent = new Date(now.getFullYear(), now.getMonth(), 1);
+    startOfPrevious = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    endOfPrevious = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    rangeLabel = 'MoM';
+    rangeTitle = 'Monthly';
+  } else {
+    // weekly
+    const todayForWeek = new Date();
+    const day = todayForWeek.getDay();
+    const diff = todayForWeek.getDate() - day + (day === 0 ? -6 : 1);
+    startOfCurrent = new Date(todayForWeek.setDate(diff));
+    startOfCurrent.setHours(0,0,0,0);
+    
+    startOfPrevious = new Date(startOfCurrent);
+    startOfPrevious.setDate(startOfPrevious.getDate() - 7);
+    
+    endOfPrevious = new Date(startOfCurrent);
+    endOfPrevious.setMilliseconds(-1);
+    rangeLabel = 'WoW';
+    rangeTitle = 'Weekly';
+  }
 
   // Fetch metrics (Current snapshot for charts)
   const totalNewTickets = await prisma.ticket.count({ where: { ...scope, status: 'New' } });
@@ -34,16 +63,16 @@ export default async function DashboardPage() {
     { status: 'Resolved', count: totalResolvedTickets }
   ];
 
-  // MoM Metrics (Global)
-  const createdThisMonth = await prisma.ticket.count({ where: { ...scope, createdAt: { gte: startOfCurrentMonth } } });
-  const createdLastMonth = await prisma.ticket.count({ where: { ...scope, createdAt: { gte: startOfLastMonth, lte: endOfLastMonth } } });
+  // Dynamic Range Metrics (Global)
+  const createdCurrent = await prisma.ticket.count({ where: { ...scope, createdAt: { gte: startOfCurrent } } });
+  const createdPrevious = await prisma.ticket.count({ where: { ...scope, createdAt: { gte: startOfPrevious, lte: endOfPrevious } } });
   
-  const resolvedThisMonth = await prisma.ticket.findMany({
-    where: { ...scope, status: 'Resolved', updatedAt: { gte: startOfCurrentMonth } },
+  const resolvedCurrent = await prisma.ticket.findMany({
+    where: { ...scope, status: 'Resolved', updatedAt: { gte: startOfCurrent } },
     select: { createdAt: true, updatedAt: true, resolvedAt: true }
   });
-  const resolvedLastMonth = await prisma.ticket.findMany({
-    where: { ...scope, status: 'Resolved', updatedAt: { gte: startOfLastMonth, lte: endOfLastMonth } },
+  const resolvedPrevious = await prisma.ticket.findMany({
+    where: { ...scope, status: 'Resolved', updatedAt: { gte: startOfPrevious, lte: endOfPrevious } },
     select: { createdAt: true, updatedAt: true, resolvedAt: true }
   });
 
@@ -56,34 +85,34 @@ export default async function DashboardPage() {
     return Math.round((total / tickets.length) / 60000); // in minutes
   };
 
-  const ttrThisMonth = getAvgTtr(resolvedThisMonth);
-  const ttrLastMonth = getAvgTtr(resolvedLastMonth);
-  const avgTtrObj = { h: Math.floor(ttrThisMonth / 60), m: ttrThisMonth % 60 };
+  const ttrCurrent = getAvgTtr(resolvedCurrent);
+  const ttrPrevious = getAvgTtr(resolvedPrevious);
+  const avgTtrObj = { h: Math.floor(ttrCurrent / 60), m: ttrCurrent % 60 };
 
   const calcChange = (current, previous) => {
     if (previous === 0) return current > 0 ? 100 : 0;
     return Math.round(((current - previous) / previous) * 100);
   };
 
-  const createdChange = calcChange(createdThisMonth, createdLastMonth);
-  const resolvedChange = calcChange(resolvedThisMonth.length, resolvedLastMonth.length);
-  const ttrChange = calcChange(ttrThisMonth, ttrLastMonth); // Negative is faster (better)
+  const createdChange = calcChange(createdCurrent, createdPrevious);
+  const resolvedChange = calcChange(resolvedCurrent.length, resolvedPrevious.length);
+  const ttrChange = calcChange(ttrCurrent, ttrPrevious); // Negative is faster (better)
 
   // Personal MoM & Insights
-  const myResolvedThisMonth = await prisma.ticket.findMany({
-    where: { assigneeId: parseInt(session?.user?.id), status: 'Resolved', updatedAt: { gte: startOfCurrentMonth } },
+  const myResolvedCurrent = await prisma.ticket.findMany({
+    where: { assigneeId: parseInt(session?.user?.id), status: 'Resolved', updatedAt: { gte: startOfCurrent } },
     include: { jobCategory: true },
     orderBy: { updatedAt: 'desc' }
   });
   
-  const myResolvedLastMonthCount = await prisma.ticket.count({
-    where: { assigneeId: parseInt(session?.user?.id), status: 'Resolved', updatedAt: { gte: startOfLastMonth, lte: endOfLastMonth } }
+  const myResolvedPreviousCount = await prisma.ticket.count({
+    where: { assigneeId: parseInt(session?.user?.id), status: 'Resolved', updatedAt: { gte: startOfPrevious, lte: endOfPrevious } }
   });
 
-  const myResolvedChange = calcChange(myResolvedThisMonth.length, myResolvedLastMonthCount);
+  const myResolvedChange = calcChange(myResolvedCurrent.length, myResolvedPreviousCount);
 
   const myCategoryBreakdown = {};
-  myResolvedThisMonth.forEach(t => {
+  myResolvedCurrent.forEach(t => {
     const catName = t.jobCategory?.name || 'Uncategorized';
     myCategoryBreakdown[catName] = (myCategoryBreakdown[catName] || 0) + 1;
   });
@@ -192,13 +221,13 @@ export default async function DashboardPage() {
         {/* Created This Month Card */}
         <div style={{ padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(225, 29, 72, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-new">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '0.9rem', color: '#be123c', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Incoming (MoM)</h2>
+            <h2 style={{ fontSize: '0.9rem', color: '#be123c', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Incoming ({rangeLabel})</h2>
             <div className="icon-bg" style={{ padding: '0.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(225, 29, 72, 0.1)' }}>
               <span style={{ fontSize: '1.2rem', display: 'block', lineHeight: 1 }}>🔥</span>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', position: 'relative', zIndex: 2 }}>
-            <p style={{ fontSize: '3.5rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#e11d48', lineHeight: 1 }}>{createdThisMonth}</p>
+            <p style={{ fontSize: '3.5rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#e11d48', lineHeight: 1 }}>{createdCurrent}</p>
             <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: createdChange > 0 ? '#ef4444' : '#10b981', background: createdChange > 0 ? '#fee2e2' : '#d1fae5', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
               {createdChange > 0 ? '▲' : '▼'} {Math.abs(createdChange)}%
             </span>
@@ -221,13 +250,13 @@ export default async function DashboardPage() {
         {/* Resolved This Month Card */}
         <div style={{ padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-resolved">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '0.9rem', color: '#15803d', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved (MoM)</h2>
+            <h2 style={{ fontSize: '0.9rem', color: '#15803d', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved ({rangeLabel})</h2>
              <div className="icon-bg" style={{ padding: '0.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.1)' }}>
                 <span style={{ fontSize: '1.2rem', display: 'block', lineHeight: 1 }}>✅</span>
              </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', position: 'relative', zIndex: 2 }}>
-            <p style={{ fontSize: '3.5rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#16a34a', lineHeight: 1 }}>{resolvedThisMonth.length}</p>
+            <p style={{ fontSize: '3.5rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#16a34a', lineHeight: 1 }}>{resolvedCurrent.length}</p>
             <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: resolvedChange >= 0 ? '#10b981' : '#ef4444', background: resolvedChange >= 0 ? '#d1fae5' : '#fee2e2', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
               {resolvedChange >= 0 ? '▲' : '▼'} {Math.abs(resolvedChange)}%
             </span>
@@ -238,21 +267,21 @@ export default async function DashboardPage() {
         {/* Average TTR This Month Card */}
         <div style={{ padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-ttr">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '0.9rem', color: '#4338ca', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Monthly TTR (MoM)</h2>
+            <h2 style={{ fontSize: '0.9rem', color: '#4338ca', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Avg TTR ({rangeLabel})</h2>
              <div className="icon-bg" style={{ padding: '0.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.1)' }}>
                 <span style={{ fontSize: '1.2rem', display: 'block', lineHeight: 1 }}>⏱️</span>
              </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', position: 'relative', zIndex: 2 }}>
             <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.9rem 0 0 0', color: '#4f46e5', lineHeight: 1 }}>
-              {resolvedThisMonth.length === 0 ? 'N/A' : (
+              {resolvedCurrent.length === 0 ? 'N/A' : (
                 <>
                   {avgTtrObj.h > 0 && <span style={{letterSpacing: '-2px'}}>{avgTtrObj.h}<span style={{fontSize: '1rem', color: '#818cf8', margin: '0 0.5rem 0 0.1rem', letterSpacing: '0'}}>h</span></span>}
                   <span style={{letterSpacing: '-2px'}}>{avgTtrObj.m}<span style={{fontSize: '1rem', color: '#818cf8', marginLeft: '0.1rem', letterSpacing: '0'}}>m</span></span>
                 </>
               )}
             </p>
-            {resolvedThisMonth.length > 0 && resolvedLastMonth.length > 0 && (
+            {resolvedCurrent.length > 0 && resolvedPrevious.length > 0 && (
               <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: ttrChange <= 0 ? '#10b981' : '#ef4444', background: ttrChange <= 0 ? '#d1fae5' : '#fee2e2', padding: '0.2rem 0.5rem', borderRadius: '6px' }}>
                 {ttrChange <= 0 ? '▲' : '▼'} {Math.abs(ttrChange)}%
               </span>
@@ -264,22 +293,25 @@ export default async function DashboardPage() {
 
       {/* Personal Monthly Wrap-Up Module */}
       <section style={{ marginBottom: '2.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <DashboardFilter />
+        </div>
         <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '16px', background: 'var(--card-bg)', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
             <div>
               <h2 className="text-dark" style={{ margin: 0, fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{fontSize: '1.5rem'}}>🏆</span> My Monthly Wrap-Up
+                <span style={{fontSize: '1.5rem'}}>🏆</span> My {rangeTitle} Wrap-Up
               </h2>
-              <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: '0.2rem 0 0 0' }}>Your personal performance insights for the current month.</p>
+              <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: '0.2rem 0 0 0' }}>Your personal performance insights for the selected time range.</p>
             </div>
             
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#0f172a', lineHeight: 1 }}>{myResolvedThisMonth.length}</div>
+              <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#0f172a', lineHeight: 1 }}>{myResolvedCurrent.length}</div>
               <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>Tickets Closed</div>
-              {myResolvedLastMonthCount > 0 && (
+              {myResolvedPreviousCount > 0 && (
                 <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: myResolvedChange >= 0 ? '#10b981' : '#ef4444', marginTop: '0.25rem' }}>
-                  {myResolvedChange >= 0 ? '▲' : '▼'} {Math.abs(myResolvedChange)}% vs Last Month
+                  {myResolvedChange >= 0 ? '▲' : '▼'} {Math.abs(myResolvedChange)}% vs Previous
                 </div>
               )}
             </div>
@@ -299,7 +331,7 @@ export default async function DashboardPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {mySortedCategories.map(([catName, count], index) => {
                     // Calculate percentage for progress bar relative to their total
-                    const percent = Math.round((count / myResolvedThisMonth.length) * 100);
+                    const percent = Math.round((count / myResolvedCurrent.length) * 100);
                     // Determine colors based on rank
                     const colors = index === 0 ? ['#ec4899', '#fdf2f8'] : index === 1 ? ['#3b82f6', '#eff6ff'] : ['#8b5cf6', '#f5f3ff'];
                     
@@ -322,13 +354,13 @@ export default async function DashboardPage() {
             {/* Recent Solves */}
             <div>
               <h3 style={{ fontSize: '1.1rem', color: '#1e293b', marginBottom: '1rem', marginTop: 0 }}>Recent Solves</h3>
-              {myResolvedThisMonth.length === 0 ? (
+              {myResolvedCurrent.length === 0 ? (
                 <div style={{ padding: '1.5rem', textAlign: 'center', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
                   <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>Waiting for your first wrap-up!</p>
                 </div>
               ) : (
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {myResolvedThisMonth.slice(0, 5).map(ticket => (
+                  {myResolvedCurrent.slice(0, 5).map(ticket => (
                     <li key={ticket.id} className="hover-bg" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-color)', transition: 'all 0.2s' }}>
                       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>
                         <Link href={`/tickets/${ticket.id}`} style={{ textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', color: '#3b82f6' }}>
