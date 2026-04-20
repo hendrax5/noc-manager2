@@ -135,7 +135,7 @@ export default async function ReportsPage({ searchParams }) {
 
   // Compute Global TTR per Category
   const resolvedTickets = await prisma.ticket.findMany({
-    where: { status: 'Resolved', awardedScore: { not: null }, ...(dateFilter && { createdAt: dateFilter }) },
+    where: { status: 'Resolved', ...(dateFilter && { createdAt: dateFilter }) },
     include: { jobCategory: true }
   });
 
