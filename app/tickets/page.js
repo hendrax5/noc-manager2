@@ -117,7 +117,6 @@ export default async function TicketsPage({ searchParams }) {
         { assignee: { name: { contains: q, mode: 'insensitive' } } },
         { assignee: { email: { contains: q, mode: 'insensitive' } } },
         { description: { contains: q, mode: 'insensitive' } },
-        { customData: { path: ['company'], string_contains: q } },
         { comments: { some: { text: { contains: q, mode: 'insensitive' } } } }
       ]
     });
@@ -177,30 +176,41 @@ export default async function TicketsPage({ searchParams }) {
   const page = parseInt(resolvedParams?.page) || 1;
   const pageSize = parseInt(resolvedParams?.limit) || 6;
 
-  let [totalTickets, tickets] = await Promise.all([
-    prisma.ticket.count({ where: whereClause }),
-    prisma.ticket.findMany({
-      where: whereClause,
-      include: { department: true, assignee: true, services: { include: { customer: true } } },
-      take: tab === 'expiring' ? undefined : pageSize,
-      skip: tab === 'expiring' ? undefined : (page - 1) * pageSize,
-      orderBy: orderByClause
-    })
-  ]);
+  let totalTickets = 0;
+  let tickets = [];
 
-  if (tab === 'expiring') {
-    tickets = tickets.filter(t => {
-      if (!t.customData || typeof t.customData !== 'object') return false;
-      return Object.values(t.customData).some(val => typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val));
-    });
-    
-    tickets.sort((a, b) => {
-      const getFirstDate = obj => Object.values(obj).find(v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v));
-      return new Date(getFirstDate(a.customData)) - new Date(getFirstDate(b.customData));
-    });
+  try {
+    const results = await Promise.all([
+      prisma.ticket.count({ where: whereClause }),
+      prisma.ticket.findMany({
+        where: whereClause,
+        include: { department: true, assignee: true, services: { include: { customer: true } } },
+        take: tab === 'expiring' ? undefined : pageSize,
+        skip: tab === 'expiring' ? undefined : (page - 1) * pageSize,
+        orderBy: orderByClause
+      })
+    ]);
+    totalTickets = results[0];
+    tickets = results[1];
 
-    totalTickets = tickets.length;
-    tickets = tickets.slice((page - 1) * pageSize, page * pageSize);
+    if (tab === 'expiring') {
+      tickets = tickets.filter(t => {
+        if (!t.customData || typeof t.customData !== 'object') return false;
+        return Object.values(t.customData).some(val => typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val));
+      });
+      
+      tickets.sort((a, b) => {
+        const getFirstDate = obj => Object.values(obj).find(v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v));
+        return new Date(getFirstDate(a.customData)) - new Date(getFirstDate(b.customData));
+      });
+
+      totalTickets = tickets.length;
+      tickets = tickets.slice((page - 1) * pageSize, page * pageSize);
+    }
+  } catch (error) {
+    console.error("====== PRISMA FILTER ERROR ======");
+    console.error(error);
+    // Return empty state or ignore the customData filter if it failed
   }
 
   function timeAgo(date) {
