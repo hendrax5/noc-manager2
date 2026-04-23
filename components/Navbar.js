@@ -46,19 +46,19 @@ export default function Navbar({ appName = "NOC Management" }) {
           </div>
 
           {/* Administration Dropdown */}
-          {(session.user?.permissions?.includes('report.view') || session.user?.permissions?.includes('team.manage') || session.user?.permissions?.includes('settings.manage')) && (
+          {(['superadmin', 'admin'].includes(session.user?.role?.toLowerCase()) || session.user?.permissions?.includes('report.view') || session.user?.permissions?.includes('team.manage') || session.user?.permissions?.includes('settings.manage')) && (
             <div className="nav-dropdown">
               <button className={`nav-dropdown-btn ${(pathname.startsWith("/reports") || pathname.startsWith("/team") || pathname.startsWith("/settings")) ? "active" : ""}`}>
                 Administration ▾
               </button>
               <div className="nav-dropdown-content">
-                {session.user?.permissions?.includes('report.view') && (
+                {(['superadmin', 'admin'].includes(session.user?.role?.toLowerCase()) || session.user?.permissions?.includes('report.view')) && (
                   <Link href="/reports" className={pathname.startsWith("/reports") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>📊 Reports & Analytics</Link>
                 )}
-                {session.user?.permissions?.includes('team.manage') && (
+                {(['superadmin', 'admin'].includes(session.user?.role?.toLowerCase()) || session.user?.permissions?.includes('team.manage')) && (
                   <Link href="/team" className={pathname === "/team" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>👥 Team Management</Link>
                 )}
-                {session.user?.permissions?.includes('settings.manage') && (
+                {(['superadmin', 'admin'].includes(session.user?.role?.toLowerCase()) || session.user?.permissions?.includes('settings.manage')) && (
                   <Link href="/settings" className={pathname.startsWith("/settings") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>⚙️ System Settings</Link>
                 )}
               </div>
