@@ -123,6 +123,21 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     }
   }, [ticket]);
 
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      title: ticket.title,
+      description: stripHtmlToText(ticket.description),
+      status: ticket.status,
+      priority: ticket.priority,
+      departmentId: ticket.departmentId,
+      assigneeId: ticket.assigneeId || "",
+      jobCategoryId: ticket.jobCategoryId || "",
+      customData: ticket.customData || {},
+      rfs: ticket.rfs || null
+    }));
+  }, [ticket]);
+
   const triggerAutoSave = async (key, newValue) => {
     if (!canModifyTicket) return;
     setFormData(prev => ({ ...prev, [key]: newValue }));
@@ -214,7 +229,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: commentText, attachmentUrl, attachmentName, actionType, replyCustomData, replyEnableSla, replySlaMins })
     });
     if (res.ok) {
-      const updatedStatus = actionType === 'finish' ? 'Finish' : 'Auto';
+      const isStaffReply = (currentUserId === ticket.assigneeId) || userPerms.includes('ticket.edit_all') || userPerms.includes('ticket.edit');
+      const updatedStatus = actionType === 'finish' ? 'Finish' : (isStaffReply ? 'Pending' : 'Open');
       setCommentText(currentUser.signature ? `\n\n${currentUser.signature}` : "");
       setFile(null);
       setReplyCustomData({});
