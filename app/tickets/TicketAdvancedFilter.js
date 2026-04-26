@@ -2,18 +2,22 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
-export default function TicketAdvancedFilter({ categories = [], companies = ["ION", "SDC", "Sistercompany"], initialCompanyParam = "" }) {
+export default function TicketAdvancedFilter({ categories = [], companies = ["ION", "SDC", "Sistercompany"], initialCompanyParam = "", dbStatuses = [] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Combine dynamic db statuses with some guaranteed baseline statuses
+  const ALL_STATUSES = Array.from(new Set([...dbStatuses, 'New', 'Open', 'Pending', 'Resolved', 'Closed']));
+  
+  // Default checked statuses: Everything except Resolved and Closed
+  const defaultStatuses = ALL_STATUSES.filter(s => s !== 'Resolved' && s !== 'Closed');
+
   const [q, setQ] = useState(searchParams.get('q') || "");
   const [categoryId, setCategoryId] = useState(searchParams.get('category') || "");
-  const [statuses, setStatuses] = useState(searchParams.get('statuses') ? searchParams.get('statuses').split(',') : ['New', 'Open', 'Reopened', 'Pending', 'Finish']); // default
+  const [statuses, setStatuses] = useState(searchParams.get('statuses') ? searchParams.get('statuses').split(',') : defaultStatuses);
   const [assignments, setAssignments] = useState(searchParams.get('assignments') ? searchParams.get('assignments').split(',') : ['me', 'unassigned', 'others']); // me, others, unassigned
   const [allDepts, setAllDepts] = useState(searchParams.get('all_depts') === 'true'); // Show all departments toggle
   const [companyParam, setCompanyParam] = useState(searchParams.get('company') !== null ? searchParams.get('company') : initialCompanyParam); // Company Routing Filter
-
-  const ALL_STATUSES = ['New', 'Open', 'Reopened', 'Pending', 'Finish', 'Resolved'];
 
   const toggleAssignment = (val) => {
     setAssignments(prev => 
@@ -62,7 +66,7 @@ export default function TicketAdvancedFilter({ categories = [], companies = ["IO
 
   const clearAll = () => {
     setQ("");
-    setStatuses(['New', 'Open', 'Reopened', 'Pending', 'Finish']);
+    setStatuses(defaultStatuses);
     setAssignments(['me', 'unassigned']);
     setAllDepts(false);
     setCompanyParam("");

@@ -20,6 +20,11 @@ export default async function TicketsPage({ searchParams }) {
   const deptCompanyMap = config.deptCompanyMap || {};
   
   const categories = await prisma.jobCategory.findMany({ select: { id: true, name: true } });
+  
+  // Dynamically fetch all unique statuses from the database so the filter UI adapts
+  const dbStatusesRes = await prisma.ticket.groupBy({ by: ['status'] });
+  const dbStatuses = dbStatusesRes.map(s => s.status).filter(Boolean);
+
   console.log("====== CATEGORIES FETCHED IN TICKET PAGE ======");
   console.log(categories);
 
@@ -126,8 +131,8 @@ export default async function TicketsPage({ searchParams }) {
     const statusArray = statusesParam.split(',');
     filters.push({ status: { in: statusArray } });
   } else if (!resolvedParams?.statuses && !resolvedParams?.tab) {
-    // Bug 29: Include 'Reopened' in default active statuses
-    filters.push({ status: { in: ['Pending', 'New', 'Open', 'Reopened', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Finish'] } });
+    // Show ALL active tickets (except Resolved and Closed) so unknown/new statuses don't go missing
+    filters.push({ status: { notIn: ['Resolved', 'Closed'] } });
   } else if (tab === 'needs_attention') {
     // Bug 29: Include 'Reopened' status in needs_attention tab
     filters.push({ OR: [{ status: 'Pending' }, { status: 'New' }, { status: 'Open' }, { status: 'Reopened' }, { assigneeId: null }] });
@@ -258,7 +263,7 @@ export default async function TicketsPage({ searchParams }) {
       </div>
 
       <Suspense fallback={<div style={{ padding: '1.5rem', marginBottom: '1.5rem', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>Loading filters...</div>}>
-        <TicketAdvancedFilter categories={categories} companies={companies} initialCompanyParam={companyParam} />
+        <TicketAdvancedFilter categories={categories} companies={companies} initialCompanyParam={companyParam} dbStatuses={dbStatuses} />
       </Suspense>
 
       <TicketTableClient 
