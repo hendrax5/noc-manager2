@@ -76,3 +76,40 @@ export async function PATCH(req) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.permissions?.includes('team.schedule')) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const start = searchParams.get("start");
+    const end = searchParams.get("end");
+    const locationId = searchParams.get("locationId");
+    const departmentId = searchParams.get("departmentId");
+
+    if (!start || !end) {
+      return NextResponse.json({ error: "start and end dates are required" }, { status: 400 });
+    }
+
+    const whereClause = {
+      date: { gte: new Date(start), lte: new Date(end) }
+    };
+    
+    if (locationId || departmentId) {
+      whereClause.user = {};
+      if (locationId) whereClause.user.locationId = parseInt(locationId);
+      if (departmentId) whereClause.user.departmentId = parseInt(departmentId);
+    }
+
+    const deleted = await prisma.shiftSchedule.deleteMany({
+      where: whereClause
+    });
+
+    return NextResponse.json({ success: true, count: deleted.count });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

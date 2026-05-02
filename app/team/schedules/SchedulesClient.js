@@ -23,6 +23,7 @@ export default function SchedulesClient({ initialShiftTypes, users, locations, d
 
   // --- Shift Types State ---
   const [shiftFormData, setShiftFormData] = useState({ name: '', startTime: '', endTime: '' });
+  const [editShiftTypeId, setEditShiftTypeId] = useState(null);
 
   // --- Department Rules State ---
   const [editDeptId, setEditDeptId] = useState(null);
@@ -69,6 +70,29 @@ export default function SchedulesClient({ initialShiftTypes, users, locations, d
     
     if (res.ok) {
       alert("Schedules successfully generated!");
+      fetchSchedules();
+    } else {
+      const err = await res.json();
+      alert(`Error: ${err.error}`);
+    }
+  };
+
+  const handleClearSchedules = async () => {
+    if (!isAdminOrManager) return alert("Forbidden");
+    if (!confirm('Warning: This will DELETE all generated shifts for the selected month/location/department. Are you sure?')) return;
+    
+    const start = new Date(calYear, calMonth, 1).toISOString();
+    const end = new Date(calYear, calMonth + 1, 0, 23, 59, 59).toISOString();
+    
+    let url = `/api/schedules?start=${start}&end=${end}`;
+    if (calLocation) url += `&locationId=${calLocation}`;
+    if (calDepartment) url += `&departmentId=${calDepartment}`;
+
+    const res = await fetch(url, { method: "DELETE" });
+    
+    if (res.ok) {
+      const data = await res.json();
+      alert(`Successfully deleted ${data.count} schedules!`);
       fetchSchedules();
     } else {
       const err = await res.json();
@@ -150,9 +174,14 @@ export default function SchedulesClient({ initialShiftTypes, users, locations, d
               </select>
             </div>
             {isAdminOrManager && (
-              <button onClick={handleGenerate} className="primary-btn" style={{ width: 'auto', background: '#8b5cf6' }}>
-                ⚡ Auto-Generate Roster
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button onClick={handleGenerate} className="primary-btn" style={{ width: 'auto', background: '#8b5cf6' }}>
+                  ⚡ Auto-Generate Roster
+                </button>
+                <button onClick={handleClearSchedules} className="secondary-btn" style={{ width: 'auto', color: '#ef4444', borderColor: '#fca5a5' }}>
+                  🗑️ Clear Month
+                </button>
+              </div>
             )}
           </div>
           
@@ -442,12 +471,59 @@ export default function SchedulesClient({ initialShiftTypes, users, locations, d
           </form>
 
           <ul style={{ listStyle: 'none', padding: 0 }}>
-            {shiftTypes.map(st => (
-              <li key={st.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', border: '1px solid #e2e8f0', marginBottom: '0.5rem', borderRadius: '4px', background: '#f8fafc' }}>
-                <strong style={{ fontSize: '1.1rem' }}>{st.name}</strong>
-                <span style={{ color: '#64748b' }}>{st.startTime} to {st.endTime}</span>
-              </li>
-            ))}
+            {shiftTypes.map(st => {
+              const isEditing = editShiftTypeId === st.id;
+              
+              if (isEditing) {
+                return (
+                  <li key={st.id} style={{ padding: '1rem', border: '1px solid #e2e8f0', marginBottom: '0.5rem', borderRadius: '4px', background: '#f8fafc' }}>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <input type="text" value={shiftFormData.name} onChange={e => setShiftFormData({...shiftFormData, name: e.target.value})} style={{ flex: 1, padding: '0.4rem' }} />
+                      <input type="time" value={shiftFormData.startTime} onChange={e => setShiftFormData({...shiftFormData, startTime: e.target.value})} style={{ padding: '0.4rem' }} />
+                      <input type="time" value={shiftFormData.endTime} onChange={e => setShiftFormData({...shiftFormData, endTime: e.target.value})} style={{ padding: '0.4rem' }} />
+                      <button onClick={async () => {
+                        const res = await fetch(`/api/schedules/types/${st.id}`, { method: 'PATCH', body: JSON.stringify(shiftFormData) });
+                        if (res.ok) {
+                          const updated = await res.json();
+                          setShiftTypes(shiftTypes.map(s => s.id === st.id ? updated : s));
+                          setEditShiftTypeId(null);
+                          setShiftFormData({ name: '', startTime: '', endTime: '' });
+                        }
+                      }} className="primary-btn" style={{ width: 'auto', padding: '0.4rem 0.8rem' }}>Save</button>
+                      <button onClick={() => {
+                        setEditShiftTypeId(null);
+                        setShiftFormData({ name: '', startTime: '', endTime: '' });
+                      }} className="secondary-btn" style={{ width: 'auto', padding: '0.4rem 0.8rem' }}>Cancel</button>
+                    </div>
+                  </li>
+                );
+              }
+
+              return (
+                <li key={st.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', border: '1px solid #e2e8f0', marginBottom: '0.5rem', borderRadius: '4px', background: '#f8fafc', alignItems: 'center' }}>
+                  <div>
+                    <strong style={{ fontSize: '1.1rem', marginRight: '1rem' }}>{st.name}</strong>
+                    <span style={{ color: '#64748b' }}>{st.startTime} to {st.endTime}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={() => {
+                      setEditShiftTypeId(st.id);
+                      setShiftFormData({ name: st.name, startTime: st.startTime, endTime: st.endTime });
+                    }} style={{ padding: '0.4rem 0.8rem', background: '#e2e8f0', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>✎ Edit</button>
+                    
+                    <button onClick={async () => {
+                      if (!confirm(`Are you sure you want to delete ${st.name}? This might break existing schedules using this shift.`)) return;
+                      const res = await fetch(`/api/schedules/types/${st.id}`, { method: 'DELETE' });
+                      if (res.ok) {
+                        setShiftTypes(shiftTypes.filter(s => s.id !== st.id));
+                      } else {
+                        alert("Failed to delete shift type.");
+                      }
+                    }} style={{ padding: '0.4rem 0.8rem', background: '#fecaca', color: '#b91c1c', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>🗑️ Delete</button>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
