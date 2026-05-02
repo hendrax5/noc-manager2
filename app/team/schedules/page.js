@@ -16,9 +16,15 @@ export default async function SchedulesPage() {
   
   const locations = await prisma.location.findMany({ select: { id: true, city: true } });
   
+  const departments = await prisma.department.findMany({
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true, scheduleRules: true }
+  });
+  
   const users = await prisma.user.findMany({
     include: {
       location: true,
+      department: true,
       schedulePreference: { include: { fixedShift: true } }
     },
     orderBy: { name: 'asc' }
@@ -40,6 +46,7 @@ export default async function SchedulesPage() {
         initialShiftTypes={shiftTypes}
         users={users}
         locations={locations}
+        departments={departments}
         currentUser={currentUser}
       />
     </main>

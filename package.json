@@ -29,6 +29,7 @@
     "react": "latest",
     "react-dom": "latest",
     "recharts": "latest",
+    "ssh2": "^1.17.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

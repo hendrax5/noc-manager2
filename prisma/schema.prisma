@@ -23,6 +23,7 @@ model Department {
   actionItems ActionItem[]
   permittedMeetings    Meeting[]    @relation("MeetingPermittedDepartments")
   permittedTickets     Ticket[]     @relation("TicketPermittedDepartments")
+  scheduleRules        Json?
 }
 
 model Location {
