@@ -10,7 +10,16 @@ import { getAppConfig } from "@/lib/config";
 export default async function TeamPage() {
   const session = await getServerSession(authOptions);
   
-  if (!session || session.user.role !== 'Admin') {
+  if (!session) {
+    redirect('/login');
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: parseInt(session.user.id) },
+    include: { role: true }
+  });
+
+  if (!dbUser || dbUser.role.name !== 'Admin') {
     redirect('/dashboard');
   }
 

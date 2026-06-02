@@ -11,8 +11,18 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
   const [assignments, setAssignments] = useState(searchParams.get('assignments') ? searchParams.get('assignments').split(',') : ['me', 'unassigned', 'others']); // me, others, unassigned
   const [allDepts, setAllDepts] = useState(searchParams.get('all_depts') === 'true'); // Show all departments toggle
   const [companyParam, setCompanyParam] = useState(searchParams.get('company') !== null ? searchParams.get('company') : initialCompanyParam); // Company Routing Filter
+  const [jobCategoryParam, setJobCategoryParam] = useState(searchParams.get('jobCategory') || ""); // Job Category Filter
+  const [jobCategories, setJobCategories] = useState([]);
 
   const ALL_STATUSES = ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Finish', 'Resolved', 'Closed'];
+
+  // Fetch job categories on mount
+  useEffect(() => {
+    fetch('/api/settings/job-categories')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setJobCategories(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
 
   const toggleAssignment = (val) => {
     setAssignments(prev => 
@@ -36,6 +46,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
     if (assignments.length > 0 && assignments.length < 3) params.set('assignments', assignments.join(','));
     if (allDepts) params.set('all_depts', 'true');
     if (companyParam) params.set('company', companyParam);
+    if (jobCategoryParam) params.set('jobCategory', jobCategoryParam);
     if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
     if (searchParams.get('tab')) params.set('tab', searchParams.get('tab'));
     
@@ -51,6 +62,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
     if (assignments.length > 0 && assignments.length < 3) params.set('assignments', assignments.join(','));
     if (allDepts) params.set('all_depts', 'true');
     if (val) params.set('company', val);
+    if (jobCategoryParam) params.set('jobCategory', jobCategoryParam);
     if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
     if (searchParams.get('tab')) params.set('tab', searchParams.get('tab'));
     
@@ -63,6 +75,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
     setAssignments(['me', 'unassigned']);
     setAllDepts(false);
     setCompanyParam("");
+    setJobCategoryParam("");
     
     // Keep the limit and tab if active
     const params = new URLSearchParams();

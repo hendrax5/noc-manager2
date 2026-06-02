@@ -32,6 +32,7 @@ export default async function TicketsPage({ searchParams }) {
   const companyParam = resolvedParams?.company !== undefined ? resolvedParams.company : mappedDefaultCompany;
   const dateParam = resolvedParams?.date || "";
   const tab = resolvedParams?.tab || "";
+  const jobCategoryParam = resolvedParams?.jobCategory || "";
 
   const filters = [];
   
@@ -112,6 +113,11 @@ export default async function TicketsPage({ searchParams }) {
     }
   }
 
+  // Job Category Filter (Phase 5)
+  if (jobCategoryParam) {
+    filters.push({ jobCategory: { name: jobCategoryParam } });
+  }
+
   const whereClause = filters.length > 0 ? { AND: filters } : {};
 
   const page = parseInt(resolvedParams?.page) || 1;
@@ -121,7 +127,7 @@ export default async function TicketsPage({ searchParams }) {
     prisma.ticket.count({ where: whereClause }),
     prisma.ticket.findMany({
       where: whereClause,
-      include: { department: true, assignee: true, services: { include: { customer: true } } },
+      include: { department: true, assignee: true, jobCategory: true, services: { include: { customer: true } } },
       take: tab === 'expiring' ? undefined : pageSize,
       skip: tab === 'expiring' ? undefined : (page - 1) * pageSize,
       orderBy: [
@@ -200,6 +206,7 @@ export default async function TicketsPage({ searchParams }) {
             <th>Tracking ID</th>
             <th>Name</th>
             <th>Subject</th>
+            <th>Category</th>
             <th>Status</th>
             <th>Priority</th>
             <th>Age</th>
@@ -209,7 +216,7 @@ export default async function TicketsPage({ searchParams }) {
         </thead>
         <tbody>
           {tickets.length === 0 && (
-            <tr><td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>No tickets found matching your filters.</td></tr>
+            <tr><td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>No tickets found matching your filters.</td></tr>
           )}
           {tickets.map(t => {
             const isCritical = t.priority === 'Critical';
@@ -268,6 +275,15 @@ export default async function TicketsPage({ searchParams }) {
                     <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', background: new Date(expiryDateStr) < new Date() ? 'var(--danger-bg, #ef4444)' : 'var(--warning-bg, #d946ef)', color: new Date(expiryDateStr) < new Date() ? 'var(--danger-text, white)' : 'var(--warning-text, white)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
                       {new Date(expiryDateStr) < new Date() ? '⚠️ EXPIRED' : `⏳ Exp: ${new Date(expiryDateStr).toLocaleDateString()}`}
                     </span>
+                  )}
+                </td>
+                <td>
+                  {t.jobCategory ? (
+                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '0.15rem 0.5rem', borderRadius: '4px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', whiteSpace: 'nowrap' }}>
+                      {t.jobCategory.name}
+                    </span>
+                  ) : (
+                    <span style={{ color: '#94a3b8', fontSize: '0.8rem', fontStyle: 'italic' }}>-</span>
                   )}
                 </td>
                 <td>

@@ -6,7 +6,16 @@ import { authOptions } from "../auth/[...nextauth]/route";
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'Admin') return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const dbUser = await prisma.user.findUnique({
+      where: { id: parseInt(session.user.id) },
+      include: { role: true }
+    });
+
+    if (!dbUser || dbUser.role.name !== 'Admin') {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
 
     const { email, name, password, roleId, departmentId } = await req.json();
     const user = await prisma.user.create({ 

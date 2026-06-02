@@ -107,7 +107,8 @@ export async function PATCH(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user.role !== 'Admin' && session.user.role !== 'Manager')) {
+    const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
+    if (!session || (session.user.role !== 'Admin' && session.user.role !== 'Manager' && !isCS)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
@@ -118,6 +119,7 @@ export async function DELETE(req, { params }) {
     await prisma.comment.deleteMany({ where: { ticketId: id } });
     await prisma.attachment.deleteMany({ where: { ticketId: id } });
     await prisma.ticketHistory.deleteMany({ where: { ticketId: id } });
+    await prisma.actionItem.updateMany({ where: { linkedTicketId: id }, data: { linkedTicketId: null } });
     await prisma.ticket.delete({ where: { id } });
 
     return NextResponse.json({ message: "Deleted" });

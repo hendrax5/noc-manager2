@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import DashboardCharts from "./DashboardCharts";
+import LiveOpsBoard from "./LiveOpsBoard";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -19,10 +20,12 @@ export default async function DashboardPage() {
   const totalNewTickets = await prisma.ticket.count({ where: { ...scope, status: 'New' } });
   const totalWaitingTickets = await prisma.ticket.count({ where: { ...scope, status: 'Waiting Reply' } });
   const totalRepliedTickets = await prisma.ticket.count({ where: { ...scope, status: 'Replied' } });
+  const totalInProgressTickets = await prisma.ticket.count({ where: { ...scope, status: 'In Progress' } });
   const totalResolvedTickets = await prisma.ticket.count({ where: { ...scope, status: 'Resolved' } });
   
   const ticketStats = [
     { status: 'New', count: totalNewTickets },
+    { status: 'In Progress', count: totalInProgressTickets },
     { status: 'Wait Reply', count: totalWaitingTickets },
     { status: 'Replied', count: totalRepliedTickets },
     { status: 'Resolved', count: totalResolvedTickets }
@@ -85,6 +88,55 @@ export default async function DashboardPage() {
   
   const reportStats = [];
 
+  // ================================================
+  // Phase 2: Job Category Metrics
+  // ================================================
+  const jobCategories = await prisma.jobCategory.findMany({
+    where: { active: true },
+    orderBy: { name: 'asc' }
+  });
+
+  // Count active tickets per category
+  const categoryMetrics = await Promise.all(
+    jobCategories.map(async (cat) => {
+      const [activeCount, todayCount, resolvedTodayCount] = await Promise.all([
+        prisma.ticket.count({
+          where: { ...scope, jobCategoryId: cat.id, status: { notIn: ['Resolved', 'Closed'] } }
+        }),
+        prisma.ticket.count({
+          where: { ...scope, jobCategoryId: cat.id, updatedAt: { gte: todayStart } }
+        }),
+        prisma.ticket.count({
+          where: { ...scope, jobCategoryId: cat.id, status: 'Resolved', resolvedAt: { gte: todayStart } }
+        })
+      ]);
+      return {
+        id: cat.id,
+        name: cat.name,
+        score: cat.score,
+        active: activeCount,
+        today: todayCount,
+        resolvedToday: resolvedTodayCount
+      };
+    })
+  );
+
+  // Category stats for chart (only categories with active tickets)
+  const categoryStats = categoryMetrics
+    .filter(c => c.active > 0)
+    .map(c => ({ name: c.name, count: c.active }));
+
+  // Count today's resolved
+  const todayResolvedCount = await prisma.ticket.count({
+    where: { ...scope, status: 'Resolved', resolvedAt: { gte: todayStart } }
+  });
+
+  // Category colors mapping
+  const CATEGORY_COLORS = [
+    '#3b82f6', '#ef4444', '#8b5cf6', '#10b981', '#f59e0b', 
+    '#f97316', '#06b6d4', '#64748b', '#ec4899', '#84cc16'
+  ];
+
   return (
     <main className="container" style={{ paddingBottom: '3rem' }}>
       
@@ -124,63 +176,127 @@ export default async function DashboardPage() {
         </Link>
       </header>
 
-      {/* 4 Premium KPI Cards */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+      {/* 5 Premium KPI Cards */}
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
         
         {/* New Tickets Card */}
-        <div style={{ padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(225, 29, 72, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-new">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '0.9rem', color: '#be123c', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>New Tickets</h2>
-            <div className="icon-bg" style={{ padding: '0.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(225, 29, 72, 0.1)' }}>
-              <span style={{ fontSize: '1.2rem', display: 'block', lineHeight: 1 }}>🔥</span>
+        <Link href="/tickets?statuses=New" style={{ textDecoration: 'none' }}>
+          <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(225, 29, 72, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-new">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
+              <h2 style={{ fontSize: '0.8rem', color: '#be123c', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>New</h2>
+              <span style={{ fontSize: '1.2rem' }}>🔥</span>
             </div>
+            <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#e11d48', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalNewTickets}</p>
+            <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>🔥</div>
           </div>
-          <p style={{ fontSize: '3.5rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#e11d48', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalNewTickets}</p>
-          <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', fontSize: '8rem', opacity: 0.05, zIndex: 1, transform: 'rotate(-15deg)' }}>🔥</div>
-        </div>
+        </Link>
+
+        {/* In Progress Card */}
+        <Link href="/tickets?statuses=In+Progress" style={{ textDecoration: 'none' }}>
+          <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-progress">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
+              <h2 style={{ fontSize: '0.8rem', color: '#1d4ed8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>In Progress</h2>
+              <span style={{ fontSize: '1.2rem' }}>⚡</span>
+            </div>
+            <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#2563eb', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalInProgressTickets}</p>
+            <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>⚡</div>
+          </div>
+        </Link>
 
         {/* Pending Card */}
-        <div style={{ padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(217, 119, 6, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-pending">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '0.9rem', color: '#b45309', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Pending Action</h2>
-            <div className="icon-bg" style={{ padding: '0.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(217, 119, 6, 0.1)' }}>
-              <span style={{ fontSize: '1.2rem', display: 'block', lineHeight: 1 }}>⏳</span>
+        <Link href="/tickets?statuses=Waiting+Reply,Replied" style={{ textDecoration: 'none' }}>
+          <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(217, 119, 6, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-pending">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
+              <h2 style={{ fontSize: '0.8rem', color: '#b45309', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Pending</h2>
+              <span style={{ fontSize: '1.2rem' }}>⏳</span>
             </div>
+            <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#d97706', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalWaitingTickets + totalRepliedTickets}</p>
+            <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>⏳</div>
           </div>
-          <p style={{ fontSize: '3.5rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#d97706', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalWaitingTickets + totalRepliedTickets}</p>
-          <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', fontSize: '8rem', opacity: 0.05, zIndex: 1, transform: 'rotate(-15deg)' }}>⏳</div>
-        </div>
+        </Link>
 
-        {/* Resolved Card */}
-        <div style={{ padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-resolved">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '0.9rem', color: '#15803d', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved</h2>
-             <div className="icon-bg" style={{ padding: '0.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.1)' }}>
-                <span style={{ fontSize: '1.2rem', display: 'block', lineHeight: 1 }}>✅</span>
-             </div>
+        {/* Resolved Today Card */}
+        <Link href="/tickets?statuses=Resolved&date=today" style={{ textDecoration: 'none' }}>
+          <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-resolved">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
+              <h2 style={{ fontSize: '0.8rem', color: '#15803d', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved Today</h2>
+              <span style={{ fontSize: '1.2rem' }}>✅</span>
+            </div>
+            <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#16a34a', lineHeight: 1, position: 'relative', zIndex: 2 }}>{todayResolvedCount}</p>
+            <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>✅</div>
           </div>
-          <p style={{ fontSize: '3.5rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#16a34a', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalResolvedTickets}</p>
-          <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', fontSize: '8rem', opacity: 0.05, zIndex: 1, transform: 'rotate(-15deg)' }}>✅</div>
-        </div>
+        </Link>
 
         {/* Average TTR Card */}
-        <div style={{ padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-ttr">
+        <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-ttr">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '0.9rem', color: '#4338ca', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Average TTR</h2>
-             <div className="icon-bg" style={{ padding: '0.5rem', borderRadius: '12px', boxShadow: '0 2px 4px rgba(79, 70, 229, 0.1)' }}>
-                <span style={{ fontSize: '1.2rem', display: 'block', lineHeight: 1 }}>⏱️</span>
-             </div>
+            <h2 style={{ fontSize: '0.8rem', color: '#4338ca', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Avg TTR</h2>
+            <span style={{ fontSize: '1.2rem' }}>⏱️</span>
           </div>
-          <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.9rem 0 0 0', color: '#4f46e5', lineHeight: 1, position: 'relative', zIndex: 2 }}>
+          <p style={{ fontSize: '2.2rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#4f46e5', lineHeight: 1, position: 'relative', zIndex: 2 }}>
             {resolvedData.length === 0 ? 'N/A' : (
               <>
-                {avgTtrObj.h > 0 && <span style={{letterSpacing: '-2px'}}>{avgTtrObj.h}<span style={{fontSize: '1rem', color: '#818cf8', margin: '0 0.5rem 0 0.1rem', letterSpacing: '0'}}>h</span></span>}
-                <span style={{letterSpacing: '-2px'}}>{avgTtrObj.m}<span style={{fontSize: '1rem', color: '#818cf8', marginLeft: '0.1rem', letterSpacing: '0'}}>m</span></span>
+                {avgTtrObj.h > 0 && <span style={{letterSpacing: '-2px'}}>{avgTtrObj.h}<span style={{fontSize: '0.85rem', color: '#818cf8', margin: '0 0.3rem 0 0.1rem', letterSpacing: '0'}}>h</span></span>}
+                <span style={{letterSpacing: '-2px'}}>{avgTtrObj.m}<span style={{fontSize: '0.85rem', color: '#818cf8', marginLeft: '0.1rem', letterSpacing: '0'}}>m</span></span>
               </>
             )}
           </p>
-          <div style={{ position: 'absolute', right: '-20px', bottom: '-20px', fontSize: '8rem', opacity: 0.03, zIndex: 1, transform: 'rotate(-15deg)' }}>⏱️</div>
+          <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.03, zIndex: 1, transform: 'rotate(-15deg)' }}>⏱️</div>
         </div>
+      </section>
+
+      {/* Job Category Monitor (Phase 2) */}
+      {categoryMetrics.length > 0 && (
+        <section style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2 className="text-dark" style={{ margin: 0, fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.2rem' }}>🏷️</span> Job Category Monitor
+            </h2>
+            <Link href="/tickets?tab=all" style={{ fontSize: '0.8rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 'bold' }}>
+              View All Tickets →
+            </Link>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem' }}>
+            {categoryMetrics.map((cat, idx) => {
+              const color = CATEGORY_COLORS[idx % CATEGORY_COLORS.length];
+              const total = cat.active + cat.resolvedToday;
+              const progress = total > 0 ? Math.round((cat.resolvedToday / total) * 100) : 0;
+              const hasOverdue = cat.active > 5; // Simple heuristic; adjust as needed
+              return (
+                <Link key={cat.id} href={`/tickets?statuses=New,Open,In+Progress,Waiting+Reply,Replied,On+Hold,Finish&assignments=me,unassigned,others`} style={{ textDecoration: 'none' }}>
+                  <div className="hover-lift" style={{
+                    padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)',
+                    background: 'var(--card-bg)', cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.03)', transition: 'all 0.2s'
+                  }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: color }}></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: color, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{cat.name}</span>
+                      {hasOverdue && <span style={{ fontSize: '0.65rem', background: '#fef2f2', color: '#dc2626', padding: '0.1rem 0.3rem', borderRadius: '3px', fontWeight: 'bold' }}>⚠️</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '1.8rem', fontWeight: '900', color: 'var(--heading-color)', lineHeight: 1 }}>{cat.active}</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-color)' }}>aktif</span>
+                    </div>
+                    {/* Progress bar */}
+                    <div style={{ height: '4px', background: 'var(--hover-bg)', borderRadius: '2px', overflow: 'hidden', marginBottom: '0.3rem' }}>
+                      <div style={{ height: '100%', width: `${progress}%`, background: color, borderRadius: '2px', transition: 'width 0.5s ease' }}></div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-color)' }}>
+                      <span>📊 {cat.today} hari ini</span>
+                      <span>✅ {cat.resolvedToday}</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Live Operations Board (Phase 3) */}
+      <section style={{ marginBottom: '2rem' }}>
+        <LiveOpsBoard jobCategories={jobCategories} />
       </section>
 
       {/* Information Modules Grid */}
@@ -265,7 +381,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* Auto-Report & Charts */}
+      {/* Today's Pulse + Charts */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         
         {/* Glassmorphic Auto-Report */}
@@ -290,14 +406,18 @@ export default async function DashboardPage() {
               </Link>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
-               <div className="bg-white-card hover-lift" style={{ padding: '1.5rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
-                 <div style={{ fontSize: '3rem', fontWeight: '900', color: '#3b82f6', marginBottom: '0.5rem', lineHeight: '1', textShadow: '0 4px 10px rgba(59, 130, 246, 0.2)' }}>{todayTickets.length}</div>
-                 <div style={{ fontSize: '0.85rem', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Touched Today</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+               <div className="bg-white-card hover-lift" style={{ padding: '1.25rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                 <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#3b82f6', marginBottom: '0.4rem', lineHeight: '1', textShadow: '0 4px 10px rgba(59, 130, 246, 0.2)' }}>{todayTickets.length}</div>
+                 <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Touched Today</div>
                </div>
-               <div className="bg-white-card hover-lift" style={{ padding: '1.5rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
-                 <div style={{ fontSize: '3rem', fontWeight: '900', color: '#10b981', marginBottom: '0.5rem', lineHeight: '1', textShadow: '0 4px 10px rgba(16, 185, 129, 0.2)' }}>{todayResolved}</div>
-                 <div style={{ fontSize: '0.85rem', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved Today</div>
+               <div className="bg-white-card hover-lift" style={{ padding: '1.25rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                 <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#10b981', marginBottom: '0.4rem', lineHeight: '1', textShadow: '0 4px 10px rgba(16, 185, 129, 0.2)' }}>{todayResolved}</div>
+                 <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved Today</div>
+               </div>
+               <div className="bg-white-card hover-lift" style={{ padding: '1.25rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                 <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#f59e0b', marginBottom: '0.4rem', lineHeight: '1', textShadow: '0 4px 10px rgba(245, 158, 11, 0.2)' }}>{categoryMetrics.reduce((a, c) => a + c.active, 0)}</div>
+                 <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Active Jobs</div>
                </div>
             </div>
           </div>
@@ -305,7 +425,7 @@ export default async function DashboardPage() {
 
         {/* Render Dynamic Graphs - Wrapped in a sleeker container */}
         <div className="bg-white-card" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
-           <DashboardCharts ticketStats={ticketStats} reportStats={reportStats} />
+           <DashboardCharts ticketStats={ticketStats} reportStats={reportStats} categoryStats={categoryStats} />
         </div>
 
       </section>

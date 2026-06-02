@@ -1,6 +1,26 @@
-# NOC Manager v2 (Version 1.2.0)
+# NOC Manager v2 (Version 1.3.1)
 
 A comprehensive Enterprise Ticketing, Operations, and Analytics suite designed exclusively for internal NOC, Customer Service, and B2B Technical Support Teams.
+
+## 🚀 What's New in v1.3.0 & v1.3.1?
+
+### 1. 📊 Complete Dashboard Redesign & Premium Layout
+- **Glassmorphic Hero Header:** Personal welcome message, visual role/department badges, and quick ticket creation shortcut.
+- **Enhanced KPI Cards:** Visual grids tracking *New*, *In Progress*, *Pending*, *Resolved Today*, and *Average Time-To-Resolution (TTR)* with 7-day sparkline micro-trends.
+- **Job Category Monitoring Grid:** Real-time breakdown of active/daily ticket workloads per Job Category (e.g., Installation, Upgrade, Relocation, Trouble Ticket) with visual progress meters and SLA warnings.
+- **CS Live Operations Board:** A real-time spreadsheet-like operational table that completely replaces legacy Excel sheets, featuring sorting, advanced filters (Date Range, PIC, Category, Status), inline quick-note inserts, and one-click CSV exporting.
+
+### 2. 📝 Ticket Notes & Activity Timeline
+- **Internal Notes System:** Integrated internal activity log on tickets, removing external tool/scratchpad dependencies for follow-up notes.
+- **Timeline UI:** Audit-style vertical timeline for notes in the Ticket Detail page with distinct note types (escalation, follow-up, internal, customer update).
+
+### 3. 🔧 Crucial Bug Fixes & Session Resolvers (v1.3.1)
+- **Cascade Deletions & ActionItems:** Disconnected ActionItem references automatically upon ticket deletion, preventing database foreign key constraints (500) from blocking purges.
+- **Next.js Route Cache Fix:** Forced clean HTTP redirects (`window.location.href`) and checked response statuses on ticket deletion, correcting the Next.js router cache bug where deleted tickets still appeared in lists.
+- **User Role Overrides Caching:** Modified Admin pages (`/team`, `/settings`) and User APIs to fetch roles dynamically from the database instead of Next-Auth JWT cache. This allows administrator role overrides and promotions to take effect instantly without requiring logout/login.
+- **Navbar Version Indicator:** Directly integrated the current version number from `package.json` into the global Navbar header.
+
+---
 
 ## 🚀 What's New in v1.2.0?
 
@@ -12,19 +32,18 @@ This release focuses on heavily expanding Administrative control, optimizing mas
 - **Factory Reset Protocol:** Admins can selectively wipe Transactional (Tickets/Meetings) bounds, Asset topologies, or generic Human Resources (while protecting their Root account) securely.
 
 ### 2. 🔍 Asynchronous Remote Parameter Macros (Ticketing)
-- **`@Customers` Debounced Search:** Custom Dropdown Fields assigned with this magic string transform into a Remote Async Autocomplete Component. To prevent SSR crash looping on a 5000+ Customer database, it enforces a 3-character threshold querying native ILIKE clauses resolving instantly without bloating React client memory.
+- **`@Customers` Debounced Search:** Dropdown Fields assigned with this magic string transform into a Remote Async Autocomplete Component, querying ILIKE clauses resolving instantly without bloating React client memory.
 - **`@ServiceTemplates` Bindings:** Automatic bridging of Active Service Assets onto Ticket Instantiation drop-downs.
 
 ### 3. 🍔 Global UI/UX & Native Responsive Reflows
-- **Hamburger Collapsible Menus:** Swapped clunky legacy horizontal flex-scrolling out for tactile CSS-driven Mobile Checkbox layers. 
-- **Enterprise Menu Grouping:** Massive top-level menus have been efficiently organized into `Resources ▾` and `Administration ▾` Dropdown contexts flattening cognitive overhead.
-- **Data Table Horizons:** Static tables now deploy `-webkit-overflow-scrolling` bindings universally resolving tight screen squeezing natively.
-- **Strict Antigravity Dark Mode Integration:** Eradicated hardcoded generic `<input>` and `<card>` white backgrounds replacing them precisely into `var(--card-bg)` matching VSCode and Antigravity variables (`#1e1e1e`, `#252526`) flawlessly.
+- **Hamburger Collapsible Menus:** Collapsible checkbox menus for tactile CSS-driven mobile responsiveness.
+- **Enterprise Menu Grouping:** Menu organization into `Resources ▾` and `Administration ▾` Dropdowns.
+- **Data Table Horizons:** Static tables deploy `-webkit-overflow-scrolling` bindings resolving tight screen squeezing natively.
+- **Strict Antigravity Dark Mode Integration:** Eradicated generic white backgrounds, replaced precisely with theme variables.
 
 ### 4. 🚢 Automated CI/CD Publishing
-- Bridged `.github/workflows/publish.yml` automatically running upon any native Git Tag creation (`v*.*.*`).
-- Auto-generates lightweight `Dockerfile` matrix bindings explicitly pushing `ghcr.io/hendrax5/noc-manager2:latest` natively.
-- Deploys localized App scopes directly into GitHub NPM Packages seamlessly.
+- Bridged `.github/workflows/publish.yml` running onGit Tag creation (`v*.*.*`).
+- Auto-generates `Dockerfile` matrix bindings pushing `ghcr.io/hendrax5/noc-manager2:latest` automatically.
 
 ## 🚀 Instalasi & Deployment (Production)
 

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useTheme } from "./ThemeProvider";
 
-export default function Navbar({ appName = "NOC Management" }) {
+export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0" }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
 
@@ -15,7 +15,10 @@ export default function Navbar({ appName = "NOC Management" }) {
 
   if (status === "loading") return (
     <nav className="navbar">
-      <div className="nav-brand">{appName}</div>
+      <div className="nav-brand">
+        {appName}
+        <span style={{ fontSize: '0.65rem', opacity: 0.7, verticalAlign: 'middle', background: 'rgba(255,255,255,0.15)', padding: '0.2rem 0.5rem', borderRadius: '10px', marginLeft: '0.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>v{appVersion}</span>
+      </div>
     </nav>
   );
   // Jangan render navbar jika tidak ada session dan sedang di halaman login
@@ -23,7 +26,10 @@ export default function Navbar({ appName = "NOC Management" }) {
 
   return (
     <nav className="navbar">
-      <div className="nav-brand">{appName}</div>
+      <div className="nav-brand">
+        {appName}
+        <span style={{ fontSize: '0.65rem', opacity: 0.7, verticalAlign: 'middle', background: 'rgba(255,255,255,0.15)', padding: '0.2rem 0.5rem', borderRadius: '10px', marginLeft: '0.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>v{appVersion}</span>
+      </div>
       {session && (
         <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} title="Menu">
           {isMobileMenuOpen ? '✖' : '☰'}
