@@ -311,7 +311,7 @@ export default async function DashboardPage({ searchParams }) {
               const progress = total > 0 ? Math.round((cat.resolvedToday / total) * 100) : 0;
               const hasOverdue = cat.active > 5; // Simple heuristic; adjust as needed
               return (
-                <Link key={cat.id} href={`/tickets?statuses=New,Open,In+Progress,Waiting+Reply,Replied,On+Hold,Finish&assignments=me,unassigned,others`} style={{ textDecoration: 'none' }}>
+                <Link key={cat.id} href={`/tickets?statuses=New,Open,In+Progress,Waiting+Reply,Replied,On+Hold,Finish&assignments=me,unassigned,others&jobCategory=${encodeURIComponent(cat.name)}`} style={{ textDecoration: 'none' }}>
                   <div className="hover-lift" style={{
                     padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)',
                     background: 'var(--card-bg)', cursor: 'pointer', position: 'relative', overflow: 'hidden',

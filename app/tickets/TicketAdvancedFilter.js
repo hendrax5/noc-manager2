@@ -24,6 +24,16 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
       .catch(() => {});
   }, []);
 
+  // Sync state with URL search params when they change client-side
+  useEffect(() => {
+    setQ(searchParams.get('q') || "");
+    setStatuses(searchParams.get('statuses') ? searchParams.get('statuses').split(',') : ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Finish']);
+    setAssignments(searchParams.get('assignments') ? searchParams.get('assignments').split(',') : ['me', 'unassigned', 'others']);
+    setAllDepts(searchParams.get('all_depts') === 'true');
+    setCompanyParam(searchParams.get('company') !== null ? searchParams.get('company') : initialCompanyParam);
+    setJobCategoryParam(searchParams.get('jobCategory') || "");
+  }, [searchParams, initialCompanyParam]);
+
   const toggleAssignment = (val) => {
     setAssignments(prev => 
       prev.includes(val) ? prev.filter(x => x !== val) : [...prev, val]
@@ -63,6 +73,21 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
     if (allDepts) params.set('all_depts', 'true');
     if (val) params.set('company', val);
     if (jobCategoryParam) params.set('jobCategory', jobCategoryParam);
+    if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
+    if (searchParams.get('tab')) params.set('tab', searchParams.get('tab'));
+    
+    router.push(`/tickets?${params.toString()}`);
+  };
+
+  const handleJobCategoryChange = (val) => {
+    setJobCategoryParam(val);
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (statuses.length > 0) params.set('statuses', statuses.join(','));
+    if (assignments.length > 0 && assignments.length < 3) params.set('assignments', assignments.join(','));
+    if (allDepts) params.set('all_depts', 'true');
+    if (companyParam) params.set('company', companyParam);
+    if (val) params.set('jobCategory', val);
     if (searchParams.get('limit')) params.set('limit', searchParams.get('limit'));
     if (searchParams.get('tab')) params.set('tab', searchParams.get('tab'));
     
@@ -159,6 +184,21 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
               >
                 <option value="">-- All Companies --</option>
                 {companies.map((c, i) => <option key={`filter-${i}`} value={c}>{c}</option>)}
+              </select>
+           </div>
+        </div>
+
+        {/* Job Category Filter */}
+        <div>
+           <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e293b', fontSize: '0.95rem' }}>Job Category:</h4>
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <select 
+                value={jobCategoryParam} 
+                onChange={(e) => handleJobCategoryChange(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.9rem', color: '#334155', outline: 'none' }}
+              >
+                <option value="">-- All Categories --</option>
+                {jobCategories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
               </select>
            </div>
         </div>

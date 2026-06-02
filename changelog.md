@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.4] - 2026-06-02
+
+### Added
+- **Job Category Dropdown in Advanced Filters**
+  - Integrated a new "Job Category" dropdown filter selector in the advanced filter panel on the tickets page (`TicketAdvancedFilter.js`).
+  - Added dynamic state synchronization in advanced filters using a `useEffect` watching search parameters to keep checkboxes and dropdowns in sync with client-side URL changes.
+
+### Fixed
+- **Dashboard Category Monitor Card Links**
+  - Fixed Job Category Monitor card links in `page.js` to correctly append `&jobCategory=...` to the URL. This resolved the issue where clicking "Installasi" or other category cards listed unrelated categories on the tickets page.
+
 ## [1.3.3] - 2026-06-02
 
 ### Fixed
