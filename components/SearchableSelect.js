@@ -55,7 +55,10 @@ export default function SearchableSelect({ options, value, onChange, placeholder
           type="text"
           value={searchTerm}
           onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => {
+            setIsOpen(true);
+            setSearchTerm("");
+          }}
           disabled={disabled}
           placeholder={placeholder}
           required={required && !value}

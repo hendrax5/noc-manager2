@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-06-02
+
+### Fixed
+- **PIC / Assignee Search Reset**: Fixed a bug in `SearchableSelect` where the dropdown options were overly filtered by the currently selected value when re-opening/focusing. The input search text is now cleared on focus to display all options, and reverts to the selected value upon clicking outside without choosing a new one.
+
+### Added
+- **Searchable Badged Multi-Select for Impacting Services**: Replaced the long, vertically scrollable checkbox checklist of services in the new ticket form with a searchable multi-select tag input. Selected services are rendered as clearable badges (with a `✕` button to remove them) and search allows filtering by customer name, service name, or service ID.
+
 ## [1.6.0] - 2026-06-02
 
 ### Added
