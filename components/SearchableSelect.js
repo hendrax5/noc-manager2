@@ -1,13 +1,22 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 
-export default function SearchableSelect({ options, value, onChange, placeholder, disabled, required }) {
+export default function SearchableSelect({ options = [], value, onChange, placeholder, disabled, required }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef(null);
 
+  const safeOptions = (options || []).map(o => 
+    typeof o === 'object' && o !== null ? o : { value: o, label: o }
+  );
+
   // Sync search input or display value when selection changes
-  const selectedOption = options.find(o => String(o.value) === String(value));
+  const selectedOption = safeOptions.find(o => {
+    if (value === undefined || value === null || value === '') {
+      return o.value === undefined || o.value === null || o.value === '';
+    }
+    return String(o.value) === String(value);
+  });
 
   useEffect(() => {
     if (!isOpen) {
@@ -26,8 +35,8 @@ export default function SearchableSelect({ options, value, onChange, placeholder
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredOptions = options.filter(o => 
-    o.label?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredOptions = safeOptions.filter(o => 
+    String(o.label || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleInputChange = (e) => {

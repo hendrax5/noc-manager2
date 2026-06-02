@@ -18,13 +18,25 @@ function linkify(text) {
   });
 }
 
-function SearchableSelect({ options, value, onChange, disabled, placeholder }) {
+function SearchableSelect({ options = [], value, onChange, disabled, placeholder }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const selectedOption = options.find(o => o.value == value);
+
+  const safeOptions = (options || []).map(o => 
+    typeof o === 'object' && o !== null ? o : { value: o, label: o }
+  );
+
+  const selectedOption = safeOptions.find(o => {
+    if (value === undefined || value === null || value === '') {
+      return o.value === undefined || o.value === null || o.value === '';
+    }
+    return String(o.value) === String(value);
+  });
   const displayValue = isOpen ? searchTerm : (selectedOption ? selectedOption.label : "");
 
-  const filteredOptions = options.filter(o => o.label.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredOptions = safeOptions.filter(o => 
+    String(o.label || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div style={{ position: 'relative', width: '100%', zIndex: isOpen ? 50 : 1 }}>
