@@ -59,6 +59,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
   const [inlineNoteText, setInlineNoteText] = useState('');
   const [inlineNoteLoading, setInlineNoteLoading] = useState(false);
   const [dateRange, setDateRange] = useState('today');
+  const [showResolved, setShowResolved] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -114,6 +115,11 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
   });
 
   const filteredTickets = sortedTickets.filter(t => {
+    // Hide resolved by default unless showResolved is checked or filterStatus is explicitly set to Resolved
+    if (t.status === 'Resolved' && !showResolved && filterStatus !== 'Resolved') {
+      return false;
+    }
+
     if (!searchTerm) return true;
     const s = searchTerm.toLowerCase();
     const customerName = getCustomerName(t);
@@ -235,6 +241,15 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
           <option value="Finish">Finish</option>
           <option value="Resolved">Resolved</option>
         </select>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-color)', cursor: 'pointer', marginLeft: 'auto' }}>
+          <input 
+            type="checkbox"
+            checked={showResolved}
+            onChange={e => setShowResolved(e.target.checked)}
+            style={{ width: '1rem', height: '1rem', cursor: 'pointer' }}
+          />
+          Tampilkan Resolved
+        </label>
       </div>
 
       {/* Table */}

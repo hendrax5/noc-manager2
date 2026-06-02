@@ -6,6 +6,7 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 
 | Version | Release Date | Status | Description |
 |---|---|---|---|
+| **v1.8.0** | 2026-06-02 | Active | **Feature Release** - Added resolved tickets default hiding and quick visibility toggle on Live Operations Board. |
 | **v1.7.0** | 2026-06-02 | Active | **Feature & Bug Fix Release** - Fixed PIC SearchableSelect focus bug and implemented searchable badged multi-select tag input for Impacting Services. |
 | **v1.6.0** | 2026-06-02 | Active | **Feature Release** - Granular ticket and user/role administration capability checklist. |
 | **v1.5.0** | 2026-06-02 | Active | **Feature Release** - Database-driven Roles & Permissions system with UI permission checklists. |
@@ -19,6 +20,11 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 | **v1.2.2** | 2026-05-15 | Active | Current baseline version prior to redesign. |
 
 ## Version Log Detail
+
+### v1.8.0
+- **Release Date**: June 2, 2026
+- **Prisma Changes**: No
+- **Status**: Stable / Verified Build / Resolved tickets default hiding and quick visibility toggle on Live Operations Board
 
 ### v1.7.0
 - **Release Date**: June 2, 2026

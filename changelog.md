@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-06-02
+
+### Added
+- **Resolved Tickets Default Hiding & Toggle**: Modified the Live Operations Board to hide resolved tickets by default. Added a "Tampilkan Resolved" checkbox toggle to the filter bar (aligned beautifully to the right) to easily display resolved tickets when needed. If the status dropdown is explicitly set to "Resolved", the resolved tickets will also show.
+
 ## [1.7.0] - 2026-06-02
 
 ### Fixed
