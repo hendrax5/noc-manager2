@@ -43,6 +43,16 @@ export default function DashboardClient({
   activeCustomerIncidents = []
 }) {
   const [activeTab, setActiveTab] = useState(hasGlobalAccess ? "helicopter" : "workspace");
+  const [expandedPics, setExpandedPics] = useState({});
+  const [expandedSlas, setExpandedSlas] = useState({});
+
+  const togglePicExpand = (id) => {
+    setExpandedPics(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const toggleSlaExpand = (id) => {
+    setExpandedSlas(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Helper to extract customer name (duplicated client-side for rendering consistency)
   function getCustomerName(t) {
@@ -532,19 +542,68 @@ export default function DashboardClient({
                       loadText = 'Sedang';
                     }
 
+                    const totalWeight = (u.tickets || []).reduce((sum, t) => sum + (t.jobCategory?.score || 0), 0);
+                    const isExpanded = !!expandedPics[u.id];
+
                     return (
-                      <div key={u.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                      <div key={u.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--heading-color)' }}>
+                          <span 
+                            onClick={() => togglePicExpand(u.id)}
+                            style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--heading-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                          >
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{isExpanded ? '▼' : '▶'}</span>
                             {name} <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-color)' }}>({dept})</span>
                           </span>
-                          <span style={{ background: bg, color: color, padding: '0.15rem 0.6rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 'bold', border: `1px solid ${color}30` }}>
-                            {count} Tiket • {loadText}
+                          <span style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                            {totalWeight > 0 && (
+                              <span style={{ fontSize: '0.68rem', background: '#eff6ff', color: '#2563eb', padding: '0.15rem 0.5rem', borderRadius: '12px', border: '1px solid #bfdbfe', fontWeight: 'bold' }}>
+                                Bobot: {totalWeight} pt
+                              </span>
+                            )}
+                            <span style={{ background: bg, color: color, padding: '0.15rem 0.6rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 'bold', border: `1px solid ${color}30` }}>
+                              {count} Tiket • {loadText}
+                            </span>
                           </span>
                         </div>
-                        <div style={{ height: '8px', background: 'var(--hover-bg)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ height: '8px', background: 'var(--hover-bg)', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer' }} onClick={() => togglePicExpand(u.id)}>
                           <div style={{ height: '100%', width: `${percent}%`, background: color, borderRadius: '4px', transition: 'width 0.4s ease-in-out' }}></div>
                         </div>
+
+                        {isExpanded && (
+                          <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {(!u.tickets || u.tickets.length === 0) ? (
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-color)', textAlign: 'center', fontStyle: 'italic' }}>
+                                Tidak ada tiket aktif saat ini.
+                              </div>
+                            ) : (
+                              u.tickets.map(t => {
+                                let pColor = '#94a3b8';
+                                if (t.priority === 'Critical') pColor = '#ef4444';
+                                else if (t.priority === 'High') pColor = '#f59e0b';
+                                else if (t.priority === 'Medium') pColor = '#3b82f6';
+                                else if (t.priority === 'Low') pColor = '#10b981';
+
+                                return (
+                                  <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
+                                      <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: pColor, flexShrink: 0 }} title={t.priority}></span>
+                                      <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', textDecoration: 'none', color: '#3b82f6', flexShrink: 0 }}>
+                                        [{t.trackingId}]
+                                      </Link>
+                                      <span style={{ color: 'var(--heading-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.title}>
+                                        {t.title}
+                                      </span>
+                                    </div>
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-color)', flexShrink: 0 }}>
+                                      {getDuration(t.createdAt)}
+                                    </span>
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -586,22 +645,72 @@ export default function DashboardClient({
                       statusLabel = `Kritis (${timeLeftMin}m)`;
                     }
 
+                    const isExpanded = !!expandedSlas[t.id];
+
+                    let priorityEmoji = '🟢';
+                    let priorityColor = '#10b981';
+                    let priorityBg = '#ecfdf5';
+                    if (t.priority === 'Critical') {
+                      priorityEmoji = '🔴';
+                      priorityColor = '#ef4444';
+                      priorityBg = '#fef2f2';
+                    } else if (t.priority === 'High') {
+                      priorityEmoji = '🟠';
+                      priorityColor = '#f59e0b';
+                      priorityBg = '#fffbeb';
+                    } else if (t.priority === 'Medium') {
+                      priorityEmoji = '🔵';
+                      priorityColor = '#3b82f6';
+                      priorityBg = '#eff6ff';
+                    }
+
                     return (
-                      <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', border: '1px solid var(--border-color)', borderRadius: '8px', borderLeft: `4px solid ${urgencyColor}`, background: 'var(--hover-bg)' }}>
-                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>
-                          <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', fontSize: '0.88rem', textDecoration: 'none', color: '#3b82f6' }}>
-                            {t.trackingId}
-                          </Link>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--heading-color)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.title}</div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--text-color)' }}>
-                            PIC: {t.assignee?.name || 'Unassigned'} • {t.department?.name}
+                      <div key={t.id} style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem 1rem', border: '1px solid var(--border-color)', borderRadius: '8px', borderLeft: `4px solid ${urgencyColor}`, background: 'var(--hover-bg)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%', cursor: 'pointer' }} onClick={() => toggleSlaExpand(t.id)}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{isExpanded ? '▼' : '▶'}</span>
+                              <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', fontSize: '0.88rem', textDecoration: 'none', color: '#3b82f6' }} onClick={e => e.stopPropagation()}>
+                                {t.trackingId}
+                              </Link>
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--heading-color)', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600' }}>{t.title}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-color)', marginTop: '0.1rem' }}>
+                              PIC: {t.assignee?.name || 'Unassigned'} • {t.department?.name}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: 'flex-end' }}>
+                            <span style={{ display: 'inline-block', background: urgencyBg, color: urgencyColor, padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 'bold', border: `1px solid ${urgencyColor}25` }}>
+                              {statusLabel}
+                            </span>
+                            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                              <span style={{ background: priorityBg, color: priorityColor, padding: '0.05rem 0.3rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 'bold', border: `1px solid ${priorityColor}20` }}>
+                                {priorityEmoji} {t.priority}
+                              </span>
+                              {t.jobCategory?.name && (
+                                <span style={{ background: 'var(--card-bg)', color: 'var(--heading-color)', padding: '0.05rem 0.3rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 'bold', border: '1px solid var(--border-color)' }}>
+                                  🏷️ {t.jobCategory.name}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <span style={{ display: 'inline-block', background: urgencyBg, color: urgencyColor, padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 'bold', border: `1px solid ${urgencyColor}25` }}>
-                            {statusLabel}
-                          </span>
-                        </div>
+
+                        {isExpanded && (
+                          <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ color: 'var(--text-color)', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                              <strong>Deskripsi:</strong> {t.description ? (t.description.length > 150 ? t.description.substring(0, 150) + "..." : t.description) : "Tidak ada deskripsi."}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed var(--border-color)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-color)' }}>
+                                Dibuat: {new Date(t.createdAt).toLocaleString('en-CA')} ({getDuration(t.createdAt)} lalu)
+                              </span>
+                              <Link href={`/tickets/${t.id}`} style={{ background: '#3b82f6', color: 'white', textDecoration: 'none', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                                Buka Tiket →
+                              </Link>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

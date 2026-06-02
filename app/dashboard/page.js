@@ -197,6 +197,24 @@ export default async function DashboardPage({ searchParams }) {
         name: true,
         email: true,
         department: { select: { name: true } },
+        tickets: {
+          where: { status: { notIn: ['Resolved', 'Closed'] } },
+          select: {
+            id: true,
+            trackingId: true,
+            title: true,
+            priority: true,
+            status: true,
+            createdAt: true,
+            jobCategory: {
+              select: {
+                name: true,
+                score: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        },
         _count: {
           select: {
             tickets: {
@@ -236,7 +254,8 @@ export default async function DashboardPage({ searchParams }) {
       },
       include: {
         assignee: { select: { name: true } },
-        department: { select: { name: true } }
+        department: { select: { name: true } },
+        jobCategory: { select: { name: true } }
       },
       orderBy: { nextSlaDeadline: 'asc' },
       take: 10
