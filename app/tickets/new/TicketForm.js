@@ -2,8 +2,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
+import SearchableSelect from "@/components/SearchableSelect";
 
-export default function TicketForm({ departments, categories, customFields, services, serviceTemplates, companies = ["ION", "SDC", "Sistercompany"], defaultTargetDeptId }) {
+export default function TicketForm({ departments, categories, users = [], customFields, services, serviceTemplates, companies = ["ION", "SDC", "Sistercompany"], defaultTargetDeptId }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customDataState, setCustomDataState] = useState({});
@@ -12,6 +13,7 @@ export default function TicketForm({ departments, categories, customFields, serv
     description: '',
     priority: 'Medium',
     departmentId: defaultTargetDeptId || departments[0]?.id || '',
+    assigneeId: '',
     jobCategoryId: '',
     enableSla: false,
     slaTimerMins: 15
@@ -222,12 +224,29 @@ export default function TicketForm({ departments, categories, customFields, serv
       
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Department</label>
-        <select value={formData.departmentId} onChange={e => setFormData({...formData, departmentId: parseInt(e.target.value)})}>
-          {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-        </select>
+        <SearchableSelect 
+          options={departments.map(d => ({ value: d.id, label: d.name }))}
+          value={formData.departmentId}
+          onChange={val => setFormData({ ...formData, departmentId: val ? parseInt(val) : '' })}
+          placeholder="-- Select Department --"
+          required
+        />
       </div>
 
       {renderCustomFields('below_department')}
+
+      <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+        <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Assignee (PIC / NOC Staff - Optional)</label>
+        <SearchableSelect 
+          options={users.map(u => ({ value: u.id, label: u.name || u.email }))}
+          value={formData.assigneeId}
+          onChange={val => setFormData({ ...formData, assigneeId: val ? parseInt(val) : '' })}
+          placeholder="-- Select PIC (Leave empty for Auto-Assignment) --"
+        />
+        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+          Pilih staf NOC secara manual, atau biarkan kosong untuk penugasan otomatis (Round-Robin).
+        </p>
+      </div>
 
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Impacting Services (Optional Link)</label>
@@ -254,10 +273,12 @@ export default function TicketForm({ departments, categories, customFields, serv
 
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Job Category (Optional)</label>
-        <select value={formData.jobCategoryId} onChange={e => setFormData({...formData, jobCategoryId: e.target.value})}>
-          <option value="">-- Select Category --</option>
-          {categories?.map(c => <option key={c.id} value={c.id}>{c.name} (+{c.score} pts)</option>)}
-        </select>
+        <SearchableSelect 
+          options={categories?.map(c => ({ value: c.id, label: `${c.name} (+${c.score} pts)` })) || []}
+          value={formData.jobCategoryId}
+          onChange={val => setFormData({ ...formData, jobCategoryId: val ? parseInt(val) : '' })}
+          placeholder="-- Select Category --"
+        />
       </div>
 
       {renderCustomFields('below_job_category')}
