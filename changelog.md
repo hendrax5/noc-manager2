@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2026-06-02
+
+### Fixed
+- **Authentication & Login Redirect Loop (Sign out/Sign in Issue)**
+  - Fixed Next.js client-side router cache staleness loops by replacing client-side `router.push("/")` with a full-page window redirect (`window.location.href = "/"`) on successful login.
+  - Replaced manual sign-out redirection in `Navbar.js` with NextAuth's native `signOut({ callbackUrl: '/login' })` method to ensure cookies and local states are cleared cleanly and synchronously.
+- **Credentials Password Support (Bcrypt & Plain-text)**
+  - Updated NextAuth credentials authorization logic to support both bcrypt-hashed passwords (used for imported Hesk users) and plain-text passwords (used for seeded/manually created users), preventing login failures due to password hashing mismatches.
+
 ## [1.3.2] - 2026-06-02
 
 ### Added

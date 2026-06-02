@@ -19,7 +19,7 @@ export default function LoginClient({ title = "NOC System Login", subtitle = "Si
     if (res?.error) {
       setError("Invalid email or password");
     } else {
-      router.push("/");
+      window.location.href = "/";
     }
   };
 

@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export const authOptions = {
   trustHost: true,
@@ -22,7 +23,26 @@ export const authOptions = {
 
         if (!user) return null;
         
-        if (user.password === credentials.password.trim()) {
+        const passwordInput = credentials.password.trim();
+        const dbPassword = user.password;
+        
+        let isValid = false;
+        
+        // 1. Try bcrypt comparison (if dbPassword looks like a bcrypt hash)
+        if (dbPassword.startsWith('$2a$') || dbPassword.startsWith('$2b$')) {
+          try {
+            isValid = await bcrypt.compare(passwordInput, dbPassword);
+          } catch (e) {
+            isValid = false;
+          }
+        }
+        
+        // 2. Fallback to plain text comparison
+        if (!isValid && dbPassword === passwordInput) {
+          isValid = true;
+        }
+
+        if (isValid) {
           return { 
             id: user.id, 
             name: user.name, 
