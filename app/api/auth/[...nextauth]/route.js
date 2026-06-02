@@ -29,7 +29,7 @@ export const authOptions = {
         let isValid = false;
         
         // 1. Try bcrypt comparison (if dbPassword looks like a bcrypt hash)
-        if (dbPassword.startsWith('$2a$') || dbPassword.startsWith('$2b$')) {
+        if (dbPassword.startsWith('$2a$') || dbPassword.startsWith('$2b$') || dbPassword.startsWith('$2y$') || dbPassword.startsWith('$2x$')) {
           try {
             isValid = await bcrypt.compare(passwordInput, dbPassword);
           } catch (e) {

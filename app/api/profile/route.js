@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 export async function PATCH(req) {
   try {
@@ -21,14 +22,34 @@ export async function PATCH(req) {
     if (avatarUrl !== undefined) updateData.avatarUrl = avatarUrl;
     if (signature !== undefined) updateData.signature = signature;
 
-    // Handle plain-text password edits (matching legacy user schema config)
+    // Handle password edits (supporting both bcrypt and plain-text)
     if (newPassword) {
       if (!currentPassword) {
         return NextResponse.json({ error: "Current password is required to set a new password" }, { status: 400 });
       }
-      if (user.password !== currentPassword) {
+      
+      let isCurrentPasswordCorrect = false;
+      const dbPassword = user.password;
+      const cleanCurrent = currentPassword.trim();
+      
+      // Try bcrypt comparison (supporting standard and PHP prefixes)
+      if (dbPassword.startsWith('$2a$') || dbPassword.startsWith('$2b$') || dbPassword.startsWith('$2y$') || dbPassword.startsWith('$2x$')) {
+        try {
+          isCurrentPasswordCorrect = await bcrypt.compare(cleanCurrent, dbPassword);
+        } catch (e) {
+          isCurrentPasswordCorrect = false;
+        }
+      }
+      
+      // Fallback to plain text
+      if (!isCurrentPasswordCorrect && dbPassword === cleanCurrent) {
+        isCurrentPasswordCorrect = true;
+      }
+      
+      if (!isCurrentPasswordCorrect) {
         return NextResponse.json({ error: "Incorrect current password" }, { status: 401 });
       }
+      
       updateData.password = newPassword.trim();
     }
 
