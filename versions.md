@@ -6,6 +6,7 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 
 | Version | Release Date | Status | Description |
 |---|---|---|---|
+| **v2.0.0** | 2026-06-02 | Active | **Major Release** - Implemented Helicopter View with Tab Switcher on main Dashboard page for executive monitoring. |
 | **v1.9.0** | 2026-06-02 | Active | **Bug Fix Release** - Supported PHP Hesk bcrypt ($2y$, $2x$) password hashes in NextAuth login and Profile updates. |
 | **v1.8.0** | 2026-06-02 | Active | **Feature Release** - Added resolved tickets default hiding and quick visibility toggle on Live Operations Board. |
 | **v1.7.0** | 2026-06-02 | Active | **Feature & Bug Fix Release** - Fixed PIC SearchableSelect focus bug and implemented searchable badged multi-select tag input for Impacting Services. |
@@ -21,6 +22,11 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 | **v1.2.2** | 2026-05-15 | Active | Current baseline version prior to redesign. |
 
 ## Version Log Detail
+
+### v2.0.0
+- **Release Date**: June 2, 2026
+- **Prisma Changes**: No
+- **Status**: Stable / Verified Build / Implemented Helicopter View with Tab Switcher on main Dashboard page for executive monitoring
 
 ### v1.9.0
 - **Release Date**: June 2, 2026
