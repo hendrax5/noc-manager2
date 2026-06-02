@@ -47,7 +47,7 @@ function getDuration(start, end) {
   return `${hours}h ${mins}m`;
 }
 
-export default function LiveOpsBoard({ initialData = [], jobCategories = [] }) {
+export default function LiveOpsBoard({ initialData = [], jobCategories = [], defaultScope = "all" }) {
   const [tickets, setTickets] = useState(initialData);
   const [loading, setLoading] = useState(false);
   const [sortField, setSortField] = useState('updatedAt');
@@ -68,6 +68,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [] }) {
     try {
       const params = new URLSearchParams();
       params.set('date', dateRange);
+      params.set('scope', defaultScope);
       if (filterCategory) params.set('category', filterCategory);
       if (filterStatus) params.set('status', filterStatus);
       const res = await fetch(`/api/dashboard/live-ops?${params.toString()}`);
@@ -77,7 +78,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [] }) {
       }
     } catch (err) {}
     setLoading(false);
-  }, [dateRange, filterCategory, filterStatus]);
+  }, [dateRange, filterCategory, filterStatus, defaultScope]);
 
   useEffect(() => {
     fetchData();

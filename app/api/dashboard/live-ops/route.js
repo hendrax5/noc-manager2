@@ -25,13 +25,29 @@ export async function GET(request) {
     where.updatedAt = { gte: weekAgo };
   }
 
-  // Department isolation
-  const scope = {
-    OR: [
-      { assigneeId: parseInt(session.user.id) },
-      { departmentId: parseInt(session.user.departmentId) || -1 }
-    ]
-  };
+  const scopeParam = searchParams.get('scope') || '';
+
+  const isAdminOrManager = session.user.role === 'Admin' || session.user.role === 'Manager';
+  const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
+  const hasGlobalAccess = isAdminOrManager || isCS;
+
+  let scope = {};
+  if (hasGlobalAccess) {
+    if (scopeParam === 'dept') {
+      scope = {
+        OR: [
+          { assigneeId: parseInt(session.user.id) },
+          { departmentId: parseInt(session.user.departmentId) || -1 }
+        ]
+      };
+    } else {
+      // Default for Admin/CS: 'all' (no scope filter)
+      scope = {};
+    }
+  } else {
+    // Non-global users only see their assigned tickets
+    scope = { assigneeId: parseInt(session.user.id) };
+  }
 
   // Category filter
   if (categoryFilter) {

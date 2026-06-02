@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-06-02
+
+### Added
+- **Global vs Department Dashboard Scope Toggle**
+  - Integrated a premium, modern pill-styled Toggle on the dashboard header for CS, Admin, and Manager users to control the query context.
+  - Users with global access can switch between the **Global** scope (viewing all tickets across the system) and the **Dept** scope (viewing only tickets assigned to them or their department).
+  - Non-global staff (technicians, engineers, etc.) are restricted strictly to their assigned tickets with no toggle available.
+  - Linked selected scope to the Live Operations Board widget, ensuring dynamic table re-fetching on toggle state change.
+
 ## [1.3.1] - 2026-06-02
 
 ### Added

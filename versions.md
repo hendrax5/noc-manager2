@@ -6,11 +6,17 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 
 | Version | Release Date | Status | Description |
 |---|---|---|---|
+| **v1.3.2** | 2026-06-02 | Active | **Feature Update** - Integrated Global vs Department scope toggle for CS/Admin users to control ticket dashboard view. |
 | **v1.3.1** | 2026-06-02 | Active | **Bug Fix Release** - Fixed ticket deletion caching, ActionItem foreign key constraints, CS role delete permissions, and user management session staleness. Added version display in Navbar. |
 | **v1.3.0** | 2026-06-02 | Active | **Dashboard Redesign** - Notes system, Live Ops Board, Job Category tracking, build fixes. |
 | **v1.2.2** | 2026-05-15 | Active | Current baseline version prior to redesign. |
 
 ## Version Log Detail
+
+### v1.3.2
+- **Release Date**: June 2, 2026
+- **Prisma Changes**: No
+- **Status**: Stable / Verified Build / Global vs Dept Dashboard Scope Switcher
 
 ### v1.3.1
 - **Release Date**: June 2, 2026

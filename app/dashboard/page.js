@@ -5,16 +5,34 @@ import DashboardCharts from "./DashboardCharts";
 import LiveOpsBoard from "./LiveOpsBoard";
 import Link from "next/link";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }) {
   const session = await getServerSession(authOptions);
+  const resolvedParams = await searchParams;
 
-  // Scope Isolation (Tickets assigned to user or their department)
-  const scope = {
-    OR: [
-      { assigneeId: parseInt(session?.user?.id) },
-      { departmentId: parseInt(session?.user?.departmentId) || -1 }
-    ]
-  };
+  const isAdminOrManager = session?.user?.role === 'Admin' || session?.user?.role === 'Manager';
+  const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
+  const hasGlobalAccess = isAdminOrManager || isCS;
+
+  const selectedScope = resolvedParams?.scope || (hasGlobalAccess ? 'all' : 'me');
+
+  // Scope Isolation (Tickets assigned to user or their department/global)
+  let scope = {};
+  if (hasGlobalAccess) {
+    if (selectedScope === 'dept') {
+      scope = {
+        OR: [
+          { assigneeId: parseInt(session?.user?.id) },
+          { departmentId: parseInt(session?.user?.departmentId) || -1 }
+        ]
+      };
+    } else {
+      // Default: 'all' (no scope filter)
+      scope = {};
+    }
+  } else {
+    // Non-global users only see their assigned tickets
+    scope = { assigneeId: parseInt(session?.user?.id) };
+  }
 
   // Fetch metrics
   const totalNewTickets = await prisma.ticket.count({ where: { ...scope, status: 'New' } });
@@ -167,13 +185,43 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
-        <Link href="/tickets/new" className="primary-btn" style={{ 
-          background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', padding: '0.8rem 1.5rem', 
-          borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem',
-          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none'
-        }}>
-          <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span> Create Ticket
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          {hasGlobalAccess && (
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', padding: '0.25rem', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <Link href="/dashboard?scope=all" style={{ 
+                padding: '0.4rem 1.2rem', 
+                borderRadius: '20px', 
+                textDecoration: 'none', 
+                fontSize: '0.8rem', 
+                fontWeight: 'bold', 
+                background: selectedScope === 'all' ? 'var(--card-bg)' : 'transparent', 
+                color: selectedScope === 'all' ? 'var(--heading-color)' : 'rgba(255,255,255,0.7)',
+                transition: 'all 0.2s'
+              }}>
+                🌐 Global
+              </Link>
+              <Link href="/dashboard?scope=dept" style={{ 
+                padding: '0.4rem 1.2rem', 
+                borderRadius: '20px', 
+                textDecoration: 'none', 
+                fontSize: '0.8rem', 
+                fontWeight: 'bold', 
+                background: selectedScope === 'dept' ? 'var(--card-bg)' : 'transparent', 
+                color: selectedScope === 'dept' ? 'var(--heading-color)' : 'rgba(255,255,255,0.7)',
+                transition: 'all 0.2s'
+              }}>
+                🏢 Dept
+              </Link>
+            </div>
+          )}
+          <Link href="/tickets/new" className="primary-btn" style={{ 
+            background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', padding: '0.8rem 1.5rem', 
+            borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem',
+            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none'
+          }}>
+            <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span> Create Ticket
+          </Link>
+        </div>
       </header>
 
       {/* 5 Premium KPI Cards */}
@@ -296,7 +344,7 @@ export default async function DashboardPage() {
 
       {/* Live Operations Board (Phase 3) */}
       <section style={{ marginBottom: '2rem' }}>
-        <LiveOpsBoard jobCategories={jobCategories} />
+        <LiveOpsBoard jobCategories={jobCategories} defaultScope={selectedScope} />
       </section>
 
       {/* Information Modules Grid */}
