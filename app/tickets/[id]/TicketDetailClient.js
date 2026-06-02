@@ -138,7 +138,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     if (res.ok) {
       router.refresh(); 
     } else {
-      alert("Failed to auto-update ticket property.");
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Failed to auto-update ticket property.");
     }
   };
 
@@ -151,7 +152,10 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     if(res.ok) {
       setEditingTicket(false);
       router.refresh();
-    } else alert("Failed to save changes");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Failed to save changes");
+    }
     setLoading(false);
   };
 

@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.5] - 2026-06-02
+
+### Fixed
+- **Descriptive Error Alert for Ticket Status Updates**
+  - Updated `TicketDetailClient.js` to parse and display specific backend API error responses (`res.json().error`) on status changes instead of showing a generic "Failed to auto-update ticket property." error message.
+  - This informs the user of actual business rules, such as the system's same-day re-open restriction for resolved tickets: *"Cannot Re-Open or Modify a Ticket that was designated 'Resolved' on the exact same chronological Date..."*
+
 ## [1.3.4] - 2026-06-02
 
 ### Added

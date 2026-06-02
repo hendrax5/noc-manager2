@@ -6,6 +6,7 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 
 | Version | Release Date | Status | Description |
 |---|---|---|---|
+| **v1.3.5** | 2026-06-02 | Active | **Bug Fix Release** - Fixed generic status update alert on frontend to parse and render specific error messages from the backend (such as same-day re-open warnings). |
 | **v1.3.4** | 2026-06-02 | Active | **Feature & Bug Fix Release** - Added Job Category selector to advanced filters page, synced state from URL query parameters, and fixed dashboard category monitor card links. |
 | **v1.3.3** | 2026-06-02 | Active | **Bug Fix Release** - Fixed sign-out and sign-in redirection loop issues, and supported both bcrypt and plain-text passwords for NextAuth credentials provider. |
 | **v1.3.2** | 2026-06-02 | Active | **Feature Update** - Integrated Global vs Department scope toggle for CS/Admin users to control ticket dashboard view. |
@@ -14,6 +15,11 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 | **v1.2.2** | 2026-05-15 | Active | Current baseline version prior to redesign. |
 
 ## Version Log Detail
+
+### v1.3.5
+- **Release Date**: June 2, 2026
+- **Prisma Changes**: No
+- **Status**: Stable / Verified Build / Detailed Alert Errors on Ticket Edits / Same-day resolved re-open validation visibility
 
 ### v1.3.4
 - **Release Date**: June 2, 2026
