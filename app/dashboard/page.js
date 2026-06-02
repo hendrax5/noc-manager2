@@ -246,7 +246,7 @@ export default async function DashboardPage() {
       </section>
 
       {/* Job Category Monitor (Phase 2) */}
-      {categoryMetrics.length > 0 && (
+      {categoryMetrics.filter(cat => cat.active > 0).length > 0 && (
         <section style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2 className="text-dark" style={{ margin: 0, fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -257,7 +257,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem' }}>
-            {categoryMetrics.map((cat, idx) => {
+            {categoryMetrics.filter(cat => cat.active > 0).map((cat, idx) => {
               const color = CATEGORY_COLORS[idx % CATEGORY_COLORS.length];
               const total = cat.active + cat.resolvedToday;
               const progress = total > 0 ? Math.round((cat.resolvedToday / total) * 100) : 0;
