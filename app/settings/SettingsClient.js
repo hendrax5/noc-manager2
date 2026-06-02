@@ -2,11 +2,12 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-export default function SettingsClient({ initialFields, initialCategories, initialConfig }) {
+export default function SettingsClient({ initialFields, initialCategories, initialConfig, departments = [] }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("custom_fields");
   const [fields, setFields] = useState(initialFields);
   const [categories, setCategories] = useState(initialCategories || []);
+  const [dashboardConfig, setDashboardConfig] = useState(initialConfig.dashboardDeptConfig || {});
   
   const [branding, setBranding] = useState(initialConfig || {
     appName: "NOC Manager",
@@ -31,6 +32,51 @@ export default function SettingsClient({ initialFields, initialCategories, initi
 
   const [editingFieldId, setEditingFieldId] = useState(null);
   const [editFieldData, setEditFieldData] = useState({ name: "", type: "text", options: "", position: "bottom", required: false, active: true });
+
+  const handleUpdateDashboardConfig = (deptName, key, value) => {
+    setDashboardConfig(prev => ({
+      ...prev,
+      [deptName]: {
+        ...prev[deptName],
+        [key]: value
+      }
+    }));
+  };
+
+  const handleToggleWidget = (deptName, widgetKey) => {
+    const currentDeptConfig = dashboardConfig[deptName] || {};
+    const currentWidgets = currentDeptConfig.widgets || ["kpi", "category_monitor", "live_ops", "my_followups", "shifts", "charts"];
+    const newWidgets = currentWidgets.includes(widgetKey)
+      ? currentWidgets.filter(w => w !== widgetKey)
+      : [...currentWidgets, widgetKey];
+    
+    handleUpdateDashboardConfig(deptName, "widgets", newWidgets);
+  };
+
+  const handleToggleCategory = (deptName, catName) => {
+    const currentDeptConfig = dashboardConfig[deptName] || {};
+    const currentCats = currentDeptConfig.categories || [];
+    const newCats = currentCats.includes(catName)
+      ? currentCats.filter(c => c !== catName)
+      : [...currentCats, catName];
+
+    handleUpdateDashboardConfig(deptName, "categories", newCats);
+  };
+
+  const handleSaveDashboardConfig = async (e) => {
+    e.preventDefault();
+    const res = await fetch("/api/settings/dashboard-config", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dashboardConfig)
+    });
+    if (res.ok) {
+      alert("Dashboard department configurations updated successfully!");
+      router.refresh();
+    } else {
+      alert("Failed to save dashboard settings.");
+    }
+  };
 
   const handleAddField = async (e) => {
     e.preventDefault();
@@ -184,7 +230,7 @@ export default function SettingsClient({ initialFields, initialCategories, initi
   return (
     <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', background: '#f8fafc' }}>
-        {['custom_fields', 'job_categories', 'preferences'].map(tab => (
+        {['custom_fields', 'job_categories', 'preferences', 'dashboard_settings'].map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -492,6 +538,105 @@ export default function SettingsClient({ initialFields, initialCategories, initi
 
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'dashboard_settings' && (
+          <div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h2>Dashboard Layout per Departemen</h2>
+              <p style={{ color: '#64748b' }}>Sesuaikan widget, kategori pekerjaan, dan default cakupan tiket yang tampil pada dashboard masing-masing departemen.</p>
+            </div>
+
+            <form onSubmit={handleSaveDashboardConfig}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                {departments.map((dept) => {
+                  const deptConfig = dashboardConfig[dept.name] || {};
+                  const activeWidgets = deptConfig.widgets || ["kpi", "category_monitor", "live_ops", "my_followups", "shifts", "charts"];
+                  const activeCategories = deptConfig.categories || [];
+                  const defaultScope = deptConfig.defaultScope || "me";
+
+                  return (
+                    <div key={dept.id} style={{ border: '1px solid var(--border-color)', borderRadius: '12px', background: 'var(--card-bg)', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                      {/* Dept Header */}
+                      <div style={{ background: 'var(--hover-bg)', padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span>🏢</span> {dept.name}
+                        </h3>
+                        
+                        {/* Default Scope Selection */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-color)' }}>Default Scope:</label>
+                          <select 
+                            value={defaultScope} 
+                            onChange={(e) => handleUpdateDashboardConfig(dept.name, "defaultScope", e.target.value)}
+                            style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.8rem', outline: 'none' }}
+                          >
+                            <option value="all">🌐 Global (Semua)</option>
+                            <option value="dept">🏢 Dept (Departemen & Me)</option>
+                            <option value="me">👤 Me (Assigned Hanya ke Saya)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Settings grid */}
+                      <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                        
+                        {/* Widget Selection */}
+                        <div>
+                          <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Aktifkan Widget Dashboard:</h4>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                            {[
+                              { key: "kpi", label: "KPI Summary Cards" },
+                              { key: "category_monitor", label: "Job Category Monitor" },
+                              { key: "live_ops", label: "Live Operations Board" },
+                              { key: "my_followups", label: "My Follow-Ups List" },
+                              { key: "shifts", label: "Weekly Shift Schedules" },
+                              { key: "charts", label: "Analytics Trends & Charts" }
+                            ].map(widget => (
+                              <label key={widget.key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-color)' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={activeWidgets.includes(widget.key)} 
+                                  onChange={() => handleToggleWidget(dept.name, widget.key)}
+                                  style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
+                                />
+                                {widget.label}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Job Category Selection */}
+                        <div>
+                          <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.95rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Filter Job Category (Kosongkan untuk menampilkan semua):</h4>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', maxHeight: '120px', overflowY: 'auto' }}>
+                            {categories.map(cat => (
+                              <label key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-color)' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={activeCategories.includes(cat.name)} 
+                                  onChange={() => handleToggleCategory(dept.name, cat.name)}
+                                  style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
+                                />
+                                {cat.name}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem' }}>
+                <button type="submit" className="primary-btn" style={{ background: '#10b981', padding: '0.8rem 2.5rem', fontSize: '1rem', fontWeight: 'bold' }}>
+                  💾 Simpan Konfigurasi Dashboard
+                </button>
+              </div>
+            </form>
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import DashboardCharts from "./DashboardCharts";
 import LiveOpsBoard from "./LiveOpsBoard";
 import Link from "next/link";
+import { getAppConfig } from "@/lib/config";
 
 export default async function DashboardPage({ searchParams }) {
   const session = await getServerSession(authOptions);
@@ -13,33 +14,57 @@ export default async function DashboardPage({ searchParams }) {
   const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
   const hasGlobalAccess = isAdminOrManager || isCS;
 
-  const selectedScope = resolvedParams?.scope || (hasGlobalAccess ? 'all' : 'me');
+  // Retrieve department configuration
+  const config = getAppConfig();
+  const userDept = session?.user?.department || "General";
+  const deptConfig = config.dashboardDeptConfig?.[userDept] || {};
+
+  // Resolve widget visibility
+  const activeWidgets = deptConfig.widgets || ["kpi", "category_monitor", "live_ops", "my_followups", "shifts", "charts"];
+  const showWidget = (key) => activeWidgets.includes(key);
+
+  // Resolve scope overrides (Option 3)
+  const defaultScopeOverride = deptConfig.defaultScope || (hasGlobalAccess ? 'all' : 'me');
+  const selectedScope = resolvedParams?.scope || defaultScopeOverride;
+
+  // Resolve allowed scopes for security
+  const allowedScopes = ['me'];
+  if (hasGlobalAccess || deptConfig.defaultScope === 'all') {
+    allowedScopes.push('all');
+  }
+  if (hasGlobalAccess || deptConfig.defaultScope === 'dept' || session?.user?.departmentId) {
+    allowedScopes.push('dept');
+  }
+
+  // Ensure selected scope is allowed, otherwise fallback
+  const finalScope = allowedScopes.includes(selectedScope) ? selectedScope : defaultScopeOverride;
 
   // Scope Isolation (Tickets assigned to user or their department/global)
   let scope = {};
-  if (hasGlobalAccess) {
-    if (selectedScope === 'dept') {
-      scope = {
-        OR: [
-          { assigneeId: parseInt(session?.user?.id) },
-          { departmentId: parseInt(session?.user?.departmentId) || -1 }
-        ]
-      };
-    } else {
-      // Default: 'all' (no scope filter)
-      scope = {};
-    }
+  if (finalScope === 'all') {
+    scope = {};
+  } else if (finalScope === 'dept') {
+    scope = {
+      OR: [
+        { assigneeId: parseInt(session?.user?.id) },
+        { departmentId: parseInt(session?.user?.departmentId) || -1 }
+      ]
+    };
   } else {
-    // Non-global users only see their assigned tickets
+    // Default / 'me'
     scope = { assigneeId: parseInt(session?.user?.id) };
   }
 
+  // Category filter based on department config
+  const hasCategoryFilter = deptConfig.categories && deptConfig.categories.length > 0;
+  const categoryFilterClause = hasCategoryFilter ? { jobCategory: { name: { in: deptConfig.categories } } } : {};
+
   // Fetch metrics
-  const totalNewTickets = await prisma.ticket.count({ where: { ...scope, status: 'New' } });
-  const totalWaitingTickets = await prisma.ticket.count({ where: { ...scope, status: 'Waiting Reply' } });
-  const totalRepliedTickets = await prisma.ticket.count({ where: { ...scope, status: 'Replied' } });
-  const totalInProgressTickets = await prisma.ticket.count({ where: { ...scope, status: 'In Progress' } });
-  const totalResolvedTickets = await prisma.ticket.count({ where: { ...scope, status: 'Resolved' } });
+  const totalNewTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: 'New' } });
+  const totalWaitingTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: 'Waiting Reply' } });
+  const totalRepliedTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: 'Replied' } });
+  const totalInProgressTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: 'In Progress' } });
+  const totalResolvedTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: 'Resolved' } });
   
   const ticketStats = [
     { status: 'New', count: totalNewTickets },
@@ -51,7 +76,7 @@ export default async function DashboardPage({ searchParams }) {
 
   // Compute Average TTR (Time to Resolution)
   const resolvedData = await prisma.ticket.findMany({
-    where: { ...scope, status: 'Resolved' },
+    where: { ...scope, ...categoryFilterClause, status: 'Resolved' },
     select: { createdAt: true, updatedAt: true, resolvedAt: true }
   });
   let totalTtrMs = 0;
@@ -98,6 +123,7 @@ export default async function DashboardPage({ searchParams }) {
   const todayTickets = await prisma.ticket.findMany({
     where: { 
       ...scope,
+      ...categoryFilterClause,
       updatedAt: { gte: todayStart }
     },
     select: { id: true, status: true }
@@ -114,9 +140,14 @@ export default async function DashboardPage({ searchParams }) {
     orderBy: { name: 'asc' }
   });
 
+  // Filter job categories by department config
+  const filteredCategories = hasCategoryFilter 
+    ? jobCategories.filter(cat => deptConfig.categories.includes(cat.name))
+    : jobCategories;
+
   // Count active tickets per category
   const categoryMetrics = await Promise.all(
-    jobCategories.map(async (cat) => {
+    filteredCategories.map(async (cat) => {
       const [activeCount, todayCount, resolvedTodayCount] = await Promise.all([
         prisma.ticket.count({
           where: { ...scope, jobCategoryId: cat.id, status: { notIn: ['Resolved', 'Closed'] } }
@@ -146,7 +177,7 @@ export default async function DashboardPage({ searchParams }) {
 
   // Count today's resolved
   const todayResolvedCount = await prisma.ticket.count({
-    where: { ...scope, status: 'Resolved', resolvedAt: { gte: todayStart } }
+    where: { ...scope, ...categoryFilterClause, status: 'Resolved', resolvedAt: { gte: todayStart } }
   });
 
   // Category colors mapping
@@ -186,32 +217,50 @@ export default async function DashboardPage({ searchParams }) {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          {hasGlobalAccess && (
+          {allowedScopes.length > 1 && (
             <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', padding: '0.25rem', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <Link href="/dashboard?scope=all" style={{ 
-                padding: '0.4rem 1.2rem', 
-                borderRadius: '20px', 
-                textDecoration: 'none', 
-                fontSize: '0.8rem', 
-                fontWeight: 'bold', 
-                background: selectedScope === 'all' ? 'var(--card-bg)' : 'transparent', 
-                color: selectedScope === 'all' ? 'var(--heading-color)' : 'rgba(255,255,255,0.7)',
-                transition: 'all 0.2s'
-              }}>
-                🌐 Global
-              </Link>
-              <Link href="/dashboard?scope=dept" style={{ 
-                padding: '0.4rem 1.2rem', 
-                borderRadius: '20px', 
-                textDecoration: 'none', 
-                fontSize: '0.8rem', 
-                fontWeight: 'bold', 
-                background: selectedScope === 'dept' ? 'var(--card-bg)' : 'transparent', 
-                color: selectedScope === 'dept' ? 'var(--heading-color)' : 'rgba(255,255,255,0.7)',
-                transition: 'all 0.2s'
-              }}>
-                🏢 Dept
-              </Link>
+              {allowedScopes.includes('all') && (
+                <Link href={`/dashboard?scope=all`} style={{ 
+                  padding: '0.4rem 1.2rem', 
+                  borderRadius: '20px', 
+                  textDecoration: 'none', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 'bold', 
+                  background: finalScope === 'all' ? 'var(--card-bg)' : 'transparent', 
+                  color: finalScope === 'all' ? 'var(--heading-color)' : 'rgba(255,255,255,0.7)',
+                  transition: 'all 0.2s'
+                }}>
+                  🌐 Global
+                </Link>
+              )}
+              {allowedScopes.includes('dept') && (
+                <Link href={`/dashboard?scope=dept`} style={{ 
+                  padding: '0.4rem 1.2rem', 
+                  borderRadius: '20px', 
+                  textDecoration: 'none', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 'bold', 
+                  background: finalScope === 'dept' ? 'var(--card-bg)' : 'transparent', 
+                  color: finalScope === 'dept' ? 'var(--heading-color)' : 'rgba(255,255,255,0.7)',
+                  transition: 'all 0.2s'
+                }}>
+                  🏢 Dept
+                </Link>
+              )}
+              {allowedScopes.includes('me') && (
+                <Link href={`/dashboard?scope=me`} style={{ 
+                  padding: '0.4rem 1.2rem', 
+                  borderRadius: '20px', 
+                  textDecoration: 'none', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 'bold', 
+                  background: finalScope === 'me' ? 'var(--card-bg)' : 'transparent', 
+                  color: finalScope === 'me' ? 'var(--heading-color)' : 'rgba(255,255,255,0.7)',
+                  transition: 'all 0.2s'
+                }}>
+                  👤 Me
+                </Link>
+              )}
             </div>
           )}
           <Link href="/tickets/new" className="primary-btn" style={{ 
@@ -225,76 +274,78 @@ export default async function DashboardPage({ searchParams }) {
       </header>
 
       {/* 5 Premium KPI Cards */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-        
-        {/* New Tickets Card */}
-        <Link href="/tickets?statuses=New" style={{ textDecoration: 'none' }}>
-          <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(225, 29, 72, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-new">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-              <h2 style={{ fontSize: '0.8rem', color: '#be123c', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>New</h2>
-              <span style={{ fontSize: '1.2rem' }}>🔥</span>
+      {showWidget('kpi') && (
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+          
+          {/* New Tickets Card */}
+          <Link href="/tickets?statuses=New" style={{ textDecoration: 'none' }}>
+            <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(225, 29, 72, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-new">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
+                <h2 style={{ fontSize: '0.8rem', color: '#be123c', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>New</h2>
+                <span style={{ fontSize: '1.2rem' }}>🔥</span>
+              </div>
+              <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#e11d48', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalNewTickets}</p>
+              <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>🔥</div>
             </div>
-            <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#e11d48', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalNewTickets}</p>
-            <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>🔥</div>
-          </div>
-        </Link>
+          </Link>
 
-        {/* In Progress Card */}
-        <Link href="/tickets?statuses=In+Progress" style={{ textDecoration: 'none' }}>
-          <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-progress">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-              <h2 style={{ fontSize: '0.8rem', color: '#1d4ed8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>In Progress</h2>
-              <span style={{ fontSize: '1.2rem' }}>⚡</span>
+          {/* In Progress Card */}
+          <Link href="/tickets?statuses=In+Progress" style={{ textDecoration: 'none' }}>
+            <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-progress">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
+                <h2 style={{ fontSize: '0.8rem', color: '#1d4ed8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>In Progress</h2>
+                <span style={{ fontSize: '1.2rem' }}>⚡</span>
+              </div>
+              <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#2563eb', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalInProgressTickets}</p>
+              <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>⚡</div>
             </div>
-            <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#2563eb', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalInProgressTickets}</p>
-            <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>⚡</div>
-          </div>
-        </Link>
+          </Link>
 
-        {/* Pending Card */}
-        <Link href="/tickets?statuses=Waiting+Reply,Replied" style={{ textDecoration: 'none' }}>
-          <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(217, 119, 6, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-pending">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-              <h2 style={{ fontSize: '0.8rem', color: '#b45309', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Pending</h2>
-              <span style={{ fontSize: '1.2rem' }}>⏳</span>
+          {/* Pending Card */}
+          <Link href="/tickets?statuses=Waiting+Reply,Replied" style={{ textDecoration: 'none' }}>
+            <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(217, 119, 6, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-pending">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
+                <h2 style={{ fontSize: '0.8rem', color: '#b45309', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Pending</h2>
+                <span style={{ fontSize: '1.2rem' }}>⏳</span>
+              </div>
+              <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#d97706', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalWaitingTickets + totalRepliedTickets}</p>
+              <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>⏳</div>
             </div>
-            <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#d97706', lineHeight: 1, position: 'relative', zIndex: 2 }}>{totalWaitingTickets + totalRepliedTickets}</p>
-            <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>⏳</div>
-          </div>
-        </Link>
+          </Link>
 
-        {/* Resolved Today Card */}
-        <Link href="/tickets?statuses=Resolved&date=today" style={{ textDecoration: 'none' }}>
-          <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-resolved">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-              <h2 style={{ fontSize: '0.8rem', color: '#15803d', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved Today</h2>
-              <span style={{ fontSize: '1.2rem' }}>✅</span>
+          {/* Resolved Today Card */}
+          <Link href="/tickets?statuses=Resolved&date=today" style={{ textDecoration: 'none' }}>
+            <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-resolved">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
+                <h2 style={{ fontSize: '0.8rem', color: '#15803d', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved Today</h2>
+                <span style={{ fontSize: '1.2rem' }}>✅</span>
+              </div>
+              <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#16a34a', lineHeight: 1, position: 'relative', zIndex: 2 }}>{todayResolvedCount}</p>
+              <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>✅</div>
             </div>
-            <p style={{ fontSize: '2.8rem', fontWeight: '900', margin: '0.3rem 0 0 0', color: '#16a34a', lineHeight: 1, position: 'relative', zIndex: 2 }}>{todayResolvedCount}</p>
-            <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.04, zIndex: 1, transform: 'rotate(-15deg)' }}>✅</div>
-          </div>
-        </Link>
+          </Link>
 
-        {/* Average TTR Card */}
-        <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-ttr">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
-            <h2 style={{ fontSize: '0.8rem', color: '#4338ca', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Avg TTR</h2>
-            <span style={{ fontSize: '1.2rem' }}>⏱️</span>
+          {/* Average TTR Card */}
+          <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.05)', position: 'relative', overflow: 'hidden' }} className="hover-lift kpi-ttr">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
+              <h2 style={{ fontSize: '0.8rem', color: '#4338ca', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Avg TTR</h2>
+              <span style={{ fontSize: '1.2rem' }}>⏱️</span>
+            </div>
+            <p style={{ fontSize: '2.2rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#4f46e5', lineHeight: 1, position: 'relative', zIndex: 2 }}>
+              {resolvedData.length === 0 ? 'N/A' : (
+                <>
+                  {avgTtrObj.h > 0 && <span style={{letterSpacing: '-2px'}}>{avgTtrObj.h}<span style={{fontSize: '0.85rem', color: '#818cf8', margin: '0 0.3rem 0 0.1rem', letterSpacing: '0'}}>h</span></span>}
+                  <span style={{letterSpacing: '-2px'}}>{avgTtrObj.m}<span style={{fontSize: '0.85rem', color: '#818cf8', marginLeft: '0.1rem', letterSpacing: '0'}}>m</span></span>
+                </>
+              )}
+            </p>
+            <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.03, zIndex: 1, transform: 'rotate(-15deg)' }}>⏱️</div>
           </div>
-          <p style={{ fontSize: '2.2rem', fontWeight: '900', margin: '0.5rem 0 0 0', color: '#4f46e5', lineHeight: 1, position: 'relative', zIndex: 2 }}>
-            {resolvedData.length === 0 ? 'N/A' : (
-              <>
-                {avgTtrObj.h > 0 && <span style={{letterSpacing: '-2px'}}>{avgTtrObj.h}<span style={{fontSize: '0.85rem', color: '#818cf8', margin: '0 0.3rem 0 0.1rem', letterSpacing: '0'}}>h</span></span>}
-                <span style={{letterSpacing: '-2px'}}>{avgTtrObj.m}<span style={{fontSize: '0.85rem', color: '#818cf8', marginLeft: '0.1rem', letterSpacing: '0'}}>m</span></span>
-              </>
-            )}
-          </p>
-          <div style={{ position: 'absolute', right: '-15px', bottom: '-15px', fontSize: '6rem', opacity: 0.03, zIndex: 1, transform: 'rotate(-15deg)' }}>⏱️</div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Job Category Monitor (Phase 2) */}
-      {categoryMetrics.filter(cat => cat.active > 0).length > 0 && (
+      {showWidget('category_monitor') && categoryMetrics.filter(cat => cat.active > 0).length > 0 && (
         <section style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2 className="text-dark" style={{ margin: 0, fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -343,140 +394,150 @@ export default async function DashboardPage({ searchParams }) {
       )}
 
       {/* Live Operations Board (Phase 3) */}
-      <section style={{ marginBottom: '2rem' }}>
-        <LiveOpsBoard jobCategories={jobCategories} defaultScope={selectedScope} />
-      </section>
+      {showWidget('live_ops') && (
+        <section style={{ marginBottom: '2rem' }}>
+          <LiveOpsBoard jobCategories={filteredCategories} defaultScope={finalScope} />
+        </section>
+      )}
 
       {/* Information Modules Grid */}
-      <section style={{ marginBottom: '2.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
-        
-        {/* Pending Follow-Ups */}
-        <div className="bg-white-card" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', position: 'relative' }}>
-          <div style={{ width: '40px', height: '4px', background: '#f59e0b', borderRadius: '2px', position: 'absolute', top: 0, left: '1.5rem' }}></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
-            <h2 className="text-dark" style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{fontSize: '1.3rem'}}>🎯</span> My Follow-Ups</h2>
-          </div>
+      {(showWidget('my_followups') || showWidget('shifts')) && (
+        <section style={{ marginBottom: '2.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
           
-          {myOpenTickets.length === 0 ? (
-            <div className="bg-light-stripe" style={{ padding: '2rem 1rem', textAlign: 'center', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
-               <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>☕</span>
-               <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: 0 }}>You have no open tickets assigned to you. You're all caught up!</p>
+          {/* Pending Follow-Ups */}
+          {showWidget('my_followups') && (
+            <div className="bg-white-card" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', position: 'relative' }}>
+              <div style={{ width: '40px', height: '4px', background: '#f59e0b', borderRadius: '2px', position: 'absolute', top: 0, left: '1.5rem' }}></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
+                <h2 className="text-dark" style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{fontSize: '1.3rem'}}>🎯</span> My Follow-Ups</h2>
+              </div>
+              
+              {myOpenTickets.length === 0 ? (
+                <div className="bg-light-stripe" style={{ padding: '2rem 1rem', textAlign: 'center', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+                   <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>☕</span>
+                   <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: 0 }}>You have no open tickets assigned to you. You're all caught up!</p>
+                </div>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {myOpenTickets.map(ticket => {
+                    let extractedName = "Unknown";
+                    const reporterMatch = ticket.description?.match(/\[Original Reporter: (.*?) -/);
+                    if (reporterMatch) {
+                      extractedName = reporterMatch[1];
+                    } else if (ticket.services && ticket.services.length > 0 && ticket.services[0].customer) {
+                      extractedName = ticket.services[0].customer.name;
+                    } else if (ticket.customData && typeof ticket.customData === 'object' && ticket.customData["Customer Name"]) {
+                       extractedName = ticket.customData["Customer Name"];
+                    }
+
+                    return (
+                    <li key={ticket.id} className="hover-bg bg-light-stripe" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', transition: 'all 0.2s', borderLeft: '3px solid #3b82f6' }}>
+                      <div>
+                        <Link href={`/tickets/${ticket.id}`} style={{ textDecoration: 'none' }}>
+                          <p className="text-dark" style={{ margin: '0 0 0.25rem 0', fontWeight: 'bold', fontSize: '0.95rem' }}>{extractedName} - {ticket.title}</p>
+                        </Link>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                          📋 Status: <strong style={{ color: ticket.status === 'New' ? '#ef4444' : '#f59e0b' }}>{ticket.status}</strong> 
+                          • Last updated: {new Date(ticket.updatedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
-          ) : (
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {myOpenTickets.map(ticket => {
-                let extractedName = "Unknown";
-                const reporterMatch = ticket.description?.match(/\[Original Reporter: (.*?) -/);
-                if (reporterMatch) {
-                  extractedName = reporterMatch[1];
-                } else if (ticket.services && ticket.services.length > 0 && ticket.services[0].customer) {
-                  extractedName = ticket.services[0].customer.name;
-                } else if (ticket.customData && typeof ticket.customData === 'object' && ticket.customData["Customer Name"]) {
-                   extractedName = ticket.customData["Customer Name"];
-                }
-
-                return (
-                <li key={ticket.id} className="hover-bg bg-light-stripe" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', transition: 'all 0.2s', borderLeft: '3px solid #3b82f6' }}>
-                  <div>
-                    <Link href={`/tickets/${ticket.id}`} style={{ textDecoration: 'none' }}>
-                      <p className="text-dark" style={{ margin: '0 0 0.25rem 0', fontWeight: 'bold', fontSize: '0.95rem' }}>{extractedName} - {ticket.title}</p>
-                    </Link>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      📋 Status: <strong style={{ color: ticket.status === 'New' ? '#ef4444' : '#f59e0b' }}>{ticket.status}</strong> 
-                      • Last updated: {new Date(ticket.updatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </li>
-                );
-              })}
-            </ul>
           )}
-        </div>
 
-        {/* My Shifts */}
-        <div className="bg-white-card" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', position: 'relative' }}>
-          <div style={{ width: '40px', height: '4px', background: '#8b5cf6', borderRadius: '2px', position: 'absolute', top: 0, left: '1.5rem' }}></div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
-             <h2 className="text-dark" style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{fontSize: '1.3rem'}}>🗓️</span> Weekly Shifts</h2>
-          </div>
+          {/* My Shifts */}
+          {showWidget('shifts') && (
+            <div className="bg-white-card" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', position: 'relative' }}>
+              <div style={{ width: '40px', height: '4px', background: '#8b5cf6', borderRadius: '2px', position: 'absolute', top: 0, left: '1.5rem' }}></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
+                 <h2 className="text-dark" style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span style={{fontSize: '1.3rem'}}>🗓️</span> Weekly Shifts</h2>
+              </div>
 
-          {myShifts.length === 0 ? (
-            <div className="bg-light-stripe" style={{ padding: '2rem 1rem', textAlign: 'center', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
-               <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>🏖️</span>
-               <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: 0 }}>No shifts have been generated or assigned for the upcoming week.</p>
+              {myShifts.length === 0 ? (
+                <div className="bg-light-stripe" style={{ padding: '2rem 1rem', textAlign: 'center', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+                   <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>🏖️</span>
+                   <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: 0 }}>No shifts have been generated or assigned for the upcoming week.</p>
+                </div>
+              ) : (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {myShifts.map(shift => {
+                     const isOff = shift.shiftTypeId === null;
+                     const d = new Date(shift.date);
+                     return (
+                       <li key={shift.id} className={`hover-bg ${isOff ? '' : 'bg-light-stripe'}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1rem', borderRadius: '8px', border: isOff ? '1px dashed var(--border-color)' : '1px solid var(--border-color)', transition: 'all 0.2s', background: isOff ? 'transparent' : '' }}>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                           <div className="bg-white-card text-dark" style={{ padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold', minWidth: '45px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+                             {d.toLocaleDateString('en-US', { weekday: 'short' })}
+                           </div>
+                           <strong className="text-dark" style={{ fontSize: '0.9rem' }}>{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</strong>
+                         </div>
+                         {isOff ? <span style={{ color: 'var(--text-color)', fontStyle: 'italic', fontSize: '0.9rem' }}>Day Off</span> : (
+                           <span style={{ fontWeight: 'bold', color: '#3b82f6', fontSize: '0.9rem' }}>{shift.shiftType?.name} <span style={{color: 'var(--text-color)', fontWeight: '500'}}>- {shift.shiftType?.startTime}</span></span>
+                         )}
+                       </li>
+                     );
+                  })}
+                </ul>
+              )}
             </div>
-          ) : (
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {myShifts.map(shift => {
-                 const isOff = shift.shiftTypeId === null;
-                 const d = new Date(shift.date);
-                 return (
-                   <li key={shift.id} className={`hover-bg ${isOff ? '' : 'bg-light-stripe'}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1rem', borderRadius: '8px', border: isOff ? '1px dashed var(--border-color)' : '1px solid var(--border-color)', transition: 'all 0.2s', background: isOff ? 'transparent' : '' }}>
-                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                       <div className="bg-white-card text-dark" style={{ padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold', minWidth: '45px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
-                         {d.toLocaleDateString('en-US', { weekday: 'short' })}
-                       </div>
-                       <strong className="text-dark" style={{ fontSize: '0.9rem' }}>{d.toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}</strong>
-                     </div>
-                     {isOff ? <span style={{ color: 'var(--text-color)', fontStyle: 'italic', fontSize: '0.9rem' }}>Day Off</span> : (
-                       <span style={{ fontWeight: 'bold', color: '#3b82f6', fontSize: '0.9rem' }}>{shift.shiftType?.name} <span style={{color: 'var(--text-color)', fontWeight: '500'}}>- {shift.shiftType?.startTime}</span></span>
-                     )}
-                   </li>
-                 );
-              })}
-            </ul>
           )}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Today's Pulse + Charts */}
-      <section style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-        
-        {/* Glassmorphic Auto-Report */}
-        <div className="glass-panel" style={{ padding: '2rem', borderRadius: '16px', backdropFilter: 'blur(10px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', position: 'relative', overflow: 'hidden' }}>
+      {showWidget('charts') && (
+        <section style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           
-          {/* Aesthetic background blobs */}
-          <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(255,255,255,0) 70%)', zIndex: 0, borderRadius: '50%' }}></div>
-          <div style={{ position: 'absolute', bottom: '-80px', left: '100px', width: '250px', height: '250px', background: 'radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, rgba(255,255,255,0) 70%)', zIndex: 0, borderRadius: '50%' }}></div>
+          {/* Glassmorphic Auto-Report */}
+          <div className="glass-panel" style={{ padding: '2rem', borderRadius: '16px', backdropFilter: 'blur(10px)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', position: 'relative', overflow: 'hidden' }}>
+            
+            {/* Aesthetic background blobs */}
+            <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, rgba(255,255,255,0) 70%)', zIndex: 0, borderRadius: '50%' }}></div>
+            <div style={{ position: 'absolute', bottom: '-80px', left: '100px', width: '250px', height: '250px', background: 'radial-gradient(circle, rgba(52, 211, 153, 0.15) 0%, rgba(255,255,255,0) 70%)', zIndex: 0, borderRadius: '50%' }}></div>
 
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-              <div>
-                <h2 className="text-dark" style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                   <span style={{fontSize: '1.5rem'}}>⚡</span> Today's Pulse
-                </h2>
-                <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: 0, maxWidth: '600px', lineHeight: 1.5 }}>
-                  Real-time aggregation of operations directly mapping chronological database manipulations dispatched bounds to the current active day shift.
-                </p>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h2 className="text-dark" style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                     <span style={{fontSize: '1.5rem'}}>⚡</span> Today's Pulse
+                  </h2>
+                  <p style={{ color: 'var(--text-color)', fontSize: '0.9rem', margin: 0, maxWidth: '600px', lineHeight: 1.5 }}>
+                    Real-time aggregation of operations directly mapping chronological database manipulations dispatched bounds to the current active day shift.
+                  </p>
+                </div>
+                <Link href="/tickets?tab=all&date=today" className="primary-btn" style={{ background: 'var(--secondary-color)', color: 'white', fontWeight: 'bold', padding: '0.8rem 1.5rem', borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 6px -1px rgba(15, 23, 42, 0.2)' }}>
+                  Inspect Log Matrix →
+                </Link>
               </div>
-              <Link href="/tickets?tab=all&date=today" className="primary-btn" style={{ background: 'var(--secondary-color)', color: 'white', fontWeight: 'bold', padding: '0.8rem 1.5rem', borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 6px -1px rgba(15, 23, 42, 0.2)' }}>
-                Inspect Log Matrix →
-              </Link>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
-               <div className="bg-white-card hover-lift" style={{ padding: '1.25rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
-                 <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#3b82f6', marginBottom: '0.4rem', lineHeight: '1', textShadow: '0 4px 10px rgba(59, 130, 246, 0.2)' }}>{todayTickets.length}</div>
-                 <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Touched Today</div>
-               </div>
-               <div className="bg-white-card hover-lift" style={{ padding: '1.25rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
-                 <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#10b981', marginBottom: '0.4rem', lineHeight: '1', textShadow: '0 4px 10px rgba(16, 185, 129, 0.2)' }}>{todayResolved}</div>
-                 <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved Today</div>
-               </div>
-               <div className="bg-white-card hover-lift" style={{ padding: '1.25rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
-                 <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#f59e0b', marginBottom: '0.4rem', lineHeight: '1', textShadow: '0 4px 10px rgba(245, 158, 11, 0.2)' }}>{categoryMetrics.reduce((a, c) => a + c.active, 0)}</div>
-                 <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Active Jobs</div>
-               </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+                 <div className="bg-white-card hover-lift" style={{ padding: '1.25rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                   <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#3b82f6', marginBottom: '0.4rem', lineHeight: '1', textShadow: '0 4px 10px rgba(59, 130, 246, 0.2)' }}>{todayTickets.length}</div>
+                   <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Touched Today</div>
+                 </div>
+                 <div className="bg-white-card hover-lift" style={{ padding: '1.25rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                   <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#10b981', marginBottom: '0.4rem', lineHeight: '1', textShadow: '0 4px 10px rgba(16, 185, 129, 0.2)' }}>{todayResolved}</div>
+                   <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved Today</div>
+                 </div>
+                 <div className="bg-white-card hover-lift" style={{ padding: '1.25rem', borderRadius: '12px', textAlign: 'center', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                   <div style={{ fontSize: '2.5rem', fontWeight: '900', color: '#f59e0b', marginBottom: '0.4rem', lineHeight: '1', textShadow: '0 4px 10px rgba(245, 158, 11, 0.2)' }}>{categoryMetrics.reduce((a, c) => a + c.active, 0)}</div>
+                   <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Active Jobs</div>
+                 </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Render Dynamic Graphs - Wrapped in a sleeker container */}
-        <div className="bg-white-card" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
-           <DashboardCharts ticketStats={ticketStats} reportStats={reportStats} categoryStats={categoryStats} />
-        </div>
+          {/* Render Dynamic Graphs - Wrapped in a sleeker container */}
+          <div className="bg-white-card" style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
+             <DashboardCharts ticketStats={ticketStats} reportStats={reportStats} categoryStats={categoryStats} />
+          </div>
 
-      </section>
+        </section>
+      )}
 
       {/* Global Style Injection for classes used here */}
       <style dangerouslySetInnerHTML={{__html: `

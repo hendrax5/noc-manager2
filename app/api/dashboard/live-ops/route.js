@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { getAppConfig } from "@/lib/config";
 
 export async function GET(request) {
   const session = await getServerSession(authOptions);
@@ -31,26 +32,49 @@ export async function GET(request) {
   const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
   const hasGlobalAccess = isAdminOrManager || isCS;
 
+  // Retrieve department configuration
+  const config = getAppConfig();
+  const userDept = session.user.department || "General";
+  const deptConfig = config.dashboardDeptConfig?.[userDept] || {};
+
+  // Resolve allowed scopes for security
+  const allowedScopes = ['me'];
+  if (hasGlobalAccess || deptConfig.defaultScope === 'all') {
+    allowedScopes.push('all');
+  }
+  if (hasGlobalAccess || deptConfig.defaultScope === 'dept' || session.user.departmentId) {
+    allowedScopes.push('dept');
+  }
+
+  // Ensure requested scope is allowed
+  const finalScope = allowedScopes.includes(scopeParam) ? scopeParam : (deptConfig.defaultScope || (hasGlobalAccess ? 'all' : 'me'));
+
   let scope = {};
-  if (hasGlobalAccess) {
-    if (scopeParam === 'dept') {
-      scope = {
-        OR: [
-          { assigneeId: parseInt(session.user.id) },
-          { departmentId: parseInt(session.user.departmentId) || -1 }
-        ]
-      };
-    } else {
-      // Default for Admin/CS: 'all' (no scope filter)
-      scope = {};
-    }
+  if (finalScope === 'all') {
+    scope = {};
+  } else if (finalScope === 'dept') {
+    scope = {
+      OR: [
+        { assigneeId: parseInt(session.user.id) },
+        { departmentId: parseInt(session.user.departmentId) || -1 }
+      ]
+    };
   } else {
-    // Non-global users only see their assigned tickets
     scope = { assigneeId: parseInt(session.user.id) };
   }
 
   // Category filter
-  if (categoryFilter) {
+  if (deptConfig.categories && deptConfig.categories.length > 0) {
+    if (categoryFilter) {
+      if (deptConfig.categories.includes(categoryFilter)) {
+        where.jobCategory = { name: categoryFilter };
+      } else {
+        where.jobCategory = { name: { in: [] } };
+      }
+    } else {
+      where.jobCategory = { name: { in: deptConfig.categories } };
+    }
+  } else if (categoryFilter) {
     where.jobCategory = { name: categoryFilter };
   }
 

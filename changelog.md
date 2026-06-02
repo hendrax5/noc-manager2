@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-06-02
+
+### Added
+- **Dynamic Dashboard Configuration per Department**
+  - Integrated "Dashboard Settings" tab in Helpdesk settings page, enabling Admin users to configure widgets, monitored job categories, and default ticket scopes per department.
+  - Dynamically controls visibility of dashboard widgets (KPI Cards, Job Category Monitor, Live Operations Board, My Follow-Ups, Weekly Shifts, Analytics Trends) based on user department settings.
+  - Enforced department-specific Job Category filtering on all dashboard stats, charts, and metrics.
+  - Enforced department-specific Default Scope overrides (Global, Dept, Me) on dashboard loading and secured URLs scope transitions.
+
 ## [1.3.5] - 2026-06-02
 
 ### Fixed

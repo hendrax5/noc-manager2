@@ -23,6 +23,7 @@ export default async function SettingsPage() {
 
   const customFields = await prisma.customField.findMany({ orderBy: { id: 'asc' } });
   const jobCategories = await prisma.jobCategory.findMany({ orderBy: { id: 'asc' } });
+  const departments = await prisma.department.findMany({ orderBy: { name: 'asc' } });
 
   return (
     <main className="container">
@@ -35,6 +36,7 @@ export default async function SettingsPage() {
         initialFields={customFields} 
         initialCategories={jobCategories} 
         initialConfig={getAppConfig()} 
+        departments={departments}
       />
     </main>
   );
