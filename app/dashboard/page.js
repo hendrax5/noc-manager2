@@ -278,7 +278,7 @@ export default async function DashboardPage({ searchParams }) {
         <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
           
           {/* New Tickets Card */}
-          <Link href="/tickets?statuses=New" style={{ textDecoration: 'none' }}>
+          <Link href={`/tickets?statuses=New${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
             <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(225, 29, 72, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-new">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
                 <h2 style={{ fontSize: '0.8rem', color: '#be123c', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>New</h2>
@@ -290,7 +290,7 @@ export default async function DashboardPage({ searchParams }) {
           </Link>
 
           {/* In Progress Card */}
-          <Link href="/tickets?statuses=In+Progress" style={{ textDecoration: 'none' }}>
+          <Link href={`/tickets?statuses=In+Progress${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
             <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-progress">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
                 <h2 style={{ fontSize: '0.8rem', color: '#1d4ed8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>In Progress</h2>
@@ -302,7 +302,7 @@ export default async function DashboardPage({ searchParams }) {
           </Link>
 
           {/* Pending Card */}
-          <Link href="/tickets?statuses=Waiting+Reply,Replied" style={{ textDecoration: 'none' }}>
+          <Link href={`/tickets?statuses=Waiting+Reply,Replied${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
             <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(217, 119, 6, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-pending">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
                 <h2 style={{ fontSize: '0.8rem', color: '#b45309', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Pending</h2>
@@ -314,7 +314,7 @@ export default async function DashboardPage({ searchParams }) {
           </Link>
 
           {/* Resolved Today Card */}
-          <Link href="/tickets?statuses=Resolved&date=today" style={{ textDecoration: 'none' }}>
+          <Link href={`/tickets?statuses=Resolved&date=today${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
             <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} className="hover-lift kpi-resolved">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
                 <h2 style={{ fontSize: '0.8rem', color: '#15803d', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved Today</h2>
@@ -351,7 +351,7 @@ export default async function DashboardPage({ searchParams }) {
             <h2 className="text-dark" style={{ margin: 0, fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '1.2rem' }}>🏷️</span> Job Category Monitor
             </h2>
-            <Link href="/tickets?tab=all" style={{ fontSize: '0.8rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 'bold' }}>
+            <Link href={`/tickets?statuses=New,Open,In+Progress,Waiting+Reply,Replied,On+Hold,Finish${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ fontSize: '0.8rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 'bold' }}>
               View All Tickets →
             </Link>
           </div>
@@ -362,7 +362,7 @@ export default async function DashboardPage({ searchParams }) {
               const progress = total > 0 ? Math.round((cat.resolvedToday / total) * 100) : 0;
               const hasOverdue = cat.active > 5; // Simple heuristic; adjust as needed
               return (
-                <Link key={cat.id} href={`/tickets?statuses=New,Open,In+Progress,Waiting+Reply,Replied,On+Hold,Finish&assignments=me,unassigned,others&jobCategory=${encodeURIComponent(cat.name)}`} style={{ textDecoration: 'none' }}>
+                <Link key={cat.id} href={`/tickets?statuses=New,Open,In+Progress,Waiting+Reply,Replied,On+Hold,Finish&jobCategory=${encodeURIComponent(cat.name)}${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
                   <div className="hover-lift" style={{
                     padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)',
                     background: 'var(--card-bg)', cursor: 'pointer', position: 'relative', overflow: 'hidden',
