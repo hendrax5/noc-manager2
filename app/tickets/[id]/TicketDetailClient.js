@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import AsyncSearchSelect from "@/components/AsyncSearchSelect";
+
 
 function linkify(text) {
   if (!text) return "";
@@ -107,7 +109,9 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     departmentId: ticket.departmentId,
     assigneeId: ticket.assigneeId || "",
     jobCategoryId: ticket.jobCategoryId || "",
-    customData: ticket.customData || {}
+    customData: ticket.customData || {},
+    enableSla: ticket.enableSla || false,
+    slaTimerMins: ticket.slaTimerMins || 15
   });
   const [commentText, setCommentText] = useState(currentUser.signature ? `\n\n${currentUser.signature}` : "");
   const [file, setFile] = useState(null);
@@ -174,7 +178,14 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     setLoading(true);
     const res = await fetch(`/api/tickets/${ticket.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...formData, title: editTitle, description: editDesc, customData: formData.customData })
+      body: JSON.stringify({ 
+        ...formData, 
+        title: editTitle, 
+        description: editDesc, 
+        customData: formData.customData,
+        enableSla: formData.enableSla,
+        slaTimerMins: formData.slaTimerMins
+      })
     });
     if(res.ok) {
       setEditingTicket(false);
@@ -342,30 +353,14 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                               value={formData.customData?.[f.name] || ''}
                               onChange={e => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: e.target.value }})}
                             />
-                          ) : f.type === 'select' && f.options?.trim() === '@Customers' ? (
-                            isEditing ? (
-                              <AsyncSearchSelect
-                                value={formData.customData?.[f.name] || ''}
-                                onChange={(val) => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: val }})}
-                                placeholder="Search Customer..."
-                                apiRoute="/api/assets/customers/search"
-                                disabled={false}
-                              />
-                            ) : (
-                               <span style={{ color: 'var(--text-color)' }}>{ticket.customData?.[f.name] || '-'}</span>
-                            )
-                          ) : f.type === 'select' && f.options === '@Customers' ? (
-                            isEditing ? (
-                              <AsyncSearchSelect
-                                value={formData.customData?.[f.name] || ''}
-                                onChange={(val) => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: val }})}
-                                placeholder="Search Customer..."
-                                apiRoute="/api/assets/customers/search"
-                                disabled={false}
-                              />
-                            ) : (
-                               <span style={{ color: 'var(--text-color)' }}>{ticket.customData?.[f.name] || '-'}</span>
-                            )
+                          ) : f.type === 'select' && (f.options?.trim() === '@Customers' || f.options === '@Customers') ? (
+                            <AsyncSearchSelect
+                              value={formData.customData?.[f.name] || ''}
+                              onChange={(val) => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: val }})}
+                              placeholder="Search Customer..."
+                              apiRoute="/api/assets/customers/search"
+                              disabled={false}
+                            />
                           ) : f.type === 'select' ? (
                             <SearchableSelect 
                               options={(f.options ? (function(){
@@ -389,6 +384,30 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                     </div>
                   </div>
                 )}
+
+                <div style={{ background: '#fffbeb', padding: '1.5rem', borderRadius: '6px', border: '1px solid #fde68a', marginBottom: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#b45309', marginBottom: '0.5rem' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={formData.enableSla} 
+                      onChange={e => setFormData({ ...formData, enableSla: e.target.checked })} 
+                      style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
+                    />
+                    Enable SLA Enforcement Timer for this ticket
+                  </label>
+                  {formData.enableSla && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '2rem', marginTop: '0.5rem' }}>
+                      <input 
+                        type="number" 
+                        value={formData.slaTimerMins} 
+                        onChange={e => setFormData({ ...formData, slaTimerMins: parseInt(e.target.value) || 15 })} 
+                        min="5" max="1440" 
+                        style={{ width: '100px', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                      />
+                      <span style={{ fontSize: '0.85rem', color: '#b45309' }}>Minutes (frequency of CS follow-up pings)</span>
+                    </div>
+                  )}
+                </div>
 
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                   <button onClick={saveTicketEdit} style={{ background: '#10b981', color: 'white', padding: '0.4rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Save Changes</button>

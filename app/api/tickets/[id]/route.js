@@ -78,26 +78,45 @@ export async function PATCH(req, { params }) {
     }
 
     let logs = [];
-    if (oldTicket.status !== body.status) logs.push({ action: `Status changed to [ ${body.status} ]`, actorId: userId });
-    if (oldTicket.priority !== body.priority) logs.push({ action: `Priority elevated to [ ${body.priority} ]`, actorId: userId });
-    if (oldTicket.departmentId != body.departmentId && body.departmentId) logs.push({ action: `Department transfer initiated`, actorId: userId });
-    if (oldTicket.assigneeId != body.assigneeId && body.assigneeId) logs.push({ action: `Assignee rotation enacted`, actorId: userId });
+    if (body.status !== undefined && oldTicket.status !== body.status) logs.push({ action: `Status changed to [ ${body.status} ]`, actorId: userId });
+    if (body.priority !== undefined && oldTicket.priority !== body.priority) logs.push({ action: `Priority elevated to [ ${body.priority} ]`, actorId: userId });
+    if (body.departmentId !== undefined && oldTicket.departmentId != body.departmentId) logs.push({ action: `Department transfer initiated`, actorId: userId });
+    if (body.assigneeId !== undefined && oldTicket.assigneeId != body.assigneeId) logs.push({ action: `Assignee rotation enacted`, actorId: userId });
     
     // Evaluate Due Date / Trial modifications
     if (body.customData && JSON.stringify(oldTicket.customData) !== JSON.stringify(body.customData)) {
       logs.push({ action: `Custom Fields / Operational Parameters updated`, actorId: userId });
     }
 
+    if (body.enableSla !== undefined && oldTicket.enableSla !== body.enableSla) {
+      logs.push({ action: body.enableSla ? `SLA Timer Activated (${body.slaTimerMins || oldTicket.slaTimerMins || 15}m)` : `SLA Timer Deactivated`, actorId: userId });
+    } else if (body.slaTimerMins !== undefined && oldTicket.slaTimerMins !== parseInt(body.slaTimerMins) && (body.enableSla || oldTicket.enableSla)) {
+      logs.push({ action: `SLA Timer duration changed to ${body.slaTimerMins}m`, actorId: userId });
+    }
+
     const ticketData = {
-      title: body.title,
-      description: body.description,
-      status: body.status,
-      priority: body.priority,
-      departmentId: parseInt(body.departmentId),
-      assigneeId: body.assigneeId ? parseInt(body.assigneeId) : null,
-      jobCategoryId: body.jobCategoryId ? parseInt(body.jobCategoryId) : oldTicket.jobCategoryId,
-      ...(body.customData && { customData: body.customData })
+      title: body.title !== undefined ? body.title : oldTicket.title,
+      description: body.description !== undefined ? body.description : oldTicket.description,
+      status: body.status !== undefined ? body.status : oldTicket.status,
+      priority: body.priority !== undefined ? body.priority : oldTicket.priority,
+      departmentId: body.departmentId !== undefined ? parseInt(body.departmentId) : oldTicket.departmentId,
+      assigneeId: body.assigneeId !== undefined ? (body.assigneeId ? parseInt(body.assigneeId) : null) : oldTicket.assigneeId,
+      jobCategoryId: body.jobCategoryId !== undefined ? (body.jobCategoryId ? parseInt(body.jobCategoryId) : null) : oldTicket.jobCategoryId,
+      ...(body.customData && { customData: body.customData }),
+      ...(body.enableSla !== undefined && { enableSla: body.enableSla }),
+      ...(body.slaTimerMins !== undefined && { slaTimerMins: parseInt(body.slaTimerMins) })
     };
+
+    if (body.enableSla !== undefined) {
+      if (body.enableSla) {
+        const mins = body.slaTimerMins ? parseInt(body.slaTimerMins) : (oldTicket.slaTimerMins || 15);
+        ticketData.nextSlaDeadline = new Date(Date.now() + mins * 60000);
+      } else {
+        ticketData.nextSlaDeadline = null;
+      }
+    } else if (body.slaTimerMins !== undefined && oldTicket.enableSla) {
+      ticketData.nextSlaDeadline = new Date(Date.now() + parseInt(body.slaTimerMins) * 60000);
+    }
 
     if (body.status === 'Resolved') {
       const explicitCategoryId = body.jobCategoryId ? parseInt(body.jobCategoryId) : oldTicket.jobCategoryId;
