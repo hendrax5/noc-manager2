@@ -23,7 +23,7 @@ export default async function TicketsPage({ searchParams }) {
   const q = resolvedParams?.q || "";
 
   const isCS = user.department?.includes('CS') || user.department?.toLowerCase().includes('customer');
-  const canViewAll = user.role === 'Admin' || user.role === 'Manager' || isCS;
+  const canViewAll = user.role === 'Admin' || user.role === 'Manager' || isCS || user.permissions?.includes('view_all_tickets');
 
   const statusesParam = resolvedParams?.statuses;
   const assignmentsParam = resolvedParams?.assignments || "me,unassigned,others";

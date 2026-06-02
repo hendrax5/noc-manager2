@@ -9,7 +9,8 @@ export default async function ReportsPage({ searchParams }) {
   if (!session) redirect('/login');
 
   const { user } = session;
-  if (user.role !== 'Admin' && user.role !== 'Manager') {
+  const hasPermission = user.permissions?.includes('view_reports') || user.role === 'Admin' || user.role === 'Manager';
+  if (!hasPermission) {
     redirect("/dashboard");
   }
 

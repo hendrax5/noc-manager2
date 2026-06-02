@@ -50,6 +50,7 @@ export const authOptions = {
             roleId: user.roleId, 
             departmentId: user.departmentId,
             role: user.role.name,
+            permissions: user.role.permissions || [],
             department: user.department.name,
             avatarUrl: user.avatarUrl,
             signature: user.signature
@@ -65,6 +66,7 @@ export const authOptions = {
         token.roleId = user.roleId;
         token.departmentId = user.departmentId;
         token.role = user.role;
+        token.permissions = user.permissions || [];
         token.department = user.department;
         token.id = user.id;
         token.avatarUrl = user.avatarUrl;
@@ -77,6 +79,7 @@ export const authOptions = {
         session.user.roleId = token.roleId;
         session.user.departmentId = token.departmentId;
         session.user.role = token.role;
+        session.user.permissions = token.permissions || [];
         session.user.department = token.department;
         session.user.id = token.id;
         session.user.avatarUrl = token.avatarUrl;

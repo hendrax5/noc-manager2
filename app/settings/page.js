@@ -17,7 +17,8 @@ export default async function SettingsPage() {
     include: { role: true }
   });
 
-  if (!dbUser || dbUser.role.name !== 'Admin') {
+  const hasPermission = dbUser?.role?.permissions?.includes('manage_settings') || dbUser?.role?.name === 'Admin';
+  if (!hasPermission) {
     redirect('/dashboard');
   }
 

@@ -15,7 +15,10 @@ export async function GET() {
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'Admin') return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const hasPermission = session.user.permissions?.includes('manage_settings') || session.user.role === 'Admin';
+    if (!hasPermission) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const body = await req.json();
     const field = await prisma.jobCategory.create({

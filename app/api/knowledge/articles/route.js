@@ -21,8 +21,8 @@ export async function GET(request) {
       ];
     }
     
-    // Admins and Managers can see unpublished articles
-    if (session.user.role === 'Admin' || session.user.role === 'Manager') {
+    // Admins, Managers, and users with manage_knowledge permission can see unpublished articles
+    if (session.user.role === 'Admin' || session.user.role === 'Manager' || session.user.permissions?.includes('manage_knowledge')) {
       delete where.isPublished; 
     }
 

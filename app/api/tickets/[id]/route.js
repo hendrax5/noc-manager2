@@ -6,13 +6,61 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 export async function PATCH(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    const userId = session?.user?.id ? parseInt(session.user.id) : null;
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const userId = session.user.id ? parseInt(session.user.id) : null;
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
     const body = await req.json();
     
     // Evaluate exact permutations requiring audit snapshots
     const oldTicket = await prisma.ticket.findUnique({ where: { id } });
+    if (!oldTicket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+
+    const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
+    const isAuthorized = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS;
+
+    // Check granular permissions for specific modifications
+    // 1. Changing status / priority
+    if ((body.status !== undefined && oldTicket.status !== body.status) || (body.priority !== undefined && oldTicket.priority !== body.priority)) {
+      const canChangeStatus = isAuthorized || session.user.permissions?.includes('change_ticket_status') || session.user.permissions?.includes('modify_tickets');
+      if (!canChangeStatus) {
+        return NextResponse.json({ error: "Forbidden: You do not have permission to change ticket status or priority." }, { status: 403 });
+      }
+    }
+
+    // 2. Assignee / Department changes
+    if ((body.assigneeId !== undefined && oldTicket.assigneeId !== (body.assigneeId ? parseInt(body.assigneeId) : null)) || 
+        (body.departmentId !== undefined && oldTicket.departmentId !== parseInt(body.departmentId))) {
+      const canAssign = isAuthorized || session.user.permissions?.includes('assign_tickets') || session.user.permissions?.includes('modify_tickets');
+      if (!canAssign) {
+        return NextResponse.json({ error: "Forbidden: You do not have permission to assign this ticket." }, { status: 403 });
+      }
+    }
+
+    // 3. Job category changes
+    if (body.jobCategoryId !== undefined && oldTicket.jobCategoryId !== (body.jobCategoryId ? parseInt(body.jobCategoryId) : null)) {
+      const canChangeJobCategory = isAuthorized || session.user.permissions?.includes('change_job_category') || session.user.permissions?.includes('modify_tickets');
+      if (!canChangeJobCategory) {
+        return NextResponse.json({ error: "Forbidden: You do not have permission to change the ticket's job category." }, { status: 403 });
+      }
+    }
+
+    // 4. Title / Description edits
+    if ((body.title !== undefined && oldTicket.title !== body.title) || (body.description !== undefined && oldTicket.description !== body.description)) {
+      const firstLog = await prisma.ticketHistory.findFirst({
+        where: { ticketId: id },
+        orderBy: { createdAt: 'asc' }
+      });
+      const isCreator = firstLog?.actorId === userId;
+      const canEditGeneral = isCreator || isAuthorized || 
+                             session.user.permissions?.includes('change_ticket_status') || 
+                             session.user.permissions?.includes('assign_tickets') || 
+                             session.user.permissions?.includes('change_job_category') || 
+                             session.user.permissions?.includes('modify_tickets');
+      if (!canEditGeneral) {
+        return NextResponse.json({ error: "Forbidden: You do not have permission to edit ticket details." }, { status: 403 });
+      }
+    }
     
     // Prevent same-day Re-Opens from Resolved state
     if (oldTicket.status === 'Resolved' && body.status && body.status !== 'Resolved') {
@@ -108,7 +156,8 @@ export async function DELETE(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
     const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
-    if (!session || (session.user.role !== 'Admin' && session.user.role !== 'Manager' && !isCS)) {
+    const hasPermission = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || session.user.permissions?.includes('delete_tickets');
+    if (!session || !hasPermission) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

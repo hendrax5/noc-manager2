@@ -30,7 +30,9 @@ export default async function MeetingsPage({ searchParams }) {
           <h1>Meetings & Syncs</h1>
           <p>Schedule and manage NOC hand-overs, incident post-mortems, and reviews.</p>
         </div>
-        <Link href="/meetings/new" className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>Schedule Meeting</Link>
+        {(session.user.permissions?.includes('manage_meetings') || session.user.role === 'Admin' || session.user.role === 'Manager') && (
+          <Link href="/meetings/new" className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>Schedule Meeting</Link>
+        )}
       </header>
 
       <div className="dashboard-grid">

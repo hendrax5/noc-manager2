@@ -13,7 +13,8 @@ export async function POST(req) {
       include: { role: true }
     });
 
-    if (!dbUser || dbUser.role.name !== 'Admin') {
+    const hasPermission = dbUser?.role?.permissions?.includes('manage_users') || dbUser?.role?.name === 'Admin';
+    if (!dbUser || !hasPermission) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

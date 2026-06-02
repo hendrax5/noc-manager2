@@ -31,6 +31,11 @@ export async function PATCH(req, { params }) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     
     const resolvedParams = await params;
+    const meetingToCheck = await prisma.meeting.findUnique({ where: { id: parseInt(resolvedParams.id) } });
+    if (!meetingToCheck) return NextResponse.json({ error: "Not Found" }, { status: 404 });
+    const isOrganizer = meetingToCheck.organizedById === parseInt(session.user.id);
+    const hasPermission = session.user.permissions?.includes('manage_meetings') || session.user.role === 'Admin' || session.user.role === 'Manager' || isOrganizer;
+    if (!hasPermission) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const body = await req.json();
     
     const { title, status, agenda, problems, solutions, scheduledAt, attendees } = body;
@@ -56,7 +61,8 @@ export async function PATCH(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (session?.user?.role !== 'Admin') return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const hasPermission = session?.user?.permissions?.includes('manage_meetings') || session?.user?.role === 'Admin';
+    if (!hasPermission) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const resolvedParams = await params;
     await prisma.meeting.delete({ where: { id: parseInt(resolvedParams.id) } });
     return NextResponse.json({ success: true });

@@ -18,6 +18,7 @@ export default function TeamAccessManager({ users, roles, departments, companies
 
   const [editingRoleId, setEditingRoleId] = useState(null);
   const [editRoleName, setEditRoleName] = useState("");
+  const [editRolePermissions, setEditRolePermissions] = useState([]);
 
   const [editingDeptId, setEditingDeptId] = useState(null);
   const [editDeptName, setEditDeptName] = useState("");
@@ -63,10 +64,20 @@ export default function TeamAccessManager({ users, roles, departments, companies
   const handleEditRole = (role) => {
     setEditingRoleId(role.id);
     setEditRoleName(role.name);
+    setEditRolePermissions(role.permissions || []);
+  };
+  const handleToggleRolePermission = (perm) => {
+    setEditRolePermissions(prev => 
+      prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]
+    );
   };
   const handleSaveRole = async (id) => {
     if (!editRoleName.trim()) return;
-    await fetch(`/api/roles/${id}`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ name: editRoleName }) });
+    await fetch(`/api/roles/${id}`, { 
+      method: "PATCH", 
+      headers: {"Content-Type": "application/json"}, 
+      body: JSON.stringify({ name: editRoleName, permissions: editRolePermissions }) 
+    });
     setEditingRoleId(null);
     router.refresh();
   };
@@ -173,32 +184,91 @@ export default function TeamAccessManager({ users, roles, departments, companies
               <input type="text" placeholder="New Role Name" required value={newRole} onChange={e => setNewRole(e.target.value)} style={{ padding: '0.75rem', width: '300px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
               <button type="submit" className="primary-btn" style={{ width: 'auto', padding: '0.75rem 1.5rem' }}>+ Add Role</button>
             </form>
-            <ul className="list-group">
+            <ul className="list-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: 0, listStyle: 'none' }}>
               {roles.map(r => {
                 if (editingRoleId === r.id) {
+                  const isAdminRole = r.name === 'Admin';
                   return (
-                    <li key={r.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <input type="text" value={editRoleName} onChange={e => setEditRoleName(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', flex: 1, marginRight: '1rem' }} />
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => handleSaveRole(r.id)} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Save</button>
-                        <button onClick={() => setEditingRoleId(null)} style={{ background: '#64748b', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>
+                    <li key={r.id} className="list-item" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--hover-bg)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '1rem' }}>
+                        <input type="text" value={editRoleName} onChange={e => setEditRoleName(e.target.value)} style={{ padding: '0.6rem', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', borderRadius: '6px', flex: 1 }} placeholder="Role Name" />
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button onClick={() => handleSaveRole(r.id)} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>💾 Save</button>
+                          <button onClick={() => setEditingRoleId(null)} style={{ background: '#64748b', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>✕ Cancel</button>
+                        </div>
+                      </div>
+                      
+                      {/* Permission checklist grid */}
+                      <div style={{ width: '100%' }}>
+                        <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', color: 'var(--heading-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.25rem' }}>Configure Permissions (Capabilities):</h4>
+                        {isAdminRole ? (
+                          <div style={{ padding: '0.5rem', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '6px', color: '#b91c1c', fontSize: '0.8rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span>🛡️</span> Role 'Admin' has hardlocked full permissions to prevent administrative lock-out.
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                            {[
+                              { key: "view_all_tickets", label: "🌐 View All Tickets (Global Scope)" },
+                              { key: "change_ticket_status", label: "🔄 Change Ticket Status (Open/Resolve)" },
+                              { key: "assign_tickets", label: "🎯 Assign Tickets (Staff/Tim/Priority)" },
+                              { key: "change_job_category", label: "🏷️ Change Job Category & Performance Score" },
+                              { key: "delete_tickets", label: "🗑️ Delete Tickets" },
+                              { key: "manage_users", label: "👥 Manage Team & NOC Staff" },
+                              { key: "manage_roles", label: "🔐 Manage Security Roles & Permissions" },
+                              { key: "manage_settings", label: "⚙️ Manage Settings, Fields & Routing" },
+                              { key: "view_reports", label: "📊 View Performance Analytics" },
+                              { key: "manage_schedules", label: "🗓️ Manage Shift Schedules & Types" },
+                              { key: "manage_knowledge", label: "📚 Manage Knowledge Base Articles" },
+                              { key: "manage_assets", label: "🗄️ Manage Customer Assets & Services" },
+                              { key: "manage_meetings", label: "🤝 Manage Meetings & Attendance" }
+                            ].map(p => {
+                              const isChecked = editRolePermissions.includes(p.key);
+                              return (
+                                <label key={p.key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-color)', background: 'var(--card-bg)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', transition: 'all 0.15s' }}>
+                                  <input 
+                                    type="checkbox" 
+                                    checked={isChecked}
+                                    onChange={() => handleToggleRolePermission(p.key)}
+                                    style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
+                                  />
+                                  <span>{p.label}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </li>
                   );
                 }
+                const isSystemRole = ['Admin', 'Manager', 'User'].includes(r.name);
+                const rolePerms = r.permissions || [];
                 return (
-                  <li key={r.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <strong>{r.name}</strong>
-                    <div>
+                  <li key={r.id} className="list-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <strong style={{ fontSize: '1.05rem', color: 'var(--heading-color)' }}>{r.name}</strong>
+                      <div>
                         <select defaultValue="" onChange={(e) => {
                           if (e.target.value === 'edit') handleEditRole(r);
                           if (e.target.value === 'delete') handleDeleteRole(r.id);
                           e.target.value = '';
                         }} style={{ padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer', background: '#f8fafc', fontWeight: 'bold' }}>
                           <option value="" disabled>Actions ▾</option>
-                          <option value="edit">✎ Edit</option>
-                          <option value="delete">🗑 Delete</option>
+                          <option value="edit">✎ Edit & Permissions</option>
+                          {!isSystemRole && <option value="delete">🗑 Delete</option>}
                         </select>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.25rem' }}>
+                      {rolePerms.length === 0 ? (
+                        <span style={{ fontSize: '0.73rem', fontStyle: 'italic', color: '#94a3b8' }}>No custom capabilities assigned (Basic staff access only)</span>
+                      ) : (
+                        rolePerms.map(p => (
+                          <span key={p} style={{ fontSize: '0.7rem', background: 'var(--hover-bg)', color: 'var(--text-color)', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', fontWeight: '500', textTransform: 'capitalize' }}>
+                            {p.replace(/_/g, ' ')}
+                          </span>
+                        ))
+                      )}
                     </div>
                   </li>
                 );

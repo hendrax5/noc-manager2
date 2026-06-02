@@ -21,7 +21,8 @@ export async function PATCH(req) {
     where: { id: parseInt(session.user.id) },
     include: { role: true }
   });
-  if (!dbUser || dbUser.role.name !== 'Admin') {
+  const hasPermission = dbUser?.role?.permissions?.includes('manage_settings') || dbUser?.role?.name === 'Admin';
+  if (!hasPermission) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-06-02
+
+### Added
+- **Granular Ticket & Admin Capabilities Checklists**
+  - Split `modify_tickets` permission into distinct granular capabilities: `change_ticket_status` (open/resolve/priority status toggles), `assign_tickets` (assigning to staff/tim), and `change_job_category` (selecting job categories/performance points).
+  - Split `manage_users` permission into `manage_users` (managing NOC staff registry accounts) and `manage_roles` (accessing security role checklists and updating capabilities).
+  - Refactored ticket details page (`page.js`) and client client component (`TicketDetailClient.js`) to disable or enable status, assignment, and job category selectors independently based on granular capabilities.
+  - Implemented server-side validation checks in `api/tickets/[id]` PATCH/DELETE, `api/users`, and `api/roles` endpoints to reject unauthorized attempts to update status, assignments, categories, staff accounts, or role mappings.
+  - Aligned database seed config (`seed-permissions.js`) to automatically assign all 13 granular permissions to Admin and 9 to Manager roles.
+
+## [1.5.0] - 2026-06-02
+
+### Added
+- **Database-Driven Roles & Permissions System**
+  - Migrated the application's access control (RBAC) checks from hardcoded role comparisons (e.g. `role === 'Admin'`) to dynamic, database-driven capability checks (e.g. `permissions.includes('...')`).
+  - Added `permissions` (JSON array) field to the `Role` model in the database schema.
+  - Implemented initial migration & seeding script (`seed-permissions.js`) to set up capabilities for default Admin and Manager roles.
+  - Attached permissions dynamically to the user session securely inside NextAuth JWT and session callbacks.
+  - Added a premium, dynamic checklist UI in Team Management for editing and toggling specific capabilities on user roles dynamically.
+  - Refactored 20+ files across Reports, Roster Schedules, Meetings, Knowledge Base, and Customer Assets/Topology components to enforce the dynamic permissions model.
+
 ## [1.4.0] - 2026-06-02
 
 ### Added

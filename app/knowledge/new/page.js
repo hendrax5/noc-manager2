@@ -8,6 +8,9 @@ export default async function NewArticlePage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
 
+  const hasPermission = session.user.permissions?.includes('manage_knowledge') || session.user.role === 'Admin' || session.user.role === 'Manager';
+  if (!hasPermission) redirect('/knowledge');
+
   const categories = await prisma.knowledgeCategory.findMany({
     orderBy: { name: 'asc' }
   });

@@ -61,8 +61,20 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const currentUserId = currentUserObj.id ? parseInt(currentUserObj.id) : null;
 
   const isCreator = ticket.historyLogs && ticket.historyLogs.length > 0 && ticket.historyLogs[ticket.historyLogs.length - 1].actorId === currentUserId;
-  const isAdminOrManager = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager';
-  const showTicketEdit = isCreator || isAdminOrManager;
+  
+  const isCS = currentUserObj.department?.includes('CS') || currentUserObj.department?.toLowerCase().includes('customer');
+  const isAuthorized = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager' || isCS;
+
+  const canChangeStatus = isAuthorized || currentUserObj.permissions?.includes('change_ticket_status') || currentUserObj.permissions?.includes('modify_tickets');
+  const canAssign = isAuthorized || currentUserObj.permissions?.includes('assign_tickets') || currentUserObj.permissions?.includes('modify_tickets');
+  const canChangeJobCategory = isAuthorized || currentUserObj.permissions?.includes('change_job_category') || currentUserObj.permissions?.includes('modify_tickets');
+  const canDelete = isAuthorized || currentUserObj.permissions?.includes('delete_tickets');
+
+  const showTicketEdit = isCreator || isAuthorized || 
+                         currentUserObj.permissions?.includes('change_ticket_status') || 
+                         currentUserObj.permissions?.includes('assign_tickets') || 
+                         currentUserObj.permissions?.includes('change_job_category') || 
+                         currentUserObj.permissions?.includes('modify_tickets');
 
   const [editingTicket, setEditingTicket] = useState(false);
   const [editTitle, setEditTitle] = useState(ticket.title);
@@ -118,6 +130,9 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   }, [ticket]);
 
   const triggerAutoSave = async (key, newValue) => {
+    if ((key === 'status' || key === 'priority') && !canChangeStatus) return;
+    if ((key === 'departmentId' || key === 'assigneeId') && !canAssign) return;
+    if (key === 'jobCategoryId' && !canChangeJobCategory) return;
     if (!canModifyTicket) return;
     setFormData(prev => ({ ...prev, [key]: newValue }));
     
@@ -606,7 +621,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           <button onClick={() => window.print()} className="print-btn" style={{ flex: 1, background: 'var(--card-bg)', color: 'var(--heading-color)', border: '1px solid var(--border-color)', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem' }}>
             <span style={{ fontSize: '1rem' }}>🖨</span> Print
           </button>
-          {canModifyTicket && (
+          {canDelete && (
             <button onClick={handleDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🗑 Delete</button>
           )}
         </div>
@@ -616,7 +631,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
              
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                <label style={{ color: 'var(--text-color)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Ticket Status</label>
-               <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: formData.status === 'Resolved' ? '#064e3b' : 'var(--input-bg)', color: formData.status === 'Resolved' ? '#34d399' : 'var(--input-text)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem', outline: 'none' }} value={formData.status} onChange={e => triggerAutoSave('status', e.target.value)} disabled={!canModifyTicket}>
+               <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: formData.status === 'Resolved' ? '#064e3b' : 'var(--input-bg)', color: formData.status === 'Resolved' ? '#34d399' : 'var(--input-text)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem', outline: 'none' }} value={formData.status} onChange={e => triggerAutoSave('status', e.target.value)} disabled={!canChangeStatus}>
                  <option value="New">New</option>
                  <option value="Open">Open</option>
                  <option value="Pending">Pending (Waiting User)</option>
@@ -627,7 +642,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
              
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                <label style={{ color: 'var(--text-color)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Priority Level</label>
-               <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: formData.priority === 'Critical' ? '#e11d48' : 'var(--input-text)', fontWeight: '600', cursor: 'pointer', fontSize: '0.85rem', outline: 'none' }} value={formData.priority} onChange={e => triggerAutoSave('priority', e.target.value)} disabled={!canModifyTicket}>
+               <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: formData.priority === 'Critical' ? '#e11d48' : 'var(--input-text)', fontWeight: '600', cursor: 'pointer', fontSize: '0.85rem', outline: 'none' }} value={formData.priority} onChange={e => triggerAutoSave('priority', e.target.value)} disabled={!canChangeStatus}>
                  <option value="Low">Low</option>
                  <option value="Medium">Medium</option>
                  <option value="High">High</option>
@@ -641,7 +656,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                   options={(departments || []).map(d => ({ value: d.id, label: d.name }))} 
                   value={formData.departmentId} 
                   onChange={val => triggerAutoSave('departmentId', val)} 
-                  disabled={!canModifyTicket} 
+                  disabled={!canAssign} 
                   placeholder="-- Select Department --" 
                 />
             </div>
@@ -652,7 +667,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                  options={users.map(u => ({ value: u.id, label: u.name || u.email }))} 
                  value={formData.assigneeId} 
                  onChange={val => triggerAutoSave('assigneeId', val)} 
-                 disabled={!canModifyTicket} 
+                 disabled={!canAssign} 
                  placeholder="-- Unassigned --" 
                />
              </div>
@@ -660,10 +675,10 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                <label style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Job Phase Category</label>
                <SearchableSelect 
-                 options={(jobCategories || []).map(c => ({ value: c.id, label: isAdminOrManager ? `${c.name} (+${c.score} pt)` : c.name }))} 
+                 options={(jobCategories || []).map(c => ({ value: c.id, label: canChangeJobCategory ? `${c.name} (+${c.score} pt)` : c.name }))} 
                  value={formData.jobCategoryId} 
                  onChange={val => triggerAutoSave('jobCategoryId', val)} 
-                 disabled={!canModifyTicket} 
+                 disabled={!canChangeJobCategory} 
                  placeholder="-- Phase Unassigned --" 
                />
              </div>

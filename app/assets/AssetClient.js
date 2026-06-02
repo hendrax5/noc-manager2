@@ -24,7 +24,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isAdmin = session?.user?.role === 'Admin' || session?.user?.role === 'Manager';
+  const isAdmin = session?.user?.role === 'Admin' || session?.user?.role === 'Manager' || session?.user?.permissions?.includes('manage_assets');
 
   return (
     <main className="container">
@@ -34,7 +34,9 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
            <p>Manage Customers, Service Subscriptions, and Topology Hops.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-           <Link href="/assets/new" className="primary-btn" style={{ textDecoration: 'none' }}>+ New Asset/Service</Link>
+           {isAdmin && (
+              <Link href="/assets/new" className="primary-btn" style={{ textDecoration: 'none' }}>+ New Asset/Service</Link>
+           )}
         </div>
       </header>
 

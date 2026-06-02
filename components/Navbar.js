@@ -52,18 +52,25 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
           </div>
 
           {/* Administration Dropdown */}
-          {(session.user?.role === 'Admin' || session.user?.role === 'Manager') && (
+          {(session.user?.permissions?.includes('view_reports') || 
+            session.user?.permissions?.includes('manage_users') || 
+            session.user?.permissions?.includes('manage_roles') || 
+            session.user?.permissions?.includes('manage_settings') ||
+            session.user?.role === 'Admin' || 
+            session.user?.role === 'Manager') && (
             <div className="nav-dropdown">
               <button className={`nav-dropdown-btn ${(pathname.startsWith("/reports") || pathname.startsWith("/team") || pathname.startsWith("/settings")) ? "active" : ""}`}>
                 Administration ▾
               </button>
               <div className="nav-dropdown-content">
-                <Link href="/reports" className={pathname.startsWith("/reports") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>📊 Reports & Analytics</Link>
-                {session.user?.role === 'Admin' && (
-                  <>
-                    <Link href="/team" className={pathname === "/team" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>👥 Team Management</Link>
-                    <Link href="/settings" className={pathname.startsWith("/settings") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>⚙️ System Settings</Link>
-                  </>
+                {(session.user?.permissions?.includes('view_reports') || session.user?.role === 'Admin' || session.user?.role === 'Manager') && (
+                  <Link href="/reports" className={pathname.startsWith("/reports") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>📊 Reports & Analytics</Link>
+                )}
+                {(session.user?.permissions?.includes('manage_users') || session.user?.permissions?.includes('manage_roles') || session.user?.role === 'Admin') && (
+                  <Link href="/team" className={pathname === "/team" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>👥 Team Management</Link>
+                )}
+                {(session.user?.permissions?.includes('manage_settings') || session.user?.role === 'Admin') && (
+                  <Link href="/settings" className={pathname.startsWith("/settings") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>⚙️ System Settings</Link>
                 )}
               </div>
             </div>

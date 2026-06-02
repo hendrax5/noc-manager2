@@ -19,7 +19,8 @@ export default async function TeamPage() {
     include: { role: true }
   });
 
-  if (!dbUser || dbUser.role.name !== 'Admin') {
+  const hasPermission = dbUser?.role?.permissions?.includes('manage_users') || dbUser?.role?.permissions?.includes('manage_roles') || dbUser?.role?.name === 'Admin';
+  if (!hasPermission) {
     redirect('/dashboard');
   }
 
