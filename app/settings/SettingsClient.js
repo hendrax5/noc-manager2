@@ -464,6 +464,11 @@ export default function SettingsClient({ initialFields, initialCategories, initi
                     <input type="text" value={branding.companyNames || "ION, SDC, Sistercompany"} onChange={e => setBranding({...branding, companyNames: e.target.value})} style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)' }} placeholder="e.g. ION, SDC, Subsidiary Group" />
                     <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.75rem', color: '#64748b' }}>Defines dropdown options for 'Order Origin' and 'Executing Vendor' when creating or filtering tickets.</p>
                   </div>
+                  <div style={{ borderTop: '1px dotted var(--border-color)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem', fontWeight: 'bold' }}>External API Key (Incidents Integrations)</label>
+                    <input type="text" value={branding.externalApiKey || ""} onChange={e => setBranding({...branding, externalApiKey: e.target.value})} style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)' }} placeholder="Enter secret API key for other applications to create tickets..." />
+                    <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.75rem', color: '#64748b' }}>This key will be validated against the 'X-API-Key' request header. If the environment variable 'EXTERNAL_API_KEY' is set, it will take precedence over this setting.</p>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '0.5rem' }}>
                    <button type="submit" className="primary-btn" style={{ background: '#3b82f6', padding: '0.6rem 2rem' }}>Apply Branding Config</button>

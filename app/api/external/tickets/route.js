@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAppConfig } from "@/lib/config";
 
 function generateTrackingId() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -15,7 +16,8 @@ export async function POST(req) {
   try {
     // 1. Authenticate using X-API-Key header
     const apiKeyHeader = req.headers.get("x-api-key");
-    const configuredApiKey = process.env.EXTERNAL_API_KEY;
+    const appConfig = getAppConfig();
+    const configuredApiKey = process.env.EXTERNAL_API_KEY || appConfig.externalApiKey;
 
     if (!configuredApiKey || apiKeyHeader !== configuredApiKey) {
       return NextResponse.json({ error: "Unauthorized: Invalid or missing API Key" }, { status: 401 });
