@@ -12,6 +12,17 @@ export async function PATCH(req, { params }) {
     const id = parseInt(resolvedParams.id);
     const body = await req.json();
     
+    const ALL_STATUSES = ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Finish', 'Resolved', 'Closed'];
+    const ALL_PRIORITIES = ['Low', 'Medium', 'High', 'Critical'];
+
+    if (body.status !== undefined && !ALL_STATUSES.includes(body.status)) {
+      return NextResponse.json({ error: `Invalid status: "${body.status}". Allowed values: ${ALL_STATUSES.join(', ')}` }, { status: 400 });
+    }
+
+    if (body.priority !== undefined && !ALL_PRIORITIES.includes(body.priority)) {
+      return NextResponse.json({ error: `Invalid priority: "${body.priority}". Allowed values: ${ALL_PRIORITIES.join(', ')}` }, { status: 400 });
+    }
+    
     // Evaluate exact permutations requiring audit snapshots
     const oldTicket = await prisma.ticket.findUnique({ where: { id } });
     if (!oldTicket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });

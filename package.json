@@ -25,7 +25,8 @@
     "pg": "^8.11.5",
     "react": "latest",
     "react-dom": "latest",
-    "recharts": "latest"
+    "recharts": "latest",
+    "ssh2": "^1.17.0"
   },
   "devDependencies": {
     "eslint": "latest",

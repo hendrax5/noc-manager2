@@ -665,9 +665,13 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: formData.status === 'Resolved' ? '#064e3b' : 'var(--input-bg)', color: formData.status === 'Resolved' ? '#34d399' : 'var(--input-text)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem', outline: 'none' }} value={formData.status} onChange={e => triggerAutoSave('status', e.target.value)} disabled={!canChangeStatus}>
                  <option value="New">New</option>
                  <option value="Open">Open</option>
-                 <option value="Pending">Pending (Waiting User)</option>
+                 <option value="Waiting Reply">Waiting Reply (Awaiting Staff)</option>
+                 <option value="Replied">Replied (Awaiting User)</option>
+                 <option value="In Progress">In Progress</option>
+                 <option value="On Hold">On Hold</option>
                  <option value="Finish">Finish</option>
                  <option value="Resolved">Resolved</option>
+                 <option value="Closed">Closed</option>
                </select>
              </div>
              

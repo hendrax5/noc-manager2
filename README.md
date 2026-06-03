@@ -74,5 +74,85 @@ Sistem menggunakan Persistent Volumes Docker untuk menghindari hilangnya data sa
 - **Database:** `noc_db_data`
 - **Uploads/File Attachments:** `noc_uploads` (Ter-mapping ke `/app/public/uploads`)
 
+---
+
+## 🔌 External API Integration (Pembuatan Tiket Eksternal)
+
+Sistem ini mendukung pembuatan tiket langsung dari aplikasi luar (misalnya sistem monitoring, CRM, atau webform kontak) secara terprogram menggunakan otentikasi API Key.
+
+### 1. Konfigurasi Server (Environment Variable)
+Agar endpoint eksternal aktif dan dapat menerima request, Anda harus mendaftarkan kunci rahasia API di variabel lingkungan pada file `.env` atau konfigurasi Docker:
+```bash
+EXTERNAL_API_KEY="kunci_rahasia_api_anda_disini"
+```
+
+### 2. Spesifikasi Endpoint
+*   **Method:** `POST`
+*   **Path:** `/api/external/tickets`
+*   **Header Wajib:**
+    *   `Content-Type: application/json`
+    *   `X-API-Key: <EXTERNAL_API_KEY_ANDA>`
+
+### 3. Payload Request (JSON)
+*   **Required Fields:**
+    *   `title` (string): Judul tiket/insiden.
+    *   `description` (string): Detail deskripsi kendala/tugas.
+    *   `departmentId` (integer): ID departemen penanggung jawab (misal: `1` untuk NOC Jakarta).
+*   **Optional Fields:**
+    *   `priority` (string): Pilihan prioritas (`Low`, `Medium`, `High`, `Critical`). Default ke `Medium`.
+    *   `assigneeId` (integer): ID petugas spesifik (jika kosong, sistem otomatis menunjuk PIC menggunakan pembagian rata *least-busy round-robin*).
+    *   `jobCategoryId` (integer): ID kategori pekerjaan.
+    *   `customData` (object): Metadata tambahan (key-value) bebas untuk keperluan pelacakan.
+    *   `enableSla` (boolean): Aktifkan timer SLA (Default `false`).
+    *   `slaTimerMins` (integer): Durasi SLA dalam menit (Default `15`).
+
+#### Contoh Body Request:
+```json
+{
+  "title": "[CRITICAL] Server Node-A Down",
+  "description": "Ping failed to host node-a.hsp.net.id. Automated trigger from monitoring system.",
+  "priority": "Critical",
+  "departmentId": 1,
+  "customData": {
+    "Source": "Zabbix Monitoring",
+    "Host IP": "10.10.20.15"
+  }
+}
+```
+
+### 4. Contoh Integrasi
+
+#### Menggunakan Curl
+```bash
+curl -X POST http://<domain-noc-anda>/api/external/tickets \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: kunci_rahasia_api_anda_disini" \
+  -d '{
+    "title": "Incident from external system",
+    "description": "Detailed log information...",
+    "priority": "High",
+    "departmentId": 1
+  }'
+```
+
+#### Menggunakan JavaScript/Node.js Fetch
+```javascript
+const response = await fetch("http://<domain-noc-anda>/api/external/tickets", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "X-API-Key": "kunci_rahasia_api_anda_disini"
+  },
+  body: JSON.stringify({
+    title: "Link failure site Semarang",
+    description: "Loss of signal on fiber core 3.",
+    priority: "Critical",
+    departmentId: 2
+  })
+});
+const ticket = await response.json();
+console.log("Tiket berhasil dibuat dengan Tracking ID:", ticket.trackingId);
+```
+
 ## License
 Proprietary / Internal Use Only.

@@ -11,7 +11,8 @@ export default function LeaderboardClient({
   departments = [],
   startDate = "",
   endDate = "",
-  helicopterStats = {}
+  helicopterStats = {},
+  isAdmin = false
 }) {
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState("");
@@ -161,84 +162,86 @@ export default function LeaderboardClient({
       />
 
       {/* Helicopter View Dashboard */}
-      <section style={{ marginBottom: "2rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-          <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "var(--heading-color)", margin: 0 }}>
-            🛸 Helicopter View: Ringkasan Performa Tim
-          </h2>
-          {startDate || endDate ? (
-            <span style={{ fontSize: "0.8rem", color: "#64748b", background: "var(--border-color)", padding: "0.25rem 0.6rem", borderRadius: "12px" }}>
-              Filter: {startDate || "Awal"} s/d {endDate || "Sekarang"}
-            </span>
-          ) : null}
-        </div>
-
-        <div className="helicopter-grid">
-          <div className="kpi-card">
-            <div className="kpi-icon" style={{ background: "#dcfce7", color: "#15803d" }}>✔️</div>
-            <div className="kpi-content">
-              <span className="kpi-value">{helicopterStats.resolvedCount}</span>
-              <span className="kpi-label">Tiket Resolved</span>
-            </div>
-          </div>
-          <div className="kpi-card">
-            <div className="kpi-icon" style={{ background: "#e0f2fe", color: "#0369a1" }}>⚡</div>
-            <div className="kpi-content">
-              <span className="kpi-value">{formatMins(helicopterStats.avgTtrMins)}</span>
-              <span className="kpi-label">Rata-rata TTR Global</span>
-            </div>
-          </div>
-          <div className="kpi-card">
-            <div className="kpi-icon" style={{ background: "#fef3c7", color: "#b45309" }}>👥</div>
-            <div className="kpi-content">
-              <span className="kpi-value">{helicopterStats.activeOperators}</span>
-              <span className="kpi-label">Operator Aktif</span>
-            </div>
-          </div>
-          <div className="kpi-card">
-            <div className="kpi-icon" style={{ background: "#f3e8ff", color: "#6b21a8" }}>🏆</div>
-            <div className="kpi-content">
-              <span className="kpi-value" style={{ fontSize: "1.1rem", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", maxWidth: "150px" }} title={helicopterStats.leadingDept}>
-                {helicopterStats.leadingDept}
+      {isAdmin && (
+        <section style={{ marginBottom: "2rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "var(--heading-color)", margin: 0 }}>
+              🛸 Helicopter View: Ringkasan Performa Tim
+            </h2>
+            {startDate || endDate ? (
+              <span style={{ fontSize: "0.8rem", color: "#64748b", background: "var(--border-color)", padding: "0.25rem 0.6rem", borderRadius: "12px" }}>
+                Filter: {startDate || "Awal"} s/d {endDate || "Sekarang"}
               </span>
-              <span className="kpi-label">Departemen Unggul</span>
+            ) : null}
+          </div>
+
+          <div className="helicopter-grid">
+            <div className="kpi-card">
+              <div className="kpi-icon" style={{ background: "#dcfce7", color: "#15803d" }}>✔️</div>
+              <div className="kpi-content">
+                <span className="kpi-value">{helicopterStats.resolvedCount}</span>
+                <span className="kpi-label">Tiket Resolved</span>
+              </div>
+            </div>
+            <div className="kpi-card">
+              <div className="kpi-icon" style={{ background: "#e0f2fe", color: "#0369a1" }}>⚡</div>
+              <div className="kpi-content">
+                <span className="kpi-value">{formatMins(helicopterStats.avgTtrMins)}</span>
+                <span className="kpi-label">Rata-rata TTR Global</span>
+              </div>
+            </div>
+            <div className="kpi-card">
+              <div className="kpi-icon" style={{ background: "#fef3c7", color: "#b45309" }}>👥</div>
+              <div className="kpi-content">
+                <span className="kpi-value">{helicopterStats.activeOperators}</span>
+                <span className="kpi-label">Operator Aktif</span>
+              </div>
+            </div>
+            <div className="kpi-card">
+              <div className="kpi-icon" style={{ background: "#f3e8ff", color: "#6b21a8" }}>🏆</div>
+              <div className="kpi-content">
+                <span className="kpi-value" style={{ fontSize: "1.1rem", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", maxWidth: "150px" }} title={helicopterStats.leadingDept}>
+                  {helicopterStats.leadingDept}
+                </span>
+                <span className="kpi-label">Departemen Unggul</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Global Average TTR by Category breakdown */}
-        <div className="card" style={{ margin: 0, padding: "1.25rem" }}>
-          <h3 style={{ margin: "0 0 1rem 0", fontSize: "0.95rem", fontWeight: "700", color: "var(--heading-color)" }}>
-            Breakdown Waktu Resolusi (TTR) Rata-rata per Kategori Tiket
-          </h3>
-          {globalCategoryTtr.length === 0 ? (
-            <div style={{ textAlign: "center", color: "#64748b", padding: "1rem" }}>Tidak ada data resolusi tiket kategori.</div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
-              {globalCategoryTtr.map(cat => {
-                const isSlow = cat.avgMins > 120;
-                const isMedium = cat.avgMins > 60 && cat.avgMins <= 120;
-                const barColor = isSlow ? "#ef4444" : isMedium ? "#f59e0b" : "#10b981";
-                const maxVal = 240; // Reference for 100% width (4 hours)
-                const pct = Math.min(100, (cat.avgMins / maxVal) * 100);
+          {/* Global Average TTR by Category breakdown */}
+          <div className="card" style={{ margin: 0, padding: "1.25rem" }}>
+            <h3 style={{ margin: "0 0 1rem 0", fontSize: "0.95rem", fontWeight: "700", color: "var(--heading-color)" }}>
+              Breakdown Waktu Resolusi (TTR) Rata-rata per Kategori Tiket
+            </h3>
+            {globalCategoryTtr.length === 0 ? (
+              <div style={{ textAlign: "center", color: "#64748b", padding: "1rem" }}>Tidak ada data resolusi tiket kategori.</div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
+                {globalCategoryTtr.map(cat => {
+                  const isSlow = cat.avgMins > 120;
+                  const isMedium = cat.avgMins > 60 && cat.avgMins <= 120;
+                  const barColor = isSlow ? "#ef4444" : isMedium ? "#f59e0b" : "#10b981";
+                  const maxVal = 240; // Reference for 100% width (4 hours)
+                  const pct = Math.min(100, (cat.avgMins / maxVal) * 100);
 
-                return (
-                  <div key={cat.name} style={{ display: "flex", flexDirection: "column", gap: "0.25rem", padding: "0.75rem", border: "1px solid var(--border-color)", borderRadius: "8px", background: "var(--bg-color)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--heading-color)" }}>{cat.name}</span>
-                      <span style={{ fontSize: "0.8rem", fontWeight: "700", color: barColor }}>{formatMins(cat.avgMins)}</span>
+                  return (
+                    <div key={cat.name} style={{ display: "flex", flexDirection: "column", gap: "0.25rem", padding: "0.75rem", border: "1px solid var(--border-color)", borderRadius: "8px", background: "var(--bg-color)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--heading-color)" }}>{cat.name}</span>
+                        <span style={{ fontSize: "0.8rem", fontWeight: "700", color: barColor }}>{formatMins(cat.avgMins)}</span>
+                      </div>
+                      <div className="ttr-bar-container" style={{ margin: "0.25rem 0 0 0" }}>
+                        <div className="ttr-bar" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+                      </div>
+                      <span style={{ fontSize: "0.7rem", color: "#94a3b8", textAlign: "right" }}>Jumlah tiket: {cat.count}</span>
                     </div>
-                    <div className="ttr-bar-container" style={{ margin: "0.25rem 0 0 0" }}>
-                      <div className="ttr-bar" style={{ width: `${pct}%`, backgroundColor: barColor }} />
-                    </div>
-                    <span style={{ fontSize: "0.7rem", color: "#94a3b8", textAlign: "right" }}>Jumlah tiket: {cat.count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Comparison Mode Float Bar / Toggle */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "1rem" }}>

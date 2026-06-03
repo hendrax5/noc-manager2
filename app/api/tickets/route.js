@@ -20,6 +20,11 @@ export async function POST(req) {
 
     const body = await req.json();
     const { title, description, priority, departmentId, assigneeId, jobCategoryId, customData, attachmentUrl, attachmentName, enableSla, slaTimerMins, serviceIds } = body;
+
+    const ALL_PRIORITIES = ['Low', 'Medium', 'High', 'Critical'];
+    if (priority !== undefined && !ALL_PRIORITIES.includes(priority)) {
+      return NextResponse.json({ error: `Invalid priority: "${priority}". Allowed values: ${ALL_PRIORITIES.join(', ')}` }, { status: 400 });
+    }
         
     // Auto assignment routing logic (Least Busy Round-Robin)
     let finalAssigneeId = assigneeId ? parseInt(assigneeId) : null;

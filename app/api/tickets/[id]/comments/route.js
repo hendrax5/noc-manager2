@@ -42,14 +42,14 @@ export async function POST(req, { params }) {
       } else {
         const isStaffReply = (userId === ticket.assigneeId) || session.user.role === 'Admin' || session.user.role === 'Manager' || session.user.department?.includes('CS');
         if (isStaffReply) {
-          newStatus = 'Pending';
-          transitionReason = "Auto-shifted to Pending (Awaiting User)";
+          newStatus = 'Replied';
+          transitionReason = "Auto-shifted to Replied (Awaiting User)";
         } else {
-          newStatus = 'Open';
-          transitionReason = "Auto-shifted to Open (Awaiting Staff)";
+          newStatus = 'Waiting Reply';
+          transitionReason = "Auto-shifted to Waiting Reply (Awaiting Staff)";
           
-          // Re-route Round Robin if the ticket was previously dormant (Pending)
-          if (ticket.status === 'Pending' || ticket.status === 'Finish') {
+          // Re-route Round Robin if the ticket was previously dormant (Replied)
+          if (ticket.status === 'Replied' || ticket.status === 'Finish') {
             const deptUsers = await prisma.user.findMany({ 
               where: { departmentId: ticket.departmentId, role: { name: { not: 'Admin' } } }, 
               select: { id: true } 

@@ -183,6 +183,8 @@ export default async function ReportsPage({ searchParams }) {
     leadingDept
   };
 
+  const isAdmin = user.role === 'Admin';
+
   return (
     <LeaderboardClient
       initialCsLeaderboard={csLeaderboard}
@@ -192,6 +194,7 @@ export default async function ReportsPage({ searchParams }) {
       startDate={start || ""}
       endDate={end || ""}
       helicopterStats={helicopterStats}
+      isAdmin={isAdmin}
     />
   );
 }
