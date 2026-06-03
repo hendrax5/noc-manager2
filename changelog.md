@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-06-03
+
+### Added
+- **External Ticket Creation API**: Created a new programmatic route `/api/external/tickets` for third-party systems to submit incidents, with API Key authentication via `X-API-Key` headers and auto-assignment.
+- **Ticket Dropdown Status Expansion**: Added all 9 valid ticket statuses to the Ticket Detail page select list so they display correctly.
+
+### Security
+- **API Status & Priority Validation**: Implemented strict validation checks on status and priority in `/api/tickets/[id]` (PATCH) and `/api/tickets` (POST) routes, returning a 400 Bad Request if an invalid value is sent.
+
 ## [2.0.0] - 2026-06-02
 
 ### Added

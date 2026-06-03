@@ -1,6 +1,19 @@
-# NOC Manager v2 (Version 1.3.1)
+# NOC Manager v2 (Version 2.1.0)
 
 A comprehensive Enterprise Ticketing, Operations, and Analytics suite designed exclusively for internal NOC, Customer Service, and B2B Technical Support Teams.
+
+## 🚀 What's New in v2.1.0?
+
+### 1. 🔌 External Ticket Creation API
+- **API Key Authentication:** Exposes a secure, programmatic POST endpoint (`/api/external/tickets`) authorized via `X-API-Key` headers.
+- **Round-Robin PIC Routing:** Automatic load-balanced ticket assignment within the target department based on staff workload.
+- **Payload Validation:** Enforces strict validation on incoming payload fields (matching allowed statuses, priorities, and resolving correct types).
+
+### 2. 🛡️ Robust Status & Priority Safeguards
+- **Status Restrictions:** Prevents invalid statuses (such as typos or custom Hesk legacy values like `'Pending'`) from polluting the database via PATCH API validation.
+- **Full Dropdown Options:** Restructured the Ticket Detail page status dropdown to contain all 9 valid system statuses, resolving display synchronization issues.
+
+---
 
 ## 🚀 What's New in v1.3.0 & v1.3.1?
 
