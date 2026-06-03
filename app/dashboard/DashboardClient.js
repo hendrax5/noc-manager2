@@ -7,6 +7,7 @@ import DashboardCharts from "./DashboardCharts";
 export default function DashboardClient({
   session,
   hasGlobalAccess,
+  hasHelicopterAccess,
   finalScope,
   allowedScopes,
   
@@ -42,7 +43,7 @@ export default function DashboardClient({
   criticalSlaTickets = [],
   activeCustomerIncidents = []
 }) {
-  const [activeTab, setActiveTab] = useState(hasGlobalAccess ? "helicopter" : "workspace");
+  const [activeTab, setActiveTab] = useState(hasHelicopterAccess ? "helicopter" : "workspace");
   const [expandedPics, setExpandedPics] = useState({});
   const [expandedSlas, setExpandedSlas] = useState({});
 
@@ -136,7 +137,7 @@ export default function DashboardClient({
               </span>
 
               {/* Tab Switcher */}
-              {hasGlobalAccess && (
+              {hasHelicopterAccess && (
                 <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', padding: '0.2rem', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.15)', marginLeft: '1rem' }}>
                   <button 
                     onClick={() => setActiveTab("workspace")}

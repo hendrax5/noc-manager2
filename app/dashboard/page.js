@@ -11,6 +11,7 @@ export default async function DashboardPage({ searchParams }) {
   const isAdminOrManager = session?.user?.role === 'Admin' || session?.user?.role === 'Manager' || session?.user?.permissions?.includes('view_reports') || session?.user?.permissions?.includes('view_all_tickets');
   const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
   const hasGlobalAccess = isAdminOrManager || isCS || session?.user?.permissions?.includes('view_all_tickets');
+  const hasHelicopterAccess = session?.user?.role === 'Admin' || session?.user?.role === 'Manager' || session?.user?.permissions?.includes('view_reports');
 
   // Retrieve department configuration
   const config = getAppConfig();
@@ -186,7 +187,7 @@ export default async function DashboardPage({ searchParams }) {
   let criticalSlaTickets = [];
   let activeCustomerIncidents = [];
 
-  if (hasGlobalAccess) {
+  if (hasHelicopterAccess) {
     // 1. NOC Staff workloads (active ticket counts assigned per staff)
     picWorkloads = await prisma.user.findMany({
       where: {
@@ -267,6 +268,7 @@ export default async function DashboardPage({ searchParams }) {
       <DashboardClient 
         session={session}
         hasGlobalAccess={hasGlobalAccess}
+        hasHelicopterAccess={hasHelicopterAccess}
         finalScope={finalScope}
         allowedScopes={allowedScopes}
         
