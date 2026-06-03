@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.2] - 2026-06-03
+
+### Fixed
+- **Next-Auth Session Cache & Admin Menu Visibility**: Updated the Next-Auth session callback to fetch user roles and permissions dynamically from the database on every session check instead of relying on static, cached values in the JWT. This ensures that role promotions/demotions and permission overrides take effect instantly across the Navbar and all client/server components without requiring the user to manually log out and log back in.
+
 ## [2.1.1] - 2026-06-03
 
 ### Added
