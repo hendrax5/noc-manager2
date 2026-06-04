@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.7] - 2026-06-04
+
+### Added
+- **Master Ticket Permission Extensions**: Enhanced `manage_tickets` to allow master administrators and CS to edit `Customer / Reporter Name` and edit *all* comments/replies inside any ticket.
+- **Auto-Grow & Plain-Text Textarea Editor**: Textarea editor for ticket description now automatically adjusts its height according to content length (auto-grow) and automatically cleans legacy HTML tags into clean plain-text line breaks when entering edit mode.
+- **Manual Downtime LiveOps Override**: Integrated manual downtime parameters (`startDowntime` and `endDowntime` / `downtimeMinutes`) to override standard creation time and age durations on the Live Operations Board, main dashboard workload grids, and CSV exports (with orange `⏱️` icons).
+
+### Removed
+- **Impacting Services (Optional Link)**: Removed the deprecated Impacting Services dropdown and badges from the ticket creation form.
+
 ## [2.1.6] - 2026-06-04
 
 ### Added
