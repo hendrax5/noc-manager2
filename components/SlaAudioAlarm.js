@@ -86,11 +86,13 @@ export default function SlaAudioAlarm() {
     const userRole = session.user.role;
     const userDept = session.user.department || "";
     
-    // Only mount interval loop for Customer Service, Managers, and Admins
+    // Only mount interval loop for Customer Service, Admins, or users with ticket/SLA permissions
     const isTargetAudience = userDept.toLowerCase().includes('cs') || 
                              userDept.toLowerCase().includes('customer') || 
                              userRole === 'Admin' || 
-                             userRole === 'Manager';
+                             session.user.permissions?.includes('manage_sla') ||
+                             session.user.permissions?.includes('manage_tickets') ||
+                             session.user.permissions?.includes('view_all_tickets');
                              
     if (!isTargetAudience) return;
 

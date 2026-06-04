@@ -3,12 +3,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import UserTableClient from "./UserTableClient";
 
-export default function TeamAccessManager({ users, roles, departments, companies = ["ION", "SDC", "Sistercompany"], initialDeptMap = {}, initialAutoRouteMap = {}, canManageUsers = false, canManageRoles = false }) {
+export default function TeamAccessManager({ users, roles, departments, companies = ["ION", "SDC", "Sistercompany"], initialDeptMap = {}, initialAutoRouteMap = {}, canManageUsers = false, canManageRoles = false, canManageDepartments = false }) {
   const router = useRouter();
   const availableTabs = [
     canManageUsers && 'users',
     canManageRoles && 'roles',
-    (canManageUsers || canManageRoles) && 'departments'
+    canManageDepartments && 'departments'
   ].filter(Boolean);
   const [activeTab, setActiveTab] = useState(availableTabs[0] || 'users');
   const [newRole, setNewRole] = useState("");

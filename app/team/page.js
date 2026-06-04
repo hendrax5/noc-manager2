@@ -21,8 +21,9 @@ export default async function TeamPage() {
 
   const canManageUsers = dbUser?.role?.permissions?.includes('manage_users') || dbUser?.role?.name === 'Admin';
   const canManageRoles = dbUser?.role?.permissions?.includes('manage_roles') || dbUser?.role?.name === 'Admin';
+  const canManageDepartments = dbUser?.role?.permissions?.includes('manage_departments') || dbUser?.role?.name === 'Admin';
 
-  if (!canManageUsers && !canManageRoles) {
+  if (!canManageUsers && !canManageRoles && !canManageDepartments) {
     redirect('/dashboard');
   }
 
@@ -56,6 +57,7 @@ export default async function TeamPage() {
         initialAutoRouteMap={initialAutoRouteMap}
         canManageUsers={canManageUsers}
         canManageRoles={canManageRoles}
+        canManageDepartments={canManageDepartments}
       />
     </main>
   );
