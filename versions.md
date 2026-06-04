@@ -6,6 +6,7 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 
 | Version | Release Date | Status | Description |
 |---|---|---|---|
+| **v2.1.5** | 2026-06-04 | Active | **Security & Feature Release** - Enforced strict permissions separating users/roles access, removed hardcoded role-level checks (e.g. Manager), added modify_tickets shorthand, manage_departments separation, and view_live_ops live monitoring permissions. |
 | **v2.1.4** | 2026-06-04 | Active | **Feature & Security Release** - Introduced manage_tickets master permission, create_tickets control, manage_sla restrictions, and view/write internal notes access controls. |
 | **v2.1.3** | 2026-06-04 | Active | **Feature Release** - Added edit_own_tickets and edit_other_tickets security permissions to roles and enforced them in ticket detail edits on frontend & backend. |
 | **v2.1.2** | 2026-06-03 | Active | **Bug Fix Release** - Resolved session caching issue where demoted admin/manager users still see the Administration menu. |
@@ -27,6 +28,11 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 | **v1.2.2** | 2026-05-15 | Active | Current baseline version prior to redesign. |
 
 ## Version Log Detail
+
+### v2.1.5
+- **Release Date**: June 4, 2026
+- **Prisma Changes**: No
+- **Status**: Stable / Verified Build / Strict Permissions & Dedicated Roles Settings Enforcements
 
 ### v2.1.4
 - **Release Date**: June 4, 2026

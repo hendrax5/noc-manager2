@@ -34,7 +34,7 @@ export async function PATCH(req, { params }) {
     const meetingToCheck = await prisma.meeting.findUnique({ where: { id: parseInt(resolvedParams.id) } });
     if (!meetingToCheck) return NextResponse.json({ error: "Not Found" }, { status: 404 });
     const isOrganizer = meetingToCheck.organizedById === parseInt(session.user.id);
-    const hasPermission = session.user.permissions?.includes('manage_meetings') || session.user.role === 'Admin' || session.user.role === 'Manager' || isOrganizer;
+    const hasPermission = session.user.permissions?.includes('manage_meetings') || session.user.role === 'Admin' || isOrganizer;
     if (!hasPermission) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const body = await req.json();
     

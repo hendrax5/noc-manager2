@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.5] - 2026-06-04
+
+### Added
+- **Permission Option `modify_tickets`**: Integrated `modify_tickets` capability check as a togglable option in the Access Settings checklist, mapping to ticket editing, status transitions, and assignment actions.
+- **Permission Option `manage_departments`**: Isolated sub-department creations, updates, and routing preferences behind a dedicated `manage_departments` permission.
+- **Permission Option `view_live_ops`**: Added `view_live_ops` to control access to real-time operations board and dashboard metrics.
+
+### Security
+- **Strict Role API Gating**: Removed the `manage_users` fallback check from Security Roles APIs and UI components. Role creation/modification is now strictly constrained to users with `manage_roles` permission or `Admin` role.
+- **Removed Hardcoded Role Overrides**: Eliminated hardcoded `role === 'Manager'` checks across all modules (Assets, Knowledge Base, Meetings, Schedules, Reports, Dashboard, and Tickets) to ensure the checklist permissions are strictly respected.
+- **Access Manager Tab Gating**: Secured the team settings tabs to only show Users, Roles, or Departments lists to users with corresponding permissions.
+
 ## [2.1.4] - 2026-06-04
 
 ### Added

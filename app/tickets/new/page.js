@@ -11,7 +11,7 @@ export default async function NewTicketPage() {
   if (!session) redirect('/login');
 
   const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
-  const canCreate = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || session.user.permissions?.includes('create_tickets') || session.user.permissions?.includes('manage_tickets');
+  const canCreate = session.user.role === 'Admin' || isCS || session.user.permissions?.includes('create_tickets') || session.user.permissions?.includes('manage_tickets');
   if (!canCreate) redirect('/tickets');
 
   const departments = await prisma.department.findMany({ orderBy: { name: 'asc' } });

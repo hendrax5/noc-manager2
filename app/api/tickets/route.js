@@ -19,7 +19,7 @@ export async function POST(req) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     
     const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
-    const canCreate = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || session.user.permissions?.includes('create_tickets') || session.user.permissions?.includes('manage_tickets');
+    const canCreate = session.user.role === 'Admin' || isCS || session.user.permissions?.includes('create_tickets') || session.user.permissions?.includes('manage_tickets');
     
     if (!canCreate) {
       return NextResponse.json({ error: "Forbidden: You do not have permission to create tickets." }, { status: 403 });

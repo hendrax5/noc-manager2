@@ -12,7 +12,7 @@ export async function GET(req) {
 
     const { user } = session;
     const isCS = user.department?.includes('CS') || user.department?.toLowerCase().includes('customer');
-    const isAdminOrManager = user.role === 'Admin' || user.role === 'Manager';
+    const isAdminOrManager = user.role === 'Admin' || user.permissions?.includes('manage_sla') || user.permissions?.includes('manage_tickets') || user.permissions?.includes('view_reports');
 
     // Only allow CS or Admins to poll this endpoint to save DB load
     if (!isCS && !isAdminOrManager) {

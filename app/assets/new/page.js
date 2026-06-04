@@ -8,7 +8,7 @@ export default async function NewAssetPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
 
-  const hasPermission = session.user.permissions?.includes('manage_assets') || session.user.role === 'Admin' || session.user.role === 'Manager';
+  const hasPermission = session.user.permissions?.includes('manage_assets') || session.user.role === 'Admin';
   if (!hasPermission) redirect('/assets');
 
   const customers = await prisma.customer.findMany({ orderBy: { name: 'asc' } });

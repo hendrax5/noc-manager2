@@ -19,8 +19,10 @@ export default async function TeamPage() {
     include: { role: true }
   });
 
-  const hasPermission = dbUser?.role?.permissions?.includes('manage_users') || dbUser?.role?.permissions?.includes('manage_roles') || dbUser?.role?.name === 'Admin';
-  if (!hasPermission) {
+  const canManageUsers = dbUser?.role?.permissions?.includes('manage_users') || dbUser?.role?.name === 'Admin';
+  const canManageRoles = dbUser?.role?.permissions?.includes('manage_roles') || dbUser?.role?.name === 'Admin';
+
+  if (!canManageUsers && !canManageRoles) {
     redirect('/dashboard');
   }
 
@@ -45,7 +47,16 @@ export default async function TeamPage() {
         <Link href="/team/schedules" style={{ padding: '0.75rem 1.5rem', textDecoration: 'none', color: '#64748b', fontWeight: '500' }}>Shift Schedules</Link>
       </div>
 
-      <TeamAccessManager users={users} roles={roles} departments={departments} companies={companies} initialDeptMap={initialDeptMap} initialAutoRouteMap={initialAutoRouteMap} />
+      <TeamAccessManager 
+        users={users} 
+        roles={roles} 
+        departments={departments} 
+        companies={companies} 
+        initialDeptMap={initialDeptMap} 
+        initialAutoRouteMap={initialAutoRouteMap}
+        canManageUsers={canManageUsers}
+        canManageRoles={canManageRoles}
+      />
     </main>
   );
 }

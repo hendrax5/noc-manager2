@@ -23,8 +23,8 @@ export default async function TicketsPage({ searchParams }) {
   const q = resolvedParams?.q || "";
 
   const isCS = user.department?.includes('CS') || user.department?.toLowerCase().includes('customer');
-  const canViewAll = user.role === 'Admin' || user.role === 'Manager' || isCS || user.permissions?.includes('view_all_tickets') || user.permissions?.includes('manage_tickets');
-  const canCreate = user.role === 'Admin' || user.role === 'Manager' || isCS || user.permissions?.includes('create_tickets') || user.permissions?.includes('manage_tickets');
+  const canViewAll = user.role === 'Admin' || isCS || user.permissions?.includes('view_all_tickets') || user.permissions?.includes('manage_tickets');
+  const canCreate = user.role === 'Admin' || isCS || user.permissions?.includes('create_tickets') || user.permissions?.includes('manage_tickets');
 
   const statusesParam = resolvedParams?.statuses;
   const assignmentsParam = resolvedParams?.assignments || "me,unassigned,others";
@@ -192,7 +192,7 @@ export default async function TicketsPage({ searchParams }) {
          <Link href="/tickets" style={{ padding: '0.5rem 1rem', textDecoration: 'none', color: !tab ? 'var(--primary-color)' : '#64748b', fontWeight: !tab ? 'bold' : '500', borderBottom: !tab ? '3px solid var(--primary-color)' : 'none', marginBottom: '-9px' }}>
             All Active View
          </Link>
-         {(isCS || user.role === 'Admin' || user.role === 'Manager') && (
+         {(isCS || user.role === 'Admin' || user.permissions?.includes('manage_sla') || user.permissions?.includes('view_all_tickets')) && (
            <Link href="/tickets?tab=cs_radar" style={{ padding: '0.5rem 1rem', textDecoration: 'none', color: tab === 'cs_radar' ? '#ef4444' : '#64748b', fontWeight: tab === 'cs_radar' ? 'bold' : '500', borderBottom: tab === 'cs_radar' ? '3px solid #ef4444' : 'none', marginBottom: '-9px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               📡 CS SLA Radar
            </Link>

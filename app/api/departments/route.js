@@ -6,7 +6,7 @@ import { authOptions } from "../auth/[...nextauth]/route";
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
-    const hasPermission = session?.user?.permissions?.includes('manage_users') || session?.user?.permissions?.includes('manage_roles') || session?.user?.role === 'Admin';
+    const hasPermission = session?.user?.permissions?.includes('manage_departments') || session?.user?.role === 'Admin';
     if (!session || !hasPermission) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const { name } = await req.json();

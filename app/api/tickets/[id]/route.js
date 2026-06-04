@@ -28,7 +28,7 @@ export async function PATCH(req, { params }) {
     if (!oldTicket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
 
     const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
-    const isAuthorized = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || session.user.permissions?.includes('manage_tickets');
+    const isAuthorized = session.user.role === 'Admin' || isCS || session.user.permissions?.includes('manage_tickets');
 
     // Check granular permissions for specific modifications
     // 1. Changing status / priority
@@ -199,7 +199,7 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
-    const hasPermission = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || session.user.permissions?.includes('delete_tickets') || session.user.permissions?.includes('manage_tickets');
+    const hasPermission = session.user.role === 'Admin' || isCS || session.user.permissions?.includes('delete_tickets') || session.user.permissions?.includes('manage_tickets');
     if (!hasPermission) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }

@@ -8,10 +8,10 @@ export default async function DashboardPage({ searchParams }) {
   const session = await getServerSession(authOptions);
   const resolvedParams = await searchParams;
 
-  const isAdminOrManager = session?.user?.role === 'Admin' || session?.user?.role === 'Manager' || session?.user?.permissions?.includes('view_reports') || session?.user?.permissions?.includes('view_all_tickets');
+  const isAdminOrManager = session?.user?.role === 'Admin' || session?.user?.permissions?.includes('view_reports') || session?.user?.permissions?.includes('view_all_tickets') || session?.user?.permissions?.includes('view_live_ops');
   const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
   const hasGlobalAccess = isAdminOrManager || isCS || session?.user?.permissions?.includes('view_all_tickets');
-  const hasHelicopterAccess = session?.user?.role === 'Admin' || session?.user?.role === 'Manager' || session?.user?.permissions?.includes('view_reports');
+  const hasHelicopterAccess = session?.user?.role === 'Admin' || session?.user?.permissions?.includes('view_live_ops') || session?.user?.permissions?.includes('view_reports');
 
   // Retrieve department configuration
   const config = getAppConfig();

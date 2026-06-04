@@ -77,7 +77,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const isCreator = ticket.historyLogs && ticket.historyLogs.length > 0 && ticket.historyLogs[ticket.historyLogs.length - 1].actorId === currentUserId;
   
   const isCS = currentUserObj.department?.includes('CS') || currentUserObj.department?.toLowerCase().includes('customer');
-  const isAuthorized = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager' || isCS || currentUserObj.permissions?.includes('manage_tickets');
+  const isAuthorized = currentUserObj.role === 'Admin' || isCS || currentUserObj.permissions?.includes('manage_tickets');
 
   const canChangeStatus = isAuthorized || currentUserObj.permissions?.includes('change_ticket_status') || currentUserObj.permissions?.includes('modify_tickets');
   const canAssign = isAuthorized || currentUserObj.permissions?.includes('assign_tickets') || currentUserObj.permissions?.includes('modify_tickets');

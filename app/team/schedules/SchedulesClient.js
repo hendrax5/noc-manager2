@@ -7,7 +7,7 @@ export default function SchedulesClient({ initialShiftTypes, users, locations, c
   const [activeTab, setActiveTab] = useState("calendar");
   const [shiftTypes, setShiftTypes] = useState(initialShiftTypes);
   
-  const isAdminOrManager = currentUser.permissions?.includes('manage_schedules') || currentUser.role === 'Admin' || currentUser.role === 'Manager';
+  const isAdminOrManager = currentUser.permissions?.includes('manage_schedules') || currentUser.role === 'Admin';
 
   // --- Calendar Tab State ---
   const [schedules, setSchedules] = useState([]);

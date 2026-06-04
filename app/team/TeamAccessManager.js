@@ -3,9 +3,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import UserTableClient from "./UserTableClient";
 
-export default function TeamAccessManager({ users, roles, departments, companies = ["ION", "SDC", "Sistercompany"], initialDeptMap = {}, initialAutoRouteMap = {} }) {
+export default function TeamAccessManager({ users, roles, departments, companies = ["ION", "SDC", "Sistercompany"], initialDeptMap = {}, initialAutoRouteMap = {}, canManageUsers = false, canManageRoles = false }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("users");
+  const availableTabs = [
+    canManageUsers && 'users',
+    canManageRoles && 'roles',
+    (canManageUsers || canManageRoles) && 'departments'
+  ].filter(Boolean);
+  const [activeTab, setActiveTab] = useState(availableTabs[0] || 'users');
   const [newRole, setNewRole] = useState("");
   const [newDept, setNewDept] = useState("");
   const [userPage, setUserPage] = useState(1);
@@ -112,7 +117,7 @@ export default function TeamAccessManager({ users, roles, departments, companies
   return (
     <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', background: '#f8fafc' }}>
-        {['users', 'roles', 'departments'].map(tab => (
+        {availableTabs.map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -211,6 +216,7 @@ export default function TeamAccessManager({ users, roles, departments, companies
                               { key: "view_all_tickets", label: "🌐 View All Tickets (Global Scope)" },
                               { key: "manage_tickets", label: "🎫 Manage Tickets (Master Permission)" },
                               { key: "create_tickets", label: "➕ Create Tickets" },
+                              { key: "modify_tickets", label: "✏️ Modify Tickets (Status/Assign/Category Shorthand)" },
                               { key: "change_ticket_status", label: "🔄 Change Ticket Status (Open/Resolve)" },
                               { key: "assign_tickets", label: "🎯 Assign Tickets (Staff/Tim/Priority)" },
                               { key: "change_job_category", label: "🏷️ Change Job Category & Performance Score" },
@@ -220,8 +226,10 @@ export default function TeamAccessManager({ users, roles, departments, companies
                               { key: "manage_sla", label: "⏱️ Manage SLA Configuration" },
                               { key: "view_internal_notes", label: "👁️ View Internal Notes" },
                               { key: "manage_ticket_notes", label: "✍️ Write Internal Notes" },
+                              { key: "view_live_ops", label: "📡 View Live Operations Dashboard" },
                               { key: "manage_users", label: "👥 Manage Team & NOC Staff" },
                               { key: "manage_roles", label: "🔐 Manage Security Roles & Permissions" },
+                              { key: "manage_departments", label: "🏢 Manage Sub-Departments & Routing" },
                               { key: "manage_settings", label: "⚙️ Manage Settings, Fields & Routing" },
                               { key: "view_reports", label: "📊 View Performance Analytics" },
                               { key: "manage_schedules", label: "🗓️ Manage Shift Schedules & Types" },

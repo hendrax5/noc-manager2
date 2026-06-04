@@ -21,7 +21,10 @@ const ALL_PERMISSIONS = [
   "create_tickets",
   "manage_sla",
   "view_internal_notes",
-  "manage_ticket_notes"
+  "manage_ticket_notes",
+  "modify_tickets",
+  "manage_departments",
+  "view_live_ops"
 ];
 
 const MANAGER_PERMISSIONS = [
@@ -40,7 +43,10 @@ const MANAGER_PERMISSIONS = [
   "create_tickets",
   "manage_sla",
   "view_internal_notes",
-  "manage_ticket_notes"
+  "manage_ticket_notes",
+  "modify_tickets",
+  "manage_departments",
+  "view_live_ops"
 ];
 
 async function main() {

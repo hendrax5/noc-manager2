@@ -203,7 +203,7 @@ export default function DashboardClient({
           )}
           {(() => {
             const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
-            const canCreate = session?.user?.role === 'Admin' || session?.user?.role === 'Manager' || isCS || session?.user?.permissions?.includes('create_tickets') || session?.user?.permissions?.includes('manage_tickets');
+            const canCreate = session?.user?.role === 'Admin' || isCS || session?.user?.permissions?.includes('create_tickets') || session?.user?.permissions?.includes('manage_tickets');
             return canCreate && (
               <Link href="/tickets/new" className="primary-btn" style={{ 
                 background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', padding: '0.8rem 1.5rem', 
