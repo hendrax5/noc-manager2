@@ -129,6 +129,27 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const [mounted, setMounted] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
+  const getDowntimeDuration = (startDt, endDt) => {
+    if (!startDt || !endDt) return null;
+    const start = new Date(startDt);
+    const end = new Date(endDt);
+    const diffMs = end - start;
+    if (diffMs < 0) return { error: "Waktu selesai tidak boleh sebelum waktu mulai!" };
+    const diffMins = Math.floor(diffMs / 60000);
+    const hrs = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return {
+      minutes: diffMins,
+      text: `${hrs > 0 ? `${hrs} jam ` : ''}${mins} menit (${diffMins} menit)`
+    };
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleString('id-ID', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  };
+
   // Activity Notes State (Phase 34)
   const [notes, setNotes] = useState([]);
   const [noteContent, setNoteContent] = useState("");
@@ -323,6 +344,11 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f8fafc', padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>
                   👤 <strong>{extractedName}</strong>
                 </span>
+                {ticket.customData && ticket.customData.hasDowntime && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#fef3c7', padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #fde68a', color: '#92400e', fontWeight: 'bold' }}>
+                    ⏱️ Downtime Outage: {formatDate(ticket.customData.startDowntime)} s/d {ticket.customData.endDowntime ? formatDate(ticket.customData.endDowntime) : 'Belum Selesai'} ({ticket.customData.downtimeMinutes || 0} menit)
+                  </span>
+                )}
                 {ticket.customData && ticket.customData["Order Origin"] && (
                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#fef2f2', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid #fecaca', color: '#991b1b', fontSize: '0.8rem', fontWeight: 'bold' }} title="Order Origin (Selling Company)">
                      🏢 {ticket.customData["Order Origin"]}
@@ -343,6 +369,102 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             <p style={{ margin: '0 0 1rem 0' }}>Dear NOC,</p>
             {editingTicket ? (
               <div>
+                {/* Edit Customer / Reporter Name */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', color: '#64748b', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Customer / Reporter Name:</label>
+                  <AsyncSearchSelect
+                    value={formData.customData?.["Customer Name"] || ''}
+                    onChange={(val) => setFormData({ ...formData, customData: { ...(formData.customData || {}), "Customer Name": val }})}
+                    placeholder="Cari atau ketik nama Customer..."
+                    apiRoute="/api/assets/customers/search"
+                    disabled={false}
+                  />
+                </div>
+
+                {/* Edit Downtime Outage */}
+                <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={formData.customData?.hasDowntime || false} 
+                      onChange={e => {
+                        const isChecked = e.target.checked;
+                        setFormData({
+                          ...formData,
+                          customData: {
+                            ...(formData.customData || {}),
+                            hasDowntime: isChecked,
+                            startDowntime: isChecked ? (formData.customData?.startDowntime || '') : null,
+                            endDowntime: isChecked ? (formData.customData?.endDowntime || '') : null,
+                            downtimeMinutes: isChecked ? (formData.customData?.downtimeMinutes || 0) : 0
+                          }
+                        });
+                      }}
+                      style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
+                    />
+                    🚨 Catat Waktu Outage / Downtime (Trouble Ticket)
+                  </label>
+                  
+                  {formData.customData?.hasDowntime && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>Mulai Downtime</label>
+                        <input 
+                          type="datetime-local" 
+                          value={formData.customData?.startDowntime || ''} 
+                          onChange={e => {
+                            const val = e.target.value;
+                            const endDt = formData.customData?.endDowntime || '';
+                            const duration = getDowntimeDuration(val, endDt);
+                            setFormData({
+                              ...formData,
+                              customData: {
+                                ...(formData.customData || {}),
+                                startDowntime: val,
+                                downtimeMinutes: (duration && !duration.error) ? duration.minutes : 0
+                              }
+                            });
+                          }} 
+                          style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>Selesai Downtime</label>
+                        <input 
+                          type="datetime-local" 
+                          value={formData.customData?.endDowntime || ''} 
+                          onChange={e => {
+                            const val = e.target.value;
+                            const startDt = formData.customData?.startDowntime || '';
+                            const duration = getDowntimeDuration(startDt, val);
+                            setFormData({
+                              ...formData,
+                              customData: {
+                                ...(formData.customData || {}),
+                                endDowntime: val,
+                                downtimeMinutes: (duration && !duration.error) ? duration.minutes : 0
+                              }
+                            });
+                          }} 
+                          style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                        />
+                      </div>
+                      
+                      {formData.customData?.startDowntime && formData.customData?.endDowntime && (
+                        <div style={{ gridColumn: '1 / -1', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.5rem 0.75rem', borderRadius: '4px', fontSize: '0.85rem', color: '#166534', fontWeight: 'bold' }}>
+                          {(() => {
+                            const duration = getDowntimeDuration(formData.customData.startDowntime, formData.customData.endDowntime);
+                            if (duration?.error) {
+                              return <span style={{ color: '#ef4444' }}>⚠️ {duration.error}</span>;
+                            }
+                            return <span>⏱️ Total Durasi Downtime: {duration?.text}</span>;
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <textarea rows="8" value={editDesc} onChange={e => setEditDesc(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: 'inherit', marginBottom: '1rem' }} />
                 
                 {customFields?.length > 0 && (

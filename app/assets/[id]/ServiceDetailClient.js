@@ -29,6 +29,40 @@ export default function ServiceDetailClient({ service, session }) {
       .catch(e => console.error(e));
   }, []);
 
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+
+  const monthlyTickets = (service.tickets || []).filter(t => {
+    let dateStr = t.createdAt;
+    if (t.customData && typeof t.customData === 'object' && t.customData.startDowntime) {
+      dateStr = t.customData.startDowntime;
+    }
+    const d = new Date(dateStr);
+    const yrMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return yrMonth === selectedMonth;
+  });
+
+  const totalDowntimeMins = monthlyTickets.reduce((acc, t) => {
+    if (t.customData && typeof t.customData === 'object' && t.customData.hasDowntime) {
+      return acc + (parseInt(t.customData.downtimeMinutes) || 0);
+    }
+    return acc;
+  }, 0);
+
+  const getMinutesInSelectedMonth = () => {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    return daysInMonth * 24 * 60;
+  };
+
+  const totalMinsInMonth = getMinutesInSelectedMonth();
+  
+  const slaPercentage = totalMinsInMonth > 0 
+    ? Math.max(0, ((totalMinsInMonth - totalDowntimeMins) / totalMinsInMonth) * 100) 
+    : 100;
+
   const templateFields = service.template?.fields ? (typeof service.template.fields === 'string' ? JSON.parse(service.template.fields) : service.template.fields) : [];
 
   const handleDelete = async () => {
@@ -134,6 +168,96 @@ export default function ServiceDetailClient({ service, session }) {
               </div>
             ) : (
               <p style={{ color: 'var(--text-color)', fontSize: '0.9rem' }}>No custom network parameters defined.</p>
+            )}
+          </div>
+
+          {/* Downtime & SLA Analytics Card */}
+          <div className="bg-white-card" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--heading-color)' }}>Analisis SLA & Downtime</h3>
+              
+              {/* Month Selector */}
+              <select 
+                value={selectedMonth} 
+                onChange={e => setSelectedMonth(e.target.value)}
+                style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer' }}
+              >
+                {(() => {
+                  const options = [];
+                  const now = new Date();
+                  for (let i = 0; i < 12; i++) {
+                    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    const label = d.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+                    options.push(<option key={val} value={val}>{label}</option>);
+                  }
+                  return options;
+                })()}
+              </select>
+            </div>
+
+            {/* KPI Cards Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Tiket Gangguan</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--heading-color)', marginTop: '0.25rem' }}>{monthlyTickets.length}</div>
+              </div>
+
+              <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Total Downtime</div>
+                <div style={{ fontSize: '1.35rem', fontWeight: 'bold', color: 'var(--heading-color)', marginTop: '0.4rem' }}>
+                  {(() => {
+                    const hrs = Math.floor(totalDowntimeMins / 60);
+                    const mins = totalDowntimeMins % 60;
+                    return hrs > 0 ? `${hrs}j ${mins}m` : `${mins}m`;
+                  })()}
+                </div>
+              </div>
+
+              <div style={{ 
+                background: slaPercentage >= 99 ? 'rgba(16, 185, 129, 0.1)' : (slaPercentage >= 97 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)'), 
+                border: `1px solid ${slaPercentage >= 99 ? '#10b981' : (slaPercentage >= 97 ? '#f59e0b' : '#ef4444')}`,
+                padding: '1rem', borderRadius: '8px', textAlign: 'center' 
+              }}>
+                <div style={{ fontSize: '0.7rem', color: slaPercentage >= 99 ? '#065f46' : (slaPercentage >= 97 ? '#92400e' : '#991b1b'), fontWeight: 'bold', textTransform: 'uppercase' }}>SLA Uptime</div>
+                <div style={{ 
+                  fontSize: '1.4rem', fontWeight: 'bold', 
+                  color: slaPercentage >= 99 ? '#10b981' : (slaPercentage >= 97 ? '#f59e0b' : '#ef4444'),
+                  marginTop: '0.3rem' 
+                }}>
+                  {slaPercentage.toFixed(3)}%
+                </div>
+              </div>
+            </div>
+
+            {/* List of Outages in selectedMonth */}
+            {monthlyTickets.some(t => t.customData?.hasDowntime) ? (
+              <div>
+                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase' }}>Detail Outage Tiket</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '150px', overflowY: 'auto' }}>
+                  {monthlyTickets.filter(t => t.customData?.hasDowntime).map(t => {
+                    const dStart = t.customData.startDowntime ? new Date(t.customData.startDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                    const dEnd = t.customData.endDowntime ? new Date(t.customData.endDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Belum Selesai';
+                    return (
+                      <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--hover-bg)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem' }}>
+                        <div style={{ flex: 1, minWidth: 0, marginRight: '0.5rem' }}>
+                          <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', color: 'var(--primary-color)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {t.trackingId ? `#${t.trackingId.split('-')[0]}` : `#${t.id}`} - {t.title}
+                          </Link>
+                          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{dStart} s/d {dEnd}</span>
+                        </div>
+                        <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                          -{t.customData.downtimeMinutes}m
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: '0.8rem', color: '#64748b', fontStyle: 'italic', textAlign: 'center', padding: '0.5rem' }}>
+                Tidak ada riwayat downtime outage pada bulan ini.
+              </div>
             )}
           </div>
 

@@ -19,6 +19,25 @@ export default function TicketForm({ departments, categories, users = [], custom
     slaTimerMins: 15
   });
   const [file, setFile] = useState(null);
+  const [hasDowntime, setHasDowntime] = useState(false);
+  const [downtimeStart, setDowntimeStart] = useState("");
+  const [downtimeEnd, setDowntimeEnd] = useState("");
+
+  const getDowntimeDuration = () => {
+    if (!downtimeStart || !downtimeEnd) return null;
+    const start = new Date(downtimeStart);
+    const end = new Date(downtimeEnd);
+    const diffMs = end - start;
+    if (diffMs < 0) return { error: "Waktu selesai tidak boleh sebelum waktu mulai!" };
+    const diffMins = Math.floor(diffMs / 60000);
+    const hrs = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return {
+      minutes: diffMins,
+      text: `${hrs > 0 ? `${hrs} jam ` : ''}${mins} menit (${diffMins} menit)`
+    };
+  };
+
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState([]);
   const [serviceSearchTerm, setServiceSearchTerm] = useState("");
@@ -67,10 +86,19 @@ export default function TicketForm({ departments, categories, users = [], custom
       }
     }
 
+    const duration = hasDowntime ? getDowntimeDuration() : null;
+    const finalCustomData = {
+      ...customDataState,
+      hasDowntime: hasDowntime,
+      startDowntime: hasDowntime ? downtimeStart : null,
+      endDowntime: hasDowntime ? downtimeEnd : null,
+      downtimeMinutes: (hasDowntime && duration && !duration.error) ? duration.minutes : 0
+    };
+
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...formData, customData: customDataState, attachmentUrl, attachmentName, serviceIds: selectedServiceIds })
+      body: JSON.stringify({ ...formData, customData: finalCustomData, attachmentUrl, attachmentName, serviceIds: selectedServiceIds })
     });
 
     if (res.ok) {
@@ -167,12 +195,12 @@ export default function TicketForm({ departments, categories, users = [], custom
 
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Customer / Reporter Name</label>
-        <input 
-          type="text" 
-          placeholder="e.g. Yayasan WFF Indonesia or BPS Pusat..."
-          value={customDataState["Customer Name"] || ''} 
-          onChange={e => setCustomDataState({...customDataState, "Customer Name": e.target.value})} 
-          style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '1rem' }}
+        <AsyncSearchSelect
+          value={customDataState["Customer Name"] || ''}
+          onChange={(val) => setCustomDataState({...customDataState, "Customer Name": val})}
+          placeholder="Cari nama Customer dari Asset Inventory atau ketik manual..."
+          apiRoute="/api/assets/customers/search"
+          disabled={false}
         />
       </div>
 
@@ -396,6 +424,56 @@ export default function TicketForm({ departments, categories, users = [], custom
             </div>
           )}
         </div>
+      </div>
+
+      {/* Downtime Tracking Block */}
+      <div className="form-group" style={{ gridColumn: '1 / -1', background: 'var(--hover-bg, #f8fafc)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color, #e2e8f0)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b' }}>
+          <input 
+            type="checkbox" 
+            checked={hasDowntime} 
+            onChange={e => setHasDowntime(e.target.checked)} 
+            style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
+          />
+          🚨 Catat Waktu Outage / Downtime (Trouble Ticket)
+        </label>
+        
+        {hasDowntime && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginTop: '0.5rem' }}>
+            <div>
+              <label style={{ display: 'block', color: '#475569', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Mulai Downtime</label>
+              <input 
+                type="datetime-local" 
+                value={downtimeStart} 
+                onChange={e => setDowntimeStart(e.target.value)} 
+                required={hasDowntime}
+                style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#475569', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Selesai Downtime</label>
+              <input 
+                type="datetime-local" 
+                value={downtimeEnd} 
+                onChange={e => setDowntimeEnd(e.target.value)} 
+                required={hasDowntime}
+                style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+              />
+            </div>
+            
+            {downtimeStart && downtimeEnd && (
+              <div style={{ gridColumn: '1 / -1', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.9rem', color: '#166534', fontWeight: 'bold' }}>
+                {(() => {
+                  const duration = getDowntimeDuration();
+                  if (duration?.error) {
+                    return <span style={{ color: '#ef4444' }}>⚠️ {duration.error}</span>;
+                  }
+                  return <span>⏱️ Total Durasi Downtime: {duration?.text}</span>;
+                })()}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>
