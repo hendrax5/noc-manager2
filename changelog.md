@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.4] - 2026-06-04
+
+### Added
+- **Master Ticket Management Permission (`manage_tickets`)**: Introduced a master permission allowing users to bypass granular checks and perform all ticket operations (view, create, edit, assign, change category, modify SLA, and delete tickets).
+- **Ticket Creation Permission (`create_tickets`)**: Restressed ticket creation capabilities to users with `create_tickets` or `manage_tickets` permissions, and conditionally rendered "+ Create Ticket" button on tickets dashboard and dashboard pages.
+- **SLA Timer Management Permission (`manage_sla`)**: Restricted the capability of checking/unchecking SLA timers and changing follow-up minutes on the ticket edit form and ticket replies.
+- **Internal notes visibility and creation control (`view_internal_notes`, `manage_ticket_notes`)**: Restricted reading and writing of internal activity notes to authorized roles only.
+
 ## [2.1.3] - 2026-06-04
 
 ### Added

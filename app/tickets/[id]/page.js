@@ -45,6 +45,7 @@ export default async function TicketDetailsPage({ params }) {
                               session.user.permissions?.includes('change_job_category') ||
                               session.user.permissions?.includes('edit_own_tickets') ||
                               session.user.permissions?.includes('edit_other_tickets') ||
+                              session.user.permissions?.includes('manage_tickets') ||
                               session.user.permissions?.includes('modify_tickets');
   const canModifyTicket = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || hasTicketPermission;
 

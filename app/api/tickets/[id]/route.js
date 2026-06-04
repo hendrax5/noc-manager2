@@ -28,7 +28,7 @@ export async function PATCH(req, { params }) {
     if (!oldTicket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
 
     const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
-    const isAuthorized = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS;
+    const isAuthorized = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || session.user.permissions?.includes('manage_tickets');
 
     // Check granular permissions for specific modifications
     // 1. Changing status / priority
@@ -71,6 +71,15 @@ export async function PATCH(req, { params }) {
                              (!isCreator && hasEditOther);
       if (!canEditGeneral) {
         return NextResponse.json({ error: "Forbidden: You do not have permission to edit ticket details." }, { status: 403 });
+      }
+    }
+
+    // 5. SLA edits
+    if ((body.enableSla !== undefined && oldTicket.enableSla !== body.enableSla) || 
+        (body.slaTimerMins !== undefined && oldTicket.slaTimerMins !== parseInt(body.slaTimerMins))) {
+      const canManageSla = isAuthorized || session.user.permissions?.includes('manage_sla') || session.user.permissions?.includes('manage_tickets');
+      if (!canManageSla) {
+        return NextResponse.json({ error: "Forbidden: You do not have permission to modify SLA configurations." }, { status: 403 });
       }
     }
     
@@ -186,10 +195,13 @@ export async function PATCH(req, { params }) {
 export async function DELETE(req, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
-    const hasPermission = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || session.user.permissions?.includes('delete_tickets');
-    if (!session || !hasPermission) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
+    const hasPermission = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || session.user.permissions?.includes('delete_tickets') || session.user.permissions?.includes('manage_tickets');
+    if (!hasPermission) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const resolvedParams = await params;

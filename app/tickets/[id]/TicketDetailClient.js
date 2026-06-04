@@ -77,7 +77,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const isCreator = ticket.historyLogs && ticket.historyLogs.length > 0 && ticket.historyLogs[ticket.historyLogs.length - 1].actorId === currentUserId;
   
   const isCS = currentUserObj.department?.includes('CS') || currentUserObj.department?.toLowerCase().includes('customer');
-  const isAuthorized = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager' || isCS;
+  const isAuthorized = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager' || isCS || currentUserObj.permissions?.includes('manage_tickets');
 
   const canChangeStatus = isAuthorized || currentUserObj.permissions?.includes('change_ticket_status') || currentUserObj.permissions?.includes('modify_tickets');
   const canAssign = isAuthorized || currentUserObj.permissions?.includes('assign_tickets') || currentUserObj.permissions?.includes('modify_tickets');
@@ -90,6 +90,10 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                          currentUserObj.permissions?.includes('modify_tickets') ||
                          (isCreator && hasEditOwn) ||
                          (!isCreator && hasEditOther);
+
+  const canManageSla = isAuthorized || currentUserObj.permissions?.includes('manage_sla') || currentUserObj.permissions?.includes('manage_tickets');
+  const canViewNotes = isAuthorized || currentUserObj.permissions?.includes('view_internal_notes') || currentUserObj.permissions?.includes('manage_tickets');
+  const canWriteNotes = isAuthorized || currentUserObj.permissions?.includes('manage_ticket_notes') || currentUserObj.permissions?.includes('manage_tickets');
 
   const [editingTicket, setEditingTicket] = useState(false);
   const [editTitle, setEditTitle] = useState(ticket.title);
@@ -392,6 +396,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                       type="checkbox" 
                       checked={formData.enableSla} 
                       onChange={e => setFormData({ ...formData, enableSla: e.target.checked })} 
+                      disabled={!canManageSla}
                       style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
                     />
                     Enable SLA Enforcement Timer for this ticket
@@ -403,6 +408,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                         value={formData.slaTimerMins} 
                         onChange={e => setFormData({ ...formData, slaTimerMins: parseInt(e.target.value) || 15 })} 
                         min="5" max="1440" 
+                        disabled={!canManageSla}
                         style={{ width: '100px', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
                       />
                       <span style={{ fontSize: '0.85rem', color: '#b45309' }}>Minutes (frequency of CS follow-up pings)</span>
@@ -564,29 +570,31 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               ></textarea>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b' }}>
-                <input 
-                  type="checkbox" 
-                  checked={replyEnableSla} 
-                  onChange={e => setReplyEnableSla(e.target.checked)} 
-                  style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
-                />
-                Reactivate / Modify External SLA Timer
-              </label>
-              {replyEnableSla && (
-                <div style={{ paddingLeft: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {canManageSla && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b' }}>
                   <input 
-                    type="number" 
-                    value={replySlaMins} 
-                    onChange={e => setReplySlaMins(parseInt(e.target.value))} 
-                    min="5" max="1440" 
-                    style={{ padding: '0.5rem', width: '80px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                    type="checkbox" 
+                    checked={replyEnableSla} 
+                    onChange={e => setReplyEnableSla(e.target.checked)} 
+                    style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
                   />
-                  <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Minutes (Ticket Original: {ticket?.slaTimerMins || 15}m)</span>
-                </div>
-              )}
-            </div>
+                  Reactivate / Modify External SLA Timer
+                </label>
+                {replyEnableSla && (
+                  <div style={{ paddingLeft: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <input 
+                      type="number" 
+                      value={replySlaMins} 
+                      onChange={e => setReplySlaMins(parseInt(e.target.value))} 
+                      min="5" max="1440" 
+                      style={{ padding: '0.5rem', width: '80px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                    />
+                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Minutes (Ticket Original: {ticket?.slaTimerMins || 15}m)</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--input-bg)', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-color)', minWidth: '100px' }}>Attachment:</label>
@@ -779,103 +787,107 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           )}
 
         {/* Activity Notes Panel (Phase 34) */}
-        <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: notesExpanded ? '1rem' : '0', cursor: 'pointer' }} onClick={() => setNotesExpanded(!notesExpanded)}>
-            <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontSize: '1rem' }}>📝</span> Activity Notes
-              <span style={{ background: 'var(--hover-bg)', color: 'var(--text-color)', padding: '0.1rem 0.5rem', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 'bold' }}>{notes.length}</span>
-            </h3>
-            <span style={{ color: 'var(--text-color)', fontSize: '0.7rem', transform: notesExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
-          </div>
+        {canViewNotes && (
+          <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: notesExpanded ? '1rem' : '0', cursor: 'pointer' }} onClick={() => setNotesExpanded(!notesExpanded)}>
+              <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ fontSize: '1rem' }}>📝</span> Activity Notes
+                <span style={{ background: 'var(--hover-bg)', color: 'var(--text-color)', padding: '0.1rem 0.5rem', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 'bold' }}>{notes.length}</span>
+              </h3>
+              <span style={{ color: 'var(--text-color)', fontSize: '0.7rem', transform: notesExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+            </div>
 
-          {notesExpanded && (
-            <>
-              {/* Add Note Form */}
-              <div style={{ marginBottom: '1rem', background: 'var(--hover-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                  {[
-                    { value: 'internal', label: '📝 Internal', color: '#6366f1' },
-                    { value: 'follow_up', label: '🔔 Follow-up', color: '#f59e0b' },
-                    { value: 'escalation', label: '⬆️ Escalation', color: '#ef4444' },
-                    { value: 'customer_update', label: '👤 Customer', color: '#10b981' }
-                  ].map(t => (
-                    <button
-                      key={t.value}
-                      type="button"
-                      onClick={() => setNoteType(t.value)}
-                      style={{
-                        padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', cursor: 'pointer', border: 'none', transition: 'all 0.2s',
-                        background: noteType === t.value ? t.color : 'var(--card-bg)',
-                        color: noteType === t.value ? 'white' : 'var(--text-color)',
-                        outline: noteType === t.value ? 'none' : '1px solid var(--border-color)'
-                      }}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-                <textarea
-                  rows="2"
-                  placeholder="Tambah catatan internal..."
-                  value={noteContent}
-                  onChange={e => setNoteContent(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: 'inherit', boxSizing: 'border-box', fontSize: '0.8rem', resize: 'vertical' }}
-                />
-                <button
-                  type="button"
-                  disabled={noteLoading || !noteContent.trim()}
-                  onClick={async () => {
-                    setNoteLoading(true);
-                    try {
-                      const res = await fetch(`/api/tickets/${ticket.id}/notes`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ content: noteContent, noteType })
-                      });
-                      if (res.ok) {
-                        const newNote = await res.json();
-                        setNotes([newNote, ...notes]);
-                        setNoteContent("");
-                      }
-                    } catch (err) {}
-                    setNoteLoading(false);
-                  }}
-                  style={{ marginTop: '0.5rem', width: '100%', padding: '0.4rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: noteContent.trim() ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.8rem', opacity: noteContent.trim() ? 1 : 0.5 }}
-                >
-                  {noteLoading ? 'Saving...' : '+ Tambah Note'}
-                </button>
-              </div>
-
-              {/* Notes Timeline */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '350px', overflowY: 'auto' }}>
-                {notes.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-color)', fontSize: '0.8rem', fontStyle: 'italic' }}>Belum ada catatan. Tambahkan note pertama di atas.</div>
-                )}
-                {notes.map(note => {
-                  const typeConfig = {
-                    internal: { icon: '📝', color: '#6366f1', bg: '#eef2ff', label: 'Internal' },
-                    follow_up: { icon: '🔔', color: '#f59e0b', bg: '#fffbeb', label: 'Follow-up' },
-                    escalation: { icon: '⬆️', color: '#ef4444', bg: '#fef2f2', label: 'Escalation' },
-                    customer_update: { icon: '👤', color: '#10b981', bg: '#ecfdf5', label: 'Customer' }
-                  };
-                  const cfg = typeConfig[note.noteType] || typeConfig.internal;
-                  return (
-                    <div key={note.id} style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', borderLeft: `3px solid ${cfg.color}`, background: 'var(--card-bg)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: cfg.color, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          {cfg.icon} {cfg.label}
-                        </span>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-color)' }}>{mounted ? new Date(note.createdAt).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '...'}</span>
-                      </div>
-                      <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.8rem', color: 'var(--heading-color)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{note.content}</p>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-color)' }}>— {note.author?.name || note.author?.email}</span>
+            {notesExpanded && (
+              <>
+                {/* Add Note Form */}
+                {canWriteNotes && (
+                  <div style={{ marginBottom: '1rem', background: 'var(--hover-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                      {[
+                        { value: 'internal', label: '📝 Internal', color: '#6366f1' },
+                        { value: 'follow_up', label: '🔔 Follow-up', color: '#f59e0b' },
+                        { value: 'escalation', label: '⬆️ Escalation', color: '#ef4444' },
+                        { value: 'customer_update', label: '👤 Customer', color: '#10b981' }
+                      ].map(t => (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => setNoteType(t.value)}
+                          style={{
+                            padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', cursor: 'pointer', border: 'none', transition: 'all 0.2s',
+                            background: noteType === t.value ? t.color : 'var(--card-bg)',
+                            color: noteType === t.value ? 'white' : 'var(--text-color)',
+                            outline: noteType === t.value ? 'none' : '1px solid var(--border-color)'
+                          }}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
+                    <textarea
+                      rows="2"
+                      placeholder="Tambah catatan internal..."
+                      value={noteContent}
+                      onChange={e => setNoteContent(e.target.value)}
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: 'inherit', boxSizing: 'border-box', fontSize: '0.8rem', resize: 'vertical' }}
+                    />
+                    <button
+                      type="button"
+                      disabled={noteLoading || !noteContent.trim()}
+                      onClick={async () => {
+                        setNoteLoading(true);
+                        try {
+                          const res = await fetch(`/api/tickets/${ticket.id}/notes`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ content: noteContent, noteType })
+                          });
+                          if (res.ok) {
+                            const newNote = await res.json();
+                            setNotes([newNote, ...notes]);
+                            setNoteContent("");
+                          }
+                        } catch (err) {}
+                        setNoteLoading(false);
+                      }}
+                      style={{ marginTop: '0.5rem', width: '100%', padding: '0.4rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: noteContent.trim() ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.8rem', opacity: noteContent.trim() ? 1 : 0.5 }}
+                    >
+                      {noteLoading ? 'Saving...' : '+ Tambah Note'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Notes Timeline */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '350px', overflowY: 'auto' }}>
+                  {notes.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-color)', fontSize: '0.8rem', fontStyle: 'italic' }}>Belum ada catatan. Tambahkan note pertama di atas.</div>
+                  )}
+                  {notes.map(note => {
+                    const typeConfig = {
+                      internal: { icon: '📝', color: '#6366f1', bg: '#eef2ff', label: 'Internal' },
+                      follow_up: { icon: '🔔', color: '#f59e0b', bg: '#fffbeb', label: 'Follow-up' },
+                      escalation: { icon: '⬆️', color: '#ef4444', bg: '#fef2f2', label: 'Escalation' },
+                      customer_update: { icon: '👤', color: '#10b981', bg: '#ecfdf5', label: 'Customer' }
+                    };
+                    const cfg = typeConfig[note.noteType] || typeConfig.internal;
+                    return (
+                      <div key={note.id} style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', borderLeft: `3px solid ${cfg.color}`, background: 'var(--card-bg)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: cfg.color, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            {cfg.icon} {cfg.label}
+                          </span>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-color)' }}>{mounted ? new Date(note.createdAt).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '...'}</span>
+                        </div>
+                        <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.8rem', color: 'var(--heading-color)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-color)' }}>— {note.author?.name || note.author?.email}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '0.9rem', color: 'var(--heading-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

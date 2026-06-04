@@ -201,13 +201,19 @@ export default function DashboardClient({
               )}
             </div>
           )}
-          <Link href="/tickets/new" className="primary-btn" style={{ 
-            background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', padding: '0.8rem 1.5rem', 
-            borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem',
-            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none'
-          }}>
-            <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span> Create Ticket
-          </Link>
+          {(() => {
+            const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
+            const canCreate = session?.user?.role === 'Admin' || session?.user?.role === 'Manager' || isCS || session?.user?.permissions?.includes('create_tickets') || session?.user?.permissions?.includes('manage_tickets');
+            return canCreate && (
+              <Link href="/tickets/new" className="primary-btn" style={{ 
+                background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', padding: '0.8rem 1.5rem', 
+                borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none'
+              }}>
+                <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span> Create Ticket
+              </Link>
+            );
+          })()}
         </div>
       </header>
 

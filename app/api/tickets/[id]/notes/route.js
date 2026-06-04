@@ -7,6 +7,10 @@ export async function GET(request, { params }) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
+  const canViewNotes = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || session.user.permissions?.includes('view_internal_notes') || session.user.permissions?.includes('manage_tickets');
+  if (!canViewNotes) return NextResponse.json({ error: "Forbidden: You do not have permission to view internal notes." }, { status: 403 });
+
   const { id } = await params;
   const ticketId = parseInt(id);
 
@@ -24,6 +28,10 @@ export async function GET(request, { params }) {
 export async function POST(request, { params }) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
+  const canWriteNotes = session.user.role === 'Admin' || session.user.role === 'Manager' || isCS || session.user.permissions?.includes('manage_ticket_notes') || session.user.permissions?.includes('manage_tickets');
+  if (!canWriteNotes) return NextResponse.json({ error: "Forbidden: You do not have permission to write internal notes." }, { status: 403 });
 
   const { id } = await params;
   const ticketId = parseInt(id);

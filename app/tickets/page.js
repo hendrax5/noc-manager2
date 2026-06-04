@@ -23,7 +23,8 @@ export default async function TicketsPage({ searchParams }) {
   const q = resolvedParams?.q || "";
 
   const isCS = user.department?.includes('CS') || user.department?.toLowerCase().includes('customer');
-  const canViewAll = user.role === 'Admin' || user.role === 'Manager' || isCS || user.permissions?.includes('view_all_tickets');
+  const canViewAll = user.role === 'Admin' || user.role === 'Manager' || isCS || user.permissions?.includes('view_all_tickets') || user.permissions?.includes('manage_tickets');
+  const canCreate = user.role === 'Admin' || user.role === 'Manager' || isCS || user.permissions?.includes('create_tickets') || user.permissions?.includes('manage_tickets');
 
   const statusesParam = resolvedParams?.statuses;
   const assignmentsParam = resolvedParams?.assignments || "me,unassigned,others";
@@ -180,7 +181,9 @@ export default async function TicketsPage({ searchParams }) {
               🕒 Filter Active: Today's Shift Only
             </span>
           )}
-          <Link href="/tickets/new" className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>+ New Ticket</Link>
+          {canCreate && (
+            <Link href="/tickets/new" className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>+ New Ticket</Link>
+          )}
         </div>
       </header>
 

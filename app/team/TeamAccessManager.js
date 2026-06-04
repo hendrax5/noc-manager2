@@ -209,12 +209,17 @@ export default function TeamAccessManager({ users, roles, departments, companies
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
                             {[
                               { key: "view_all_tickets", label: "🌐 View All Tickets (Global Scope)" },
+                              { key: "manage_tickets", label: "🎫 Manage Tickets (Master Permission)" },
+                              { key: "create_tickets", label: "➕ Create Tickets" },
                               { key: "change_ticket_status", label: "🔄 Change Ticket Status (Open/Resolve)" },
                               { key: "assign_tickets", label: "🎯 Assign Tickets (Staff/Tim/Priority)" },
                               { key: "change_job_category", label: "🏷️ Change Job Category & Performance Score" },
                               { key: "delete_tickets", label: "🗑️ Delete Tickets" },
                               { key: "edit_own_tickets", label: "✍️ Edit Tickets Created by Self" },
                               { key: "edit_other_tickets", label: "📝 Edit Tickets Created by Others" },
+                              { key: "manage_sla", label: "⏱️ Manage SLA Configuration" },
+                              { key: "view_internal_notes", label: "👁️ View Internal Notes" },
+                              { key: "manage_ticket_notes", label: "✍️ Write Internal Notes" },
                               { key: "manage_users", label: "👥 Manage Team & NOC Staff" },
                               { key: "manage_roles", label: "🔐 Manage Security Roles & Permissions" },
                               { key: "manage_settings", label: "⚙️ Manage Settings, Fields & Routing" },
