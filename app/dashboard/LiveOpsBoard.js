@@ -161,18 +161,28 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
 
   const exportCSV = () => {
     const headers = ['Tracking ID', 'Customer', 'Subject', 'Category', 'Status', 'Time Down', 'Duration', 'PIC', 'Last Note', 'SLA Pings'];
-    const rows = filteredTickets.map(t => [
-      t.trackingId || '',
-      getCustomerName(t),
-      t.title,
-      t.jobCategory?.name || '-',
-      t.status,
-      new Date(t.createdAt).toLocaleString('en-CA'),
-      getDuration(t.createdAt, t.resolvedAt),
-      t.assignee?.name || 'Unassigned',
-      t.notes?.[0]?.content?.substring(0, 50) || '-',
-      t.slaBreaches || 0
-    ]);
+    const rows = filteredTickets.map(t => {
+      const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
+      const timeDownVal = hasDt && t.customData.startDowntime
+        ? new Date(t.customData.startDowntime).toLocaleString('en-CA')
+        : new Date(t.createdAt).toLocaleString('en-CA');
+      const durationVal = hasDt && t.customData.startDowntime
+        ? getDuration(t.customData.startDowntime, t.customData.endDowntime)
+        : getDuration(t.createdAt, t.resolvedAt);
+
+      return [
+        t.trackingId || '',
+        getCustomerName(t),
+        t.title,
+        t.jobCategory?.name || '-',
+        t.status,
+        timeDownVal,
+        durationVal,
+        t.assignee?.name || 'Unassigned',
+        t.notes?.[0]?.content?.substring(0, 50) || '-',
+        t.slaBreaches || 0
+      ];
+    });
     const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -278,8 +288,22 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
               const stColor = STATUS_COLORS[t.status] || { bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0' };
               const catColor = CATEGORY_COLORS[t.jobCategory?.name] || '#94a3b8';
               const isOverdue = t.slaBreaches > 0 && t.status !== 'Resolved';
+              
+              const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
+              const dtStart = hasDt ? t.customData.startDowntime : null;
+              const dtEnd = hasDt ? t.customData.endDowntime : null;
+
               const hoursIdle = (Date.now() - new Date(t.updatedAt).getTime()) / 3600000;
+              
+              let hoursActive = hoursIdle;
+              if (hasDt && dtStart) {
+                const startMs = new Date(dtStart).getTime();
+                const endMs = dtEnd ? new Date(dtEnd).getTime() : Date.now();
+                hoursActive = (endMs - startMs) / 3600000;
+              }
+
               const rowBg = isOverdue ? 'rgba(239, 68, 68, 0.04)' : (t.status === 'New' && hoursIdle > 2 ? 'rgba(245, 158, 11, 0.04)' : 'transparent');
+              const durationColor = hoursActive > 4 ? '#ef4444' : (hoursActive > 2 ? '#f59e0b' : 'var(--text-color)');
 
               return (
                 <tr key={t.id} style={{ borderBottom: '1px solid var(--border-color)', background: rowBg, transition: 'background 0.15s' }} className="hover-bg">
@@ -306,11 +330,23 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
                       {t.status}
                     </span>
                   </td>
-                  <td style={{ padding: '0.5rem', fontSize: '0.75rem', color: 'var(--text-color)', whiteSpace: 'nowrap' }}>
-                    {mounted ? new Date(t.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '...'}
+                  <td style={{ padding: '0.5rem', fontSize: '0.75rem', color: hasDt ? '#f59e0b' : 'var(--text-color)', fontWeight: hasDt ? 'bold' : 'normal', whiteSpace: 'nowrap' }}>
+                    {mounted ? (
+                      hasDt && dtStart ? (
+                        <span title={`Downtime Mulai: ${new Date(dtStart).toLocaleString('id-ID')}`}>
+                          ⏱️ {new Date(dtStart).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      ) : (
+                        new Date(t.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                      )
+                    ) : '...'}
                   </td>
-                  <td style={{ padding: '0.5rem', fontSize: '0.75rem', fontWeight: '600', color: hoursIdle > 4 ? '#ef4444' : (hoursIdle > 2 ? '#f59e0b' : 'var(--text-color)'), whiteSpace: 'nowrap' }}>
-                    {getDuration(t.createdAt, t.resolvedAt && t.status === 'Resolved' ? t.resolvedAt : null)}
+                  <td style={{ padding: '0.5rem', fontSize: '0.75rem', fontWeight: '600', color: durationColor, whiteSpace: 'nowrap' }}>
+                    {hasDt && dtStart ? (
+                      getDuration(dtStart, dtEnd)
+                    ) : (
+                      getDuration(t.createdAt, t.resolvedAt && t.status === 'Resolved' ? t.resolvedAt : null)
+                    )}
                   </td>
                   <td style={{ padding: '0.5rem', fontSize: '0.8rem', color: t.assignee ? 'var(--heading-color)' : '#94a3b8', fontWeight: t.assignee ? '600' : 'normal', fontStyle: t.assignee ? 'normal' : 'italic', whiteSpace: 'nowrap' }}>
                     {t.assignee?.name || 'Unassigned'}

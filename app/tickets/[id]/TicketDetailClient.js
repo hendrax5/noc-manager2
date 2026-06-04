@@ -191,6 +191,23 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       .then(data => setNotes(data))
       .catch(() => {});
 
+    // Sync state values with newly loaded server-side props
+    setEditTitle(ticket.title);
+    setEditDesc(ticket.description);
+    setFormData({
+      title: ticket.title,
+      description: ticket.description,
+      status: ticket.status,
+      priority: ticket.priority,
+      departmentId: ticket.departmentId,
+      assigneeId: ticket.assigneeId || "",
+      jobCategoryId: ticket.jobCategoryId || "",
+      customData: ticket.customData || {},
+      enableSla: ticket.enableSla || false,
+      slaTimerMins: ticket.slaTimerMins || 15
+    });
+    setCustomerSearchTerm(ticket.customData?.["Customer Name"] || '');
+
     function handleClickOutside(event) {
       if (customerWrapperRef.current && !customerWrapperRef.current.contains(event.target)) {
         setIsCustomerDropdownOpen(false);
@@ -327,7 +344,15 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
         
         <div style={{ background: 'var(--card-bg)', padding: '2rem', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           {editingTicket ? (
-            <input value={editTitle} onChange={e => setEditTitle(e.target.value)} style={{ width: '100%', fontSize: '1.6rem', fontWeight: 'bold', padding: '0.5rem', marginBottom: '1rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', color: 'var(--text-color)', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Subjek / Judul Tiket:</label>
+              <input 
+                value={editTitle} 
+                onChange={e => setEditTitle(e.target.value)} 
+                placeholder="Masukkan subjek/judul tiket..."
+                style={{ width: '100%', fontSize: '1.25rem', fontWeight: 'bold', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)' }} 
+              />
+            </div>
           ) : (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
               <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--heading-color)' }}>

@@ -62,7 +62,7 @@ export async function PATCH(req, { params }) {
         where: { ticketId: id },
         orderBy: { createdAt: 'asc' }
       });
-      const isCreator = firstLog?.actorId === userId;
+      const isCreator = !firstLog || firstLog.actorId === userId;
       const hasEditOwn = session.user.permissions?.includes('edit_own_tickets');
       const hasEditOther = session.user.permissions?.includes('edit_other_tickets');
       const canEditGeneral = isAuthorized || 

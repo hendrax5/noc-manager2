@@ -68,9 +68,10 @@ export default function DashboardClient({
     return '-';
   }
 
-  function getDuration(start) {
+  function getDuration(start, end) {
     const startTime = new Date(start).getTime();
-    const diffMs = Date.now() - startTime;
+    const endTime = end ? new Date(end).getTime() : Date.now();
+    const diffMs = endTime - startTime;
     const hours = Math.floor(diffMs / 3600000);
     const mins = Math.floor((diffMs % 3600000) / 60000);
     if (hours > 24) {
@@ -603,7 +604,12 @@ export default function DashboardClient({
                                       </span>
                                     </div>
                                     <span style={{ fontSize: '0.7rem', color: 'var(--text-color)', flexShrink: 0 }}>
-                                      {getDuration(t.createdAt)}
+                                      {(() => {
+                                        const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
+                                        return hasDt && t.customData.startDowntime
+                                          ? `⏱️ ${getDuration(t.customData.startDowntime, t.customData.endDowntime)}`
+                                          : getDuration(t.createdAt);
+                                      })()}
                                     </span>
                                   </div>
                                 );
@@ -786,7 +792,18 @@ export default function DashboardClient({
                                     [{t.trackingId}]
                                   </Link>
                                   <span style={{ color: 'var(--heading-color)' }}>{t.title}</span>
-                                  <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>(Down: {getDuration(t.createdAt)})</span>
+                                  <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>
+                                    {(() => {
+                                      const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
+                                      return hasDt && t.customData.startDowntime ? (
+                                        <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                                          ⏱️ Down: {getDuration(t.customData.startDowntime, t.customData.endDowntime)}
+                                        </span>
+                                      ) : (
+                                        `(Down: ${getDuration(t.createdAt)})`
+                                      );
+                                    })()}
+                                  </span>
                                 </div>
                               ))}
                             </div>
