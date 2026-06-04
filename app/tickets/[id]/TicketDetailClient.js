@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
 
@@ -68,7 +68,7 @@ function SearchableSelect({ options = [], value, onChange, disabled, placeholder
   );
 }
 
-export default function TicketDetailClient({ ticket, departments, users, jobCategories, customFields, canModifyTicket, currentUser, serviceTemplates }) {
+export default function TicketDetailClient({ ticket, departments, users, jobCategories, customFields, canModifyTicket, currentUser, serviceTemplates, services = [] }) {
   const router = useRouter();
   
   const currentUserObj = currentUser || {};
@@ -129,6 +129,31 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const [mounted, setMounted] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
+  const [customerSearchTerm, setCustomerSearchTerm] = useState(formData.customData?.["Customer Name"] || '');
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const customerWrapperRef = useRef(null);
+
+  const matchingCustomerServices = (services || []).filter(s => {
+    const term = customerSearchTerm.toLowerCase();
+    if (!term) return false;
+    const custName = s.customer?.name?.toLowerCase() || "";
+    const srvName = s.name?.toLowerCase() || "";
+    const srvId = String(s.id);
+    return custName.includes(term) || srvName.includes(term) || srvId.includes(term);
+  });
+
+  const handleSelectCustomerService = (s) => {
+    setCustomerSearchTerm(s.customer?.name || "");
+    setFormData({
+      ...formData,
+      customData: {
+        ...(formData.customData || {}),
+        "Customer Name": s.customer?.name || ""
+      }
+    });
+    setIsCustomerDropdownOpen(false);
+  };
+
   const getDowntimeDuration = (startDt, endDt) => {
     if (!startDt || !endDt) return null;
     const start = new Date(startDt);
@@ -165,10 +190,23 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       .then(r => r.ok ? r.json() : [])
       .then(data => setNotes(data))
       .catch(() => {});
-    if (ticket.enableSla && ticket.status !== 'Resolved' && ticket.status !== 'Waiting Reply') {
-      const interval = setInterval(() => setNow(Date.now()), 10000); // 10s tick
-      return () => clearInterval(interval);
+
+    function handleClickOutside(event) {
+      if (customerWrapperRef.current && !customerWrapperRef.current.contains(event.target)) {
+        setIsCustomerDropdownOpen(false);
+      }
     }
+    document.addEventListener("mousedown", handleClickOutside);
+
+    let interval;
+    if (ticket.enableSla && ticket.status !== 'Resolved' && ticket.status !== 'Waiting Reply') {
+      interval = setInterval(() => setNow(Date.now()), 10000); // 10s tick
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      if (interval) clearInterval(interval);
+    };
   }, [ticket]);
 
   const triggerAutoSave = async (key, newValue) => {
@@ -370,15 +408,72 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             {editingTicket ? (
               <div>
                 {/* Edit Customer / Reporter Name */}
-                <div style={{ marginBottom: '1rem' }}>
+                <div style={{ marginBottom: '1rem', position: 'relative' }} ref={customerWrapperRef}>
                   <label style={{ display: 'block', color: '#64748b', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Customer / Reporter Name:</label>
-                  <AsyncSearchSelect
-                    value={formData.customData?.["Customer Name"] || ''}
-                    onChange={(val) => setFormData({ ...formData, customData: { ...(formData.customData || {}), "Customer Name": val }})}
-                    placeholder="Cari atau ketik nama Customer..."
-                    apiRoute="/api/assets/customers/search"
-                    disabled={false}
+                  <input 
+                    type="text" 
+                    placeholder="Cari dari Telecom Asset Inventory atau ketik manual..."
+                    value={customerSearchTerm}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setCustomerSearchTerm(val);
+                      setFormData({
+                        ...formData,
+                        customData: {
+                          ...(formData.customData || {}),
+                          "Customer Name": val
+                        }
+                      });
+                      setIsCustomerDropdownOpen(true);
+                    }}
+                    onFocus={() => setIsCustomerDropdownOpen(true)}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)' }}
                   />
+                  
+                  {isCustomerDropdownOpen && customerSearchTerm.length >= 2 && (
+                    <div 
+                      style={{ 
+                        position: 'absolute', 
+                        top: '100%', 
+                        left: 0, 
+                        right: 0, 
+                        marginTop: '4px', 
+                        background: 'var(--card-bg, white)', 
+                        border: '1px solid var(--border-color, #cbd5e1)', 
+                        borderRadius: '4px', 
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', 
+                        zIndex: 99, 
+                        maxHeight: '200px', 
+                        overflowY: 'auto' 
+                      }}
+                    >
+                      {matchingCustomerServices.length > 0 ? (
+                        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                          {matchingCustomerServices.map(s => (
+                            <li 
+                              key={s.id}
+                              onClick={() => handleSelectCustomerService(s)}
+                              style={{ 
+                                padding: '0.75rem', 
+                                cursor: 'pointer', 
+                                borderBottom: '1px solid var(--border-color, #f1f5f9)', 
+                                fontSize: '0.9rem', 
+                                color: 'var(--text-color, #334155)'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                              <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>(ID: {s.id})</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>
+                          Tidak ada kecocokan di inventory. Ketikan Anda akan disimpan sebagai input manual.
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Edit Downtime Outage */}

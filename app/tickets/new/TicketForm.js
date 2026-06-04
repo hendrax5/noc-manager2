@@ -44,15 +44,43 @@ export default function TicketForm({ departments, categories, users = [], custom
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const serviceWrapperRef = useRef(null);
 
+  const [customerSearchTerm, setCustomerSearchTerm] = useState(customDataState["Customer Name"] || '');
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const customerWrapperRef = useRef(null);
+
+  const matchingCustomerServices = (services || []).filter(s => {
+    const term = customerSearchTerm.toLowerCase();
+    if (!term) return false;
+    const custName = s.customer?.name?.toLowerCase() || "";
+    const srvName = s.name?.toLowerCase() || "";
+    const srvId = String(s.id);
+    return custName.includes(term) || srvName.includes(term) || srvId.includes(term);
+  });
+
+  const handleSelectCustomerService = (s) => {
+    setCustomerSearchTerm(s.customer?.name || "");
+    setCustomDataState({
+      ...customDataState,
+      "Customer Name": s.customer?.name || ""
+    });
+    if (!selectedServiceIds.includes(s.id)) {
+      setSelectedServiceIds([...selectedServiceIds, s.id]);
+    }
+    setIsCustomerDropdownOpen(false);
+  };
+
   useEffect(() => {
-    function handleClickOutsideService(event) {
+    function handleClickOutside(event) {
       if (serviceWrapperRef.current && !serviceWrapperRef.current.contains(event.target)) {
         setIsServiceDropdownOpen(false);
       }
+      if (customerWrapperRef.current && !customerWrapperRef.current.contains(event.target)) {
+        setIsCustomerDropdownOpen(false);
+      }
     }
-    document.addEventListener("mousedown", handleClickOutsideService);
-    return () => document.removeEventListener("mousedown", handleClickOutsideService);
-  }, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [customerSearchTerm, selectedServiceIds, customDataState]);
 
   const filteredServices = (services || []).filter(s => {
     const searchLower = serviceSearchTerm.toLowerCase();
@@ -193,15 +221,66 @@ export default function TicketForm({ departments, categories, users = [], custom
         </div>
       )}
 
-      <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+      <div className="form-group" style={{ gridColumn: '1 / -1', position: 'relative' }} ref={customerWrapperRef}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Customer / Reporter Name</label>
-        <AsyncSearchSelect
-          value={customDataState["Customer Name"] || ''}
-          onChange={(val) => setCustomDataState({...customDataState, "Customer Name": val})}
-          placeholder="Cari nama Customer dari Asset Inventory atau ketik manual..."
-          apiRoute="/api/assets/customers/search"
-          disabled={false}
+        <input 
+          type="text" 
+          placeholder="Cari dari Telecom Asset Inventory (e.g. Yayasan WFF) atau ketik manual..."
+          value={customerSearchTerm}
+          onChange={e => {
+            const val = e.target.value;
+            setCustomerSearchTerm(val);
+            setCustomDataState({...customDataState, "Customer Name": val});
+            setIsCustomerDropdownOpen(true);
+          }}
+          onFocus={() => setIsCustomerDropdownOpen(true)}
+          style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '1rem', background: 'var(--input-bg)', color: 'var(--input-text)' }}
         />
+        
+        {isCustomerDropdownOpen && customerSearchTerm.length >= 2 && (
+          <div 
+            style={{ 
+              position: 'absolute', 
+              top: '100%', 
+              left: 0, 
+              right: 0, 
+              marginTop: '4px', 
+              background: 'var(--card-bg, white)', 
+              border: '1px solid var(--border-color, #cbd5e1)', 
+              borderRadius: '4px', 
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', 
+              zIndex: 99, 
+              maxHeight: '200px', 
+              overflowY: 'auto' 
+            }}
+          >
+            {matchingCustomerServices.length > 0 ? (
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {matchingCustomerServices.map(s => (
+                  <li 
+                    key={s.id}
+                    onClick={() => handleSelectCustomerService(s)}
+                    style={{ 
+                      padding: '0.75rem', 
+                      cursor: 'pointer', 
+                      borderBottom: '1px solid var(--border-color, #f1f5f9)', 
+                      fontSize: '0.9rem', 
+                      color: 'var(--text-color, #334155)'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>(ID: {s.id})</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>
+                Tidak ada kecocokan di inventory. Ketikan Anda akan disimpan sebagai input manual.
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="form-group" style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', background: '#f1f5f9', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
