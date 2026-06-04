@@ -20,6 +20,20 @@ function linkify(text) {
   });
 }
 
+function htmlToPlainText(html) {
+  if (!html) return "";
+  let text = html.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<\/p>/gi, "\n");
+  text = text.replace(/<p\b[^>]*>/gi, "");
+  text = text.replace(/&nbsp;/gi, " ");
+  text = text.replace(/&amp;/gi, "&");
+  text = text.replace(/&lt;/gi, "<");
+  text = text.replace(/&gt;/gi, ">");
+  text = text.replace(/&quot;/gi, '"');
+  text = text.replace(/<\/?[^>]+(>|$)/g, "");
+  return text;
+}
+
 function SearchableSelect({ options = [], value, onChange, disabled, placeholder }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
@@ -97,7 +111,17 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
   const [editingTicket, setEditingTicket] = useState(false);
   const [editTitle, setEditTitle] = useState(ticket.title);
-  const [editDesc, setEditDesc] = useState(ticket.description);
+  const [editDesc, setEditDesc] = useState(htmlToPlainText(ticket.description));
+  
+  const textareaRef = useRef(null);
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  };
+
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
@@ -193,7 +217,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
     // Sync state values with newly loaded server-side props
     setEditTitle(ticket.title);
-    setEditDesc(ticket.description);
+    setEditDesc(htmlToPlainText(ticket.description));
     setFormData({
       title: ticket.title,
       description: ticket.description,
@@ -225,6 +249,13 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       if (interval) clearInterval(interval);
     };
   }, [ticket]);
+
+  useEffect(() => {
+    if (editingTicket) {
+      const timer = setTimeout(adjustTextareaHeight, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [editingTicket, editDesc]);
 
   const triggerAutoSave = async (key, newValue) => {
     if ((key === 'status' || key === 'priority') && !canChangeStatus) return;
@@ -596,7 +627,32 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                   )}
                 </div>
 
-                <textarea rows="8" value={editDesc} onChange={e => setEditDesc(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: 'inherit', marginBottom: '1rem' }} />
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', color: 'var(--text-color)', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Deskripsi Tiket:</label>
+                  <textarea 
+                    ref={textareaRef}
+                    value={editDesc} 
+                    onChange={e => {
+                      setEditDesc(e.target.value);
+                      adjustTextareaHeight();
+                    }} 
+                    placeholder="Masukkan deskripsi detail kendala..."
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.75rem', 
+                      borderRadius: '6px', 
+                      border: '1px solid var(--border-color)', 
+                      background: 'var(--input-bg)', 
+                      color: 'var(--input-text)', 
+                      fontFamily: 'inherit', 
+                      overflowY: 'hidden',
+                      resize: 'none',
+                      minHeight: '200px',
+                      lineHeight: '1.6',
+                      fontSize: '0.95rem'
+                    }} 
+                  />
+                </div>
                 
                 {customFields?.length > 0 && (
                   <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
