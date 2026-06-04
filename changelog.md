@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.3] - 2026-06-04
+
+### Added
+- **Granular Ticket Edit Permissions**: Introduced two new dynamic capabilities `edit_own_tickets` (Edit tickets created by oneself) and `edit_other_tickets` (Edit tickets created by others).
+- **Backend & Frontend Enforcement**: Enforced checks on both the client (hiding/showing Edit details button based on ticket ownership and capability) and the server (validating user ownership and permissions in the PATCH api endpoint).
+- **Settings checklist integration**: Added new security role permission check items on the Team & NOC Staff access management settings page.
+
 ## [2.1.2] - 2026-06-03
 
 ### Fixed

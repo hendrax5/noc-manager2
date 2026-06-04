@@ -213,6 +213,8 @@ export default function TeamAccessManager({ users, roles, departments, companies
                               { key: "assign_tickets", label: "🎯 Assign Tickets (Staff/Tim/Priority)" },
                               { key: "change_job_category", label: "🏷️ Change Job Category & Performance Score" },
                               { key: "delete_tickets", label: "🗑️ Delete Tickets" },
+                              { key: "edit_own_tickets", label: "✍️ Edit Tickets Created by Self" },
+                              { key: "edit_other_tickets", label: "📝 Edit Tickets Created by Others" },
                               { key: "manage_users", label: "👥 Manage Team & NOC Staff" },
                               { key: "manage_roles", label: "🔐 Manage Security Roles & Permissions" },
                               { key: "manage_settings", label: "⚙️ Manage Settings, Fields & Routing" },

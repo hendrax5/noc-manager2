@@ -84,11 +84,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const canChangeJobCategory = isAuthorized || currentUserObj.permissions?.includes('change_job_category') || currentUserObj.permissions?.includes('modify_tickets');
   const canDelete = isAuthorized || currentUserObj.permissions?.includes('delete_tickets');
 
-  const showTicketEdit = isCreator || isAuthorized || 
-                         currentUserObj.permissions?.includes('change_ticket_status') || 
-                         currentUserObj.permissions?.includes('assign_tickets') || 
-                         currentUserObj.permissions?.includes('change_job_category') || 
-                         currentUserObj.permissions?.includes('modify_tickets');
+  const hasEditOwn = currentUserObj.permissions?.includes('edit_own_tickets');
+  const hasEditOther = currentUserObj.permissions?.includes('edit_other_tickets');
+  const showTicketEdit = isAuthorized || 
+                         currentUserObj.permissions?.includes('modify_tickets') ||
+                         (isCreator && hasEditOwn) ||
+                         (!isCreator && hasEditOther);
 
   const [editingTicket, setEditingTicket] = useState(false);
   const [editTitle, setEditTitle] = useState(ticket.title);

@@ -63,11 +63,12 @@ export async function PATCH(req, { params }) {
         orderBy: { createdAt: 'asc' }
       });
       const isCreator = firstLog?.actorId === userId;
-      const canEditGeneral = isCreator || isAuthorized || 
-                             session.user.permissions?.includes('change_ticket_status') || 
-                             session.user.permissions?.includes('assign_tickets') || 
-                             session.user.permissions?.includes('change_job_category') || 
-                             session.user.permissions?.includes('modify_tickets');
+      const hasEditOwn = session.user.permissions?.includes('edit_own_tickets');
+      const hasEditOther = session.user.permissions?.includes('edit_other_tickets');
+      const canEditGeneral = isAuthorized || 
+                             session.user.permissions?.includes('modify_tickets') ||
+                             (isCreator && hasEditOwn) ||
+                             (!isCreator && hasEditOther);
       if (!canEditGeneral) {
         return NextResponse.json({ error: "Forbidden: You do not have permission to edit ticket details." }, { status: 403 });
       }
