@@ -39,10 +39,6 @@ export default function TicketForm({ departments, categories, users = [], custom
   };
 
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
-  const [selectedServiceIds, setSelectedServiceIds] = useState([]);
-  const [serviceSearchTerm, setServiceSearchTerm] = useState("");
-  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
-  const serviceWrapperRef = useRef(null);
 
   const [customerSearchTerm, setCustomerSearchTerm] = useState(customDataState["Customer Name"] || '');
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
@@ -63,34 +59,18 @@ export default function TicketForm({ departments, categories, users = [], custom
       ...customDataState,
       "Customer Name": s.customer?.name || ""
     });
-    if (!selectedServiceIds.includes(s.id)) {
-      setSelectedServiceIds([...selectedServiceIds, s.id]);
-    }
     setIsCustomerDropdownOpen(false);
   };
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (serviceWrapperRef.current && !serviceWrapperRef.current.contains(event.target)) {
-        setIsServiceDropdownOpen(false);
-      }
       if (customerWrapperRef.current && !customerWrapperRef.current.contains(event.target)) {
         setIsCustomerDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [customerSearchTerm, selectedServiceIds, customDataState]);
-
-  const filteredServices = (services || []).filter(s => {
-    const searchLower = serviceSearchTerm.toLowerCase();
-    const customerName = s.customer?.name?.toLowerCase() || "";
-    const serviceName = s.name?.toLowerCase() || "";
-    const serviceId = String(s.id);
-    return customerName.includes(searchLower) || serviceName.includes(searchLower) || serviceId.includes(searchLower);
-  });
-
-  const unselectedServices = filteredServices.filter(s => !selectedServiceIds.includes(s.id));
+  }, [customerSearchTerm, customDataState]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -126,7 +106,7 @@ export default function TicketForm({ departments, categories, users = [], custom
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...formData, customData: finalCustomData, attachmentUrl, attachmentName, serviceIds: selectedServiceIds })
+      body: JSON.stringify({ ...formData, customData: finalCustomData, attachmentUrl, attachmentName, serviceIds: [] })
     });
 
     if (res.ok) {
@@ -378,132 +358,7 @@ export default function TicketForm({ departments, categories, users = [], custom
         </p>
       </div>
 
-      <div className="form-group" style={{ gridColumn: '1 / -1' }} ref={serviceWrapperRef}>
-        <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Impacting Services (Optional Link)</label>
-        
-        {/* Selected Services Badges */}
-        {selectedServiceIds.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            {selectedServiceIds.map(id => {
-              const s = services?.find(srv => srv.id === id);
-              if (!s) return null;
-              return (
-                <span 
-                  key={s.id} 
-                  style={{ 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
-                    gap: '0.35rem', 
-                    background: '#e0f2fe', 
-                    color: '#0369a1', 
-                    padding: '0.35rem 0.75rem', 
-                    borderRadius: '9999px', 
-                    fontSize: '0.85rem', 
-                    fontWeight: 'bold',
-                    border: '1px solid #bae6fd' 
-                  }}
-                >
-                  <span>{s.customer?.name}: {s.name} (ID: {s.id})</span>
-                  <button 
-                    type="button" 
-                    onClick={() => setSelectedServiceIds(selectedServiceIds.filter(x => x !== s.id))}
-                    style={{ 
-                      background: 'none', 
-                      border: 'none', 
-                      color: '#0284c7', 
-                      cursor: 'pointer', 
-                      fontSize: '1rem', 
-                      lineHeight: 1, 
-                      padding: 0,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '16px',
-                      height: '16px',
-                      borderRadius: '50%'
-                    }}
-                  >
-                    ✕
-                  </button>
-                </span>
-              );
-            })}
-          </div>
-        )}
 
-        {/* Search Input & Dropdown */}
-        <div style={{ position: 'relative' }}>
-          <input 
-            type="text"
-            placeholder="Type customer or service name to link services..."
-            value={serviceSearchTerm}
-            onChange={e => {
-              setServiceSearchTerm(e.target.value);
-              setIsServiceDropdownOpen(true);
-            }}
-            onFocus={() => setIsServiceDropdownOpen(true)}
-            style={{ 
-              width: '100%', 
-              padding: '0.75rem', 
-              border: '1px solid var(--border-color, #cbd5e1)', 
-              borderRadius: '4px', 
-              background: 'var(--input-bg, white)', 
-              color: 'var(--input-text, #0f172a)',
-              outline: 'none',
-              fontSize: '0.95rem'
-            }}
-          />
-          
-          {isServiceDropdownOpen && (
-            <div 
-              style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                right: 0, 
-                marginTop: '4px', 
-                background: 'var(--card-bg, white)', 
-                border: '1px solid var(--border-color, #cbd5e1)', 
-                borderRadius: '4px', 
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', 
-                zIndex: 99, 
-                maxHeight: '200px', 
-                overflowY: 'auto' 
-              }}
-            >
-              {unselectedServices.length > 0 ? (
-                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                  {unselectedServices.map(s => (
-                    <li 
-                      key={s.id}
-                      onClick={() => {
-                        setSelectedServiceIds([...selectedServiceIds, s.id]);
-                        setServiceSearchTerm("");
-                        setIsServiceDropdownOpen(false);
-                      }}
-                      style={{ 
-                        padding: '0.75rem', 
-                        cursor: 'pointer', 
-                        borderBottom: '1px solid var(--border-color, #f1f5f9)', 
-                        fontSize: '0.9rem', 
-                        color: 'var(--text-color, #334155)'
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>(ID: {s.id})</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>
-                  {services && services.length > 0 ? "No matching unlinked services" : "No active services found in Inventory."}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* Downtime Tracking Block */}
       <div className="form-group" style={{ gridColumn: '1 / -1', background: 'var(--hover-bg, #f8fafc)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color, #e2e8f0)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>

@@ -106,6 +106,11 @@ export async function PATCH(req, { params }) {
     
     // Evaluate Due Date / Trial modifications
     if (body.customData && JSON.stringify(oldTicket.customData) !== JSON.stringify(body.customData)) {
+      const oldCust = oldTicket.customData && typeof oldTicket.customData === 'object' ? oldTicket.customData["Customer Name"] : undefined;
+      const newCust = body.customData && typeof body.customData === 'object' ? body.customData["Customer Name"] : undefined;
+      if (oldCust !== newCust && !isAuthorized) {
+        return NextResponse.json({ error: "Forbidden: You do not have permission to modify the Customer Name." }, { status: 403 });
+      }
       logs.push({ action: `Custom Fields / Operational Parameters updated`, actorId: userId });
     }
 

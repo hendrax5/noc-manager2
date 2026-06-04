@@ -15,8 +15,16 @@ export async function PATCH(req, { params }) {
     const { text } = body;
 
     const comment = await prisma.comment.findUnique({ where: { id: commentId } });
-    if (!comment || comment.authorId !== parseInt(session.user.id)) {
-      return NextResponse.json({ error: "Forbidden or Not Found" }, { status: 403 });
+    if (!comment) {
+      return NextResponse.json({ error: "Comment Not Found" }, { status: 404 });
+    }
+
+    const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
+    const isAuthorized = session.user.role === 'Admin' || isCS || session.user.permissions?.includes('manage_tickets');
+    const isAuthor = comment.authorId === parseInt(session.user.id);
+
+    if (!isAuthor && !isAuthorized) {
+      return NextResponse.json({ error: "Forbidden: You do not have permission to edit this reply." }, { status: 403 });
     }
 
     const updated = await prisma.comment.update({

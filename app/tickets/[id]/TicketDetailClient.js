@@ -435,69 +435,80 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                 {/* Edit Customer / Reporter Name */}
                 <div style={{ marginBottom: '1rem', position: 'relative' }} ref={customerWrapperRef}>
                   <label style={{ display: 'block', color: '#64748b', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Customer / Reporter Name:</label>
-                  <input 
-                    type="text" 
-                    placeholder="Cari dari Telecom Asset Inventory atau ketik manual..."
-                    value={customerSearchTerm}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setCustomerSearchTerm(val);
-                      setFormData({
-                        ...formData,
-                        customData: {
-                          ...(formData.customData || {}),
-                          "Customer Name": val
-                        }
-                      });
-                      setIsCustomerDropdownOpen(true);
-                    }}
-                    onFocus={() => setIsCustomerDropdownOpen(true)}
-                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)' }}
-                  />
-                  
-                  {isCustomerDropdownOpen && customerSearchTerm.length >= 2 && (
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        top: '100%', 
-                        left: 0, 
-                        right: 0, 
-                        marginTop: '4px', 
-                        background: 'var(--card-bg, white)', 
-                        border: '1px solid var(--border-color, #cbd5e1)', 
-                        borderRadius: '4px', 
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', 
-                        zIndex: 99, 
-                        maxHeight: '200px', 
-                        overflowY: 'auto' 
-                      }}
-                    >
-                      {matchingCustomerServices.length > 0 ? (
-                        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                          {matchingCustomerServices.map(s => (
-                            <li 
-                              key={s.id}
-                              onClick={() => handleSelectCustomerService(s)}
-                              style={{ 
-                                padding: '0.75rem', 
-                                cursor: 'pointer', 
-                                borderBottom: '1px solid var(--border-color, #f1f5f9)', 
-                                fontSize: '0.9rem', 
-                                color: 'var(--text-color, #334155)'
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)'}
-                              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                            >
-                              <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>(ID: {s.id})</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>
-                          Tidak ada kecocokan di inventory. Ketikan Anda akan disimpan sebagai input manual.
+                  {isAuthorized ? (
+                    <>
+                      <input 
+                        type="text" 
+                        placeholder="Cari dari Telecom Asset Inventory atau ketik manual..."
+                        value={customerSearchTerm}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setCustomerSearchTerm(val);
+                          setFormData({
+                            ...formData,
+                            customData: {
+                              ...(formData.customData || {}),
+                              "Customer Name": val
+                            }
+                          });
+                          setIsCustomerDropdownOpen(true);
+                        }}
+                        onFocus={() => setIsCustomerDropdownOpen(true)}
+                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                      />
+                      
+                      {isCustomerDropdownOpen && customerSearchTerm.length >= 2 && (
+                        <div 
+                          style={{ 
+                            position: 'absolute', 
+                            top: '100%', 
+                            left: 0, 
+                            right: 0, 
+                            marginTop: '4px', 
+                            background: 'var(--card-bg, white)', 
+                            border: '1px solid var(--border-color, #cbd5e1)', 
+                            borderRadius: '4px', 
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', 
+                            zIndex: 99, 
+                            maxHeight: '200px', 
+                            overflowY: 'auto' 
+                          }}
+                        >
+                          {matchingCustomerServices.length > 0 ? (
+                            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                              {matchingCustomerServices.map(s => (
+                                <li 
+                                  key={s.id}
+                                  onClick={() => handleSelectCustomerService(s)}
+                                  style={{ 
+                                    padding: '0.75rem', 
+                                    cursor: 'pointer', 
+                                    borderBottom: '1px solid var(--border-color, #f1f5f9)', 
+                                    fontSize: '0.9rem', 
+                                    color: 'var(--text-color, #334155)'
+                                  }}
+                                  onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)'}
+                                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>(ID: {s.id})</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>
+                              Tidak ada kecocokan di inventory. Ketikan Anda akan disimpan sebagai input manual.
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
+                    </>
+                  ) : (
+                    <input 
+                      type="text" 
+                      value={customerSearchTerm} 
+                      disabled 
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--hover-bg)', color: 'var(--text-color)', cursor: 'not-allowed' }} 
+                    />
                   )}
                 </div>
 
@@ -707,7 +718,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                 <span style={{ marginLeft: '0.5rem' }}>&gt; <span>{mounted ? new Date(c.createdAt).toLocaleString('en-CA') : '...'}</span></span>
               </span>
               <span>
-                {c.authorId === currentUserId && (
+                {(c.authorId === currentUserId || isAuthorized) && (
                   <span onClick={() => { setEditingCommentId(c.id); setEditingCommentText(c.text); }} style={{ color: '#0ea5e9', cursor: 'pointer', fontWeight: 'bold' }}>Edit</span>
                 )}
               </span>
