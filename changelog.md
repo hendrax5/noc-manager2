@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.6] - 2026-06-04
+
+### Added
+- **Autocomplete Customer Search**: Replaced manual "Customer / Reporter Name" input with `AsyncSearchSelect` connected to the customer database search endpoint `/api/assets/customers/search`, while still allowing manual text overrides for new customers.
+- **Outage Downtime Tracking**: Added "Catat Waktu Outage / Downtime" checkbox to ticket creation and edit forms. This prompts for start and end datetime-local inputs and automatically calculates downtime duration in minutes, storing it safely in the `customData` JSON field.
+- **Monthly SLA & Downtime Analytics**: Added a new dashboard card to the Service Detail page (`ServiceDetailClient.js`) that calculates total monthly tickets, total accumulated downtime, and availability SLA percentages dynamically for the selected month (with green/yellow/red SLA status indicators).
+
 ## [2.1.5] - 2026-06-04
 
 ### Added
