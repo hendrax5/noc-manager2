@@ -192,7 +192,7 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
       {/* Stats Cards */}
       {!loading && !error && data && (
         <>
-          <div className="helicopter-grid">
+          <div className="sky-view-grid">
             <div className="kpi-card">
               <div className="kpi-icon" style={{ background: "#e0f2fe", color: "#0369a1" }}>🕒</div>
               <div className="kpi-content">

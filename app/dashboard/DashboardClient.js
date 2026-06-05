@@ -7,7 +7,7 @@ import DashboardCharts from "./DashboardCharts";
 export default function DashboardClient({
   session,
   hasGlobalAccess,
-  hasHelicopterAccess,
+  hasSkyViewAccess,
   finalScope,
   allowedScopes,
   
@@ -38,12 +38,12 @@ export default function DashboardClient({
   todayTickets,
   todayResolved,
   
-  // Helicopter View specific data
+  // Sky View specific data
   picWorkloads = [],
   criticalSlaTickets = [],
   activeCustomerIncidents = []
 }) {
-  const [activeTab, setActiveTab] = useState(hasHelicopterAccess ? "helicopter" : "workspace");
+  const [activeTab, setActiveTab] = useState(hasSkyViewAccess ? "skyview" : "workspace");
   const [expandedPics, setExpandedPics] = useState({});
   const [expandedSlas, setExpandedSlas] = useState({});
 
@@ -81,7 +81,7 @@ export default function DashboardClient({
     return `${hours}h ${mins}m`;
   }
 
-  // Calculate global health metrics for helicopter view
+  // Calculate global health metrics for Sky View
   const totalActiveOutages = activeCustomerIncidents.filter(t => t.priority === 'Critical').length;
   const totalActiveHighIncidents = activeCustomerIncidents.filter(t => t.priority === 'High').length;
   const totalActiveTicketsCount = categoryMetrics.reduce((a, c) => a + c.active, 0);
@@ -138,7 +138,7 @@ export default function DashboardClient({
               </span>
 
               {/* Tab Switcher */}
-              {hasHelicopterAccess && (
+              {hasSkyViewAccess && (
                 <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', padding: '0.2rem', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.15)', marginLeft: '1rem' }}>
                   <button 
                     onClick={() => setActiveTab("workspace")}
@@ -151,14 +151,14 @@ export default function DashboardClient({
                     👤 My Workspace
                   </button>
                   <button 
-                    onClick={() => setActiveTab("helicopter")}
+                    onClick={() => setActiveTab("skyview")}
                     style={{
-                      background: activeTab === "helicopter" ? 'var(--card-bg, #ffffff)' : 'transparent',
-                      color: activeTab === "helicopter" ? 'var(--heading-color, #0f172a)' : 'rgba(255,255,255,0.8)',
+                      background: activeTab === "skyview" ? 'var(--card-bg, #ffffff)' : 'transparent',
+                      color: activeTab === "skyview" ? 'var(--heading-color, #0f172a)' : 'rgba(255,255,255,0.8)',
                       border: 'none', padding: '0.35rem 1rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s'
                     }}
                   >
-                    🚁 Helicopter View
+                    🚁 Sky View
                   </button>
                 </div>
               )}
@@ -462,9 +462,9 @@ export default function DashboardClient({
       )}
 
       {/* ========================================================================================= */}
-      {/* VIEW 2: HELICOPTER VIEW (GLOBAL EXECUTIVE RADAR) */}
+      {/* VIEW 2: SKY VIEW (GLOBAL EXECUTIVE RADAR) */}
       {/* ========================================================================================= */}
-      {activeTab === "helicopter" && (
+      {activeTab === "skyview" && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
           
           {/* Executive Global KPI Stats */}

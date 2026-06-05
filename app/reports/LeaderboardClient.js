@@ -12,7 +12,7 @@ export default function LeaderboardClient({
   departments = [],
   startDate = "",
   endDate = "",
-  helicopterStats = {},
+  skyViewStats = {},
   isAdmin = false
 }) {
   const [search, setSearch] = useState("");
@@ -138,6 +138,7 @@ export default function LeaderboardClient({
             </div>
           </div>
         ))}
+      </div>
     );
   };
 
@@ -150,7 +151,7 @@ export default function LeaderboardClient({
           📊 Performance Leaderboard & Report Analytics
         </h1>
         <p style={{ color: "#64748b", margin: 0 }}>
-          Helicopter view pemantauan aktivitas, kecepatan penyelesaian (TTR), dan skor performa operator.
+          Sky View pemantauan aktivitas, kecepatan penyelesaian (TTR), dan skor performa operator.
         </p>
       </header>
 
@@ -203,12 +204,12 @@ export default function LeaderboardClient({
             onDepartmentChange={setDepartment}
           />
 
-          {/* Helicopter View Dashboard */}
+          {/* Sky View Dashboard */}
           {isAdmin && (
             <section style={{ marginBottom: "2rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
                 <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "var(--heading-color)", margin: 0 }}>
-                  🛸 Helicopter View: Ringkasan Performa Tim
+                  🛸 Sky View: Ringkasan Performa Tim
                 </h2>
                 {startDate || endDate ? (
                   <span style={{ fontSize: "0.8rem", color: "#64748b", background: "var(--border-color)", padding: "0.25rem 0.6rem", borderRadius: "12px" }}>
@@ -217,33 +218,33 @@ export default function LeaderboardClient({
                 ) : null}
               </div>
 
-              <div className="helicopter-grid">
+              <div className="sky-view-grid">
                 <div className="kpi-card">
                   <div className="kpi-icon" style={{ background: "#dcfce7", color: "#15803d" }}>✔️</div>
                   <div className="kpi-content">
-                    <span className="kpi-value">{helicopterStats.resolvedCount}</span>
+                    <span className="kpi-value">{skyViewStats.resolvedCount}</span>
                     <span className="kpi-label">Tiket Resolved</span>
                   </div>
                 </div>
                 <div className="kpi-card">
                   <div className="kpi-icon" style={{ background: "#e0f2fe", color: "#0369a1" }}>⚡</div>
                   <div className="kpi-content">
-                    <span className="kpi-value">{formatMins(helicopterStats.avgTtrMins)}</span>
+                    <span className="kpi-value">{formatMins(skyViewStats.avgTtrMins)}</span>
                     <span className="kpi-label">Rata-rata TTR Global</span>
                   </div>
                 </div>
                 <div className="kpi-card">
                   <div className="kpi-icon" style={{ background: "#fef3c7", color: "#b45309" }}>👥</div>
                   <div className="kpi-content">
-                    <span className="kpi-value">{helicopterStats.activeOperators}</span>
+                    <span className="kpi-value">{skyViewStats.activeOperators}</span>
                     <span className="kpi-label">Operator Aktif</span>
                   </div>
                 </div>
                 <div className="kpi-card">
                   <div className="kpi-icon" style={{ background: "#f3e8ff", color: "#6b21a8" }}>🏆</div>
                   <div className="kpi-content">
-                    <span className="kpi-value" style={{ fontSize: "1.1rem", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", maxWidth: "150px" }} title={helicopterStats.leadingDept}>
-                      {helicopterStats.leadingDept}
+                    <span className="kpi-value" style={{ fontSize: "1.1rem", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", maxWidth: "150px" }} title={skyViewStats.leadingDept}>
+                      {skyViewStats.leadingDept}
                     </span>
                     <span className="kpi-label">Departemen Unggul</span>
                   </div>

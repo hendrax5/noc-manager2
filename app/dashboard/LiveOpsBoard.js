@@ -333,19 +333,46 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
                   <td style={{ padding: '0.5rem', fontSize: '0.75rem', color: hasDt ? '#f59e0b' : 'var(--text-color)', fontWeight: hasDt ? 'bold' : 'normal', whiteSpace: 'nowrap' }}>
                     {mounted ? (
                       hasDt && dtStart ? (
-                        <span title={`Downtime Mulai: ${new Date(dtStart).toLocaleString('id-ID')}`}>
-                          ⏱️ {new Date(dtStart).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                        <div>
+                          <span title={`Downtime Mulai: ${new Date(dtStart).toLocaleString('id-ID')}`}>
+                            ⏱️ {new Date(dtStart).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'normal', marginTop: '0.15rem' }}>
+                            Created: {new Date(t.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} ({getTimeAgo(t.createdAt)})
+                          </div>
+                        </div>
                       ) : (
-                        new Date(t.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                        <div>
+                          <div>{new Date(t.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'normal', marginTop: '0.15rem' }}>
+                            ({getTimeAgo(t.createdAt)})
+                          </div>
+                        </div>
                       )
                     ) : '...'}
                   </td>
                   <td style={{ padding: '0.5rem', fontSize: '0.75rem', fontWeight: '600', color: durationColor, whiteSpace: 'nowrap' }}>
                     {hasDt && dtStart ? (
-                      getDuration(dtStart, dtEnd)
+                      <div>
+                        <div>{getDuration(dtStart, dtEnd)}</div>
+                        <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'normal', marginTop: '0.15rem' }}>
+                          Real Age: {getDuration(t.createdAt, t.resolvedAt && t.status === 'Resolved' ? t.resolvedAt : null)}
+                        </div>
+                        {t.status !== 'Resolved' && (
+                          <div style={{ fontSize: '0.65rem', color: hoursIdle > 2 ? '#ef4444' : '#64748b', fontWeight: hoursIdle > 2 ? 'bold' : 'normal', marginTop: '0.05rem' }}>
+                            Idle: {getTimeAgo(t.updatedAt)}
+                          </div>
+                        )}
+                      </div>
                     ) : (
-                      getDuration(t.createdAt, t.resolvedAt && t.status === 'Resolved' ? t.resolvedAt : null)
+                      <div>
+                        <div>{getDuration(t.createdAt, t.resolvedAt && t.status === 'Resolved' ? t.resolvedAt : null)}</div>
+                        {t.status !== 'Resolved' && (
+                          <div style={{ fontSize: '0.65rem', color: hoursIdle > 2 ? '#ef4444' : '#64748b', fontWeight: hoursIdle > 2 ? 'bold' : 'normal', marginTop: '0.1rem' }}>
+                            Idle: {getTimeAgo(t.updatedAt)}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </td>
                   <td style={{ padding: '0.5rem', fontSize: '0.8rem', color: t.assignee ? 'var(--heading-color)' : '#94a3b8', fontWeight: t.assignee ? '600' : 'normal', fontStyle: t.assignee ? 'normal' : 'italic', whiteSpace: 'nowrap' }}>

@@ -79,9 +79,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.0] - 2026-06-02
 
 ### Added
-- **Helicopter View & Tab Switcher**: Refactored the main dashboard (`/dashboard`) into a stateful client wrapper `<DashboardClient />` featuring an elegant Tab Switcher for Admin, Manager, and Superadmin roles.
+- **Sky View & Tab Switcher**: Refactored the main dashboard (`/dashboard`) into a stateful client wrapper `<DashboardClient />` featuring an elegant Tab Switcher for Admin, Manager, and Superadmin roles.
   - **My Workspace**: Focuses on personal workflows including individual shifts, assigned tickets, and local metrics.
-  - **Helicopter View**: Renders global operational analytics:
+  - **Sky View**: Renders global operational analytics:
     - *NOC Global Health KPIs*: Tracks total active outages, critical SLA pings, global MTTR, and total active tickets.
     - *NOC Staff Workload Heatmap*: Displays load capacity and active ticket counts per engineer.
     - *Customer Outage Impact Matrix*: Aggregates active outages and high priority incidents by commercial customer/client name with total downtime durations.

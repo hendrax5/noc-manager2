@@ -15,7 +15,7 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 | **v2.1.2** | 2026-06-03 | Active | **Bug Fix Release** - Resolved session caching issue where demoted admin/manager users still see the Administration menu. |
 | **v2.1.1** | 2026-06-03 | Active | **Feature Release** - Integrated External API Key configurations into Admin Branding & Preferences settings panel. |
 | **v2.1.0** | 2026-06-03 | Active | **Feature & Security Release** - Exposed External Ticket Creation API and added validation checks for ticket status & priority. |
-| **v2.0.0** | 2026-06-02 | Active | **Major Release** - Implemented Helicopter View with Tab Switcher on main Dashboard page for executive monitoring. |
+| **v2.0.0** | 2026-06-02 | Active | **Major Release** - Implemented Sky View with Tab Switcher on main Dashboard page for executive monitoring. |
 | **v1.9.0** | 2026-06-02 | Active | **Bug Fix Release** - Supported PHP Hesk bcrypt ($2y$, $2x$) password hashes in NextAuth login and Profile updates. |
 | **v1.8.0** | 2026-06-02 | Active | **Feature Release** - Added resolved tickets default hiding and quick visibility toggle on Live Operations Board. |
 | **v1.7.0** | 2026-06-02 | Active | **Feature & Bug Fix Release** - Fixed PIC SearchableSelect focus bug and implemented searchable badged multi-select tag input for Impacting Services. |
@@ -80,7 +80,7 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 ### v2.0.0
 - **Release Date**: June 2, 2026
 - **Prisma Changes**: No
-- **Status**: Stable / Verified Build / Implemented Helicopter View with Tab Switcher on main Dashboard page for executive monitoring
+- **Status**: Stable / Verified Build / Implemented Sky View with Tab Switcher on main Dashboard page for executive monitoring
 
 ### v1.9.0
 - **Release Date**: June 2, 2026

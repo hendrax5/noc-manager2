@@ -117,7 +117,7 @@ export default async function ReportsPage({ searchParams }) {
     select: { id: true, name: true }
   });
 
-  // Calculate Helicopter Stats
+  // Calculate Sky View Stats
   const resolvedCount = resolvedTickets.length;
   let totalTtrMs = 0;
   let validTtrCount = 0;
@@ -176,7 +176,7 @@ export default async function ReportsPage({ searchParams }) {
     }
   });
 
-  const helicopterStats = {
+  const skyViewStats = {
     resolvedCount,
     avgTtrMins,
     activeOperators,
@@ -193,7 +193,7 @@ export default async function ReportsPage({ searchParams }) {
       departments={departments}
       startDate={start || ""}
       endDate={end || ""}
-      helicopterStats={helicopterStats}
+      skyViewStats={skyViewStats}
       isAdmin={isAdmin}
     />
   );

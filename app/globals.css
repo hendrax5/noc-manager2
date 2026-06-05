@@ -871,9 +871,9 @@ body {
 [data-theme='dark'] .status-closed { background-color: rgba(71, 85, 105, 0.15); color: #94a3b8; border-color: rgba(71, 85, 105, 0.3); }
 
 /* =========================================
-   📈 HELICOPTER VIEW & PROGRESS BARS
+   📈 SKY VIEW & PROGRESS BARS
    ========================================= */
-.helicopter-grid {
+.sky-view-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.25rem;
