@@ -515,313 +515,324 @@ export default function DashboardClient({
           </section>
 
           {/* Row 1: PIC Workloads Heatmap & SLA Escalation Radar */}
-          <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem' }}>
+          <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '2rem' }}>
             
             {/* Workload Heatmap NOC Staff */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', padding: '1.75rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
-              <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.15rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', height: '450px', display: 'flex', flexDirection: 'column' }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span>👥</span> NOC Staff Workload Capacity
               </h3>
-              <p style={{ color: 'var(--text-color)', fontSize: '0.85rem', margin: '-0.5rem 0 1.5rem 0' }}>
+              <p style={{ color: 'var(--text-color)', fontSize: '0.8rem', margin: '0 0 1.25rem 0' }}>
                 Monitoring load aktif setiap tim teknis untuk re-assignment penyeimbangan tugas.
               </p>
 
-              {picWorkloads.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-color)', fontStyle: 'italic' }}>Tidak ada user NOC terdaftar.</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-                  {picWorkloads.map(u => {
-                    const count = u._count.tickets;
-                    const name = u.name || u.email.split('@')[0];
-                    const dept = u.department?.name || "General";
-                    // Capacity percentage logic (max expected load = 8 tickets)
-                    const percent = Math.min(Math.round((count / 8) * 100), 100);
-                    // Color code
-                    let color = '#10b981'; // green
-                    let bg = '#ecfdf5';
-                    let loadText = 'Ringan';
-                    if (count >= 6) {
-                      color = '#ef4444'; // red
-                      bg = '#fef2f2';
-                      loadText = 'Overload';
-                    } else if (count >= 3) {
-                      color = '#f59e0b'; // amber
-                      bg = '#fffbeb';
-                      loadText = 'Sedang';
-                    }
+              <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem' }}>
+                {picWorkloads.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-color)', fontStyle: 'italic' }}>Tidak ada user NOC terdaftar.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                    {picWorkloads.map(u => {
+                      const count = u._count.tickets;
+                      const name = u.name || u.email.split('@')[0];
+                      const dept = u.department?.name || "General";
+                      // Capacity percentage logic (max expected load = 8 tickets)
+                      const percent = Math.min(Math.round((count / 8) * 100), 100);
+                      // Color code
+                      let color = '#10b981'; // green
+                      let bg = '#ecfdf5';
+                      let loadText = 'Ringan';
+                      if (count >= 6) {
+                        color = '#ef4444'; // red
+                        bg = '#fef2f2';
+                        loadText = 'Overload';
+                      } else if (count >= 3) {
+                        color = '#f59e0b'; // amber
+                        bg = '#fffbeb';
+                        loadText = 'Sedang';
+                      }
 
-                    const totalWeight = (u.tickets || []).reduce((sum, t) => sum + (t.jobCategory?.score || 0), 0);
-                    const isExpanded = !!expandedPics[u.id];
+                      const totalWeight = (u.tickets || []).reduce((sum, t) => sum + (t.jobCategory?.score || 0), 0);
+                      const isExpanded = !!expandedPics[u.id];
 
-                    return (
-                      <div key={u.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span 
-                            onClick={() => togglePicExpand(u.id)}
-                            style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--heading-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                          >
-                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{isExpanded ? '▼' : '▶'}</span>
-                            {name} <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-color)' }}>({dept})</span>
-                          </span>
-                          <span style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                            {totalWeight > 0 && (
-                              <span style={{ fontSize: '0.68rem', background: '#eff6ff', color: '#2563eb', padding: '0.15rem 0.5rem', borderRadius: '12px', border: '1px solid #bfdbfe', fontWeight: 'bold' }}>
-                                Bobot: {totalWeight} pt
-                              </span>
-                            )}
-                            <span style={{ background: bg, color: color, padding: '0.15rem 0.6rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 'bold', border: `1px solid ${color}30` }}>
-                              {count} Tiket • {loadText}
+                      return (
+                        <div key={u.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span 
+                              onClick={() => togglePicExpand(u.id)}
+                              style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--heading-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                            >
+                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{isExpanded ? '▼' : '▶'}</span>
+                              {name} <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-color)' }}>({dept})</span>
                             </span>
-                          </span>
-                        </div>
-                        <div style={{ height: '8px', background: 'var(--hover-bg)', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer' }} onClick={() => togglePicExpand(u.id)}>
-                          <div style={{ height: '100%', width: `${percent}%`, background: color, borderRadius: '4px', transition: 'width 0.4s ease-in-out' }}></div>
-                        </div>
+                            <span style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                              {totalWeight > 0 && (
+                                <span style={{ fontSize: '0.68rem', background: '#eff6ff', color: '#2563eb', padding: '0.15rem 0.5rem', borderRadius: '12px', border: '1px solid #bfdbfe', fontWeight: 'bold' }}>
+                                  Bobot: {totalWeight} pt
+                                </span>
+                              )}
+                              <span style={{ background: bg, color: color, padding: '0.15rem 0.6rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 'bold', border: `1px solid ${color}30` }}>
+                                {count} Tiket • {loadText}
+                              </span>
+                            </span>
+                          </div>
+                          <div style={{ height: '8px', background: 'var(--hover-bg)', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer' }} onClick={() => togglePicExpand(u.id)}>
+                            <div style={{ height: '100%', width: `${percent}%`, background: color, borderRadius: '4px', transition: 'width 0.4s ease-in-out' }}></div>
+                          </div>
 
-                        {isExpanded && (
-                          <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {(!u.tickets || u.tickets.length === 0) ? (
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-color)', textAlign: 'center', fontStyle: 'italic' }}>
-                                Tidak ada tiket aktif saat ini.
-                              </div>
-                            ) : (
-                              u.tickets.map(t => {
-                                let pColor = '#94a3b8';
-                                if (t.priority === 'Critical') pColor = '#ef4444';
-                                else if (t.priority === 'High') pColor = '#f59e0b';
-                                else if (t.priority === 'Medium') pColor = '#3b82f6';
-                                else if (t.priority === 'Low') pColor = '#10b981';
+                          {isExpanded && (
+                            <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              {(!u.tickets || u.tickets.length === 0) ? (
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-color)', textAlign: 'center', fontStyle: 'italic' }}>
+                                  Tidak ada tiket aktif saat ini.
+                                </div>
+                              ) : (
+                                u.tickets.map(t => {
+                                  let pColor = '#94a3b8';
+                                  if (t.priority === 'Critical') pColor = '#ef4444';
+                                  else if (t.priority === 'High') pColor = '#f59e0b';
+                                  else if (t.priority === 'Medium') pColor = '#3b82f6';
+                                  else if (t.priority === 'Low') pColor = '#10b981';
 
-                                return (
-                                  <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', gap: '0.5rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
-                                      <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: pColor, flexShrink: 0 }} title={t.priority}></span>
-                                      <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', textDecoration: 'none', color: '#3b82f6', flexShrink: 0 }}>
-                                        [{t.trackingId}]
-                                      </Link>
-                                      <span style={{ color: 'var(--heading-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.title}>
-                                        {t.title}
+                                  return (
+                                    <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', gap: '0.5rem' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
+                                        <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: pColor, flexShrink: 0 }} title={t.priority}></span>
+                                        <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', textDecoration: 'none', color: '#3b82f6', flexShrink: 0 }}>
+                                          [{t.trackingId}]
+                                        </Link>
+                                        <span style={{ color: 'var(--heading-color)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={t.title}>
+                                          {t.title}
+                                        </span>
+                                      </div>
+                                      <span style={{ fontSize: '0.7rem', color: 'var(--text-color)', flexShrink: 0 }}>
+                                        {(() => {
+                                          const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
+                                          return hasDt && t.customData.startDowntime
+                                            ? `⏱️ ${getDuration(t.customData.startDowntime, t.customData.endDowntime)}`
+                                            : getDuration(t.createdAt);
+                                        })()}
                                       </span>
                                     </div>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-color)', flexShrink: 0 }}>
-                                      {(() => {
-                                        const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
-                                        return hasDt && t.customData.startDowntime
-                                          ? `⏱️ ${getDuration(t.customData.startDowntime, t.customData.endDowntime)}`
-                                          : getDuration(t.createdAt);
-                                      })()}
-                                    </span>
-                                  </div>
-                                );
-                              })
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                                  );
+                                })
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* SLA Early Warning Radar */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', padding: '1.75rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
-              <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.15rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', height: '450px', display: 'flex', flexDirection: 'column' }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span>⚡</span> SLA Escalation Radar & Warnings
               </h3>
-              <p style={{ color: 'var(--text-color)', fontSize: '0.85rem', margin: '-0.5rem 0 1.5rem 0' }}>
+              <p style={{ color: 'var(--text-color)', fontSize: '0.8rem', margin: '0 0 1.25rem 0' }}>
                 Daftar tiket aktif yang mendekati batas waktu SLA (diurutkan berdasarkan urgensi waktu).
               </p>
 
-              {criticalSlaTickets.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem 1rem', border: '1px dashed var(--border-color)', borderRadius: '8px', color: 'var(--text-color)', fontStyle: 'italic' }}>
-                  🎉 Seluruh tiket aktif memiliki SLA yang aman.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '320px', overflowY: 'auto' }}>
-                  {criticalSlaTickets.map(t => {
-                    const timeLeftMs = new Date(t.nextSlaDeadline).getTime() - Date.now();
-                    const isOverdue = timeLeftMs < 0;
-                    const timeLeftMin = Math.round(timeLeftMs / 60000);
-                    
-                    let urgencyColor = '#10b981';
-                    let urgencyBg = '#ecfdf5';
-                    let statusLabel = `Sisa ${timeLeftMin} menit`;
-                    
-                    if (isOverdue) {
-                      urgencyColor = '#ef4444';
-                      urgencyBg = '#fef2f2';
-                      statusLabel = 'SLA BREACHED';
-                    } else if (timeLeftMin < 30) {
-                      urgencyColor = '#f59e0b';
-                      urgencyBg = '#fffbeb';
-                      statusLabel = `Kritis (${timeLeftMin}m)`;
-                    }
+              <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem' }}>
+                {criticalSlaTickets.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '3rem 1rem', border: '1px dashed var(--border-color)', borderRadius: '8px', color: 'var(--text-color)', fontStyle: 'italic' }}>
+                    🎉 Seluruh tiket aktif memiliki SLA yang aman.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {criticalSlaTickets.map(t => {
+                      const timeLeftMs = new Date(t.nextSlaDeadline).getTime() - Date.now();
+                      const isOverdue = timeLeftMs < 0;
+                      const timeLeftMin = Math.round(timeLeftMs / 60000);
+                      
+                      let urgencyColor = '#10b981';
+                      let urgencyBg = '#ecfdf5';
+                      let statusLabel = `Sisa ${timeLeftMin} menit`;
+                      
+                      if (isOverdue) {
+                        urgencyColor = '#ef4444';
+                        urgencyBg = '#fef2f2';
+                        statusLabel = 'SLA BREACHED';
+                      } else if (timeLeftMin < 30) {
+                        urgencyColor = '#f59e0b';
+                        urgencyBg = '#fffbeb';
+                        statusLabel = `Kritis (${timeLeftMin}m)`;
+                      }
 
-                    const isExpanded = !!expandedSlas[t.id];
+                      const isExpanded = !!expandedSlas[t.id];
 
-                    let priorityEmoji = '🟢';
-                    let priorityColor = '#10b981';
-                    let priorityBg = '#ecfdf5';
-                    if (t.priority === 'Critical') {
-                      priorityEmoji = '🔴';
-                      priorityColor = '#ef4444';
-                      priorityBg = '#fef2f2';
-                    } else if (t.priority === 'High') {
-                      priorityEmoji = '🟠';
-                      priorityColor = '#f59e0b';
-                      priorityBg = '#fffbeb';
-                    } else if (t.priority === 'Medium') {
-                      priorityEmoji = '🔵';
-                      priorityColor = '#3b82f6';
-                      priorityBg = '#eff6ff';
-                    }
+                      let priorityEmoji = '🟢';
+                      let priorityColor = '#10b981';
+                      let priorityBg = '#ecfdf5';
+                      if (t.priority === 'Critical') {
+                        priorityEmoji = '🔴';
+                        priorityColor = '#ef4444';
+                        priorityBg = '#fef2f2';
+                      } else if (t.priority === 'High') {
+                        priorityEmoji = '🟠';
+                        priorityColor = '#f59e0b';
+                        priorityBg = '#fffbeb';
+                      } else if (t.priority === 'Medium') {
+                        priorityEmoji = '🔵';
+                        priorityColor = '#3b82f6';
+                        priorityBg = '#eff6ff';
+                      }
 
-                    return (
-                      <div key={t.id} style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem 1rem', border: '1px solid var(--border-color)', borderRadius: '8px', borderLeft: `4px solid ${urgencyColor}`, background: 'var(--hover-bg)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%', cursor: 'pointer' }} onClick={() => toggleSlaExpand(t.id)}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{isExpanded ? '▼' : '▶'}</span>
-                              <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', fontSize: '0.88rem', textDecoration: 'none', color: '#3b82f6' }} onClick={e => e.stopPropagation()}>
-                                {t.trackingId}
-                              </Link>
+                      return (
+                        <div key={t.id} style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem 1rem', border: '1px solid var(--border-color)', borderRadius: '8px', borderLeft: `4px solid ${urgencyColor}`, background: 'var(--hover-bg)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%', cursor: 'pointer' }} onClick={() => toggleSlaExpand(t.id)}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{isExpanded ? '▼' : '▶'}</span>
+                                <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', fontSize: '0.88rem', textDecoration: 'none', color: '#3b82f6' }} onClick={e => e.stopPropagation()}>
+                                  {t.trackingId}
+                                </Link>
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: 'var(--heading-color)', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600' }}>{t.title}</div>
+                              <div style={{ fontSize: '0.72rem', color: 'var(--text-color)', marginTop: '0.1rem' }}>
+                                PIC: {t.assignee?.name || 'Unassigned'} • {t.department?.name}
+                              </div>
                             </div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--heading-color)', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600' }}>{t.title}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-color)', marginTop: '0.1rem' }}>
-                              PIC: {t.assignee?.name || 'Unassigned'} • {t.department?.name}
-                            </div>
-                          </div>
-                          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: 'flex-end' }}>
-                            <span style={{ display: 'inline-block', background: urgencyBg, color: urgencyColor, padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 'bold', border: `1px solid ${urgencyColor}25` }}>
-                              {statusLabel}
-                            </span>
-                            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-                              <span style={{ background: priorityBg, color: priorityColor, padding: '0.05rem 0.3rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 'bold', border: `1px solid ${priorityColor}20` }}>
-                                {priorityEmoji} {t.priority}
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '0.3rem', alignItems: 'flex-end' }}>
+                              <span style={{ display: 'inline-block', background: urgencyBg, color: urgencyColor, padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 'bold', border: `1px solid ${urgencyColor}25` }}>
+                                {statusLabel}
                               </span>
-                              {t.jobCategory?.name && (
-                                <span style={{ background: 'var(--card-bg)', color: 'var(--heading-color)', padding: '0.05rem 0.3rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 'bold', border: '1px solid var(--border-color)' }}>
-                                  🏷️ {t.jobCategory.name}
+                              <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+                                <span style={{ background: priorityBg, color: priorityColor, padding: '0.05rem 0.3rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 'bold', border: `1px solid ${priorityColor}20` }}>
+                                  {priorityEmoji} {t.priority}
                                 </span>
-                              )}
+                                {t.jobCategory?.name && (
+                                  <span style={{ background: 'var(--card-bg)', color: 'var(--heading-color)', padding: '0.05rem 0.3rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 'bold', border: '1px solid var(--border-color)' }}>
+                                    🏷️ {t.jobCategory.name}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {isExpanded && (
-                          <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <div style={{ color: 'var(--text-color)', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
-                              <strong>Deskripsi:</strong> {t.description ? (t.description.length > 150 ? t.description.substring(0, 150) + "..." : t.description) : "Tidak ada deskripsi."}
+                          {isExpanded && (
+                            <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              <div style={{ color: 'var(--text-color)', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                                <strong>Deskripsi:</strong> {t.description ? (t.description.length > 150 ? t.description.substring(0, 150) + "..." : t.description) : "Tidak ada deskripsi."}
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed var(--border-color)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-color)' }}>
+                                  Dibuat: {new Date(t.createdAt).toLocaleString('en-CA')} ({getDuration(t.createdAt)} lalu)
+                                </span>
+                                <Link href={`/tickets/${t.id}`} style={{ background: '#3b82f6', color: 'white', textDecoration: 'none', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 'bold' }}>
+                                  Buka Tiket →
+                                </Link>
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed var(--border-color)', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
-                              <span style={{ fontSize: '0.72rem', color: 'var(--text-color)' }}>
-                                Dibuat: {new Date(t.createdAt).toLocaleString('en-CA')} ({getDuration(t.createdAt)} lalu)
-                              </span>
-                              <Link href={`/tickets/${t.id}`} style={{ background: '#3b82f6', color: 'white', textDecoration: 'none', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 'bold' }}>
-                                Buka Tiket →
-                              </Link>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
           </section>
 
           {/* Row 2: Customer Impact Matrix (Incidents List) & Global Charts */}
-          <section style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+          <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '2rem' }}>
             
             {/* Customer Outages Impact Matrix */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', padding: '1.75rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
-              <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.15rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', height: '450px', display: 'flex', flexDirection: 'column' }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span>🏢</span> Customer Outage Impact Matrix
               </h3>
-              <p style={{ color: 'var(--text-color)', fontSize: '0.85rem', margin: '-0.5rem 0 1.5rem 0' }}>
+              <p style={{ color: 'var(--text-color)', fontSize: '0.8rem', margin: '0 0 1.25rem 0' }}>
                 Daftar pelanggan komersial dengan gangguan Critical (Outage) / High yang sedang aktif saat ini.
               </p>
 
-              {clientImpacts.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-color)', fontStyle: 'italic', border: '1px dashed var(--border-color)', borderRadius: '8px' }}>
-                  🟢 Tidak ada pelanggan terdampak outage saat ini. Seluruh jaringan terpantau stabil.
-                </div>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                        <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', color: 'var(--text-color)', fontWeight: 'bold' }}>Customer Name</th>
-                        <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center', color: 'var(--text-color)', fontWeight: 'bold', width: '120px' }}>Critical Outages</th>
-                        <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center', color: 'var(--text-color)', fontWeight: 'bold', width: '120px' }}>High Incidents</th>
-                        <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', color: 'var(--text-color)', fontWeight: 'bold' }}>Active Impacted Tickets</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {clientImpacts.map(client => (
-                        <tr key={client.name} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                          <td style={{ padding: '0.85rem 0.5rem', fontWeight: 'bold', color: 'var(--heading-color)' }}>
-                            🏢 {client.name}
-                          </td>
-                          <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>
-                            {client.criticalCount > 0 ? (
-                              <span style={{ background: '#fef2f2', color: '#dc2626', fontWeight: 'bold', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', border: '1px solid #fecaca' }}>
-                                🔥 {client.criticalCount} Outage
-                              </span>
-                            ) : (
-                              <span style={{ color: '#94a3b8' }}>-</span>
-                            )}
-                          </td>
-                          <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>
-                            {client.highCount > 0 ? (
-                              <span style={{ background: '#fffbeb', color: '#d97706', fontWeight: 'bold', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', border: '1px solid #fde68a' }}>
-                                ⚠️ {client.highCount} Tiket
-                              </span>
-                            ) : (
-                              <span style={{ color: '#94a3b8' }}>-</span>
-                            )}
-                          </td>
-                          <td style={{ padding: '0.85rem 0.5rem' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                              {client.tickets.map(t => (
-                                <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem' }}>
-                                  <Link href={`/tickets/${t.id}`} style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 'bold' }}>
-                                    [{t.trackingId}]
-                                  </Link>
-                                  <span style={{ color: 'var(--heading-color)' }}>{t.title}</span>
-                                  <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>
-                                    {(() => {
-                                      const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
-                                      return hasDt && t.customData.startDowntime ? (
-                                        <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>
-                                          ⏱️ Down: {getDuration(t.customData.startDowntime, t.customData.endDowntime)}
-                                        </span>
-                                      ) : (
-                                        `(Down: ${getDuration(t.createdAt)})`
-                                      );
-                                    })()}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </td>
+              <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem' }}>
+                {clientImpacts.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-color)', fontStyle: 'italic', border: '1px dashed var(--border-color)', borderRadius: '8px' }}>
+                    🟢 Tidak ada pelanggan terdampak outage saat ini. Seluruh jaringan terpantau stabil.
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+                          <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', color: 'var(--text-color)', fontWeight: 'bold' }}>Customer Name</th>
+                          <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center', color: 'var(--text-color)', fontWeight: 'bold', width: '120px' }}>Critical Outages</th>
+                          <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center', color: 'var(--text-color)', fontWeight: 'bold', width: '120px' }}>High Incidents</th>
+                          <th style={{ padding: '0.75rem 0.5rem', textAlign: 'left', color: 'var(--text-color)', fontWeight: 'bold' }}>Active Impacted Tickets</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      </thead>
+                      <tbody>
+                        {clientImpacts.map(client => (
+                          <tr key={client.name} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            <td style={{ padding: '0.85rem 0.5rem', fontWeight: 'bold', color: 'var(--heading-color)' }}>
+                              🏢 {client.name}
+                            </td>
+                            <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>
+                              {client.criticalCount > 0 ? (
+                                <span style={{ background: '#fef2f2', color: '#dc2626', fontWeight: 'bold', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', border: '1px solid #fecaca' }}>
+                                  🔥 {client.criticalCount} Outage
+                                </span>
+                              ) : (
+                                <span style={{ color: '#94a3b8' }}>-</span>
+                              )}
+                            </td>
+                            <td style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>
+                              {client.highCount > 0 ? (
+                                <span style={{ background: '#fffbeb', color: '#d97706', fontWeight: 'bold', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', border: '1px solid #fde68a' }}>
+                                  ⚠️ {client.highCount} Tiket
+                                </span>
+                              ) : (
+                                <span style={{ color: '#94a3b8' }}>-</span>
+                              )}
+                            </td>
+                            <td style={{ padding: '0.85rem 0.5rem' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                {client.tickets.map(t => (
+                                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.78rem' }}>
+                                    <Link href={`/tickets/${t.id}`} style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 'bold' }}>
+                                      [{t.trackingId}]
+                                    </Link>
+                                    <span style={{ color: 'var(--heading-color)' }}>{t.title}</span>
+                                    <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>
+                                      {(() => {
+                                        const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
+                                        return hasDt && t.customData.startDowntime ? (
+                                          <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                                            ⏱️ Down: {getDuration(t.customData.startDowntime, t.customData.endDowntime)}
+                                          </span>
+                                        ) : (
+                                          `(Down: ${getDuration(t.createdAt)})`
+                                        );
+                                      })()}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Global Trends & Analytics (Charts) */}
-            <div style={{ padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
-               <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.15rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', height: '450px', display: 'flex', flexDirection: 'column' }}>
+               <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                  <span>📈</span> Global Incoming vs Resolved Incident Analytics
                </h3>
-               <DashboardCharts ticketStats={ticketStats} reportStats={reportStats} categoryStats={categoryStats} />
+               <p style={{ color: 'var(--text-color)', fontSize: '0.8rem', margin: '0 0 1.25rem 0' }}>
+                 Visualisasi tren pembuatan dan penyelesaian tiket untuk melihat tren performa tim.
+               </p>
+               <div style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem' }}>
+                 <DashboardCharts ticketStats={ticketStats} reportStats={reportStats} categoryStats={categoryStats} />
+               </div>
             </div>
 
           </section>
