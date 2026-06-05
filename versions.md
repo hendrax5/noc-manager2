@@ -6,6 +6,7 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 
 | Version | Release Date | Status | Description |
 |---|---|---|---|
+| **v2.2.1** | 2026-06-06 | Active | **Feature Release** - Implemented Ticket Reopen Cycle Timer using `reopenedAt` metadata inside `customData` to reset timers without losing original ticket `createdAt` history. |
 | **v2.2.0** | 2026-06-06 | Active | **Feature & UI Release** - Implemented daily visual Team Work Hours timeline, PIC Diligence/Loyalty analysis scoring, and custom premium scroll-experience. |
 | **v2.1.7** | 2026-06-04 | Active | **Feature Release** - Implemented subject editing, manual downtime override on LiveOpsBoard, master ticket permission for comments/customer editing, and removed Impacting Services. |
 | **v2.1.6** | 2026-06-04 | Active | **Feature Release** - Implemented Customer Name autocomplete search from Asset Inventory, Outage downtime tracking on tickets, and monthly SLA availability analytics per service. |
@@ -31,6 +32,11 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 | **v1.2.2** | 2026-05-15 | Active | Current baseline version prior to redesign. |
 
 ## Version Log Detail
+
+### v2.2.1
+- **Release Date**: June 6, 2026
+- **Prisma Changes**: No
+- **Status**: Stable / Verified Build / Reopened Ticket Active Timer Reset
 
 ### v2.2.0
 - **Release Date**: June 6, 2026

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-06-06
+
+### Added
+- **Ticket Reopen Cycle Timer**: Reset timer functionality when reopened from a resolved state using a metadata-based cycle age (`reopenedAt`) stored in `customData` without losing the original ticket `createdAt` history. This preserves audit integrity, aligns comment timestamps chronologically, and updates workload grids, LiveOps boards, and TTR analytics.
+
 ## [2.2.0] - 2026-06-06
 
 ### Added
