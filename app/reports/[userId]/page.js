@@ -100,7 +100,7 @@ export default async function UserReportDetail({ params, searchParams }) {
     if (!t.jobCategory) return;
     const catName = t.jobCategory.name;
     const end = t.resolvedAt || t.updatedAt;
-    const diff = new Date(end).getTime() - new Date(t.createdAt).getTime();
+    const diff = new Date(end).getTime() - new Date(t.customData?.reopenedAt || t.createdAt).getTime();
     if (diff > 0) {
       if (!personalCategoryTTRRaw[catName]) personalCategoryTTRRaw[catName] = { totalMs: 0, count: 0 };
       personalCategoryTTRRaw[catName].totalMs += diff;
@@ -202,7 +202,7 @@ export default async function UserReportDetail({ params, searchParams }) {
                 {paginatedTickets.map(t => (
                   <tr key={t.id}>
                     <td style={{ color: '#64748b', fontSize: '0.85rem' }}>{new Date(t.updatedAt).toLocaleDateString()}</td>
-                    <td style={{ fontWeight: 'bold', color: '#3b82f6', fontSize: '0.85rem' }}>{formatDuration(t.createdAt, t.resolvedAt || t.updatedAt)}</td>
+                    <td style={{ fontWeight: 'bold', color: '#3b82f6', fontSize: '0.85rem' }}>{formatDuration(t.customData?.reopenedAt || t.createdAt, t.resolvedAt || t.updatedAt)}</td>
                     <td style={{ fontWeight: 'bold', fontSize: '0.85rem' }}><Link href={`/tickets/${t.id}`} style={{color: 'var(--primary-color)'}}>{t.trackingId}</Link></td>
                     <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#10b981', fontSize: '0.85rem' }}>+{t.awardedScore} pts</td>
                   </tr>

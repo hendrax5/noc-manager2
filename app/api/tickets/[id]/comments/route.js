@@ -108,28 +108,45 @@ export async function POST(req, { params }) {
       }
     }
 
+    let ticketUpdateData = {};
     if (newStatus !== ticket.status || newAssigneeId !== ticket.assigneeId || resetJobCategory || nextSlaDeadlineUpdate !== undefined || enableSlaUpdate !== undefined) {
-      await prisma.ticket.update({ 
-        where: { id: ticketId }, 
-        data: { 
-          status: newStatus, 
-          assigneeId: newAssigneeId,
-          ...(resetJobCategory && { jobCategoryId: null }),
-          ...(nextSlaDeadlineUpdate !== undefined && { nextSlaDeadline: nextSlaDeadlineUpdate }),
-          ...(enableSlaUpdate !== undefined && { enableSla: enableSlaUpdate }),
-          ...(slaMinsUpdate !== undefined && { slaTimerMins: slaMinsUpdate })
-        } 
-      });
+      ticketUpdateData = {
+        status: newStatus,
+        assigneeId: newAssigneeId,
+        ...(resetJobCategory && { jobCategoryId: null }),
+        ...(nextSlaDeadlineUpdate !== undefined && { nextSlaDeadline: nextSlaDeadlineUpdate }),
+        ...(enableSlaUpdate !== undefined && { enableSla: enableSlaUpdate }),
+        ...(slaMinsUpdate !== undefined && { slaTimerMins: slaMinsUpdate })
+      };
+    }
+
+    let mergedCustomData = typeof ticket.customData === 'object' && ticket.customData !== null ? { ...ticket.customData } : {};
+    let customDataChanged = false;
+
+    if (ticket.status === 'Resolved' && newStatus !== 'Resolved') {
+      mergedCustomData.reopenedAt = new Date().toISOString();
+      customDataChanged = true;
     }
 
     if (replyCustomData && Object.keys(replyCustomData).length > 0) {
-      await prisma.ticket.update({ 
-        where: { id: ticketId }, 
-        data: { customData: { ...(typeof ticket.customData === 'object' && ticket.customData !== null ? ticket.customData : {}), ...replyCustomData } }
+      Object.assign(mergedCustomData, replyCustomData);
+      customDataChanged = true;
+    }
+
+    if (customDataChanged) {
+      ticketUpdateData.customData = mergedCustomData;
+    }
+
+    if (Object.keys(ticketUpdateData).length > 0) {
+      await prisma.ticket.update({
+        where: { id: ticketId },
+        data: ticketUpdateData
       });
-      await prisma.ticketHistory.create({
-        data: { ticketId, action: `Parameters augmented via Reply [Toggled Fields: ${Object.keys(replyCustomData).join(', ')}]`, actorId: userId }
-      });
+      if (replyCustomData && Object.keys(replyCustomData).length > 0) {
+        await prisma.ticketHistory.create({
+          data: { ticketId, action: `Parameters augmented via Reply [Toggled Fields: ${Object.keys(replyCustomData).join(', ')}]`, actorId: userId }
+        });
+      }
     }
 
     await prisma.ticketHistory.create({

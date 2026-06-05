@@ -104,7 +104,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
       case 'category': valA = a.jobCategory?.name || ''; valB = b.jobCategory?.name || ''; break;
       case 'assignee': valA = a.assignee?.name || ''; valB = b.assignee?.name || ''; break;
       case 'updatedAt': valA = new Date(a.updatedAt).getTime(); valB = new Date(b.updatedAt).getTime(); break;
-      case 'createdAt': valA = new Date(a.createdAt).getTime(); valB = new Date(b.createdAt).getTime(); break;
+      case 'createdAt': valA = new Date(a.customData?.reopenedAt || a.createdAt).getTime(); valB = new Date(b.customData?.reopenedAt || b.createdAt).getTime(); break;
       case 'slaBreaches': valA = a.slaBreaches || 0; valB = b.slaBreaches || 0; break;
       default: valA = new Date(a.updatedAt).getTime(); valB = new Date(b.updatedAt).getTime();
     }
@@ -165,10 +165,10 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
       const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
       const timeDownVal = hasDt && t.customData.startDowntime
         ? new Date(t.customData.startDowntime).toLocaleString('en-CA')
-        : new Date(t.createdAt).toLocaleString('en-CA');
+        : new Date(t.customData?.reopenedAt || t.createdAt).toLocaleString('en-CA');
       const durationVal = hasDt && t.customData.startDowntime
         ? getDuration(t.customData.startDowntime, t.customData.endDowntime)
-        : getDuration(t.createdAt, t.resolvedAt);
+        : getDuration(t.customData?.reopenedAt || t.createdAt, t.resolvedAt);
 
       return [
         t.trackingId || '',
@@ -366,7 +366,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
                       </div>
                     ) : (
                       <div>
-                        <div>{getDuration(t.createdAt, t.resolvedAt && t.status === 'Resolved' ? t.resolvedAt : null)}</div>
+                        <div>{getDuration(t.customData?.reopenedAt || t.createdAt, t.resolvedAt && t.status === 'Resolved' ? t.resolvedAt : null)}</div>
                         {t.status !== 'Resolved' && (
                           <div style={{ fontSize: '0.65rem', color: hoursIdle > 2 ? '#ef4444' : '#64748b', fontWeight: hoursIdle > 2 ? 'bold' : 'normal', marginTop: '0.1rem' }}>
                             Idle: {getTimeAgo(t.updatedAt)}

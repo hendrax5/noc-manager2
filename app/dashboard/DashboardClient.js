@@ -609,7 +609,7 @@ export default function DashboardClient({
                                           const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
                                           return hasDt && t.customData.startDowntime
                                             ? `⏱️ ${getDuration(t.customData.startDowntime, t.customData.endDowntime)}`
-                                            : getDuration(t.createdAt);
+                                            : getDuration(t.customData?.reopenedAt || t.createdAt);
                                         })()}
                                       </span>
                                     </div>
@@ -805,7 +805,7 @@ export default function DashboardClient({
                                             ⏱️ Down: {getDuration(t.customData.startDowntime, t.customData.endDowntime)}
                                           </span>
                                         ) : (
-                                          `(Down: ${getDuration(t.createdAt)})`
+                                          `(Down: ${getDuration(t.customData?.reopenedAt || t.createdAt)})`
                                         );
                                       })()}
                                     </span>

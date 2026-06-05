@@ -120,6 +120,17 @@ export async function PATCH(req, { params }) {
       logs.push({ action: `SLA Timer duration changed to ${body.slaTimerMins}m`, actorId: userId });
     }
 
+    let finalCustomData = body.customData !== undefined 
+      ? body.customData 
+      : (oldTicket.customData && typeof oldTicket.customData === 'object' ? { ...oldTicket.customData } : {});
+
+    if (body.status !== undefined && body.status !== 'Resolved' && oldTicket.status === 'Resolved') {
+      finalCustomData = {
+        ...(finalCustomData && typeof finalCustomData === 'object' ? finalCustomData : {}),
+        reopenedAt: new Date().toISOString()
+      };
+    }
+
     const ticketData = {
       title: body.title !== undefined ? body.title : oldTicket.title,
       description: body.description !== undefined ? body.description : oldTicket.description,
@@ -128,7 +139,7 @@ export async function PATCH(req, { params }) {
       departmentId: body.departmentId !== undefined ? parseInt(body.departmentId) : oldTicket.departmentId,
       assigneeId: body.assigneeId !== undefined ? (body.assigneeId ? parseInt(body.assigneeId) : null) : oldTicket.assigneeId,
       jobCategoryId: body.jobCategoryId !== undefined ? (body.jobCategoryId ? parseInt(body.jobCategoryId) : null) : oldTicket.jobCategoryId,
-      ...(body.customData && { customData: body.customData }),
+      ...(finalCustomData !== undefined && { customData: finalCustomData }),
       ...(body.enableSla !== undefined && { enableSla: body.enableSla }),
       ...(body.slaTimerMins !== undefined && { slaTimerMins: parseInt(body.slaTimerMins) })
     };

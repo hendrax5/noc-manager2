@@ -99,7 +99,7 @@ export default async function ReportsPage({ searchParams }) {
     if (!t.jobCategory) return;
     const catName = t.jobCategory.name;
     const end = t.resolvedAt || t.updatedAt;
-    const diff = new Date(end).getTime() - new Date(t.createdAt).getTime();
+    const diff = new Date(end).getTime() - new Date(t.customData?.reopenedAt || t.createdAt).getTime();
     if (diff > 0) {
       if (!categoryTTRRaw[catName]) categoryTTRRaw[catName] = { totalMs: 0, count: 0 };
       categoryTTRRaw[catName].totalMs += diff;
@@ -123,7 +123,7 @@ export default async function ReportsPage({ searchParams }) {
   let validTtrCount = 0;
   resolvedTickets.forEach(t => {
     const end = t.resolvedAt || t.updatedAt;
-    const diff = new Date(end).getTime() - new Date(t.createdAt).getTime();
+    const diff = new Date(end).getTime() - new Date(t.customData?.reopenedAt || t.createdAt).getTime();
     if (diff > 0) {
       totalTtrMs += diff;
       validTtrCount++;
