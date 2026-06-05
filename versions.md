@@ -6,6 +6,7 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 
 | Version | Release Date | Status | Description |
 |---|---|---|---|
+| **v2.2.0** | 2026-06-06 | Active | **Feature & UI Release** - Implemented daily visual Team Work Hours timeline, PIC Diligence/Loyalty analysis scoring, and custom premium scroll-experience. |
 | **v2.1.3** | 2026-06-04 | Active | **Feature Release** - Added edit_own_tickets and edit_other_tickets security permissions to roles and enforced them in ticket detail edits on frontend & backend. |
 | **v2.1.2** | 2026-06-03 | Active | **Bug Fix Release** - Resolved session caching issue where demoted admin/manager users still see the Administration menu. |
 | **v2.1.1** | 2026-06-03 | Active | **Feature Release** - Integrated External API Key configurations into Admin Branding & Preferences settings panel. |
@@ -26,6 +27,11 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 | **v1.2.2** | 2026-05-15 | Active | Current baseline version prior to redesign. |
 
 ## Version Log Detail
+
+### v2.2.0
+- **Release Date**: June 6, 2026
+- **Prisma Changes**: No
+- **Status**: Stable / Verified Build / Team Work Hours Timeline & Loyalty Analysis
 
 ### v2.1.3
 - **Release Date**: June 4, 2026

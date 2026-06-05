@@ -965,3 +965,48 @@ body {
   }
 }
 
+/* =========================================
+   📈 CUSTOM PREMIUM SCROLL-EXPERIENCE (UI-UX Pro Max)
+   ========================================= */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar for Webkit Browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 999px;
+  border: 2px solid var(--card-bg); /* Margin padding effect */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-color);
+}
+
+/* Custom Scrollbar for Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+/* Prevent scroll chaining/bouncing on custom scroll panels, adding smooth mobile momentum */
+.drawer-body,
+.card,
+[style*="overflow-y: auto"],
+[style*="overflow-x: auto"],
+[style*="overflowX: auto"],
+[style*="overflowY: auto"] {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch; /* Butter-smooth iOS inertia scrolling */
+}
+
+

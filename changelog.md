@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-06-06
+
+### Added
+- **Team Work Hours Timeline**: Visual horizontal daily timeline tracking active work blocks, scheduled shift windows, and overtime blocks dynamically.
+- **PIC Diligence & Loyalty Analysis**: System-generated score (0-100) and qualitative evaluation of PIC contributions based on ticket activities, comment detail length, touch frequency, and tech/courtesy keywords.
+- **UI/UX Scroll-Experience Upgrade**: Added premium thin rounded scrollbars that adapt dynamically to Dark/Light themes, smooth scrolling, overscroll confinement (`overscroll-behavior: contain`), and touch momentum for mobile/tablet devices.
+
 ## [2.1.3] - 2026-06-04
 
 ### Added
