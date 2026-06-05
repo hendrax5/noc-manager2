@@ -7,6 +7,10 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 | Version | Release Date | Status | Description |
 |---|---|---|---|
 | **v2.2.0** | 2026-06-06 | Active | **Feature & UI Release** - Implemented daily visual Team Work Hours timeline, PIC Diligence/Loyalty analysis scoring, and custom premium scroll-experience. |
+| **v2.1.7** | 2026-06-04 | Active | **Feature Release** - Implemented subject editing, manual downtime override on LiveOpsBoard, master ticket permission for comments/customer editing, and removed Impacting Services. |
+| **v2.1.6** | 2026-06-04 | Active | **Feature Release** - Implemented Customer Name autocomplete search from Asset Inventory, Outage downtime tracking on tickets, and monthly SLA availability analytics per service. |
+| **v2.1.5** | 2026-06-04 | Active | **Security & Feature Release** - Enforced strict permissions separating users/roles access, removed hardcoded role-level checks (e.g. Manager), added modify_tickets shorthand, manage_departments separation, and view_live_ops live monitoring permissions. |
+| **v2.1.4** | 2026-06-04 | Active | **Feature & Security Release** - Introduced manage_tickets master permission, create_tickets control, manage_sla restrictions, and view/write internal notes access controls. |
 | **v2.1.3** | 2026-06-04 | Active | **Feature Release** - Added edit_own_tickets and edit_other_tickets security permissions to roles and enforced them in ticket detail edits on frontend & backend. |
 | **v2.1.2** | 2026-06-03 | Active | **Bug Fix Release** - Resolved session caching issue where demoted admin/manager users still see the Administration menu. |
 | **v2.1.1** | 2026-06-03 | Active | **Feature Release** - Integrated External API Key configurations into Admin Branding & Preferences settings panel. |
@@ -32,6 +36,26 @@ Catalog of active, planned, and deprecated versions of the NOC Manager applicati
 - **Release Date**: June 6, 2026
 - **Prisma Changes**: No
 - **Status**: Stable / Verified Build / Team Work Hours Timeline & Loyalty Analysis
+
+### v2.1.7
+- **Release Date**: June 4, 2026
+- **Prisma Changes**: No
+- **Status**: Stable / Verified Build / Master Otorisasi & Textarea Auto-Grow
+
+### v2.1.6
+- **Release Date**: June 4, 2026
+- **Prisma Changes**: No
+- **Status**: Stable / Verified Build / Customer Autocomplete & Downtime SLA Analytics
+
+### v2.1.5
+- **Release Date**: June 4, 2026
+- **Prisma Changes**: No
+- **Status**: Stable / Verified Build / Strict Permissions & Dedicated Roles Settings Enforcements
+
+### v2.1.4
+- **Release Date**: June 4, 2026
+- **Prisma Changes**: No
+- **Status**: Stable / Verified Build / Extended Ticket & SLA Security Permissions
 
 ### v2.1.3
 - **Release Date**: June 4, 2026

@@ -68,9 +68,10 @@ export default function DashboardClient({
     return '-';
   }
 
-  function getDuration(start) {
+  function getDuration(start, end) {
     const startTime = new Date(start).getTime();
-    const diffMs = Date.now() - startTime;
+    const endTime = end ? new Date(end).getTime() : Date.now();
+    const diffMs = endTime - startTime;
     const hours = Math.floor(diffMs / 3600000);
     const mins = Math.floor((diffMs % 3600000) / 60000);
     if (hours > 24) {
@@ -201,13 +202,19 @@ export default function DashboardClient({
               )}
             </div>
           )}
-          <Link href="/tickets/new" className="primary-btn" style={{ 
-            background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', padding: '0.8rem 1.5rem', 
-            borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem',
-            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none'
-          }}>
-            <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span> Create Ticket
-          </Link>
+          {(() => {
+            const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
+            const canCreate = session?.user?.role === 'Admin' || isCS || session?.user?.permissions?.includes('create_tickets') || session?.user?.permissions?.includes('manage_tickets');
+            return canCreate && (
+              <Link href="/tickets/new" className="primary-btn" style={{ 
+                background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', padding: '0.8rem 1.5rem', 
+                borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none'
+              }}>
+                <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>+</span> Create Ticket
+              </Link>
+            );
+          })()}
         </div>
       </header>
 
@@ -597,7 +604,12 @@ export default function DashboardClient({
                                       </span>
                                     </div>
                                     <span style={{ fontSize: '0.7rem', color: 'var(--text-color)', flexShrink: 0 }}>
-                                      {getDuration(t.createdAt)}
+                                      {(() => {
+                                        const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
+                                        return hasDt && t.customData.startDowntime
+                                          ? `⏱️ ${getDuration(t.customData.startDowntime, t.customData.endDowntime)}`
+                                          : getDuration(t.createdAt);
+                                      })()}
                                     </span>
                                   </div>
                                 );
@@ -780,7 +792,18 @@ export default function DashboardClient({
                                     [{t.trackingId}]
                                   </Link>
                                   <span style={{ color: 'var(--heading-color)' }}>{t.title}</span>
-                                  <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>(Down: {getDuration(t.createdAt)})</span>
+                                  <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>
+                                    {(() => {
+                                      const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
+                                      return hasDt && t.customData.startDowntime ? (
+                                        <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                                          ⏱️ Down: {getDuration(t.customData.startDowntime, t.customData.endDowntime)}
+                                        </span>
+                                      ) : (
+                                        `(Down: ${getDuration(t.createdAt)})`
+                                      );
+                                    })()}
+                                  </span>
                                 </div>
                               ))}
                             </div>

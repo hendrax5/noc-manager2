@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
     });
 
     if (!article) return NextResponse.json({ error: 'Article not found' }, { status: 404 });
-    if (!article.isPublished && session.user.role !== 'Admin' && session.user.role !== 'Manager' && !session.user.permissions?.includes('manage_knowledge') && article.authorId !== session.user.id) {
+    if (!article.isPublished && session.user.role !== 'Admin' && !session.user.permissions?.includes('manage_knowledge') && article.authorId !== session.user.id) {
        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -39,7 +39,7 @@ export async function PATCH(request, { params }) {
     if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     // Only Author, Manager, Admin, or user with manage_knowledge can edit
-    if (session.user.role !== 'Admin' && session.user.role !== 'Manager' && !session.user.permissions?.includes('manage_knowledge') && existing.authorId !== session.user.id) {
+    if (session.user.role !== 'Admin' && !session.user.permissions?.includes('manage_knowledge') && existing.authorId !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -64,7 +64,7 @@ export async function PATCH(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || (session.user.role !== 'Admin' && session.user.role !== 'Manager' && !session.user.permissions?.includes('manage_knowledge'))) {
+    if (!session || (session.user.role !== 'Admin' && !session.user.permissions?.includes('manage_knowledge'))) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

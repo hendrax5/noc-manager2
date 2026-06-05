@@ -14,7 +14,7 @@ export default function KnowledgeClient({ session, initialCategories }) {
   const [newCatIcon, setNewCatIcon] = useState('📁');
   const [isSubmittingCat, setIsSubmittingCat] = useState(false);
 
-  const isAdmin = session?.user?.role === 'Admin' || session?.user?.role === 'Manager' || session?.user?.permissions?.includes('manage_knowledge');
+  const isAdmin = session?.user?.role === 'Admin' || session?.user?.permissions?.includes('manage_knowledge');
 
   const fetchArticles = async (categoryId = null, query = '') => {
     setIsLoading(true);

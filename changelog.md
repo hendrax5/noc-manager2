@@ -12,6 +12,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **PIC Diligence & Loyalty Analysis**: System-generated score (0-100) and qualitative evaluation of PIC contributions based on ticket activities, comment detail length, touch frequency, and tech/courtesy keywords.
 - **UI/UX Scroll-Experience Upgrade**: Added premium thin rounded scrollbars that adapt dynamically to Dark/Light themes, smooth scrolling, overscroll confinement (`overscroll-behavior: contain`), and touch momentum for mobile/tablet devices.
 
+## [2.1.7] - 2026-06-04
+
+### Added
+- **Master Ticket Permission Extensions**: Enhanced `manage_tickets` to allow master administrators and CS to edit `Customer / Reporter Name` and edit *all* comments/replies inside any ticket.
+- **Auto-Grow & Plain-Text Textarea Editor**: Textarea editor for ticket description now automatically adjusts its height according to content length (auto-grow) and automatically cleans legacy HTML tags into clean plain-text line breaks when entering edit mode.
+- **Manual Downtime LiveOps Override**: Integrated manual downtime parameters (`startDowntime` and `endDowntime` / `downtimeMinutes`) to override standard creation time and age durations on the Live Operations Board, main dashboard workload grids, and CSV exports (with orange `⏱️` icons).
+
+### Removed
+- **Impacting Services (Optional Link)**: Removed the deprecated Impacting Services dropdown and badges from the ticket creation form.
+
+## [2.1.6] - 2026-06-04
+
+### Added
+- **Autocomplete Customer Search**: Replaced manual "Customer / Reporter Name" input with `AsyncSearchSelect` connected to the customer database search endpoint `/api/assets/customers/search`, while still allowing manual text overrides for new customers.
+- **Outage Downtime Tracking**: Added "Catat Waktu Outage / Downtime" checkbox to ticket creation and edit forms. This prompts for start and end datetime-local inputs and automatically calculates downtime duration in minutes, storing it safely in the `customData` JSON field.
+- **Monthly SLA & Downtime Analytics**: Added a new dashboard card to the Service Detail page (`ServiceDetailClient.js`) that calculates total monthly tickets, total accumulated downtime, and availability SLA percentages dynamically for the selected month (with green/yellow/red SLA status indicators).
+
+## [2.1.5] - 2026-06-04
+
+### Added
+- **Permission Option `modify_tickets`**: Integrated `modify_tickets` capability check as a togglable option in the Access Settings checklist, mapping to ticket editing, status transitions, and assignment actions.
+- **Permission Option `manage_departments`**: Isolated sub-department creations, updates, and routing preferences behind a dedicated `manage_departments` permission.
+- **Permission Option `view_live_ops`**: Added `view_live_ops` to control access to real-time operations board and dashboard metrics.
+
+### Security
+- **Strict Role API Gating**: Removed the `manage_users` fallback check from Security Roles APIs and UI components. Role creation/modification is now strictly constrained to users with `manage_roles` permission or `Admin` role.
+- **Removed Hardcoded Role Overrides**: Eliminated hardcoded `role === 'Manager'` checks across all modules (Assets, Knowledge Base, Meetings, Schedules, Reports, Dashboard, and Tickets) to ensure the checklist permissions are strictly respected.
+- **Access Manager Tab Gating**: Secured the team settings tabs to only show Users, Roles, or Departments lists to users with corresponding permissions.
+
+## [2.1.4] - 2026-06-04
+
+### Added
+- **Master Ticket Management Permission (`manage_tickets`)**: Introduced a master permission allowing users to bypass granular checks and perform all ticket operations (view, create, edit, assign, change category, modify SLA, and delete tickets).
+- **Ticket Creation Permission (`create_tickets`)**: Restressed ticket creation capabilities to users with `create_tickets` or `manage_tickets` permissions, and conditionally rendered "+ Create Ticket" button on tickets dashboard and dashboard pages.
+- **SLA Timer Management Permission (`manage_sla`)**: Restricted the capability of checking/unchecking SLA timers and changing follow-up minutes on the ticket edit form and ticket replies.
+- **Internal notes visibility and creation control (`view_internal_notes`, `manage_ticket_notes`)**: Restricted reading and writing of internal activity notes to authorized roles only.
+
 ## [2.1.3] - 2026-06-04
 
 ### Added

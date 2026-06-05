@@ -40,7 +40,7 @@ export async function POST(req, { params }) {
         newStatus = 'Finish';
         transitionReason = "Marked as Finished, awaiting CS validation";
       } else {
-        const isStaffReply = (userId === ticket.assigneeId) || session.user.role === 'Admin' || session.user.role === 'Manager' || session.user.department?.includes('CS');
+        const isStaffReply = (userId === ticket.assigneeId) || session.user.role === 'Admin' || session.user.permissions?.includes('manage_tickets') || session.user.permissions?.includes('change_ticket_status') || session.user.permissions?.includes('view_all_tickets') || session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
         if (isStaffReply) {
           newStatus = 'Replied';
           transitionReason = "Auto-shifted to Replied (Awaiting User)";

@@ -24,7 +24,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isAdmin = session?.user?.role === 'Admin' || session?.user?.role === 'Manager' || session?.user?.permissions?.includes('manage_assets');
+  const isAdmin = session?.user?.role === 'Admin' || session?.user?.permissions?.includes('manage_assets');
 
   return (
     <main className="container">

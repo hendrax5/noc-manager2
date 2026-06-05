@@ -19,31 +19,58 @@ export default function TicketForm({ departments, categories, users = [], custom
     slaTimerMins: 15
   });
   const [file, setFile] = useState(null);
+  const [hasDowntime, setHasDowntime] = useState(false);
+  const [downtimeStart, setDowntimeStart] = useState("");
+  const [downtimeEnd, setDowntimeEnd] = useState("");
+
+  const getDowntimeDuration = () => {
+    if (!downtimeStart || !downtimeEnd) return null;
+    const start = new Date(downtimeStart);
+    const end = new Date(downtimeEnd);
+    const diffMs = end - start;
+    if (diffMs < 0) return { error: "Waktu selesai tidak boleh sebelum waktu mulai!" };
+    const diffMins = Math.floor(diffMs / 60000);
+    const hrs = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return {
+      minutes: diffMins,
+      text: `${hrs > 0 ? `${hrs} jam ` : ''}${mins} menit (${diffMins} menit)`
+    };
+  };
+
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
-  const [selectedServiceIds, setSelectedServiceIds] = useState([]);
-  const [serviceSearchTerm, setServiceSearchTerm] = useState("");
-  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
-  const serviceWrapperRef = useRef(null);
 
-  useEffect(() => {
-    function handleClickOutsideService(event) {
-      if (serviceWrapperRef.current && !serviceWrapperRef.current.contains(event.target)) {
-        setIsServiceDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutsideService);
-    return () => document.removeEventListener("mousedown", handleClickOutsideService);
-  }, []);
+  const [customerSearchTerm, setCustomerSearchTerm] = useState(customDataState["Customer Name"] || '');
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const customerWrapperRef = useRef(null);
 
-  const filteredServices = (services || []).filter(s => {
-    const searchLower = serviceSearchTerm.toLowerCase();
-    const customerName = s.customer?.name?.toLowerCase() || "";
-    const serviceName = s.name?.toLowerCase() || "";
-    const serviceId = String(s.id);
-    return customerName.includes(searchLower) || serviceName.includes(searchLower) || serviceId.includes(searchLower);
+  const matchingCustomerServices = (services || []).filter(s => {
+    const term = customerSearchTerm.toLowerCase();
+    if (!term) return false;
+    const custName = s.customer?.name?.toLowerCase() || "";
+    const srvName = s.name?.toLowerCase() || "";
+    const srvId = String(s.id);
+    return custName.includes(term) || srvName.includes(term) || srvId.includes(term);
   });
 
-  const unselectedServices = filteredServices.filter(s => !selectedServiceIds.includes(s.id));
+  const handleSelectCustomerService = (s) => {
+    setCustomerSearchTerm(s.customer?.name || "");
+    setCustomDataState({
+      ...customDataState,
+      "Customer Name": s.customer?.name || ""
+    });
+    setIsCustomerDropdownOpen(false);
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (customerWrapperRef.current && !customerWrapperRef.current.contains(event.target)) {
+        setIsCustomerDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [customerSearchTerm, customDataState]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,10 +94,19 @@ export default function TicketForm({ departments, categories, users = [], custom
       }
     }
 
+    const duration = hasDowntime ? getDowntimeDuration() : null;
+    const finalCustomData = {
+      ...customDataState,
+      hasDowntime: hasDowntime,
+      startDowntime: hasDowntime ? downtimeStart : null,
+      endDowntime: hasDowntime ? downtimeEnd : null,
+      downtimeMinutes: (hasDowntime && duration && !duration.error) ? duration.minutes : 0
+    };
+
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...formData, customData: customDataState, attachmentUrl, attachmentName, serviceIds: selectedServiceIds })
+      body: JSON.stringify({ ...formData, customData: finalCustomData, attachmentUrl, attachmentName, serviceIds: [] })
     });
 
     if (res.ok) {
@@ -165,15 +201,66 @@ export default function TicketForm({ departments, categories, users = [], custom
         </div>
       )}
 
-      <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+      <div className="form-group" style={{ gridColumn: '1 / -1', position: 'relative' }} ref={customerWrapperRef}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Customer / Reporter Name</label>
         <input 
           type="text" 
-          placeholder="e.g. Yayasan WFF Indonesia or BPS Pusat..."
-          value={customDataState["Customer Name"] || ''} 
-          onChange={e => setCustomDataState({...customDataState, "Customer Name": e.target.value})} 
-          style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '1rem' }}
+          placeholder="Cari dari Telecom Asset Inventory (e.g. Yayasan WFF) atau ketik manual..."
+          value={customerSearchTerm}
+          onChange={e => {
+            const val = e.target.value;
+            setCustomerSearchTerm(val);
+            setCustomDataState({...customDataState, "Customer Name": val});
+            setIsCustomerDropdownOpen(true);
+          }}
+          onFocus={() => setIsCustomerDropdownOpen(true)}
+          style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '1rem', background: 'var(--input-bg)', color: 'var(--input-text)' }}
         />
+        
+        {isCustomerDropdownOpen && customerSearchTerm.length >= 2 && (
+          <div 
+            style={{ 
+              position: 'absolute', 
+              top: '100%', 
+              left: 0, 
+              right: 0, 
+              marginTop: '4px', 
+              background: 'var(--card-bg, white)', 
+              border: '1px solid var(--border-color, #cbd5e1)', 
+              borderRadius: '4px', 
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', 
+              zIndex: 99, 
+              maxHeight: '200px', 
+              overflowY: 'auto' 
+            }}
+          >
+            {matchingCustomerServices.length > 0 ? (
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {matchingCustomerServices.map(s => (
+                  <li 
+                    key={s.id}
+                    onClick={() => handleSelectCustomerService(s)}
+                    style={{ 
+                      padding: '0.75rem', 
+                      cursor: 'pointer', 
+                      borderBottom: '1px solid var(--border-color, #f1f5f9)', 
+                      fontSize: '0.9rem', 
+                      color: 'var(--text-color, #334155)'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>(ID: {s.id})</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>
+                Tidak ada kecocokan di inventory. Ketikan Anda akan disimpan sebagai input manual.
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="form-group" style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', background: '#f1f5f9', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
@@ -271,131 +358,56 @@ export default function TicketForm({ departments, categories, users = [], custom
         </p>
       </div>
 
-      <div className="form-group" style={{ gridColumn: '1 / -1' }} ref={serviceWrapperRef}>
-        <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Impacting Services (Optional Link)</label>
+
+
+      {/* Downtime Tracking Block */}
+      <div className="form-group" style={{ gridColumn: '1 / -1', background: 'var(--hover-bg, #f8fafc)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color, #e2e8f0)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b' }}>
+          <input 
+            type="checkbox" 
+            checked={hasDowntime} 
+            onChange={e => setHasDowntime(e.target.checked)} 
+            style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
+          />
+          🚨 Catat Waktu Outage / Downtime (Trouble Ticket)
+        </label>
         
-        {/* Selected Services Badges */}
-        {selectedServiceIds.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            {selectedServiceIds.map(id => {
-              const s = services?.find(srv => srv.id === id);
-              if (!s) return null;
-              return (
-                <span 
-                  key={s.id} 
-                  style={{ 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
-                    gap: '0.35rem', 
-                    background: '#e0f2fe', 
-                    color: '#0369a1', 
-                    padding: '0.35rem 0.75rem', 
-                    borderRadius: '9999px', 
-                    fontSize: '0.85rem', 
-                    fontWeight: 'bold',
-                    border: '1px solid #bae6fd' 
-                  }}
-                >
-                  <span>{s.customer?.name}: {s.name} (ID: {s.id})</span>
-                  <button 
-                    type="button" 
-                    onClick={() => setSelectedServiceIds(selectedServiceIds.filter(x => x !== s.id))}
-                    style={{ 
-                      background: 'none', 
-                      border: 'none', 
-                      color: '#0284c7', 
-                      cursor: 'pointer', 
-                      fontSize: '1rem', 
-                      lineHeight: 1, 
-                      padding: 0,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '16px',
-                      height: '16px',
-                      borderRadius: '50%'
-                    }}
-                  >
-                    ✕
-                  </button>
-                </span>
-              );
-            })}
+        {hasDowntime && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginTop: '0.5rem' }}>
+            <div>
+              <label style={{ display: 'block', color: '#475569', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Mulai Downtime</label>
+              <input 
+                type="datetime-local" 
+                value={downtimeStart} 
+                onChange={e => setDowntimeStart(e.target.value)} 
+                required={hasDowntime}
+                style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', color: '#475569', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Selesai Downtime</label>
+              <input 
+                type="datetime-local" 
+                value={downtimeEnd} 
+                onChange={e => setDowntimeEnd(e.target.value)} 
+                required={hasDowntime}
+                style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+              />
+            </div>
+            
+            {downtimeStart && downtimeEnd && (
+              <div style={{ gridColumn: '1 / -1', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.9rem', color: '#166534', fontWeight: 'bold' }}>
+                {(() => {
+                  const duration = getDowntimeDuration();
+                  if (duration?.error) {
+                    return <span style={{ color: '#ef4444' }}>⚠️ {duration.error}</span>;
+                  }
+                  return <span>⏱️ Total Durasi Downtime: {duration?.text}</span>;
+                })()}
+              </div>
+            )}
           </div>
         )}
-
-        {/* Search Input & Dropdown */}
-        <div style={{ position: 'relative' }}>
-          <input 
-            type="text"
-            placeholder="Type customer or service name to link services..."
-            value={serviceSearchTerm}
-            onChange={e => {
-              setServiceSearchTerm(e.target.value);
-              setIsServiceDropdownOpen(true);
-            }}
-            onFocus={() => setIsServiceDropdownOpen(true)}
-            style={{ 
-              width: '100%', 
-              padding: '0.75rem', 
-              border: '1px solid var(--border-color, #cbd5e1)', 
-              borderRadius: '4px', 
-              background: 'var(--input-bg, white)', 
-              color: 'var(--input-text, #0f172a)',
-              outline: 'none',
-              fontSize: '0.95rem'
-            }}
-          />
-          
-          {isServiceDropdownOpen && (
-            <div 
-              style={{ 
-                position: 'absolute', 
-                top: '100%', 
-                left: 0, 
-                right: 0, 
-                marginTop: '4px', 
-                background: 'var(--card-bg, white)', 
-                border: '1px solid var(--border-color, #cbd5e1)', 
-                borderRadius: '4px', 
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', 
-                zIndex: 99, 
-                maxHeight: '200px', 
-                overflowY: 'auto' 
-              }}
-            >
-              {unselectedServices.length > 0 ? (
-                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                  {unselectedServices.map(s => (
-                    <li 
-                      key={s.id}
-                      onClick={() => {
-                        setSelectedServiceIds([...selectedServiceIds, s.id]);
-                        setServiceSearchTerm("");
-                        setIsServiceDropdownOpen(false);
-                      }}
-                      style={{ 
-                        padding: '0.75rem', 
-                        cursor: 'pointer', 
-                        borderBottom: '1px solid var(--border-color, #f1f5f9)', 
-                        fontSize: '0.9rem', 
-                        color: 'var(--text-color, #334155)'
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>(ID: {s.id})</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>
-                  {services && services.length > 0 ? "No matching unlinked services" : "No active services found in Inventory."}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>

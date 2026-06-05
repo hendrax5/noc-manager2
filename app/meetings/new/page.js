@@ -8,7 +8,7 @@ export default async function NewMeetingPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
 
-  const hasPermission = session.user.permissions?.includes('manage_meetings') || session.user.role === 'Admin' || session.user.role === 'Manager';
+  const hasPermission = session.user.permissions?.includes('manage_meetings') || session.user.role === 'Admin';
   if (!hasPermission) redirect('/meetings');
 
   const users = await prisma.user.findMany({

@@ -16,7 +16,15 @@ const ALL_PERMISSIONS = [
   "manage_assets",
   "manage_meetings",
   "edit_own_tickets",
-  "edit_other_tickets"
+  "edit_other_tickets",
+  "manage_tickets",
+  "create_tickets",
+  "manage_sla",
+  "view_internal_notes",
+  "manage_ticket_notes",
+  "modify_tickets",
+  "manage_departments",
+  "view_live_ops"
 ];
 
 const MANAGER_PERMISSIONS = [
@@ -30,7 +38,15 @@ const MANAGER_PERMISSIONS = [
   "manage_assets",
   "manage_meetings",
   "edit_own_tickets",
-  "edit_other_tickets"
+  "edit_other_tickets",
+  "manage_tickets",
+  "create_tickets",
+  "manage_sla",
+  "view_internal_notes",
+  "manage_ticket_notes",
+  "modify_tickets",
+  "manage_departments",
+  "view_live_ops"
 ];
 
 async function main() {

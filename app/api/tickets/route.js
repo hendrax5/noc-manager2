@@ -16,8 +16,16 @@ function generateTrackingId() {
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
-    const userId = session?.user?.id ? parseInt(session.user.id) : null;
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    
+    const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
+    const canCreate = session.user.role === 'Admin' || isCS || session.user.permissions?.includes('create_tickets') || session.user.permissions?.includes('manage_tickets');
+    
+    if (!canCreate) {
+      return NextResponse.json({ error: "Forbidden: You do not have permission to create tickets." }, { status: 403 });
+    }
 
+    const userId = parseInt(session.user.id);
     const body = await req.json();
     const { title, description, priority, departmentId, assigneeId, jobCategoryId, customData, attachmentUrl, attachmentName, enableSla, slaTimerMins, serviceIds } = body;
 

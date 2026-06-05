@@ -28,7 +28,7 @@ export async function GET(request) {
 
   const scopeParam = searchParams.get('scope') || '';
 
-  const isAdminOrManager = session.user.role === 'Admin' || session.user.role === 'Manager' || session.user.permissions?.includes('view_reports') || session.user.permissions?.includes('view_all_tickets');
+  const isAdminOrManager = session.user.role === 'Admin' || session.user.permissions?.includes('view_reports') || session.user.permissions?.includes('view_all_tickets') || session.user.permissions?.includes('view_live_ops');
   const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
   const hasGlobalAccess = isAdminOrManager || isCS || session.user.permissions?.includes('view_all_tickets');
 

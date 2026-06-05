@@ -55,18 +55,21 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
           {(session.user?.permissions?.includes('view_reports') || 
             session.user?.permissions?.includes('manage_users') || 
             session.user?.permissions?.includes('manage_roles') || 
+            session.user?.permissions?.includes('manage_departments') || 
             session.user?.permissions?.includes('manage_settings') ||
-            session.user?.role === 'Admin' || 
-            session.user?.role === 'Manager') && (
+            session.user?.role === 'Admin') && (
             <div className="nav-dropdown">
               <button className={`nav-dropdown-btn ${(pathname.startsWith("/reports") || pathname.startsWith("/team") || pathname.startsWith("/settings")) ? "active" : ""}`}>
                 Administration ▾
               </button>
               <div className="nav-dropdown-content">
-                {(session.user?.permissions?.includes('view_reports') || session.user?.role === 'Admin' || session.user?.role === 'Manager') && (
+                {(session.user?.permissions?.includes('view_reports') || session.user?.role === 'Admin') && (
                   <Link href="/reports" className={pathname.startsWith("/reports") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>📊 Reports & Analytics</Link>
                 )}
-                {(session.user?.permissions?.includes('manage_users') || session.user?.permissions?.includes('manage_roles') || session.user?.role === 'Admin') && (
+                {(session.user?.permissions?.includes('manage_users') || 
+                  session.user?.permissions?.includes('manage_roles') || 
+                  session.user?.permissions?.includes('manage_departments') || 
+                  session.user?.role === 'Admin') && (
                   <Link href="/team" className={pathname === "/team" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>👥 Team Management</Link>
                 )}
                 {(session.user?.permissions?.includes('manage_settings') || session.user?.role === 'Admin') && (

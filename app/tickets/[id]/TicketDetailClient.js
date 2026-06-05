@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
 
@@ -18,6 +18,20 @@ function linkify(text) {
   return text.replace(urlRegex, function(url) {
     return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: underline; word-break: break-all;">${url}</a>`;
   });
+}
+
+function htmlToPlainText(html) {
+  if (!html) return "";
+  let text = html.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<\/p>/gi, "\n");
+  text = text.replace(/<p\b[^>]*>/gi, "");
+  text = text.replace(/&nbsp;/gi, " ");
+  text = text.replace(/&amp;/gi, "&");
+  text = text.replace(/&lt;/gi, "<");
+  text = text.replace(/&gt;/gi, ">");
+  text = text.replace(/&quot;/gi, '"');
+  text = text.replace(/<\/?[^>]+(>|$)/g, "");
+  return text;
 }
 
 function SearchableSelect({ options = [], value, onChange, disabled, placeholder }) {
@@ -68,7 +82,7 @@ function SearchableSelect({ options = [], value, onChange, disabled, placeholder
   );
 }
 
-export default function TicketDetailClient({ ticket, departments, users, jobCategories, customFields, canModifyTicket, currentUser, serviceTemplates }) {
+export default function TicketDetailClient({ ticket, departments, users, jobCategories, customFields, canModifyTicket, currentUser, serviceTemplates, services = [] }) {
   const router = useRouter();
   
   const currentUserObj = currentUser || {};
@@ -77,7 +91,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const isCreator = ticket.historyLogs && ticket.historyLogs.length > 0 && ticket.historyLogs[ticket.historyLogs.length - 1].actorId === currentUserId;
   
   const isCS = currentUserObj.department?.includes('CS') || currentUserObj.department?.toLowerCase().includes('customer');
-  const isAuthorized = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager' || isCS;
+  const isAuthorized = currentUserObj.role === 'Admin' || isCS || currentUserObj.permissions?.includes('manage_tickets');
 
   const canChangeStatus = isAuthorized || currentUserObj.permissions?.includes('change_ticket_status') || currentUserObj.permissions?.includes('modify_tickets');
   const canAssign = isAuthorized || currentUserObj.permissions?.includes('assign_tickets') || currentUserObj.permissions?.includes('modify_tickets');
@@ -91,9 +105,23 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                          (isCreator && hasEditOwn) ||
                          (!isCreator && hasEditOther);
 
+  const canManageSla = isAuthorized || currentUserObj.permissions?.includes('manage_sla') || currentUserObj.permissions?.includes('manage_tickets');
+  const canViewNotes = isAuthorized || currentUserObj.permissions?.includes('view_internal_notes') || currentUserObj.permissions?.includes('manage_tickets');
+  const canWriteNotes = isAuthorized || currentUserObj.permissions?.includes('manage_ticket_notes') || currentUserObj.permissions?.includes('manage_tickets');
+
   const [editingTicket, setEditingTicket] = useState(false);
   const [editTitle, setEditTitle] = useState(ticket.title);
-  const [editDesc, setEditDesc] = useState(ticket.description);
+  const [editDesc, setEditDesc] = useState(htmlToPlainText(ticket.description));
+  
+  const textareaRef = useRef(null);
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  };
+
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingCommentText, setEditingCommentText] = useState("");
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
@@ -125,6 +153,52 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const [mounted, setMounted] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
+  const [customerSearchTerm, setCustomerSearchTerm] = useState(formData.customData?.["Customer Name"] || '');
+  const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const customerWrapperRef = useRef(null);
+
+  const matchingCustomerServices = (services || []).filter(s => {
+    const term = customerSearchTerm.toLowerCase();
+    if (!term) return false;
+    const custName = s.customer?.name?.toLowerCase() || "";
+    const srvName = s.name?.toLowerCase() || "";
+    const srvId = String(s.id);
+    return custName.includes(term) || srvName.includes(term) || srvId.includes(term);
+  });
+
+  const handleSelectCustomerService = (s) => {
+    setCustomerSearchTerm(s.customer?.name || "");
+    setFormData({
+      ...formData,
+      customData: {
+        ...(formData.customData || {}),
+        "Customer Name": s.customer?.name || ""
+      }
+    });
+    setIsCustomerDropdownOpen(false);
+  };
+
+  const getDowntimeDuration = (startDt, endDt) => {
+    if (!startDt || !endDt) return null;
+    const start = new Date(startDt);
+    const end = new Date(endDt);
+    const diffMs = end - start;
+    if (diffMs < 0) return { error: "Waktu selesai tidak boleh sebelum waktu mulai!" };
+    const diffMins = Math.floor(diffMs / 60000);
+    const hrs = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return {
+      minutes: diffMins,
+      text: `${hrs > 0 ? `${hrs} jam ` : ''}${mins} menit (${diffMins} menit)`
+    };
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return d.toLocaleString('id-ID', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  };
+
   // Activity Notes State (Phase 34)
   const [notes, setNotes] = useState([]);
   const [noteContent, setNoteContent] = useState("");
@@ -140,11 +214,48 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       .then(r => r.ok ? r.json() : [])
       .then(data => setNotes(data))
       .catch(() => {});
-    if (ticket.enableSla && ticket.status !== 'Resolved' && ticket.status !== 'Waiting Reply') {
-      const interval = setInterval(() => setNow(Date.now()), 10000); // 10s tick
-      return () => clearInterval(interval);
+
+    // Sync state values with newly loaded server-side props
+    setEditTitle(ticket.title);
+    setEditDesc(htmlToPlainText(ticket.description));
+    setFormData({
+      title: ticket.title,
+      description: ticket.description,
+      status: ticket.status,
+      priority: ticket.priority,
+      departmentId: ticket.departmentId,
+      assigneeId: ticket.assigneeId || "",
+      jobCategoryId: ticket.jobCategoryId || "",
+      customData: ticket.customData || {},
+      enableSla: ticket.enableSla || false,
+      slaTimerMins: ticket.slaTimerMins || 15
+    });
+    setCustomerSearchTerm(ticket.customData?.["Customer Name"] || '');
+
+    function handleClickOutside(event) {
+      if (customerWrapperRef.current && !customerWrapperRef.current.contains(event.target)) {
+        setIsCustomerDropdownOpen(false);
+      }
     }
+    document.addEventListener("mousedown", handleClickOutside);
+
+    let interval;
+    if (ticket.enableSla && ticket.status !== 'Resolved' && ticket.status !== 'Waiting Reply') {
+      interval = setInterval(() => setNow(Date.now()), 10000); // 10s tick
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      if (interval) clearInterval(interval);
+    };
   }, [ticket]);
+
+  useEffect(() => {
+    if (editingTicket) {
+      const timer = setTimeout(adjustTextareaHeight, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [editingTicket, editDesc]);
 
   const triggerAutoSave = async (key, newValue) => {
     if ((key === 'status' || key === 'priority') && !canChangeStatus) return;
@@ -264,7 +375,15 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
         
         <div style={{ background: 'var(--card-bg)', padding: '2rem', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           {editingTicket ? (
-            <input value={editTitle} onChange={e => setEditTitle(e.target.value)} style={{ width: '100%', fontSize: '1.6rem', fontWeight: 'bold', padding: '0.5rem', marginBottom: '1rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', color: 'var(--text-color)', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Subjek / Judul Tiket:</label>
+              <input 
+                value={editTitle} 
+                onChange={e => setEditTitle(e.target.value)} 
+                placeholder="Masukkan subjek/judul tiket..."
+                style={{ width: '100%', fontSize: '1.25rem', fontWeight: 'bold', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)' }} 
+              />
+            </div>
           ) : (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
               <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--heading-color)' }}>
@@ -319,6 +438,11 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f8fafc', padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>
                   👤 <strong>{extractedName}</strong>
                 </span>
+                {ticket.customData && ticket.customData.hasDowntime && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#fef3c7', padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #fde68a', color: '#92400e', fontWeight: 'bold' }}>
+                    ⏱️ Downtime Outage: {formatDate(ticket.customData.startDowntime)} s/d {ticket.customData.endDowntime ? formatDate(ticket.customData.endDowntime) : 'Belum Selesai'} ({ticket.customData.downtimeMinutes || 0} menit)
+                  </span>
+                )}
                 {ticket.customData && ticket.customData["Order Origin"] && (
                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#fef2f2', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid #fecaca', color: '#991b1b', fontSize: '0.8rem', fontWeight: 'bold' }} title="Order Origin (Selling Company)">
                      🏢 {ticket.customData["Order Origin"]}
@@ -339,7 +463,196 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             <p style={{ margin: '0 0 1rem 0' }}>Dear NOC,</p>
             {editingTicket ? (
               <div>
-                <textarea rows="8" value={editDesc} onChange={e => setEditDesc(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: 'inherit', marginBottom: '1rem' }} />
+                {/* Edit Customer / Reporter Name */}
+                <div style={{ marginBottom: '1rem', position: 'relative' }} ref={customerWrapperRef}>
+                  <label style={{ display: 'block', color: '#64748b', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Customer / Reporter Name:</label>
+                  {isAuthorized ? (
+                    <>
+                      <input 
+                        type="text" 
+                        placeholder="Cari dari Telecom Asset Inventory atau ketik manual..."
+                        value={customerSearchTerm}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setCustomerSearchTerm(val);
+                          setFormData({
+                            ...formData,
+                            customData: {
+                              ...(formData.customData || {}),
+                              "Customer Name": val
+                            }
+                          });
+                          setIsCustomerDropdownOpen(true);
+                        }}
+                        onFocus={() => setIsCustomerDropdownOpen(true)}
+                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                      />
+                      
+                      {isCustomerDropdownOpen && customerSearchTerm.length >= 2 && (
+                        <div 
+                          style={{ 
+                            position: 'absolute', 
+                            top: '100%', 
+                            left: 0, 
+                            right: 0, 
+                            marginTop: '4px', 
+                            background: 'var(--card-bg, white)', 
+                            border: '1px solid var(--border-color, #cbd5e1)', 
+                            borderRadius: '4px', 
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', 
+                            zIndex: 99, 
+                            maxHeight: '200px', 
+                            overflowY: 'auto' 
+                          }}
+                        >
+                          {matchingCustomerServices.length > 0 ? (
+                            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                              {matchingCustomerServices.map(s => (
+                                <li 
+                                  key={s.id}
+                                  onClick={() => handleSelectCustomerService(s)}
+                                  style={{ 
+                                    padding: '0.75rem', 
+                                    cursor: 'pointer', 
+                                    borderBottom: '1px solid var(--border-color, #f1f5f9)', 
+                                    fontSize: '0.9rem', 
+                                    color: 'var(--text-color, #334155)'
+                                  }}
+                                  onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)'}
+                                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>(ID: {s.id})</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>
+                              Tidak ada kecocokan di inventory. Ketikan Anda akan disimpan sebagai input manual.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <input 
+                      type="text" 
+                      value={customerSearchTerm} 
+                      disabled 
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--hover-bg)', color: 'var(--text-color)', cursor: 'not-allowed' }} 
+                    />
+                  )}
+                </div>
+
+                {/* Edit Downtime Outage */}
+                <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={formData.customData?.hasDowntime || false} 
+                      onChange={e => {
+                        const isChecked = e.target.checked;
+                        setFormData({
+                          ...formData,
+                          customData: {
+                            ...(formData.customData || {}),
+                            hasDowntime: isChecked,
+                            startDowntime: isChecked ? (formData.customData?.startDowntime || '') : null,
+                            endDowntime: isChecked ? (formData.customData?.endDowntime || '') : null,
+                            downtimeMinutes: isChecked ? (formData.customData?.downtimeMinutes || 0) : 0
+                          }
+                        });
+                      }}
+                      style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
+                    />
+                    🚨 Catat Waktu Outage / Downtime (Trouble Ticket)
+                  </label>
+                  
+                  {formData.customData?.hasDowntime && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>Mulai Downtime</label>
+                        <input 
+                          type="datetime-local" 
+                          value={formData.customData?.startDowntime || ''} 
+                          onChange={e => {
+                            const val = e.target.value;
+                            const endDt = formData.customData?.endDowntime || '';
+                            const duration = getDowntimeDuration(val, endDt);
+                            setFormData({
+                              ...formData,
+                              customData: {
+                                ...(formData.customData || {}),
+                                startDowntime: val,
+                                downtimeMinutes: (duration && !duration.error) ? duration.minutes : 0
+                              }
+                            });
+                          }} 
+                          style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>Selesai Downtime</label>
+                        <input 
+                          type="datetime-local" 
+                          value={formData.customData?.endDowntime || ''} 
+                          onChange={e => {
+                            const val = e.target.value;
+                            const startDt = formData.customData?.startDowntime || '';
+                            const duration = getDowntimeDuration(startDt, val);
+                            setFormData({
+                              ...formData,
+                              customData: {
+                                ...(formData.customData || {}),
+                                endDowntime: val,
+                                downtimeMinutes: (duration && !duration.error) ? duration.minutes : 0
+                              }
+                            });
+                          }} 
+                          style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                        />
+                      </div>
+                      
+                      {formData.customData?.startDowntime && formData.customData?.endDowntime && (
+                        <div style={{ gridColumn: '1 / -1', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.5rem 0.75rem', borderRadius: '4px', fontSize: '0.85rem', color: '#166534', fontWeight: 'bold' }}>
+                          {(() => {
+                            const duration = getDowntimeDuration(formData.customData.startDowntime, formData.customData.endDowntime);
+                            if (duration?.error) {
+                              return <span style={{ color: '#ef4444' }}>⚠️ {duration.error}</span>;
+                            }
+                            return <span>⏱️ Total Durasi Downtime: {duration?.text}</span>;
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', color: 'var(--text-color)', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Deskripsi Tiket:</label>
+                  <textarea 
+                    ref={textareaRef}
+                    value={editDesc} 
+                    onChange={e => {
+                      setEditDesc(e.target.value);
+                      adjustTextareaHeight();
+                    }} 
+                    placeholder="Masukkan deskripsi detail kendala..."
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.75rem', 
+                      borderRadius: '6px', 
+                      border: '1px solid var(--border-color)', 
+                      background: 'var(--input-bg)', 
+                      color: 'var(--input-text)', 
+                      fontFamily: 'inherit', 
+                      overflowY: 'hidden',
+                      resize: 'none',
+                      minHeight: '200px',
+                      lineHeight: '1.6',
+                      fontSize: '0.95rem'
+                    }} 
+                  />
+                </div>
                 
                 {customFields?.length > 0 && (
                   <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
@@ -392,6 +705,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                       type="checkbox" 
                       checked={formData.enableSla} 
                       onChange={e => setFormData({ ...formData, enableSla: e.target.checked })} 
+                      disabled={!canManageSla}
                       style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
                     />
                     Enable SLA Enforcement Timer for this ticket
@@ -403,6 +717,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                         value={formData.slaTimerMins} 
                         onChange={e => setFormData({ ...formData, slaTimerMins: parseInt(e.target.value) || 15 })} 
                         min="5" max="1440" 
+                        disabled={!canManageSla}
                         style={{ width: '100px', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
                       />
                       <span style={{ fontSize: '0.85rem', color: '#b45309' }}>Minutes (frequency of CS follow-up pings)</span>
@@ -459,7 +774,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                 <span style={{ marginLeft: '0.5rem' }}>&gt; <span>{mounted ? new Date(c.createdAt).toLocaleString('en-CA') : '...'}</span></span>
               </span>
               <span>
-                {c.authorId === currentUserId && (
+                {(c.authorId === currentUserId || isAuthorized) && (
                   <span onClick={() => { setEditingCommentId(c.id); setEditingCommentText(c.text); }} style={{ color: '#0ea5e9', cursor: 'pointer', fontWeight: 'bold' }}>Edit</span>
                 )}
               </span>
@@ -564,29 +879,31 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               ></textarea>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b' }}>
-                <input 
-                  type="checkbox" 
-                  checked={replyEnableSla} 
-                  onChange={e => setReplyEnableSla(e.target.checked)} 
-                  style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
-                />
-                Reactivate / Modify External SLA Timer
-              </label>
-              {replyEnableSla && (
-                <div style={{ paddingLeft: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {canManageSla && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b' }}>
                   <input 
-                    type="number" 
-                    value={replySlaMins} 
-                    onChange={e => setReplySlaMins(parseInt(e.target.value))} 
-                    min="5" max="1440" 
-                    style={{ padding: '0.5rem', width: '80px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                    type="checkbox" 
+                    checked={replyEnableSla} 
+                    onChange={e => setReplyEnableSla(e.target.checked)} 
+                    style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer' }}
                   />
-                  <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Minutes (Ticket Original: {ticket?.slaTimerMins || 15}m)</span>
-                </div>
-              )}
-            </div>
+                  Reactivate / Modify External SLA Timer
+                </label>
+                {replyEnableSla && (
+                  <div style={{ paddingLeft: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <input 
+                      type="number" 
+                      value={replySlaMins} 
+                      onChange={e => setReplySlaMins(parseInt(e.target.value))} 
+                      min="5" max="1440" 
+                      style={{ padding: '0.5rem', width: '80px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                    />
+                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Minutes (Ticket Original: {ticket?.slaTimerMins || 15}m)</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--input-bg)', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
               <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-color)', minWidth: '100px' }}>Attachment:</label>
@@ -779,103 +1096,107 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           )}
 
         {/* Activity Notes Panel (Phase 34) */}
-        <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: notesExpanded ? '1rem' : '0', cursor: 'pointer' }} onClick={() => setNotesExpanded(!notesExpanded)}>
-            <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontSize: '1rem' }}>📝</span> Activity Notes
-              <span style={{ background: 'var(--hover-bg)', color: 'var(--text-color)', padding: '0.1rem 0.5rem', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 'bold' }}>{notes.length}</span>
-            </h3>
-            <span style={{ color: 'var(--text-color)', fontSize: '0.7rem', transform: notesExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
-          </div>
+        {canViewNotes && (
+          <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: notesExpanded ? '1rem' : '0', cursor: 'pointer' }} onClick={() => setNotesExpanded(!notesExpanded)}>
+              <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ fontSize: '1rem' }}>📝</span> Activity Notes
+                <span style={{ background: 'var(--hover-bg)', color: 'var(--text-color)', padding: '0.1rem 0.5rem', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 'bold' }}>{notes.length}</span>
+              </h3>
+              <span style={{ color: 'var(--text-color)', fontSize: '0.7rem', transform: notesExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+            </div>
 
-          {notesExpanded && (
-            <>
-              {/* Add Note Form */}
-              <div style={{ marginBottom: '1rem', background: 'var(--hover-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                  {[
-                    { value: 'internal', label: '📝 Internal', color: '#6366f1' },
-                    { value: 'follow_up', label: '🔔 Follow-up', color: '#f59e0b' },
-                    { value: 'escalation', label: '⬆️ Escalation', color: '#ef4444' },
-                    { value: 'customer_update', label: '👤 Customer', color: '#10b981' }
-                  ].map(t => (
-                    <button
-                      key={t.value}
-                      type="button"
-                      onClick={() => setNoteType(t.value)}
-                      style={{
-                        padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', cursor: 'pointer', border: 'none', transition: 'all 0.2s',
-                        background: noteType === t.value ? t.color : 'var(--card-bg)',
-                        color: noteType === t.value ? 'white' : 'var(--text-color)',
-                        outline: noteType === t.value ? 'none' : '1px solid var(--border-color)'
-                      }}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-                <textarea
-                  rows="2"
-                  placeholder="Tambah catatan internal..."
-                  value={noteContent}
-                  onChange={e => setNoteContent(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: 'inherit', boxSizing: 'border-box', fontSize: '0.8rem', resize: 'vertical' }}
-                />
-                <button
-                  type="button"
-                  disabled={noteLoading || !noteContent.trim()}
-                  onClick={async () => {
-                    setNoteLoading(true);
-                    try {
-                      const res = await fetch(`/api/tickets/${ticket.id}/notes`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ content: noteContent, noteType })
-                      });
-                      if (res.ok) {
-                        const newNote = await res.json();
-                        setNotes([newNote, ...notes]);
-                        setNoteContent("");
-                      }
-                    } catch (err) {}
-                    setNoteLoading(false);
-                  }}
-                  style={{ marginTop: '0.5rem', width: '100%', padding: '0.4rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: noteContent.trim() ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.8rem', opacity: noteContent.trim() ? 1 : 0.5 }}
-                >
-                  {noteLoading ? 'Saving...' : '+ Tambah Note'}
-                </button>
-              </div>
-
-              {/* Notes Timeline */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '350px', overflowY: 'auto' }}>
-                {notes.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-color)', fontSize: '0.8rem', fontStyle: 'italic' }}>Belum ada catatan. Tambahkan note pertama di atas.</div>
-                )}
-                {notes.map(note => {
-                  const typeConfig = {
-                    internal: { icon: '📝', color: '#6366f1', bg: '#eef2ff', label: 'Internal' },
-                    follow_up: { icon: '🔔', color: '#f59e0b', bg: '#fffbeb', label: 'Follow-up' },
-                    escalation: { icon: '⬆️', color: '#ef4444', bg: '#fef2f2', label: 'Escalation' },
-                    customer_update: { icon: '👤', color: '#10b981', bg: '#ecfdf5', label: 'Customer' }
-                  };
-                  const cfg = typeConfig[note.noteType] || typeConfig.internal;
-                  return (
-                    <div key={note.id} style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', borderLeft: `3px solid ${cfg.color}`, background: 'var(--card-bg)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: cfg.color, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          {cfg.icon} {cfg.label}
-                        </span>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-color)' }}>{mounted ? new Date(note.createdAt).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '...'}</span>
-                      </div>
-                      <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.8rem', color: 'var(--heading-color)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{note.content}</p>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-color)' }}>— {note.author?.name || note.author?.email}</span>
+            {notesExpanded && (
+              <>
+                {/* Add Note Form */}
+                {canWriteNotes && (
+                  <div style={{ marginBottom: '1rem', background: 'var(--hover-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                      {[
+                        { value: 'internal', label: '📝 Internal', color: '#6366f1' },
+                        { value: 'follow_up', label: '🔔 Follow-up', color: '#f59e0b' },
+                        { value: 'escalation', label: '⬆️ Escalation', color: '#ef4444' },
+                        { value: 'customer_update', label: '👤 Customer', color: '#10b981' }
+                      ].map(t => (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => setNoteType(t.value)}
+                          style={{
+                            padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', cursor: 'pointer', border: 'none', transition: 'all 0.2s',
+                            background: noteType === t.value ? t.color : 'var(--card-bg)',
+                            color: noteType === t.value ? 'white' : 'var(--text-color)',
+                            outline: noteType === t.value ? 'none' : '1px solid var(--border-color)'
+                          }}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
+                    <textarea
+                      rows="2"
+                      placeholder="Tambah catatan internal..."
+                      value={noteContent}
+                      onChange={e => setNoteContent(e.target.value)}
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: 'inherit', boxSizing: 'border-box', fontSize: '0.8rem', resize: 'vertical' }}
+                    />
+                    <button
+                      type="button"
+                      disabled={noteLoading || !noteContent.trim()}
+                      onClick={async () => {
+                        setNoteLoading(true);
+                        try {
+                          const res = await fetch(`/api/tickets/${ticket.id}/notes`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ content: noteContent, noteType })
+                          });
+                          if (res.ok) {
+                            const newNote = await res.json();
+                            setNotes([newNote, ...notes]);
+                            setNoteContent("");
+                          }
+                        } catch (err) {}
+                        setNoteLoading(false);
+                      }}
+                      style={{ marginTop: '0.5rem', width: '100%', padding: '0.4rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: noteContent.trim() ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.8rem', opacity: noteContent.trim() ? 1 : 0.5 }}
+                    >
+                      {noteLoading ? 'Saving...' : '+ Tambah Note'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Notes Timeline */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '350px', overflowY: 'auto' }}>
+                  {notes.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-color)', fontSize: '0.8rem', fontStyle: 'italic' }}>Belum ada catatan. Tambahkan note pertama di atas.</div>
+                  )}
+                  {notes.map(note => {
+                    const typeConfig = {
+                      internal: { icon: '📝', color: '#6366f1', bg: '#eef2ff', label: 'Internal' },
+                      follow_up: { icon: '🔔', color: '#f59e0b', bg: '#fffbeb', label: 'Follow-up' },
+                      escalation: { icon: '⬆️', color: '#ef4444', bg: '#fef2f2', label: 'Escalation' },
+                      customer_update: { icon: '👤', color: '#10b981', bg: '#ecfdf5', label: 'Customer' }
+                    };
+                    const cfg = typeConfig[note.noteType] || typeConfig.internal;
+                    return (
+                      <div key={note.id} style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', borderLeft: `3px solid ${cfg.color}`, background: 'var(--card-bg)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: cfg.color, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            {cfg.icon} {cfg.label}
+                          </span>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-color)' }}>{mounted ? new Date(note.createdAt).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '...'}</span>
+                        </div>
+                        <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.8rem', color: 'var(--heading-color)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{note.content}</p>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-color)' }}>— {note.author?.name || note.author?.email}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '0.9rem', color: 'var(--heading-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -26,7 +26,7 @@ export async function POST(req) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const hasPermission = session.user.permissions?.includes('manage_meetings') || session.user.role === 'Admin' || session.user.role === 'Manager';
+    const hasPermission = session.user.permissions?.includes('manage_meetings') || session.user.role === 'Admin';
     if (!hasPermission) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const body = await req.json();

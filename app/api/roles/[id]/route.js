@@ -8,7 +8,7 @@ export async function DELETE(req, { params }) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const hasPermission = session.user.permissions?.includes('manage_roles') || session.user.permissions?.includes('manage_users') || session.user.role === 'Admin';
+    const hasPermission = session.user.permissions?.includes('manage_roles') || session.user.role === 'Admin';
     if (!hasPermission) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const resolvedParams = await params;
@@ -25,7 +25,7 @@ export async function PATCH(req, { params }) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const hasPermission = session.user.permissions?.includes('manage_roles') || session.user.permissions?.includes('manage_users') || session.user.role === 'Admin';
+    const hasPermission = session.user.permissions?.includes('manage_roles') || session.user.role === 'Admin';
     if (!hasPermission) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const resolvedParams = await params;
