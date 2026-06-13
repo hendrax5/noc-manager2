@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
 export default function ServiceDetailClient({ service, session }) {
   const router = useRouter();
   const isAdmin = session?.user?.role === 'Admin' || session?.user?.permissions?.includes('manage_assets');
+  const [activeTab, setActiveTab] = useState('parameters');
   const [isEditingHops, setIsEditingHops] = useState(false);
   const [editableHops, setEditableHops] = useState(service.hops || []);
   const [isSaving, setIsSaving] = useState(false);
@@ -62,6 +64,47 @@ export default function ServiceDetailClient({ service, session }) {
   const slaPercentage = totalMinsInMonth > 0 
     ? Math.max(0, ((totalMinsInMonth - totalDowntimeMins) / totalMinsInMonth) * 100) 
     : 100;
+
+  // Calculate 12-month trend
+  const yearlyTrend = [];
+  const nowForTrend = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(nowForTrend.getFullYear(), nowForTrend.getMonth() - i, 1);
+    const yrMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = d.toLocaleString('id-ID', { month: 'short' });
+    
+    // Find tickets for this month
+    const mTickets = (service.tickets || []).filter(t => {
+      let dateStr = t.createdAt;
+      if (t.customData && typeof t.customData === 'object' && t.customData.startDowntime) {
+        dateStr = t.customData.startDowntime;
+      }
+      const tD = new Date(dateStr);
+      return `${tD.getFullYear()}-${String(tD.getMonth() + 1).padStart(2, '0')}` === yrMonth;
+    });
+
+    const mDowntimeMins = mTickets.reduce((acc, t) => {
+      if (t.customData && typeof t.customData === 'object' && t.customData.hasDowntime) {
+        return acc + (parseInt(t.customData.downtimeMinutes) || 0);
+      }
+      return acc;
+    }, 0);
+
+    const daysInM = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    const mMins = daysInM * 24 * 60;
+    const mUptime = mMins > 0 ? Math.max(0, ((mMins - mDowntimeMins) / mMins) * 100) : 100;
+    
+    yearlyTrend.push({
+      month: label,
+      fullMonth: yrMonth,
+      uptime: parseFloat(mUptime.toFixed(3)),
+      downtimeMins: mDowntimeMins
+    });
+  }
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   const templateFields = service.template?.fields ? (typeof service.template.fields === 'string' ? JSON.parse(service.template.fields) : service.template.fields) : [];
 
@@ -152,135 +195,181 @@ export default function ServiceDetailClient({ service, session }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
         
-        {/* Left Col: Params & Tickets */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        {/* Left Col: Params & SLA Tabs */}
+        <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           
-          <div className="bg-white-card" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--heading-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Technical Parameters</h3>
-            {service.customData && Object.keys(service.customData).length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                 {Object.entries(service.customData).map(([key, val]) => (
-                    <div key={key}>
-                       <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>{key}</div>
-                       <div style={{ fontSize: '1.05rem', color: 'var(--heading-color)', background: 'var(--hover-bg)', padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'monospace' }}>{val || '-'}</div>
-                    </div>
-                 ))}
-              </div>
-            ) : (
-              <p style={{ color: 'var(--text-color)', fontSize: '0.9rem' }}>No custom network parameters defined.</p>
-            )}
+          {/* Tabs Navigation */}
+          <div style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+            <button 
+              onClick={() => setActiveTab('parameters')} 
+              style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'parameters' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'parameters' ? 'var(--primary-color)' : 'var(--text-color)', transition: 'all 0.2s' }}
+            >
+              Technical Parameters
+            </button>
+            <button 
+              onClick={() => setActiveTab('sla')} 
+              style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'sla' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'sla' ? 'var(--primary-color)' : 'var(--text-color)', transition: 'all 0.2s' }}
+            >
+              SLA & Analytics
+            </button>
+            <button 
+              onClick={() => setActiveTab('tickets')} 
+              style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'tickets' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'tickets' ? 'var(--primary-color)' : 'var(--text-color)', transition: 'all 0.2s' }}
+            >
+              Linked Tickets
+            </button>
           </div>
 
-          {/* Downtime & SLA Analytics Card */}
-          <div className="bg-white-card" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-              <h3 style={{ margin: 0, color: 'var(--heading-color)' }}>Analisis SLA & Downtime</h3>
-              
-              {/* Month Selector */}
-              <select 
-                value={selectedMonth} 
-                onChange={e => setSelectedMonth(e.target.value)}
-                style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer' }}
-              >
-                {(() => {
-                  const options = [];
-                  const now = new Date();
-                  for (let i = 0; i < 12; i++) {
-                    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                    const label = d.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-                    options.push(<option key={val} value={val}>{label}</option>);
-                  }
-                  return options;
-                })()}
-              </select>
-            </div>
-
-            {/* KPI Cards Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Tiket Gangguan</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--heading-color)', marginTop: '0.25rem' }}>{monthlyTickets.length}</div>
-              </div>
-
-              <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Total Downtime</div>
-                <div style={{ fontSize: '1.35rem', fontWeight: 'bold', color: 'var(--heading-color)', marginTop: '0.4rem' }}>
-                  {(() => {
-                    const hrs = Math.floor(totalDowntimeMins / 60);
-                    const mins = totalDowntimeMins % 60;
-                    return hrs > 0 ? `${hrs}j ${mins}m` : `${mins}m`;
-                  })()}
-                </div>
-              </div>
-
-              <div style={{ 
-                background: slaPercentage >= 99 ? 'rgba(16, 185, 129, 0.1)' : (slaPercentage >= 97 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)'), 
-                border: `1px solid ${slaPercentage >= 99 ? '#10b981' : (slaPercentage >= 97 ? '#f59e0b' : '#ef4444')}`,
-                padding: '1rem', borderRadius: '8px', textAlign: 'center' 
-              }}>
-                <div style={{ fontSize: '0.7rem', color: slaPercentage >= 99 ? '#065f46' : (slaPercentage >= 97 ? '#92400e' : '#991b1b'), fontWeight: 'bold', textTransform: 'uppercase' }}>SLA Uptime</div>
-                <div style={{ 
-                  fontSize: '1.4rem', fontWeight: 'bold', 
-                  color: slaPercentage >= 99 ? '#10b981' : (slaPercentage >= 97 ? '#f59e0b' : '#ef4444'),
-                  marginTop: '0.3rem' 
-                }}>
-                  {slaPercentage.toFixed(3)}%
-                </div>
-              </div>
-            </div>
-
-            {/* List of Outages in selectedMonth */}
-            {monthlyTickets.some(t => t.customData?.hasDowntime) ? (
-              <div>
-                <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase' }}>Detail Outage Tiket</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '150px', overflowY: 'auto' }}>
-                  {monthlyTickets.filter(t => t.customData?.hasDowntime).map(t => {
-                    const dStart = t.customData.startDowntime ? new Date(t.customData.startDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-                    const dEnd = t.customData.endDowntime ? new Date(t.customData.endDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Belum Selesai';
-                    return (
-                      <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--hover-bg)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.8rem' }}>
-                        <div style={{ flex: 1, minWidth: 0, marginRight: '0.5rem' }}>
-                          <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', color: 'var(--primary-color)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {t.trackingId ? `#${t.trackingId.split('-')[0]}` : `#${t.id}`} - {t.title}
-                          </Link>
-                          <span style={{ fontSize: '0.7rem', color: '#64748b' }}>{dStart} s/d {dEnd}</span>
-                        </div>
-                        <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
-                          -{t.customData.downtimeMinutes}m
-                        </span>
+          {activeTab === 'parameters' && (
+            <div className="bg-white-card scale-in" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+              {service.customData && Object.keys(service.customData).length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                   {Object.entries(service.customData).map(([key, val]) => (
+                      <div key={key}>
+                         <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>{key}</div>
+                         <div style={{ fontSize: '1.05rem', color: 'var(--heading-color)', background: 'var(--hover-bg)', padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'monospace' }}>{val || '-'}</div>
                       </div>
-                    );
-                  })}
+                   ))}
+                </div>
+              ) : (
+                <p style={{ color: 'var(--text-color)', fontSize: '0.9rem' }}>No custom network parameters defined.</p>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'sla' && (
+            <div className="bg-white-card scale-in" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                <h3 style={{ margin: 0, color: 'var(--heading-color)' }}>Analisis SLA & Downtime</h3>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <select 
+                    value={selectedMonth} 
+                    onChange={e => setSelectedMonth(e.target.value)}
+                    style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer' }}
+                  >
+                    {(() => {
+                      const options = [];
+                      const now = new Date();
+                      for (let i = 0; i < 12; i++) {
+                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                        const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const label = d.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+                        options.push(<option key={val} value={val}>{label}</option>);
+                      }
+                      return options;
+                    })()}
+                  </select>
+                  <button onClick={handlePrint} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🖨️ Export PDF Klien</button>
                 </div>
               </div>
-            ) : (
-              <div style={{ fontSize: '0.8rem', color: '#64748b', fontStyle: 'italic', textAlign: 'center', padding: '0.5rem' }}>
-                Tidak ada riwayat downtime outage pada bulan ini.
-              </div>
-            )}
-          </div>
 
-          <div className="bg-white-card" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--heading-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Linked Incident Tickets</h3>
-            {service.tickets && service.tickets.length > 0 ? (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                 {service.tickets.map(t => (
-                    <li key={t.id} style={{ padding: '1rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                       <Link href={`/tickets/${t.id}`} style={{ textDecoration: 'none', color: 'var(--heading-color)', fontWeight: 'bold', display: 'block', marginBottom: '0.3rem' }}>
-                         {t.trackingId ? `#${t.trackingId.split('-')[0]}` : `Ticket #${t.id}`} - {t.title}
-                       </Link>
-                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-color)' }}>
-                         <span style={{ color: t.status === 'Resolved' ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>{t.status}</span>
-                         <span>{new Date(t.createdAt).toLocaleDateString()}</span>
-                       </div>
-                    </li>
-                 ))}
-              </ul>
-            ) : (
-              <p style={{ color: 'var(--text-color)', fontSize: '0.9rem' }}>Clean record. No networking incidents found.</p>
-            )}
-          </div>
+              {/* KPI Cards Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+                <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Tiket Gangguan</div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--heading-color)', marginTop: '0.25rem' }}>{monthlyTickets.length}</div>
+                </div>
+
+                <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Total Downtime</div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--heading-color)', marginTop: '0.4rem' }}>
+                    {(() => {
+                      const hrs = Math.floor(totalDowntimeMins / 60);
+                      const mins = totalDowntimeMins % 60;
+                      return hrs > 0 ? `${hrs}j ${mins}m` : `${mins}m`;
+                    })()}
+                  </div>
+                </div>
+
+                <div style={{ 
+                  background: slaPercentage >= 99 ? 'rgba(16, 185, 129, 0.1)' : (slaPercentage >= 97 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)'), 
+                  border: `1px solid ${slaPercentage >= 99 ? '#10b981' : (slaPercentage >= 97 ? '#f59e0b' : '#ef4444')}`,
+                  padding: '1rem', borderRadius: '8px', textAlign: 'center' 
+                }}>
+                  <div style={{ fontSize: '0.75rem', color: slaPercentage >= 99 ? '#065f46' : (slaPercentage >= 97 ? '#92400e' : '#991b1b'), fontWeight: 'bold', textTransform: 'uppercase' }}>SLA Uptime</div>
+                  <div style={{ 
+                    fontSize: '1.8rem', fontWeight: 'bold', 
+                    color: slaPercentage >= 99 ? '#10b981' : (slaPercentage >= 97 ? '#f59e0b' : '#ef4444'),
+                    marginTop: '0.3rem' 
+                  }}>
+                    {slaPercentage.toFixed(3)}%
+                  </div>
+                </div>
+              </div>
+
+              {/* 12-Month Trend Chart */}
+              <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--heading-color)', textTransform: 'uppercase' }}>Tren Uptime 12 Bulan Terakhir</h4>
+              <div style={{ height: '200px', marginBottom: '2rem' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={yearlyTrend} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" fontSize={10} />
+                    <YAxis domain={[90, 100]} fontSize={10} />
+                    <RechartsTooltip formatter={(value) => `${value}%`} />
+                    <Bar dataKey="uptime" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Uptime %" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* List of Outages in selectedMonth */}
+              {monthlyTickets.some(t => t.customData?.hasDowntime) ? (
+                <div>
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase' }}>Detail Outage Tiket</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+                    {monthlyTickets.filter(t => t.customData?.hasDowntime).map(t => {
+                      const dStart = t.customData.startDowntime ? new Date(t.customData.startDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                      const dEnd = t.customData.endDowntime ? new Date(t.customData.endDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Belum Selesai';
+                      const dtMins = parseInt(t.customData.downtimeMinutes) || 0;
+                      const hrs = Math.floor(dtMins / 60);
+                      const mins = dtMins % 60;
+                      const durText = hrs > 0 ? `${hrs}j ${mins}m` : `${mins}m`;
+                      
+                      return (
+                        <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--hover-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
+                          <div style={{ flex: 1, minWidth: 0, marginRight: '0.5rem' }}>
+                            <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', color: 'var(--primary-color)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {t.trackingId ? `#${t.trackingId.split('-')[0]}` : `#${t.id}`} - {t.title}
+                            </Link>
+                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{dStart} s/d {dEnd}</span>
+                          </div>
+                          <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #fca5a5', padding: '0.3rem 0.6rem', borderRadius: '4px', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <span>{durText}</span>
+                            <span style={{ fontSize: '0.65rem', textTransform: 'uppercase' }}>Breach</span>
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.9rem', color: '#64748b', fontStyle: 'italic', textAlign: 'center', padding: '2rem', background: 'var(--hover-bg)', borderRadius: '8px' }}>
+                  Tidak ada riwayat downtime outage pada bulan ini. Uptime sempurna! 🎉
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'tickets' && (
+            <div className="bg-white-card scale-in" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+              {service.tickets && service.tickets.length > 0 ? (
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                   {service.tickets.map(t => (
+                      <li key={t.id} style={{ padding: '1rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                         <Link href={`/tickets/${t.id}`} style={{ textDecoration: 'none', color: 'var(--heading-color)', fontWeight: 'bold', display: 'block', marginBottom: '0.3rem' }}>
+                           {t.trackingId ? `#${t.trackingId.split('-')[0]}` : `Ticket #${t.id}`} - {t.title}
+                         </Link>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-color)' }}>
+                           <span style={{ color: t.status === 'Resolved' ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>{t.status}</span>
+                           <span>{new Date(t.createdAt).toLocaleDateString()}</span>
+                         </div>
+                      </li>
+                   ))}
+                </ul>
+              ) : (
+                <p style={{ color: 'var(--text-color)', fontSize: '0.9rem' }}>Clean record. No networking incidents found.</p>
+              )}
+            </div>
+          )}
 
         </div>
 
@@ -437,9 +526,120 @@ export default function ServiceDetailClient({ service, session }) {
       <datalist id="service-devices">
          {hints.devices.map((dev, i) => <option key={i} value={dev} />)}
       </datalist>
-      <datalist id="service-ports">
-         {hints.ports.map((p, i) => <option key={i} value={p} />)}
-      </datalist>
+      {/* PRINT REPORT - HIDDEN FROM UI */}
+      <div id="client-formal-report" style={{ display: 'none' }}>
+        <div style={{ borderBottom: '2px solid #333', paddingBottom: '1rem', marginBottom: '2rem' }}>
+          <h1 style={{ margin: 0, color: '#111' }}>Service Level Agreement (SLA) Report</h1>
+          <p style={{ margin: 0, color: '#555', fontSize: '1.2rem' }}>NOC Operations Management</p>
+        </div>
+
+        <div style={{ marginBottom: '2rem' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
+            <tbody>
+              <tr>
+                <td style={{ padding: '0.5rem', fontWeight: 'bold', width: '30%' }}>Customer Name</td>
+                <td style={{ padding: '0.5rem' }}>: {service.customer?.name}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '0.5rem', fontWeight: 'bold' }}>Service / Circuit</td>
+                <td style={{ padding: '0.5rem' }}>: {service.name}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '0.5rem', fontWeight: 'bold' }}>Type</td>
+                <td style={{ padding: '0.5rem' }}>: {service.template?.name}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '0.5rem', fontWeight: 'bold' }}>Reporting Period</td>
+                <td style={{ padding: '0.5rem' }}>: {new Date(selectedMonth + '-01').toLocaleString('id-ID', { month: 'long', year: 'numeric' })}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ marginBottom: '2rem' }}>
+          <h2 style={{ borderBottom: '1px solid #ccc', paddingBottom: '0.5rem', marginBottom: '1rem' }}>SLA Performance Summary</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', textAlign: 'center' }}>
+            <div style={{ border: '1px solid #ccc', padding: '1rem' }}>
+              <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#555' }}>Guaranteed Uptime</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>99.9%</div>
+            </div>
+            <div style={{ border: '1px solid #ccc', padding: '1rem' }}>
+              <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#555' }}>Actual Uptime</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: slaPercentage < 99 ? 'red' : 'green' }}>{slaPercentage.toFixed(3)}%</div>
+            </div>
+            <div style={{ border: '1px solid #ccc', padding: '1rem' }}>
+              <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#555' }}>Total Outage Duration</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{Math.floor(totalDowntimeMins / 60)}h {totalDowntimeMins % 60}m</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '2rem' }}>
+          <h2 style={{ borderBottom: '1px solid #ccc', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Incident Log</h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+            <thead>
+              <tr style={{ background: '#eee' }}>
+                <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'left' }}>Ticket ID</th>
+                <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'left' }}>Issue Description</th>
+                <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'left' }}>Outage Period</th>
+                <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>Downtime</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthlyTickets.filter(t => t.customData?.hasDowntime).length > 0 ? (
+                monthlyTickets.filter(t => t.customData?.hasDowntime).map(t => {
+                  const dStart = t.customData.startDowntime ? new Date(t.customData.startDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+                  const dEnd = t.customData.endDowntime ? new Date(t.customData.endDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Unresolved';
+                  const dtMins = parseInt(t.customData.downtimeMinutes) || 0;
+                  return (
+                    <tr key={t.id}>
+                      <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>#{t.trackingId ? t.trackingId.split('-')[0] : t.id}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{t.title}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{dStart} - {dEnd}</td>
+                      <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{Math.floor(dtMins / 60)}h {dtMins % 60}m</td>
+                    </tr>
+                  )
+                })
+              ) : (
+                <tr>
+                  <td colSpan="4" style={{ border: '1px solid #ccc', padding: '1rem', textAlign: 'center', fontStyle: 'italic' }}>No outages reported in this period.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        <div style={{ marginTop: '4rem', display: 'flex', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ marginBottom: '4rem' }}>Prepared By,</p>
+            <p style={{ fontWeight: 'bold', textDecoration: 'underline' }}>{session?.user?.name || "NOC Team"}</p>
+            <p>Network Operations Center</p>
+          </div>
+          <div>
+            <p style={{ marginBottom: '4rem' }}>Acknowledged By,</p>
+            <p style={{ fontWeight: 'bold', textDecoration: 'underline' }}>Customer Representative</p>
+            <p>{service.customer?.name}</p>
+          </div>
+        </div>
+      </div>
+
+      <style dangerouslySetInnerHTML={{__html:`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #client-formal-report, #client-formal-report * {
+            visibility: visible;
+          }
+          #client-formal-report {
+            display: block !important;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+        }
+      `}} />
 
     </main>
   );
