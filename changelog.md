@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-06-13
+
+### Added
+- **Gemini AI Performance Analysis**: Integrated `@google/generative-ai` (`gemini-1.5-flash`) to generate human-readable narratives comparing staff performance (resolved, involved, comments) directly in the NOC Member Comparison Modal. Added UI input to set the `GEMINI_API_KEY` dynamically.
+- **Multiple Linked Incidents**: Upgraded the new ticket form to support multiple telecom assets/services selections at once via a pill-based UI layout, linking all selected IDs directly to the ticket entity.
+- **Auto-enable SLA Tracking**: Implemented dynamic automation that automatically checks the "Enable External SLA Tracking" timer whenever a customer asset/service is selected.
+- **OKLCH Theme Migration**: Refactored `globals.css` to adopt a modern, perceptually uniform OKLCH color space (scales 50-900) mapped seamlessly to existing functional CSS variables.
+
 ## [2.2.1] - 2026-06-06
 
 ### Added
