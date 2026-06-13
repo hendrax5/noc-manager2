@@ -64,6 +64,6 @@ Gunakan nada profesional namun santai (menggunakan bahasa Indonesia). Jangan tam
     return NextResponse.json({ analysis: text });
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    return NextResponse.json({ error: "Gagal menghasilkan analisa. Pastikan API key valid." }, { status: 500 });
+    return NextResponse.json({ error: `AI Error: ${error.message || "Terjadi kesalahan internal"}` }, { status: 500 });
   }
 }
