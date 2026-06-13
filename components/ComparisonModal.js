@@ -7,13 +7,7 @@ export default function ComparisonModal({ selectedUserIds = [], onClose, startDa
   const [error, setError] = useState(null);
   const [aiAnalysis, setAiAnalysis] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [apiKey, setApiKey] = useState("");
   const modalRef = useRef(null);
-
-  useEffect(() => {
-    const savedKey = localStorage.getItem("gemini_api_key");
-    if (savedKey) setApiKey(savedKey);
-  }, []);
 
   useEffect(() => {
     if (selectedUserIds.length === 0) return;
@@ -65,7 +59,7 @@ export default function ComparisonModal({ selectedUserIds = [], onClose, startDa
         const res = await fetch("/api/analyze-performance", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ usersData, apiKey })
+          body: JSON.stringify({ usersData })
         });
         const data = await res.json();
         if (data.analysis) {
@@ -79,13 +73,7 @@ export default function ComparisonModal({ selectedUserIds = [], onClose, startDa
     };
     
     fetchAiAnalysis();
-  }, [usersData, apiKey]);
-
-  const handleSaveApiKey = (e) => {
-    e.preventDefault();
-    localStorage.setItem("gemini_api_key", apiKey);
-    // If we have data, setting the key will re-trigger the useEffect to fetch the analysis
-  };
+  }, [usersData]);
 
   // Close on Esc key
   useEffect(() => {
@@ -278,21 +266,9 @@ export default function ComparisonModal({ selectedUserIds = [], onClose, startDa
 
               {/* AI Analysis Section */}
               <div className="card" style={{ padding: "1.5rem", margin: 0, border: "1px solid var(--secondary-color)", background: "linear-gradient(to right, rgba(59, 130, 246, 0.05), transparent)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "1rem" }}>
-                  <h4 style={{ margin: 0, fontSize: "1rem", color: "var(--secondary-color)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <span style={{ fontSize: "1.2rem" }}>✨</span> Analisa Performa AI
-                  </h4>
-                  <form onSubmit={handleSaveApiKey} style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                    <input 
-                      type="password" 
-                      placeholder="Masukkan Gemini API Key" 
-                      value={apiKey} 
-                      onChange={(e) => setApiKey(e.target.value)}
-                      style={{ padding: "0.4rem 0.6rem", borderRadius: "4px", border: "1px solid var(--border-color)", fontSize: "0.85rem", width: "200px" }}
-                    />
-                    <button type="submit" className="primary-btn" style={{ padding: "0.4rem 0.8rem", width: "auto", fontSize: "0.85rem" }}>Simpan Key</button>
-                  </form>
-                </div>
+                <h4 style={{ margin: "0 0 1rem 0", fontSize: "1rem", color: "var(--secondary-color)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ fontSize: "1.2rem" }}>✨</span> Analisa Performa AI
+                </h4>
                 {isAiLoading ? (
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", color: "#64748b" }}>
                     <div style={{ width: "20px", height: "20px", border: "3px solid #cbd5e1", borderTopColor: "var(--secondary-color)", borderRadius: "50%", animation: "spin 1s linear infinite" }}></div>

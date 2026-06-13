@@ -1,21 +1,25 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { getAppConfig } from "@/lib/config";
 
 export async function POST(req) {
   try {
-    const { usersData, apiKey } = await req.json();
+    const { usersData } = await req.json();
     
     if (!usersData || !Array.isArray(usersData) || usersData.length === 0) {
       return NextResponse.json({ error: "Data pengguna tidak valid" }, { status: 400 });
     }
 
-    if (!apiKey) {
+    const config = getAppConfig();
+    const resolvedApiKey = process.env.GEMINI_API_KEY || config.geminiApiKey;
+
+    if (!resolvedApiKey) {
       return NextResponse.json({ 
-        analysis: "MOHON PERHATIAN: Silakan masukkan Gemini API Key Anda pada kolom input di atas untuk mengaktifkan Analisa AI secara nyata." 
+        analysis: "MOHON PERHATIAN: Admin belum mengkonfigurasi Gemini API Key di menu Settings > Team Preferences. Fitur AI saat ini belum dapat digunakan." 
       });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const genAI = new GoogleGenerativeAI(resolvedApiKey);
 
     // Buat rangkuman string untuk Gemini agar tidak kebesaran payload (hanya ambil data esensial)
     const summarizedData = usersData.map(u => ({
