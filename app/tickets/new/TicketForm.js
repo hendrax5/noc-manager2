@@ -42,6 +42,7 @@ export default function TicketForm({ departments, categories, users = [], custom
 
   const [customerSearchTerm, setCustomerSearchTerm] = useState(customDataState["Customer Name"] || '');
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const [selectedServices, setSelectedServices] = useState([]);
   const customerWrapperRef = useRef(null);
 
   const matchingCustomerServices = (services || []).filter(s => {
@@ -54,12 +55,33 @@ export default function TicketForm({ departments, categories, users = [], custom
   });
 
   const handleSelectCustomerService = (s) => {
-    setCustomerSearchTerm(s.customer?.name || "");
+    if (!selectedServices.find(srv => srv.id === s.id)) {
+      const newSelected = [...selectedServices, s];
+      setSelectedServices(newSelected);
+      
+      // Auto-enable SLA
+      setFormData(prev => ({ ...prev, enableSla: true }));
+      
+      // Update custom data with customer names (unique)
+      const uniqueCustomers = Array.from(new Set(newSelected.map(srv => srv.customer?.name).filter(Boolean)));
+      setCustomDataState({
+        ...customDataState,
+        "Customer Name": uniqueCustomers.join(', ')
+      });
+    }
+    setCustomerSearchTerm("");
+    setIsCustomerDropdownOpen(false);
+  };
+
+  const removeService = (serviceId) => {
+    const newSelected = selectedServices.filter(s => s.id !== serviceId);
+    setSelectedServices(newSelected);
+    
+    const uniqueCustomers = Array.from(new Set(newSelected.map(srv => srv.customer?.name).filter(Boolean)));
     setCustomDataState({
       ...customDataState,
-      "Customer Name": s.customer?.name || ""
+      "Customer Name": uniqueCustomers.join(', ')
     });
-    setIsCustomerDropdownOpen(false);
   };
 
   useEffect(() => {
@@ -106,7 +128,7 @@ export default function TicketForm({ departments, categories, users = [], custom
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...formData, customData: finalCustomData, attachmentUrl, attachmentName, serviceIds: [] })
+      body: JSON.stringify({ ...formData, customData: finalCustomData, attachmentUrl, attachmentName, serviceIds: selectedServices.map(s => s.id) })
     });
 
     if (res.ok) {
@@ -259,6 +281,17 @@ export default function TicketForm({ departments, categories, users = [], custom
                 Tidak ada kecocokan di inventory. Ketikan Anda akan disimpan sebagai input manual.
               </div>
             )}
+          </div>
+        )}
+
+        {selectedServices.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem' }}>
+            {selectedServices.map(s => (
+              <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e0f2fe', padding: '0.4rem 0.8rem', borderRadius: '99px', border: '1px solid #bae6fd' }}>
+                <span style={{ fontSize: '0.85rem', color: '#0369a1', fontWeight: 'bold' }}>{s.customer?.name}: {s.name}</span>
+                <button type="button" onClick={() => removeService(s.id)} style={{ background: 'transparent', border: 'none', color: '#0284c7', cursor: 'pointer', fontSize: '1rem', lineHeight: '1' }}>&times;</button>
+              </div>
+            ))}
           </div>
         )}
       </div>
