@@ -56,7 +56,8 @@ Jelaskan KENAPA seseorang (yang skornya tertinggi) bisa memiliki skor kumulatif 
 Soroti juga kontribusi anggota lainnya secara positif.
 Gunakan nada profesional namun santai (menggunakan bahasa Indonesia). Jangan tampilkan format JSON di output, cukup teks narasinya.`;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const modelId = config.geminiModel || "gemini-1.5-flash";
+    const model = genAI.getGenerativeModel({ model: modelId });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
