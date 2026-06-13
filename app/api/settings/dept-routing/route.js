@@ -16,7 +16,7 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Missing departmentId' }, { status: 400 });
     }
 
-    const currentConfig = getAppConfig();
+    const currentConfig = await getAppConfig();
     const deptCompanyMap = currentConfig.deptCompanyMap || {};
     const deptAutoRouteMap = currentConfig.deptAutoRouteMap || {};
 

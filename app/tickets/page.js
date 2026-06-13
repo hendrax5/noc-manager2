@@ -14,7 +14,7 @@ export default async function TicketsPage({ searchParams }) {
   
   if (!session) redirect('/login');
 
-  const config = getAppConfig();
+  const config = await getAppConfig();
   const companies = config.companyNames ? config.companyNames.split(',').map(s => s.trim()) : ["ION", "SDC", "Sistercompany"];
   const deptCompanyMap = config.deptCompanyMap || {};
 

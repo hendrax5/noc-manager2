@@ -5,16 +5,16 @@ import { authOptions } from "../api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 
 export async function generateMetadata() {
-  const config = getAppConfig();
-  return { title: `${config.appName} - Login` };
+  const config = await getAppConfig();
+  return {
+    title: `Login - ${config.appName}`,
+  };
 }
 
 export default async function LoginPage() {
   const session = await getServerSession(authOptions);
-  if (session) {
-    redirect("/");
-  }
+  if (session) redirect("/dashboard");
 
-  const config = getAppConfig();
+  const config = await getAppConfig();
   return <LoginClient title={config.loginTitle} subtitle={config.loginSubtitle} />;
 }

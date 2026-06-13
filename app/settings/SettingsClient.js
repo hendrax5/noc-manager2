@@ -476,8 +476,13 @@ export default function SettingsClient({ initialFields, initialCategories, initi
                   </div>
                   <div style={{ borderTop: '1px dotted var(--border-color)', paddingTop: '1rem', marginTop: '0.5rem' }}>
                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem', fontWeight: 'bold' }}>Gemini AI Model ID</label>
-                    <input type="text" value={branding.geminiModel || "gemini-1.5-flash"} onChange={e => setBranding({...branding, geminiModel: e.target.value})} style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)' }} placeholder="e.g. gemini-1.5-flash or gemini-2.0-flash" />
-                    <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.75rem', color: '#64748b' }}>Specify the model version ID you want to use. Defaults to gemini-1.5-flash.</p>
+                    <select value={branding.geminiModel || "gemini-1.5-flash"} onChange={e => setBranding({...branding, geminiModel: e.target.value})} style={{ width: '100%', padding: '0.6rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)' }}>
+                      <option value="gemini-1.5-flash">gemini-1.5-flash (Fast & Standard)</option>
+                      <option value="gemini-1.5-pro">gemini-1.5-pro (Advanced Reasoning)</option>
+                      <option value="gemini-2.0-flash-exp">gemini-2.0-flash-exp (Experimental)</option>
+                      <option value="gemini-2.5-flash">gemini-2.5-flash (Next Gen)</option>
+                    </select>
+                    <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.75rem', color: '#64748b' }}>Select the model version ID you want to use. Make sure your API Key has access to the selected model.</p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '0.5rem' }}>

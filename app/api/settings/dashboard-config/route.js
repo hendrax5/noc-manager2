@@ -8,7 +8,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const config = getAppConfig();
+  const config = await getAppConfig();
   return NextResponse.json(config.dashboardDeptConfig || {});
 }
 

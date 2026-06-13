@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Data pengguna tidak valid" }, { status: 400 });
     }
 
-    const config = getAppConfig();
+    const config = await getAppConfig();
     const resolvedApiKey = process.env.GEMINI_API_KEY || config.geminiApiKey;
 
     if (!resolvedApiKey) {

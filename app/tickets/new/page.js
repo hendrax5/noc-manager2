@@ -22,7 +22,7 @@ export default async function NewTicketPage() {
   const services = await prisma.service.findMany({ include: { customer: true }, orderBy: { name: 'asc' } });
   const serviceTemplates = await prisma.serviceTemplate.findMany({ orderBy: { name: 'asc' } });
   
-  const config = getAppConfig();
+  const config = await getAppConfig();
   const companies = config.companyNames ? config.companyNames.split(',').map(s => s.trim()) : ["ION", "SDC", "Sistercompany"];
   const deptAutoRouteMap = config.deptAutoRouteMap || {};
   

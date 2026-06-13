@@ -10,15 +10,15 @@ import packageInfo from '../package.json';
 import { Toaster } from 'react-hot-toast';
 
 export async function generateMetadata() {
-  const config = getAppConfig();
+  const config = await getAppConfig();
   return {
     title: config.appName,
     description: 'Manage tickets, teams, and daily reports for NOC',
   };
 }
 
-export default function RootLayout({ children }) {
-  const config = getAppConfig();
+export default async function RootLayout({ children }) {
+  const config = await getAppConfig();
   return (
     <html lang="en">
       <body>

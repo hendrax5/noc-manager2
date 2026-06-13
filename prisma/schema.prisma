@@ -332,3 +332,12 @@ model TicketNote {
   noteType  String   @default("internal") // "internal", "follow_up", "escalation", "customer_update"
   createdAt DateTime @default(now())
 }
+
+// ==========================================
+// Phase 35: System Configuration
+// ==========================================
+
+model AppSetting {
+  key   String @id
+  value String @db.Text
+}

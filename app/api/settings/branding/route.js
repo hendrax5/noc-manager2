@@ -4,7 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { updateAppConfig, getAppConfig } from '@/lib/config';
 
 export async function GET() {
-  const config = getAppConfig();
+  const config = await getAppConfig();
   return NextResponse.json(config);
 }
 

@@ -16,7 +16,7 @@ export async function POST(req) {
   try {
     // 1. Authenticate using X-API-Key header
     const apiKeyHeader = req.headers.get("x-api-key");
-    const appConfig = getAppConfig();
+    const appConfig = await getAppConfig();
     const configuredApiKey = process.env.EXTERNAL_API_KEY || appConfig.externalApiKey;
 
     if (!configuredApiKey || apiKeyHeader !== configuredApiKey) {

@@ -14,7 +14,7 @@ export default async function DashboardPage({ searchParams }) {
   const hasSkyViewAccess = session?.user?.role === 'Admin' || session?.user?.permissions?.includes('view_live_ops') || session?.user?.permissions?.includes('view_reports');
 
   // Retrieve department configuration
-  const config = getAppConfig();
+  const config = await getAppConfig();
   const userDept = session?.user?.department || "General";
   const deptConfig = config.dashboardDeptConfig?.[userDept] || {};
 

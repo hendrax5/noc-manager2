@@ -33,7 +33,7 @@ export async function GET(request) {
   const hasGlobalAccess = isAdminOrManager || isCS || session.user.permissions?.includes('view_all_tickets');
 
   // Retrieve department configuration
-  const config = getAppConfig();
+  const config = await getAppConfig();
   const userDept = session.user.department || "General";
   const deptConfig = config.dashboardDeptConfig?.[userDept] || {};
 

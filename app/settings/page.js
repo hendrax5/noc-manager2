@@ -36,7 +36,7 @@ export default async function SettingsPage() {
       <SettingsClient 
         initialFields={customFields} 
         initialCategories={jobCategories} 
-        initialConfig={getAppConfig()} 
+        initialConfig={await getAppConfig()} 
         departments={departments}
       />
     </main>
