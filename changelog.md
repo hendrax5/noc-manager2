@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-06-13
+
+### Added
+- **TypeScript Infrastructure (Phase 1)**: Integrated TypeScript compiler with `allowJs: true` to begin an incremental architectural migration. Created `tsconfig.json` and refactored the first batch of core files (`ComparisonModal.tsx` and `app/api/analyze-performance/route.ts`) to enforce strict type-safety.
+- **Global Loading Skeletons**: Installed and implemented `react-loading-skeleton` globally to replace legacy CSS spinners with elegant, placeholder content blocks during async data fetching.
+- **Global Error Toaster**: Installed `react-hot-toast` and injected `<Toaster />` into `app/layout.js`. Standardized error handling visually to prevent silent API failures (such as invalid AI configurations) by rendering beautiful, screen-floating notifications.
+
 ## [2.3.1] - 2026-06-13
 
 ### Changed

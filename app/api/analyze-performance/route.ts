@@ -2,9 +2,25 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { getAppConfig } from "@/lib/config";
 
-export async function POST(req) {
+interface MetricParams {
+  finalScore: number;
+  resolvedCount: number;
+  totalInvolvedCount: number;
+  totalComments: number;
+}
+
+interface UserDataPayload {
+  user: {
+    name: string;
+    department: string;
+  };
+  metrics: MetricParams;
+}
+
+export async function POST(req: Request) {
   try {
-    const { usersData } = await req.json();
+    const body = await req.json();
+    const usersData = body.usersData as UserDataPayload[];
     
     if (!usersData || !Array.isArray(usersData) || usersData.length === 0) {
       return NextResponse.json({ error: "Data pengguna tidak valid" }, { status: 400 });
@@ -46,7 +62,7 @@ Gunakan nada profesional namun santai (menggunakan bahasa Indonesia). Jangan tam
     const text = response.text();
 
     return NextResponse.json({ analysis: text });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Error:", error);
     return NextResponse.json({ error: "Gagal menghasilkan analisa. Pastikan API key valid." }, { status: 500 });
   }

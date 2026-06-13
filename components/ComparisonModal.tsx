@@ -1,13 +1,49 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import Skeleton from "react-loading-skeleton";
+import toast from "react-hot-toast";
 
-export default function ComparisonModal({ selectedUserIds = [], onClose, startDate = "", endDate = "" }) {
-  const [usersData, setUsersData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [aiAnalysis, setAiAnalysis] = useState("");
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const modalRef = useRef(null);
+interface UserMetrics {
+  finalScore: number;
+  resolvedCount: number;
+  totalInvolvedCount: number;
+  totalComments: number;
+  meetingsAttended: number;
+  meetingsScheduled: number;
+  isCS: boolean;
+}
+
+interface UserProfile {
+  id: number;
+  name: string;
+  email: string;
+  department: string;
+  role: number;
+  avatarUrl: string | null;
+}
+
+interface UserData {
+  user: UserProfile;
+  metrics: UserMetrics;
+  tickets: any[];
+  categoryTtr: any[];
+  activities: any[];
+}
+
+interface ComparisonModalProps {
+  selectedUserIds?: number[];
+  onClose: () => void;
+  startDate?: string;
+  endDate?: string;
+}
+
+export default function ComparisonModal({ selectedUserIds = [], onClose, startDate = "", endDate = "" }: ComparisonModalProps) {
+  const [usersData, setUsersData] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [aiAnalysis, setAiAnalysis] = useState<string>("");
+  const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (selectedUserIds.length === 0) return;
@@ -23,13 +59,14 @@ export default function ComparisonModal({ selectedUserIds = [], onClose, startDa
         const fetches = selectedUserIds.map(async (id) => {
           const res = await fetch(`/api/reports/performance/${id}?${query.toString()}`);
           if (!res.ok) throw new Error(`Gagal memuat data untuk ID ${id}`);
-          return res.json();
+          return res.json() as Promise<UserData>;
         });
 
         const results = await Promise.all(fetches);
         setUsersData(results);
-      } catch (err) {
+      } catch (err: any) {
         setError(err.message);
+        toast.error(`Gagal membandingkan data: ${err.message}`);
       } finally {
         setLoading(false);
       }
@@ -40,8 +77,8 @@ export default function ComparisonModal({ selectedUserIds = [], onClose, startDa
 
   // Close modal on clicking outside the container
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (modalRef.current && !modalRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         onClose();
       }
     };
@@ -64,9 +101,13 @@ export default function ComparisonModal({ selectedUserIds = [], onClose, startDa
         const data = await res.json();
         if (data.analysis) {
           setAiAnalysis(data.analysis);
+        } else if (data.error) {
+          setAiAnalysis(`⚠️ Peringatan: ${data.error}`);
+          toast.error(data.error);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Gagal mendapatkan analisa AI", err);
+        toast.error("Gagal terhubung ke AI Service");
       } finally {
         setIsAiLoading(false);
       }
@@ -77,7 +118,7 @@ export default function ComparisonModal({ selectedUserIds = [], onClose, startDa
 
   // Close on Esc key
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -91,7 +132,7 @@ export default function ComparisonModal({ selectedUserIds = [], onClose, startDa
   const maxResolved = Math.max(...usersData.map(u => u.metrics?.resolvedCount || 1), 1);
   const maxComments = Math.max(...usersData.map(u => u.metrics?.totalComments || 1), 1);
 
-  const getInitials = (name) => {
+  const getInitials = (name?: string) => {
     if (!name) return "?";
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   };
@@ -112,14 +153,21 @@ export default function ComparisonModal({ selectedUserIds = [], onClose, startDa
 
         <div style={{ flex: 1, overflowY: "auto" }}>
           {loading && (
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "300px", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ width: "35px", height: "35px", border: "4px solid #cbd5e1", borderTopColor: "var(--secondary-color)", borderRadius: "50%", animation: "spin 1s linear infinite" }}></div>
-              <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-              <span style={{ color: "#64748b", fontSize: "0.9rem" }}>Memuat perbandingan performa...</span>
+            <div style={{ padding: "1.5rem" }}>
+               <div style={{ display: "grid", gridTemplateColumns: `repeat(${selectedUserIds.length}, 1fr)`, gap: "1rem", marginBottom: "2rem" }}>
+                 {selectedUserIds.map((id) => (
+                   <div key={id}>
+                     <Skeleton height={200} borderRadius={12} />
+                   </div>
+                 ))}
+               </div>
+               <Skeleton height={150} borderRadius={8} />
+               <br />
+               <Skeleton height={120} borderRadius={8} />
             </div>
           )}
 
-          {error && (
+          {error && !loading && (
             <div style={{ padding: "2rem" }}>
               <div className="card" style={{ borderLeft: "4px solid #ef4444", padding: "1rem", color: "#ef4444", margin: 0 }}>
                 Gagal membandingkan data: {error}
@@ -270,10 +318,7 @@ export default function ComparisonModal({ selectedUserIds = [], onClose, startDa
                   <span style={{ fontSize: "1.2rem" }}>✨</span> Analisa Performa AI
                 </h4>
                 {isAiLoading ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", color: "#64748b" }}>
-                    <div style={{ width: "20px", height: "20px", border: "3px solid #cbd5e1", borderTopColor: "var(--secondary-color)", borderRadius: "50%", animation: "spin 1s linear infinite" }}></div>
-                    <span style={{ fontSize: "0.9rem" }}>Sedang menganalisa performa...</span>
-                  </div>
+                  <Skeleton count={3} />
                 ) : (
                   <p style={{ margin: 0, fontSize: "0.95rem", lineHeight: "1.6", color: "var(--text-color)", whiteSpace: "pre-wrap" }}>
                     {aiAnalysis || "Belum ada analisa yang dihasilkan."}
