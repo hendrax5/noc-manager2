@@ -64,7 +64,10 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
               </button>
               <div className="nav-dropdown-content">
                 {(session.user?.permissions?.includes('view_reports') || session.user?.role === 'Admin') && (
-                  <Link href="/reports" className={pathname.startsWith("/reports") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>📊 Reports & Analytics</Link>
+                  <>
+                    <Link href="/reports" className={pathname === "/reports" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>📊 Daily Reports</Link>
+                    <Link href="/reports/sla" className={pathname.startsWith("/reports/sla") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>📈 SLA & Analytics</Link>
+                  </>
                 )}
                 {(session.user?.permissions?.includes('manage_users') || 
                   session.user?.permissions?.includes('manage_roles') || 
