@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2026-06-13
+
+### Added
+- **Configurable Gemini AI Model**: Introduced a new "Gemini AI Model ID" configuration field in the Admin Settings (Preferences). This allows administrators to dynamically switch between Gemini model versions (e.g. from `gemini-1.5-flash` to `gemini-2.0-flash`) without redeploying the application, solving the `404 Not Found` API model restrictions.
+
 ## [2.4.0] - 2026-06-13
 
 ### Added
