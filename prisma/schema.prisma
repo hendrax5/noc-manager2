@@ -21,6 +21,7 @@ model Department {
   users     User[]
   tickets   Ticket[]
   actionItems ActionItem[]
+  queues    TicketQueue[]
 }
 
 model Location {
@@ -44,6 +45,7 @@ model User {
   department   Department  @relation(fields: [departmentId], references: [id])
   locationId   Int?
   location     Location?   @relation(fields: [locationId], references: [id])
+  skillTags    String      @default("[]")
   tickets      Ticket[]    @relation("AssignedUser")
   reports      DailyReport[]
   comments     Comment[]
@@ -58,6 +60,7 @@ model User {
   schedules         ShiftSchedule[]
   articles          KnowledgeArticle[]
   ticketNotes       TicketNote[]
+  watchedTickets    TicketWatcher[]
 }
 
 model Ticket {
@@ -66,17 +69,29 @@ model Ticket {
   title        String
   description  String
   status       String     @default("New")
+  ticketType   String     @default("Incident") // Incident | Problem | Change | Request
   customData   Json?
   priority     String     @default("Medium")
   
-  // SLA Tracking (Phase 22)
+  // SLA Tracking (Phase 22 + P0 policy)
   nextSlaDeadline DateTime?
   slaBreaches     Int       @default(0)
   slaTimerMins    Int       @default(15)
   enableSla       Boolean   @default(false)
+  responseDueAt   DateTime?
+  resolutionDueAt DateTime?
+  firstRespondedAt DateTime?
   
+  escalationLevel Int       @default(0)
+  approvalStatus  String?   // null | Pending | Approved | Rejected
+  csatScore       Int?
+  csatComment     String?
+  csatAt          DateTime?
+
   departmentId Int
   department   Department @relation(fields: [departmentId], references: [id])
+  queueId       Int?
+  queue         TicketQueue? @relation(fields: [queueId], references: [id])
   assigneeId   Int?
   assignee     User?      @relation("AssignedUser", fields: [assigneeId], references: [id])
   jobCategoryId Int?
@@ -88,10 +103,23 @@ model Ticket {
   meetings     Meeting[]
   actionItem   ActionItem?
   notes        TicketNote[]
+  watchers     TicketWatcher[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   resolvedAt   DateTime?
   services     Service[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  text      String
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id])
+  isPublic  Boolean  @default(true)
+  attachments Attachment[]
+  createdAt DateTime @default(now())
 }
 
 model DailyReport {
@@ -108,7 +136,7 @@ model Meeting {
   agenda        String?
   problems      String?
   solutions     String?
-  status        String   @default("Scheduled") 
+  status        String   @default("Scheduled")
   scheduledAt   DateTime
   organizedById Int?
   organizedBy   User?    @relation("MeetingOrganizer", fields: [organizedById], references: [id])
@@ -117,17 +145,6 @@ model Meeting {
   actionItems   ActionItem[]
   discussedTickets Ticket[]
   createdAt     DateTime @default(now())
-}
-
-model Comment {
-  id        Int      @id @default(autoincrement())
-  text      String
-  ticketId  Int
-  ticket    Ticket   @relation(fields: [ticketId], references: [id])
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
-  attachments Attachment[]
-  createdAt DateTime @default(now())
 }
 
 model CustomField {
@@ -340,4 +357,53 @@ model TicketNote {
 model AppSetting {
   key   String @id
   value String @db.Text
+}
+
+// ==========================================
+// P0–P3: Ticketing power features
+// ==========================================
+
+model TicketQueue {
+  id           Int         @id @default(autoincrement())
+  name         String      @unique
+  departmentId Int?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  skillTags    String      @default("[]")
+  active       Boolean     @default(true)
+  tickets      Ticket[]
+  createdAt    DateTime    @default(now())
+}
+
+model TicketWatcher {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([ticketId, userId])
+}
+
+model EscalationRule {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  fromLevel          Int      @default(0)
+  toLevel            Int
+  afterBreachCount   Int      @default(1)
+  targetRole         String?
+  targetDepartmentId Int?
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+}
+
+model NotificationLog {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int?
+  channel   String   @default("log")
+  event     String
+  recipient String   @default("")
+  status    String   @default("sent")
+  payload   Json?
+  createdAt DateTime @default(now())
 }

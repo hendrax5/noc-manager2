@@ -1,15 +1,11 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { STATUS_COLORS as CANONICAL_STATUS_COLORS, TICKET_STATUSES, normalizeStatus } from "@/lib/tickets/status";
 
 const STATUS_COLORS = {
-  'New': { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
-  'Open': { bg: '#fff7ed', color: '#ea580c', border: '#fed7aa' },
-  'Waiting Reply': { bg: '#fffbeb', color: '#d97706', border: '#fde68a' },
-  'Replied': { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
-  'In Progress': { bg: '#eff6ff', color: '#2563eb', border: '#bfdbfe' },
-  'On Hold': { bg: '#f5f3ff', color: '#7c3aed', border: '#ddd6fe' },
-  'Finish': { bg: '#ecfdf5', color: '#059669', border: '#a7f3d0' },
-  'Resolved': { bg: '#f0fdf4', color: '#15803d', border: '#86efac' },
+  ...CANONICAL_STATUS_COLORS,
+  'Waiting Reply': CANONICAL_STATUS_COLORS.Pending,
+  'Replied': CANONICAL_STATUS_COLORS.Open,
 };
 
 const CATEGORY_COLORS = {
@@ -242,14 +238,10 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
           {jobCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
         </select>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: '0.4rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.8rem', cursor: 'pointer' }}>
-          <option value="">📊 Semua Status</option>
-          <option value="New">New</option>
-          <option value="Open">Open</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Waiting Reply">Waiting Reply</option>
-          <option value="Replied">Replied</option>
-          <option value="Finish">Finish</option>
-          <option value="Resolved">Resolved</option>
+          <option value="">All statuses</option>
+          {TICKET_STATUSES.map((st) => (
+            <option key={st} value={st}>{st}</option>
+          ))}
         </select>
         <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-color)', cursor: 'pointer', marginLeft: 'auto' }}>
           <input 
@@ -285,7 +277,8 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
             )}
             {filteredTickets.map(t => {
               const customerName = getCustomerName(t);
-              const stColor = STATUS_COLORS[t.status] || { bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0' };
+              const displayStatus = normalizeStatus(t.status);
+              const stColor = STATUS_COLORS[displayStatus] || STATUS_COLORS[t.status] || { bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0' };
               const catColor = CATEGORY_COLORS[t.jobCategory?.name] || '#94a3b8';
               const isOverdue = t.slaBreaches > 0 && t.status !== 'Resolved';
               
@@ -327,7 +320,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
                   </td>
                   <td style={{ padding: '0.5rem' }}>
                     <span style={{ background: stColor.bg, color: stColor.color, padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', whiteSpace: 'nowrap', border: `1px solid ${stColor.border}` }}>
-                      {t.status}
+                      {displayStatus}
                     </span>
                   </td>
                   <td style={{ padding: '0.5rem', fontSize: '0.75rem', color: hasDt ? '#f59e0b' : 'var(--text-color)', fontWeight: hasDt ? 'bold' : 'normal', whiteSpace: 'nowrap' }}>

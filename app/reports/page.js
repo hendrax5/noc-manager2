@@ -1,8 +1,9 @@
-import { getServerSession } from "next-auth";
+﻿import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import LeaderboardClient from "./LeaderboardClient";
+import ServiceDeskMetrics from "./ServiceDeskMetrics";
 
 export default async function ReportsPage({ searchParams }) {
   const session = await getServerSession(authOptions);
@@ -186,15 +187,20 @@ export default async function ReportsPage({ searchParams }) {
   const isAdmin = user.role === 'Admin';
 
   return (
-    <LeaderboardClient
-      initialCsLeaderboard={csLeaderboard}
-      initialTechLeaderboard={techLeaderboard}
-      globalCategoryTtr={globalCategoryTtr}
-      departments={departments}
-      startDate={start || ""}
-      endDate={end || ""}
-      skyViewStats={skyViewStats}
-      isAdmin={isAdmin}
-    />
+    <>
+      <div className="container" style={{ paddingBottom: 0 }}>
+        <ServiceDeskMetrics days={30} />
+      </div>
+      <LeaderboardClient
+        initialCsLeaderboard={csLeaderboard}
+        initialTechLeaderboard={techLeaderboard}
+        globalCategoryTtr={globalCategoryTtr}
+        departments={departments}
+        startDate={start || ""}
+        endDate={end || ""}
+        skyViewStats={skyViewStats}
+        isAdmin={isAdmin}
+      />
+    </>
   );
 }

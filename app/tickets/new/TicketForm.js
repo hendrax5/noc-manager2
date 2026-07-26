@@ -12,9 +12,11 @@ export default function TicketForm({ departments, categories, users = [], custom
     title: '',
     description: '',
     priority: 'Medium',
+    ticketType: 'Incident',
     departmentId: defaultTargetDeptId || departments[0]?.id || '',
     assigneeId: '',
     jobCategoryId: '',
+    queueId: '',
     enableSla: false,
     slaTimerMins: 15
   });
@@ -44,6 +46,7 @@ export default function TicketForm({ departments, categories, users = [], custom
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
   const [selectedServices, setSelectedServices] = useState([]);
   const customerWrapperRef = useRef(null);
+  const [queues, setQueues] = useState([]);
 
   const matchingCustomerServices = (services || []).filter(s => {
     const term = customerSearchTerm.toLowerCase();
@@ -93,6 +96,13 @@ export default function TicketForm({ departments, categories, users = [], custom
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [customerSearchTerm, customDataState]);
+
+  useEffect(() => {
+    fetch('/api/queues')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setQueues(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -362,6 +372,28 @@ export default function TicketForm({ departments, categories, users = [], custom
           <option value="Critical">Critical - Outage</option>
         </select>
       </div>
+
+      <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+        <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Ticket type</label>
+        <select value={formData.ticketType} onChange={e => setFormData({...formData, ticketType: e.target.value})}>
+          <option value="Incident">Incident</option>
+          <option value="Problem">Problem</option>
+          <option value="Change">Change (requires approval)</option>
+          <option value="Request">Request</option>
+        </select>
+      </div>
+
+      {queues.length > 0 && (
+        <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+          <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Queue (optional)</label>
+          <select value={formData.queueId} onChange={e => setFormData({...formData, queueId: e.target.value})}>
+            <option value="">-- Default department routing --</option>
+            {queues.map((q) => (
+              <option key={q.id} value={q.id}>{q.name}{q.department ? ` (${q.department.name})` : ''}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {renderCustomFields('below_priority')}
       

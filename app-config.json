@@ -3,6 +3,13 @@
   "loginTitle": "Welcome to ION NOC Manager",
   "loginSubtitle": "Sign in to access your ION NOC Manager",
   "sidebarLogoText": "NOC",
-  "primaryColor": "#0f172a",
-  "dashboardDeptConfig": {}
+  "primaryColor": "#18181B",
+  "dashboardDeptConfig": {},
+  "slaPolicy": {
+    "Low": { "responseMins": 240, "resolutionMins": 1440, "followUpMins": 60 },
+    "Medium": { "responseMins": 60, "resolutionMins": 480, "followUpMins": 30 },
+    "High": { "responseMins": 30, "resolutionMins": 240, "followUpMins": 20 },
+    "Critical": { "responseMins": 15, "resolutionMins": 120, "followUpMins": 15 }
+  },
+  "slaBusinessHours": null
 }

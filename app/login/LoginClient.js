@@ -27,7 +27,7 @@ export default function LoginClient({ title = "NOC System Login", subtitle = "Si
     <div className="login-container">
       <div className="login-card">
         <h2>{title}</h2>
-        {subtitle && <p style={{ color: '#64748b', marginBottom: '1.5rem', textAlign: 'center' }}>{subtitle}</p>}
+        {subtitle && <p className="login-subtitle">{subtitle}</p>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email</label>

@@ -16,10 +16,13 @@ export default async function TicketDetailsPage({ params }) {
       department: true, 
       assignee: true, 
       attachments: true,
+      queue: true,
       actionItem: { include: { meeting: true } },
       services: { include: { customer: true } },
       historyLogs: { include: { actor: true }, orderBy: { createdAt: 'desc' } },
-      comments: { include: { author: true, attachments: true }, orderBy: { createdAt: 'asc' } }
+      comments: { include: { author: true, attachments: true }, orderBy: { createdAt: 'asc' } },
+      watchers: { include: { user: { select: { id: true, name: true, email: true } } } },
+      notes: { include: { author: true }, orderBy: { createdAt: 'desc' } },
     }
   });
 
@@ -54,7 +57,12 @@ export default async function TicketDetailsPage({ params }) {
     <main className="container">
       <header className="page-header">
         <h1>Ticket {ticket.trackingId}</h1>
-        <p>View and update the status of this operational issue.</p>
+        <p>
+          View and update this operational issue.{" "}
+          <a href={`/track/${encodeURIComponent(ticket.trackingId || ticket.id)}`} style={{ color: "var(--secondary-color)" }}>
+            Public track link
+          </a>
+        </p>
       </header>
       
       <TicketDetailClient 

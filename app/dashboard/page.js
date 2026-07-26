@@ -62,18 +62,19 @@ export default async function DashboardPage({ searchParams }) {
   const hasCategoryFilter = deptConfig.categories && deptConfig.categories.length > 0;
   const categoryFilterClause = hasCategoryFilter ? { jobCategory: { name: { in: deptConfig.categories } } } : {};
 
-  // Fetch metrics
+  // Fetch metrics (canonical statuses; include legacy aliases until DB normalized)
   const totalNewTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: 'New' } });
-  const totalWaitingTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: 'Waiting Reply' } });
-  const totalRepliedTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: 'Replied' } });
+  const totalPendingTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: { in: ['Pending', 'Waiting Reply'] } } });
+  const totalOpenTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: { in: ['Open', 'Replied'] } } });
   const totalInProgressTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: 'In Progress' } });
+  const totalResolvedTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: { in: ['Resolved', 'Closed'] } } });
   
   const ticketStats = [
     { status: 'New', count: totalNewTickets },
+    { status: 'Open', count: totalOpenTickets },
     { status: 'In Progress', count: totalInProgressTickets },
-    { status: 'Wait Reply', count: totalWaitingTickets },
-    { status: 'Replied', count: totalRepliedTickets },
-    { status: 'Resolved', count: 0 } // Computed dynamically client-side or populated below
+    { status: 'Pending', count: totalPendingTickets },
+    { status: 'Resolved', count: totalResolvedTickets }
   ];
 
   // Compute Average TTR (Time to Resolution)
@@ -275,8 +276,8 @@ export default async function DashboardPage({ searchParams }) {
         // Workspace metrics
         totalNewTickets={totalNewTickets}
         totalInProgressTickets={totalInProgressTickets}
-        totalWaitingTickets={totalWaitingTickets}
-        totalRepliedTickets={totalRepliedTickets}
+        totalWaitingTickets={totalPendingTickets}
+        totalRepliedTickets={0}
         todayResolvedCount={todayResolvedCount}
         avgTtrObj={avgTtrObj}
         resolvedData={resolvedData}

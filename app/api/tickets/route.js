@@ -2,13 +2,17 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { buildSlaDeadlines } from "@/lib/tickets/sla";
+import { pickLeastBusyAssignee } from "@/lib/tickets/routing";
+import { notifyTicketEvent } from "@/lib/notify";
+import { TICKET_TYPES, TICKET_PRIORITIES, assertValidStatus } from "@/lib/tickets/status";
 
 function generateTrackingId() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let id = 'HSK-';
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let id = "HSK-";
   for (let i = 0; i < 8; i++) {
     id += chars.charAt(Math.floor(Math.random() * chars.length));
-    if (i === 3) id += '-';
+    if (i === 3) id += "-";
   }
   return id;
 }
@@ -17,84 +21,143 @@ export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    
-    const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
-    const canCreate = session.user.role === 'Admin' || isCS || session.user.permissions?.includes('create_tickets') || session.user.permissions?.includes('manage_tickets');
-    
+
+    const isCS =
+      session.user.department?.includes("CS") ||
+      session.user.department?.toLowerCase().includes("customer");
+    const canCreate =
+      session.user.role === "Admin" ||
+      isCS ||
+      session.user.permissions?.includes("create_tickets") ||
+      session.user.permissions?.includes("manage_tickets");
+
     if (!canCreate) {
-      return NextResponse.json({ error: "Forbidden: You do not have permission to create tickets." }, { status: 403 });
+      return NextResponse.json(
+        { error: "Forbidden: You do not have permission to create tickets." },
+        { status: 403 }
+      );
     }
 
     const userId = parseInt(session.user.id);
     const body = await req.json();
-    const { title, description, priority, departmentId, assigneeId, jobCategoryId, customData, attachmentUrl, attachmentName, enableSla, slaTimerMins, serviceIds } = body;
+    const {
+      title,
+      description,
+      priority,
+      departmentId,
+      assigneeId,
+      jobCategoryId,
+      customData,
+      attachmentUrl,
+      attachmentName,
+      enableSla,
+      slaTimerMins,
+      serviceIds,
+      ticketType,
+      queueId,
+      approvalRequired,
+    } = body;
 
-    const ALL_PRIORITIES = ['Low', 'Medium', 'High', 'Critical'];
-    if (priority !== undefined && !ALL_PRIORITIES.includes(priority)) {
-      return NextResponse.json({ error: `Invalid priority: "${priority}". Allowed values: ${ALL_PRIORITIES.join(', ')}` }, { status: 400 });
+    if (priority !== undefined && !TICKET_PRIORITIES.includes(priority)) {
+      return NextResponse.json(
+        {
+          error: `Invalid priority: "${priority}". Allowed values: ${TICKET_PRIORITIES.join(", ")}`,
+        },
+        { status: 400 }
+      );
     }
-        
-    // Auto assignment routing logic (Least Busy Round-Robin)
+
     let finalAssigneeId = assigneeId ? parseInt(assigneeId) : null;
 
-    if (!finalAssigneeId && departmentId) {
-      const deptUsers = await prisma.user.findMany({ 
-        where: { departmentId: parseInt(departmentId), role: { name: { not: 'Admin' } } }, 
-        select: { id: true } 
+    if (!finalAssigneeId && (departmentId || queueId)) {
+      finalAssigneeId = await pickLeastBusyAssignee(prisma, {
+        departmentId,
+        queueId,
       });
-      if (deptUsers.length > 0) {
-        const activeTicketsCount = await prisma.ticket.groupBy({
-          by: ['assigneeId'],
-          where: { assigneeId: { in: deptUsers.map(u => u.id) }, status: { not: 'Resolved' } },
-          _count: { id: true }
-        });
-        
-        const loadMap = {};
-        deptUsers.forEach(u => loadMap[u.id] = 0);
-        activeTicketsCount.forEach(l => { if (l.assigneeId) loadMap[l.assigneeId] = l._count.id; });
-        
-        let minLoad = Infinity;
-        for (const [uid, count] of Object.entries(loadMap)) {
-          if (count < minLoad) {
-            minLoad = count;
-            finalAssigneeId = parseInt(uid);
-          }
-        }
-      }
     }
+
+    const sla = buildSlaDeadlines({
+      priority: priority || "Medium",
+      enableSla: !!enableSla,
+      slaTimerMins,
+    });
+
+    const type = TICKET_TYPES.includes(ticketType) ? ticketType : "Incident";
+    const needsApproval = approvalRequired || type === "Change";
 
     let ticketData = {
       trackingId: generateTrackingId(),
       title,
       description,
-      priority,
+      priority: priority || "Medium",
+      ticketType: type,
       customData: customData || {},
       departmentId: parseInt(departmentId),
+      queueId: queueId ? parseInt(queueId) : null,
       jobCategoryId: jobCategoryId ? parseInt(jobCategoryId) : null,
       assigneeId: finalAssigneeId,
-      status: "New",
-      enableSla: enableSla ? true : false,
-      slaTimerMins: slaTimerMins ? parseInt(slaTimerMins) : 15,
-      nextSlaDeadline: enableSla ? new Date(Date.now() + (slaTimerMins ? parseInt(slaTimerMins) : 15) * 60000) : null,
+      status: assertValidStatus("New"),
+      approvalStatus: needsApproval ? "Pending" : null,
+      enableSla: sla.enableSla,
+      slaTimerMins: sla.slaTimerMins,
+      nextSlaDeadline: sla.nextSlaDeadline,
+      responseDueAt: sla.responseDueAt,
+      resolutionDueAt: sla.resolutionDueAt,
       historyLogs: {
-        create: { action: "Ticket systemically instantiated" + (finalAssigneeId ? ` & auto-assigned to ID ${finalAssigneeId}` : ''), actorId: userId }
-      }
+        create: {
+          action:
+            "Ticket created" +
+            (finalAssigneeId ? ` & auto-assigned to ID ${finalAssigneeId}` : "") +
+            (queueId ? ` via queue ${queueId}` : ""),
+          actorId: userId,
+        },
+      },
     };
 
     if (serviceIds && serviceIds.length > 0) {
       ticketData.services = {
-        connect: serviceIds.map(id => ({ id: parseInt(id) }))
+        connect: serviceIds.map((id) => ({ id: parseInt(id) })),
       };
     }
 
-    // Safely nest attachments onto relational write block
     if (attachmentUrl && userId) {
       ticketData.attachments = {
-        create: { filename: attachmentName || "attachment", url: attachmentUrl, uploadedBy: userId }
+        create: {
+          filename: attachmentName || "attachment",
+          url: attachmentUrl,
+          uploadedBy: userId,
+        },
       };
     }
 
-    const ticket = await prisma.ticket.create({ data: ticketData });
+    if (userId) {
+      ticketData.watchers = {
+        create: { userId },
+      };
+    }
+
+    const ticket = await prisma.ticket.create({
+      data: ticketData,
+      include: {
+        assignee: { select: { email: true, name: true } },
+        watchers: { include: { user: { select: { email: true } } } },
+      },
+    });
+
+    const emails = [];
+    if (ticket.assignee?.email) emails.push(ticket.assignee.email);
+    for (const w of ticket.watchers || []) {
+      if (w.user?.email) emails.push(w.user.email);
+    }
+
+    await notifyTicketEvent({
+      prisma,
+      event: "created",
+      ticket,
+      emails,
+      message: `New ${ticket.ticketType} ticket ${ticket.trackingId}: ${ticket.title}`,
+    });
+
     return NextResponse.json(ticket, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

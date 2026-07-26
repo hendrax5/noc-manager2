@@ -3,6 +3,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getAppConfig } from "@/lib/config";
+import { expandStatusesForQuery } from "@/lib/tickets/status";
 
 export async function GET(request) {
   const session = await getServerSession(authOptions);
@@ -80,7 +81,7 @@ export async function GET(request) {
 
   // Status filter
   if (statusFilter) {
-    where.status = { in: statusFilter.split(',') };
+    where.status = { in: expandStatusesForQuery(statusFilter.split(',')) };
   } else {
     // Default: show active tickets
     where.status = { notIn: ['Closed'] };

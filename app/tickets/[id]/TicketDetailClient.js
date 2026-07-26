@@ -135,6 +135,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     description: ticket.description,
     status: ticket.status,
     priority: ticket.priority,
+    ticketType: ticket.ticketType || "Incident",
+    approvalStatus: ticket.approvalStatus || "",
     departmentId: ticket.departmentId,
     assigneeId: ticket.assigneeId || "",
     jobCategoryId: ticket.jobCategoryId || "",
@@ -143,6 +145,10 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     slaTimerMins: ticket.slaTimerMins || 15
   });
   const [commentText, setCommentText] = useState(currentUser.signature ? `\n\n${currentUser.signature}` : "");
+  const [isPublicReply, setIsPublicReply] = useState(true);
+  const [watching, setWatching] = useState(
+    Array.isArray(ticket.watchers) && ticket.watchers.some((w) => w.userId === currentUserId || w.user?.id === currentUserId)
+  );
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [commentLoading, setCommentLoading] = useState(false);
@@ -226,6 +232,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       departmentId: ticket.departmentId,
       assigneeId: ticket.assigneeId || "",
       jobCategoryId: ticket.jobCategoryId || "",
+      ticketType: ticket.ticketType || "Incident",
+      approvalStatus: ticket.approvalStatus || "",
       customData: ticket.customData || {},
       enableSla: ticket.enableSla || false,
       slaTimerMins: ticket.slaTimerMins || 15
@@ -240,8 +248,14 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     document.addEventListener("mousedown", handleClickOutside);
 
     let interval;
-    if (ticket.enableSla && ticket.status !== 'Resolved' && ticket.status !== 'Waiting Reply') {
-      interval = setInterval(() => setNow(Date.now()), 10000); // 10s tick
+    if (
+      ticket.enableSla &&
+      ticket.status !== "Resolved" &&
+      ticket.status !== "Closed" &&
+      ticket.status !== "Pending" &&
+      ticket.status !== "Waiting Reply"
+    ) {
+      interval = setInterval(() => setNow(Date.now()), 10000);
     }
 
     return () => {
@@ -352,7 +366,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     }
 
     const res = await fetch(`/api/tickets/${ticket.id}/comments`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: commentText, attachmentUrl, attachmentName, actionType, replyCustomData, replyEnableSla, replySlaMins })
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: commentText, attachmentUrl, attachmentName, actionType, replyCustomData, replyEnableSla, replySlaMins, isPublic: isPublicReply })
     });
     if (res.ok) {
       const updatedStatus = actionType === 'finish' ? 'Finish' : 'Auto';
@@ -808,7 +822,13 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
         <div style={{ background: 'var(--hover-bg)', padding: '2rem', borderRadius: '8px', border: '1px solid var(--border-color)', marginTop: '1rem' }}>
           <form onSubmit={handleCommentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--heading-color)' }}>Reply to ticket</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--heading-color)' }}>Reply to ticket</h3>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+                <input type="checkbox" checked={isPublicReply} onChange={(e) => setIsPublicReply(e.target.checked)} />
+                Public reply (visible on track link)
+              </label>
+            </div>
             
             {optionalFields.length > 0 && (
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-0.5rem' }}>
@@ -983,15 +1003,51 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: formData.status === 'Resolved' ? '#064e3b' : 'var(--input-bg)', color: formData.status === 'Resolved' ? '#34d399' : 'var(--input-text)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem', outline: 'none' }} value={formData.status} onChange={e => triggerAutoSave('status', e.target.value)} disabled={!canChangeStatus}>
                  <option value="New">New</option>
                  <option value="Open">Open</option>
-                 <option value="Waiting Reply">Waiting Reply (Awaiting Staff)</option>
-                 <option value="Replied">Replied (Awaiting User)</option>
                  <option value="In Progress">In Progress</option>
+                 <option value="Pending">Pending (Waiting User)</option>
                  <option value="On Hold">On Hold</option>
                  <option value="Finish">Finish</option>
                  <option value="Resolved">Resolved</option>
                  <option value="Closed">Closed</option>
                </select>
              </div>
+
+             <div>
+               <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-color)', marginBottom: '0.35rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Type</label>
+               <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontWeight: '600', fontSize: '0.85rem' }} value={formData.ticketType} onChange={e => triggerAutoSave('ticketType', e.target.value)} disabled={!canModifyTicket}>
+                 <option value="Incident">Incident</option>
+                 <option value="Problem">Problem</option>
+                 <option value="Change">Change</option>
+                 <option value="Request">Request</option>
+               </select>
+             </div>
+
+             {formData.ticketType === 'Change' && (
+               <div>
+                 <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-color)', marginBottom: '0.35rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Approval</label>
+                 <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontWeight: '600', fontSize: '0.85rem' }} value={formData.approvalStatus || 'Pending'} onChange={e => triggerAutoSave('approvalStatus', e.target.value)} disabled={!isAdminOrManager}>
+                   <option value="Pending">Pending</option>
+                   <option value="Approved">Approved</option>
+                   <option value="Rejected">Rejected</option>
+                 </select>
+               </div>
+             )}
+
+             <button
+               type="button"
+               onClick={async () => {
+                 if (watching) {
+                   await fetch(`/api/tickets/${ticket.id}/watchers?userId=${currentUserId}`, { method: 'DELETE' });
+                   setWatching(false);
+                 } else {
+                   await fetch(`/api/tickets/${ticket.id}/watchers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+                   setWatching(true);
+                 }
+               }}
+               style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: watching ? 'var(--secondary-color)' : 'var(--card-bg)', color: watching ? '#fff' : 'var(--heading-color)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+             >
+               {watching ? 'Watching' : 'Watch ticket'}
+             </button>
              
              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                <label style={{ color: 'var(--text-color)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Priority Level</label>
@@ -1100,23 +1156,22 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: notesExpanded ? '1rem' : '0', cursor: 'pointer' }} onClick={() => setNotesExpanded(!notesExpanded)}>
               <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ fontSize: '1rem' }}>📝</span> Activity Notes
-                <span style={{ background: 'var(--hover-bg)', color: 'var(--text-color)', padding: '0.1rem 0.5rem', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 'bold' }}>{notes.length}</span>
+                Activity Notes
+                <span style={{ background: 'var(--hover-bg)', color: 'var(--text-color)', padding: '0.1rem 0.5rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>{notes.length}</span>
               </h3>
               <span style={{ color: 'var(--text-color)', fontSize: '0.7rem', transform: notesExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
             </div>
 
             {notesExpanded && (
               <>
-                {/* Add Note Form */}
                 {canWriteNotes && (
                   <div style={{ marginBottom: '1rem', background: 'var(--hover-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
                     <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                       {[
-                        { value: 'internal', label: '📝 Internal', color: '#6366f1' },
-                        { value: 'follow_up', label: '🔔 Follow-up', color: '#f59e0b' },
-                        { value: 'escalation', label: '⬆️ Escalation', color: '#ef4444' },
-                        { value: 'customer_update', label: '👤 Customer', color: '#10b981' }
+                        { value: 'internal', label: 'Internal', color: '#0f766e' },
+                        { value: 'follow_up', label: 'Follow-up', color: '#d97706' },
+                        { value: 'escalation', label: 'Escalation', color: '#dc2626' },
+                        { value: 'customer_update', label: 'Customer', color: '#059669' }
                       ].map(t => (
                         <button
                           key={t.value}
@@ -1159,31 +1214,30 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                         } catch (err) {}
                         setNoteLoading(false);
                       }}
-                      style={{ marginTop: '0.5rem', width: '100%', padding: '0.4rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: noteContent.trim() ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.8rem', opacity: noteContent.trim() ? 1 : 0.5 }}
+                      style={{ marginTop: '0.5rem', width: '100%', padding: '0.4rem', background: 'var(--secondary-color)', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: noteContent.trim() ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.8rem', opacity: noteContent.trim() ? 1 : 0.5, fontFamily: 'inherit' }}
                     >
-                      {noteLoading ? 'Saving...' : '+ Tambah Note'}
+                      {noteLoading ? 'Saving...' : 'Add note'}
                     </button>
                   </div>
                 )}
 
-                {/* Notes Timeline */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '350px', overflowY: 'auto' }}>
                   {notes.length === 0 && (
                     <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-color)', fontSize: '0.8rem', fontStyle: 'italic' }}>Belum ada catatan. Tambahkan note pertama di atas.</div>
                   )}
                   {notes.map(note => {
                     const typeConfig = {
-                      internal: { icon: '📝', color: '#6366f1', bg: '#eef2ff', label: 'Internal' },
-                      follow_up: { icon: '🔔', color: '#f59e0b', bg: '#fffbeb', label: 'Follow-up' },
-                      escalation: { icon: '⬆️', color: '#ef4444', bg: '#fef2f2', label: 'Escalation' },
-                      customer_update: { icon: '👤', color: '#10b981', bg: '#ecfdf5', label: 'Customer' }
+                      internal: { color: '#0f766e', label: 'Internal' },
+                      follow_up: { color: '#d97706', label: 'Follow-up' },
+                      escalation: { color: '#dc2626', label: 'Escalation' },
+                      customer_update: { color: '#059669', label: 'Customer' }
                     };
                     const cfg = typeConfig[note.noteType] || typeConfig.internal;
                     return (
-                      <div key={note.id} style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', borderLeft: `3px solid ${cfg.color}`, background: 'var(--card-bg)' }}>
+                      <div key={note.id} style={{ padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', borderLeft: `3px solid ${cfg.color}`, background: 'var(--card-bg)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
-                          <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: cfg.color, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                            {cfg.icon} {cfg.label}
+                          <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: cfg.color, letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+                            {cfg.label}
                           </span>
                           <span style={{ fontSize: '0.65rem', color: 'var(--text-color)' }}>{mounted ? new Date(note.createdAt).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '...'}</span>
                         </div>

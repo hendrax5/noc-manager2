@@ -8,6 +8,7 @@ import TicketQuickActions from "./TicketQuickActions";
 import TicketAdvancedFilter from "./TicketAdvancedFilter";
 import Pagination from "@/components/Pagination";
 import { getAppConfig } from "@/lib/config";
+import { DEFAULT_FILTER_STATUSES, expandStatusesForQuery } from "@/lib/tickets/status";
 
 export default async function TicketsPage({ searchParams }) {
   const session = await getServerSession(authOptions);
@@ -90,11 +91,10 @@ export default async function TicketsPage({ searchParams }) {
   }
 
   if (statusesParam) {
-    const statusArray = statusesParam.split(',');
+    const statusArray = expandStatusesForQuery(statusesParam.split(','));
     filters.push({ status: { in: statusArray } });
   } else if (!resolvedParams?.statuses && !resolvedParams?.tab) {
-    // default statuses
-    filters.push({ status: { in: ['New', 'Open', 'Waiting Reply', 'Replied', 'In Progress', 'On Hold', 'Finish'] } });
+    filters.push({ status: { in: expandStatusesForQuery([...DEFAULT_FILTER_STATUSES]) } });
   } else if (tab === 'needs_attention') {
     filters.push({ OR: [{ status: 'New' }, { status: 'Open' }, { assigneeId: null }] });
   } else if (tab === 'in_progress') {
