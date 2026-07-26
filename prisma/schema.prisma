@@ -88,6 +88,12 @@ model Ticket {
   csatComment     String?
   csatAt          DateTime?
 
+  // Integration API
+  externalRef      String?
+  idempotencyKey   String?
+  integrationAppId Int?
+  integrationApp   IntegrationApp? @relation(fields: [integrationAppId], references: [id])
+
   departmentId Int
   department   Department @relation(fields: [departmentId], references: [id])
   queueId       Int?
@@ -108,6 +114,9 @@ model Ticket {
   updatedAt    DateTime   @updatedAt
   resolvedAt   DateTime?
   services     Service[]
+
+  @@unique([integrationAppId, idempotencyKey])
+  @@index([externalRef])
 }
 
 model Comment {
@@ -406,4 +415,43 @@ model NotificationLog {
   status    String   @default("sent")
   payload   Json?
   createdAt DateTime @default(now())
+}
+
+// ==========================================
+// Integration Platform v1
+// ==========================================
+
+model IntegrationApp {
+  id                   Int      @id @default(autoincrement())
+  name                 String   @unique
+  description          String?
+  keyPrefix            String   // first 8 chars for display
+  keyHash              String   @unique
+  scopes               String   @default("[\"tickets:create\",\"tickets:read\"]")
+  webhookUrl           String?
+  webhookSecret        String?
+  webhookEvents        String   @default("[\"ticket.created\",\"ticket.status_changed\",\"ticket.resolved\"]")
+  defaultDepartmentId  Int?
+  rateLimitPerMinute   Int      @default(60)
+  active               Boolean  @default(true)
+  tickets              Ticket[]
+  auditLogs            IntegrationAuditLog[]
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model IntegrationAuditLog {
+  id               Int             @id @default(autoincrement())
+  integrationAppId Int?
+  integrationApp   IntegrationApp? @relation(fields: [integrationAppId], references: [id], onDelete: SetNull)
+  method           String
+  path             String
+  statusCode       Int
+  ip               String?
+  externalRef      String?
+  ticketId         Int?
+  message          String?
+  createdAt        DateTime        @default(now())
+
+  @@index([integrationAppId, createdAt])
 }

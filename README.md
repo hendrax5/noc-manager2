@@ -2,6 +2,18 @@
 
 A comprehensive Enterprise Ticketing, Operations, and Analytics suite designed exclusively for internal NOC, Customer Service, and B2B Technical Support Teams.
 
+## 🔌 Integration API v1
+
+Stable server-to-server API under `/api/v1/*` with per-app API keys (Settings → Integrations).
+
+- Create / get / patch tickets, add comments, list department codes
+- Idempotency via `Idempotency-Key` / `externalRef`
+- Outbound webhooks signed with `X-NOC-Signature` (HMAC-SHA256)
+- OpenAPI: `GET /api/v1/openapi` · Guide: [`docs/API_V1.md`](docs/API_V1.md) · Connectors: [`docs/connectors/`](docs/connectors/)
+- Legacy: `POST /api/external/tickets` remains as an alias
+
+---
+
 ## 🚀 What's New in v2.1.0 & v2.1.1?
 
 ### 1. 🔌 External Ticket Creation API

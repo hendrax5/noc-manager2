@@ -5,6 +5,7 @@ import { authOptions } from "../../../auth/[...nextauth]/route";
 import { refreshFollowUpDeadline } from "@/lib/tickets/sla";
 import { maybeEscalateOnBreach } from "@/lib/tickets/escalation";
 import { notifyTicketEvent, collectTicketNotifyEmails } from "@/lib/notify";
+import { dispatchIntegrationWebhook } from "@/lib/integration/webhooks";
 
 export async function POST(req, { params }) {
   try {
@@ -48,6 +49,8 @@ export async function POST(req, { params }) {
       emails,
       message: `SLA follow-up / breach on ${updated.trackingId}. Breaches: ${updated.slaBreaches}`,
     });
+
+    await dispatchIntegrationWebhook("ticket.sla_breached", updated);
 
     await maybeEscalateOnBreach(prisma, updated, parseInt(session.user.id));
 

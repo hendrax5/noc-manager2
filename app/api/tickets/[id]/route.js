@@ -10,6 +10,7 @@ import {
   TICKET_PRIORITIES,
 } from "@/lib/tickets/status";
 import { notifyTicketEvent, collectTicketNotifyEmails } from "@/lib/notify";
+import { dispatchIntegrationWebhook } from "@/lib/integration/webhooks";
 
 export async function PATCH(req, { params }) {
   try {
@@ -348,6 +349,13 @@ export async function PATCH(req, { params }) {
         ticket,
         emails,
         message: `Ticket ${ticket.trackingId} status: ${oldTicket.status} → ${nextStatus}`,
+      });
+      const event =
+        nextStatus === "Resolved" || nextStatus === "Closed"
+          ? "ticket.resolved"
+          : "ticket.status_changed";
+      await dispatchIntegrationWebhook(event, ticket, {
+        previousStatus: oldTicket.status,
       });
     }
 

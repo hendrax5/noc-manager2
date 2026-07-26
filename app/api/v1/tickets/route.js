@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
-import { createTicketFromIntegration, publicTicketDto } from "@/lib/integration/tickets";
 import {
   authenticateIntegration,
   writeIntegrationAudit,
 } from "@/lib/integration/auth";
+import { createTicketFromIntegration, publicTicketDto } from "@/lib/integration/tickets";
 
-/**
- * Legacy alias for POST /api/v1/tickets
- * Kept for existing integrators using /api/external/tickets
- */
 export async function POST(req) {
   const auth = await authenticateIntegration(req, {
     requireScopes: ["tickets:create"],
@@ -19,6 +15,7 @@ export async function POST(req) {
     const body = await req.json().catch(() => ({}));
     const idempotencyKey =
       req.headers.get("idempotency-key") || body.idempotencyKey || null;
+
     const { ticket, replayed } = await createTicketFromIntegration({
       body,
       app: auth.app,
@@ -33,21 +30,25 @@ export async function POST(req) {
       ip: auth.ip,
       externalRef: ticket.externalRef,
       ticketId: ticket.id,
-      message: replayed ? "idempotent replay (legacy)" : "created (legacy)",
+      message: replayed ? "idempotent replay" : "created",
     });
 
-    // Legacy response shape: raw ticket fields + DTO extras
     return NextResponse.json(
-      { ...ticket, ...publicTicketDto(ticket), replayed: !!replayed },
+      { ...publicTicketDto(ticket), replayed: !!replayed },
       { status: replayed ? 200 : 201 }
     );
   } catch (error) {
     const status = error.status || 500;
+    await writeIntegrationAudit({
+      integrationAppId: auth.app?.id,
+      method: auth.method,
+      path: auth.path,
+      statusCode: status,
+      ip: auth.ip,
+      message: error.message,
+    });
     return NextResponse.json(
-      {
-        error: status === 500 ? "Internal Server Error" : error.message,
-        details: error.message,
-      },
+      { error: status === 500 ? "Internal Server Error" : error.message },
       { status }
     );
   }

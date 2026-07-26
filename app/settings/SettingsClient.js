@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import IntegrationsPanel from "./IntegrationsPanel";
 
 export default function SettingsClient({ initialFields, initialCategories, initialConfig, departments = [] }) {
   const router = useRouter();
@@ -230,14 +231,14 @@ export default function SettingsClient({ initialFields, initialCategories, initi
   return (
     <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', background: '#f8fafc' }}>
-        {['custom_fields', 'job_categories', 'preferences', 'dashboard_settings'].map(tab => (
+        {['custom_fields', 'job_categories', 'preferences', 'dashboard_settings', 'integrations'].map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
             style={{ 
               flex: 1, padding: '1rem', border: 'none', background: activeTab === tab ? 'white' : 'transparent', 
               borderBottom: activeTab === tab ? '3px solid var(--primary-color)' : '3px solid transparent',
-              fontWeight: activeTab === tab ? 'bold' : 'normal', cursor: 'pointer', fontSize: '1rem', textTransform: 'capitalize', transition: 'all 0.2s'
+              fontWeight: activeTab === tab ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.95rem', textTransform: 'capitalize', transition: 'all 0.2s'
             }}
           >
             {tab.replace('_', ' ')}
@@ -246,6 +247,8 @@ export default function SettingsClient({ initialFields, initialCategories, initi
       </div>
 
       <div style={{ padding: '2rem' }}>
+        {activeTab === 'integrations' && <IntegrationsPanel departments={departments} />}
+
         {activeTab === 'custom_fields' && (
           <div>
             <div style={{ marginBottom: '1.5rem' }}>

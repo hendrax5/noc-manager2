@@ -6,6 +6,7 @@ import { normalizeStatus, isTerminalStatus } from "@/lib/tickets/status";
 import { refreshFollowUpDeadline } from "@/lib/tickets/sla";
 import { pickLeastBusyAssignee } from "@/lib/tickets/routing";
 import { notifyTicketEvent, collectTicketNotifyEmails } from "@/lib/notify";
+import { dispatchIntegrationWebhook } from "@/lib/integration/webhooks";
 
 export async function POST(req, { params }) {
   try {
@@ -196,6 +197,9 @@ export async function POST(req, { params }) {
         ticket: full || ticket,
         emails: emails.filter((e) => e !== session.user.email),
         message: `New reply on ${ticket.trackingId}: ${text?.slice(0, 200) || ""}`,
+      });
+      await dispatchIntegrationWebhook("ticket.commented", full || ticket, {
+        comment: { id: comment.id, text: comment.text, isPublic: comment.isPublic },
       });
     }
 
