@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { SCHEDULE_POLAS, SCHEDULE_FLAGS } from "@/lib/schedules/pola";
 import { exportScheduleMatrixExcel } from "@/lib/schedules/exportExcel";
 import { departmentColor } from "@/lib/schedules/deptColors";
+import { shiftCellColor, SHIFT_COLOR_LEGEND } from "@/lib/schedules/shiftColors";
 import { toDateOnlyString } from "@/lib/schedules/dates";
 import { HIGHLIGHT_COLORS } from "@/lib/schedules/access";
 
@@ -663,15 +664,19 @@ export default function SchedulesClient({
                               const shift = cell?.shiftType;
                               const selected =
                                 swapA && swapA.userId === row.user.id && swapA.day === d;
+                              const shiftColor = isPending
+                                ? null
+                                : shiftCellColor(isOff ? null : shift?.name);
                               const bg = selected
                                 ? "#fef3c7"
                                 : cell?.highlightColor
                                   ? cell.highlightColor
-                                  : isOff
-                                    ? colors.off
-                                    : isPending
-                                      ? colors.bg
-                                      : colors.cell;
+                                  : isPending
+                                    ? colors.bg
+                                    : shiftColor.bg;
+                              const cellText = cell?.highlightColor
+                                ? colors.text
+                                : shiftColor?.text || colors.text;
                               return (
                                 <td
                                   key={d}
@@ -698,12 +703,12 @@ export default function SchedulesClient({
                                     fontSize: "0.75rem",
                                     background: bg,
                                     cursor: isEditor || cell?.note ? "pointer" : "default",
-                                    color: colors.text,
+                                    color: cellText,
                                     position: "relative",
                                   }}
                                 >
                                   {isOff ? (
-                                    <span style={{ opacity: 0.55 }}>OFF</span>
+                                    <span style={{ fontWeight: 600, opacity: 0.85 }}>OFF</span>
                                   ) : isPending ? (
                                     <span style={{ opacity: 0.35 }}>-</span>
                                   ) : (
@@ -749,8 +754,30 @@ export default function SchedulesClient({
                   gap: "0.75rem",
                   marginTop: "1rem",
                   fontSize: "0.8rem",
+                  alignItems: "center",
                 }}
               >
+                <span style={{ color: "#64748b", fontWeight: 600, marginRight: 4 }}>Shift:</span>
+                {SHIFT_COLOR_LEGEND.map((sc) => (
+                  <span
+                    key={`shift-${sc.label}`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "0.25rem 0.6rem",
+                      borderRadius: 4,
+                      background: sc.bg,
+                      color: sc.text,
+                      border: "1px solid #cbd5e1",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {sc.label}
+                  </span>
+                ))}
+                <span style={{ color: "#94a3b8", margin: "0 0.25rem" }}>|</span>
+                <span style={{ color: "#64748b", fontWeight: 600, marginRight: 4 }}>Dept:</span>
                 {groupedRows.map((g) => {
                   const c = departmentColor(g.deptId);
                   return (
