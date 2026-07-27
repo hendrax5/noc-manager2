@@ -12,6 +12,11 @@ services:
       - "5432:5432"
     volumes:
       - noc_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nocticketing"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: always
 
   shift-solver:
@@ -19,6 +24,18 @@ services:
     container_name: noc_shift_solver
     ports:
       - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     restart: unless-stopped
 
   app:
@@ -32,6 +49,7 @@ services:
       - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/nocticketing?schema=public
       - HOSTNAME=0.0.0.0
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-my_super_secret_key_123}
+      - TZ=Asia/Jakarta
       - SHIFT_SOLVER_URL=http://shift-solver:8000
       - SCHEDULE_CRON_SECRET=${SCHEDULE_CRON_SECRET:-noc-schedule-cron}
       - APP_INTERNAL_URL=http://127.0.0.1:3000
@@ -40,8 +58,10 @@ services:
       - /app/node_modules
       - /app/.next
     depends_on:
-      - db
-      - shift-solver
+      db:
+        condition: service_healthy
+      shift-solver:
+        condition: service_healthy
     command: sh -c "sleep 3 && npx prisma db push --accept-data-loss && (node scripts/schedule_cron.js & npm run dev)"
     restart: unless-stopped
 

@@ -37,6 +37,9 @@ export async function PATCH(req, { params }) {
       }
       data.schedulePola = pola;
     }
+    if (body.scheduleEnabled != null) {
+      data.scheduleEnabled = !!body.scheduleEnabled;
+    }
     const dept = await prisma.department.update({ where: { id }, data });
     return NextResponse.json(dept);
   } catch (error) {

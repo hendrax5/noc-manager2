@@ -10,7 +10,15 @@ NOC Manager now uses the **Documents/absen** OR-Tools solver as a sidecar:
 
 Admin sets **default pola per department** (`Department.schedulePola`: `POLA_1`…`POLA_6`).
 
+Toggle **Generate** (`Department.scheduleEnabled`): uncheck departments that should **not** get roster/auto-absen (e.g. Admin, Sales). Auto-generate and “generate all” only include enabled departments. Generating a single selected department still works even if unchecked (manual override).
+
+Minimum staff before solve: POLA_1/2/3/6 ≥3, POLA_4/5 ≥4 (clear error if below).
+
+Day/hour for auto-generate use **Asia/Jakarta**. `lastScheduleAutoGenerateKey` is saved only when every enabled department succeeds (or is skipped for no users).
+
 Manual generate: calendar month + optional dept + optional pola override → `POST /api/schedules/generate`.
+
+Import mapping from absen SQLite: see [`SCHEDULE_IMPORT.md`](./SCHEDULE_IMPORT.md).
 
 ## Auto-generate (tanggal 15)
 

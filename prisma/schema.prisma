@@ -15,14 +15,15 @@ model Role {
 }
 
 model Department {
-  id           Int       @id @default(autoincrement())
-  name         String    @unique
-  schedulePola String    @default("POLA_1") // POLA_1 … POLA_6 (absen OR-Tools engine)
-  locations    Location[]
-  users        User[]
-  tickets      Ticket[]
-  actionItems  ActionItem[]
-  queues       TicketQueue[]
+  id              Int       @id @default(autoincrement())
+  name            String    @unique
+  schedulePola    String    @default("POLA_1") // POLA_1 … POLA_6 (absen OR-Tools engine)
+  scheduleEnabled Boolean   @default(true) // false = skip generate roster / auto-absen
+  locations       Location[]
+  users           User[]
+  tickets         Ticket[]
+  actionItems     ActionItem[]
+  queues          TicketQueue[]
 }
 
 model Location {

@@ -15,7 +15,7 @@ export default async function SchedulesPage() {
   const locations = await prisma.location.findMany({ select: { id: true, city: true } });
   const departments = await prisma.department.findMany({
     orderBy: { name: "asc" },
-    select: { id: true, name: true, schedulePola: true },
+    select: { id: true, name: true, schedulePola: true, scheduleEnabled: true },
   });
   const users = await prisma.user.findMany({
     include: {
