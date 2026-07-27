@@ -362,7 +362,8 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                     model.Add(sum(x[e, d, 0] for d in wg) >= 1).OnlyEnforceIf(has_off)
                     bonus_vars.append(has_off * 500)
                     
-        # Demand Shift
+        # Demand Shift — scaled for team size (classic design ~5; also works for 6–8+)
+        # Hard coverage: 1× S1+OC every day. Weekday fills remaining with S1/S2.
         for d in range(num_days):
             s1_count = sum(x[e, d, 1] for e in range(num_employees))
             s2_count = sum(x[e, d, 2] for e in range(num_employees))
@@ -371,30 +372,39 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
             working_cnt = model.NewIntVar(0, num_employees, f'core_working_d{d}')
             model.Add(working_cnt == num_employees - off_count)
 
-            # Tepat 1 orang S1+OC (On Call 22:00-pagi), merupakan bagian dari slot S1
+            # Tepat 1 orang S1+OC (On Call 22:00-pagi)
             model.Add(oc_count == 1)
 
             curr = start_date + timedelta(days=d)
             if curr.weekday() < 5:
-                model.Add(working_cnt >= num_employees - 1)
-                model.Add(s2_count <= 2)
+                # Tim kecil (≤5): max 1 OFF. Tim lebih besar: max 2 OFF agar feasible.
+                max_off = 1 if num_employees <= 5 else 2
+                min_working = max(4, num_employees - max_off)
+                if min_working > num_employees:
+                    min_working = num_employees
+                model.Add(working_cnt >= min_working)
 
-                # S1 = 2 org: 1 plain S1 + 1 S1+OC (bukan slot terpisah)
-                model.Add(s1_count + oc_count == 2)
-                model.Add(s1_count == 1)
+                # Minimal 1 plain S1 + 1 S2; S1 boleh naik jika tim besar
+                model.Add(s1_count >= 1)
+                model.Add(s2_count >= 1)
+                model.Add(s2_count <= max(2, (num_employees + 2) // 3))
 
-                # Full team (5 org kerja): 1 S1 + 1 S1+OC + 2 S2
+                # Soft: prefer hampir penuh (n atau n-1 kerja) dengan komposisi klasik
                 full_team = model.NewBoolVar(f'core_full_team_d{d}')
                 model.Add(working_cnt == num_employees).OnlyEnforceIf(full_team)
                 model.Add(working_cnt < num_employees).OnlyEnforceIf(full_team.Not())
-                model.Add(s2_count == 2).OnlyEnforceIf(full_team)
                 bonus_vars.append(full_team * 1000)
 
-                # Understaffed (4 org kerja): 1 S1 + 1 S1+OC + 1 S2
-                partial_ok = model.NewBoolVar(f'core_partial_ok_d{d}')
-                model.Add(working_cnt == num_employees - 1).OnlyEnforceIf(partial_ok)
-                model.Add(s2_count == 1).OnlyEnforceIf(partial_ok)
-                bonus_vars.append(partial_ok * 5000)
+                nearly_full = model.NewBoolVar(f'core_nearly_full_d{d}')
+                model.Add(working_cnt == num_employees - 1).OnlyEnforceIf(nearly_full)
+                model.Add(working_cnt != num_employees - 1).OnlyEnforceIf(nearly_full.Not())
+                bonus_vars.append(nearly_full * 5000)
+
+                # Soft: usahakan tepat 1 plain S1 (pola klasik) bila tim kecil
+                classic_s1 = model.NewBoolVar(f'core_classic_s1_d{d}')
+                model.Add(s1_count == 1).OnlyEnforceIf(classic_s1)
+                model.Add(s1_count != 1).OnlyEnforceIf(classic_s1.Not())
+                bonus_vars.append(classic_s1 * 800)
             elif curr.weekday() >= 5:
                 # Sabtu-Minggu WFH: 1 S1+OC + 1 S2 (usahakan tepat 2 org kerja)
                 model.Add(working_cnt <= 2)
