@@ -259,13 +259,17 @@ model UserSchedulePreference {
 }
 
 model ShiftSchedule {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date        DateTime @db.Date
-  shiftTypeId Int?     
-  shiftType   ShiftType? @relation(fields: [shiftTypeId], references: [id])
-  
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime  @db.Date
+  shiftTypeId    Int?
+  shiftType      ShiftType? @relation(fields: [shiftTypeId], references: [id])
+  highlightColor String?   // e.g. #fef08a — manager/staff marker (stabilo)
+  note           String?   @db.Text
+  noteUpdatedBy  Int?
+  noteUpdatedAt  DateTime?
+
   @@unique([userId, date])
 }
 

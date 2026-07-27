@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { dateOnlyToUtcDate, toDateOnlyString } from "@/lib/schedules/dates";
+import { canEditSchedules } from "@/lib/schedules/access";
 
 export async function GET(req) {
   try {
@@ -47,22 +48,18 @@ export async function GET(req) {
 }
 
 /**
- * PATCH — edit one cell or swap two cells.
- * Body:
- *  { userId, date: "YYYY-MM-DD", shiftTypeId?: number|null, shift?: "OFF"|"S1"|... }
- *  { action: "swap", a: { userId, date }, b: { userId, date } }
+ * PATCH — edit cell (shift / highlight / note) or swap two cells.
+ * Editors: Admin, Manager, manage_schedules
  */
 export async function PATCH(req) {
   try {
     const session = await getServerSession(authOptions);
-    const hasPermission =
-      session?.user?.permissions?.includes("manage_schedules") ||
-      session?.user?.role === "Admin";
-    if (!session || !hasPermission) {
+    if (!session || !canEditSchedules(session.user)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await req.json().catch(() => ({}));
+    const actorId = session.user.id ? parseInt(session.user.id, 10) : null;
 
     if (body.action === "swap") {
       return swapCells(body);
@@ -74,30 +71,60 @@ export async function PATCH(req) {
       return NextResponse.json({ error: "userId and date required" }, { status: 400 });
     }
 
-    let shiftTypeId = body.shiftTypeId;
+    const data = {};
+
     if (body.shift != null) {
       const name = String(body.shift).toUpperCase();
       if (name === "OFF" || name === "") {
-        shiftTypeId = null;
+        data.shiftTypeId = null;
       } else {
         const st = await prisma.shiftType.findFirst({ where: { name } });
         if (!st) {
           return NextResponse.json({ error: `Unknown shift ${name}` }, { status: 400 });
         }
-        shiftTypeId = st.id;
+        data.shiftTypeId = st.id;
       }
-    } else if (shiftTypeId !== undefined && shiftTypeId !== null) {
-      shiftTypeId = parseInt(shiftTypeId, 10);
+    } else if (body.shiftTypeId !== undefined) {
+      data.shiftTypeId =
+        body.shiftTypeId === null || body.shiftTypeId === ""
+          ? null
+          : parseInt(body.shiftTypeId, 10);
+    }
+
+    if (body.highlightColor !== undefined) {
+      const hex = body.highlightColor;
+      if (hex === null || hex === "" || hex === "clear") {
+        data.highlightColor = null;
+      } else if (/^#[0-9A-Fa-f]{6}$/.test(String(hex))) {
+        data.highlightColor = String(hex).toLowerCase();
+      } else {
+        return NextResponse.json({ error: "highlightColor must be #RRGGBB or null" }, { status: 400 });
+      }
+    }
+
+    if (body.note !== undefined) {
+      const text = body.note == null ? null : String(body.note).trim();
+      data.note = text || null;
+      data.noteUpdatedBy = actorId;
+      data.noteUpdatedAt = new Date();
+    }
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ error: "No fields to update" }, { status: 400 });
     }
 
     const date = dateOnlyToUtcDate(dateStr);
     const row = await prisma.shiftSchedule.upsert({
       where: { userId_date: { userId, date } },
-      update: { shiftTypeId: shiftTypeId === undefined ? undefined : shiftTypeId },
+      update: data,
       create: {
         userId,
         date,
-        shiftTypeId: shiftTypeId === undefined ? null : shiftTypeId,
+        shiftTypeId: data.shiftTypeId !== undefined ? data.shiftTypeId : null,
+        highlightColor: data.highlightColor !== undefined ? data.highlightColor : null,
+        note: data.note !== undefined ? data.note : null,
+        noteUpdatedBy: data.noteUpdatedBy ?? null,
+        noteUpdatedAt: data.noteUpdatedAt ?? null,
       },
       include: { shiftType: true, user: { select: { id: true, name: true, email: true } } },
     });
@@ -128,20 +155,32 @@ async function swapCells(body) {
     prisma.shiftSchedule.findUnique({ where: { userId_date: { userId: bUser, date: bDate } } }),
   ]);
 
-  const aShift = aRow?.shiftTypeId ?? null;
-  const bShift = bRow?.shiftTypeId ?? null;
+  const aPayload = {
+    shiftTypeId: aRow?.shiftTypeId ?? null,
+    highlightColor: aRow?.highlightColor ?? null,
+    note: aRow?.note ?? null,
+    noteUpdatedBy: aRow?.noteUpdatedBy ?? null,
+    noteUpdatedAt: aRow?.noteUpdatedAt ?? null,
+  };
+  const bPayload = {
+    shiftTypeId: bRow?.shiftTypeId ?? null,
+    highlightColor: bRow?.highlightColor ?? null,
+    note: bRow?.note ?? null,
+    noteUpdatedBy: bRow?.noteUpdatedBy ?? null,
+    noteUpdatedAt: bRow?.noteUpdatedAt ?? null,
+  };
 
   const [aOut, bOut] = await prisma.$transaction([
     prisma.shiftSchedule.upsert({
       where: { userId_date: { userId: aUser, date: aDate } },
-      update: { shiftTypeId: bShift },
-      create: { userId: aUser, date: aDate, shiftTypeId: bShift },
+      update: bPayload,
+      create: { userId: aUser, date: aDate, ...bPayload },
       include: { shiftType: true },
     }),
     prisma.shiftSchedule.upsert({
       where: { userId_date: { userId: bUser, date: bDate } },
-      update: { shiftTypeId: aShift },
-      create: { userId: bUser, date: bDate, shiftTypeId: aShift },
+      update: aPayload,
+      create: { userId: bUser, date: bDate, ...aPayload },
       include: { shiftType: true },
     }),
   ]);

@@ -5,6 +5,7 @@ import { SCHEDULE_POLAS, SCHEDULE_FLAGS } from "@/lib/schedules/pola";
 import { exportScheduleMatrixExcel } from "@/lib/schedules/exportExcel";
 import { departmentColor } from "@/lib/schedules/deptColors";
 import { toDateOnlyString } from "@/lib/schedules/dates";
+import { HIGHLIGHT_COLORS } from "@/lib/schedules/access";
 
 export default function SchedulesClient({
   initialShiftTypes,
@@ -13,6 +14,8 @@ export default function SchedulesClient({
   departments: initialDepartments = [],
   currentUser,
   scheduleConfig = {},
+  canEdit = false,
+  canEngine = false,
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("calendar");
@@ -20,8 +23,8 @@ export default function SchedulesClient({
   const [users, setUsers] = useState(initialUsers);
   const [departments, setDepartments] = useState(initialDepartments);
 
-  const isAdminOrManager =
-    currentUser.permissions?.includes("manage_schedules") || currentUser.role === "Admin";
+  const isEditor = !!canEdit;
+  const isScheduleAdmin = !!canEngine;
 
   const [schedules, setSchedules] = useState([]);
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
@@ -33,6 +36,8 @@ export default function SchedulesClient({
   const [generating, setGenerating] = useState(false);
   const [swapMode, setSwapMode] = useState(false);
   const [swapA, setSwapA] = useState(null); // { userId, day }
+  const [cellEditor, setCellEditor] = useState(null);
+  // { userId, userName, day, shift, highlightColor, note }
 
   const [editPrefId, setEditPrefId] = useState(null);
   const [prefFormData, setPrefFormData] = useState({});
@@ -66,7 +71,7 @@ export default function SchedulesClient({
   }, [calMonth, calYear, calLocation]);
 
   const handleGenerate = async () => {
-    if (!isAdminOrManager) return alert("Forbidden");
+    if (!isScheduleAdmin) return alert("Forbidden");
     if (
       !confirm(
         "Generate roster dengan engine POLA (OR-Tools) untuk bulan ini? Jadwal existing bulan ini akan ditimpa."
@@ -138,8 +143,9 @@ export default function SchedulesClient({
           cells: Object.fromEntries(
             dayHeaders.map((d) => {
               if (!Object.prototype.hasOwnProperty.call(row.days, d)) return [d, ""];
-              const shift = row.days[d];
-              return [d, shift == null ? "OFF" : shift.name];
+              const cell = row.days[d];
+              const st = cell?.shiftType;
+              return [d, st == null ? "OFF" : st.name];
             })
           ),
         });
@@ -155,22 +161,36 @@ export default function SchedulesClient({
     });
   };
 
-  const patchCell = async (userId, day, shift) => {
+  const patchCell = async (userId, day, payload) => {
     const res = await fetch("/api/schedules", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, date: cellDateStr(day), shift }),
+      body: JSON.stringify({ userId, date: cellDateStr(day), ...payload }),
     });
     const data = await res.json();
     if (!res.ok) {
       alert(data.error || "Gagal update");
-      return;
+      return false;
     }
     await fetchSchedules();
+    return true;
   };
 
-  const handleCellClick = async (userId, day) => {
-    if (!isAdminOrManager) return;
+  const saveCellEditor = async () => {
+    if (!cellEditor) return;
+    const ok = await patchCell(cellEditor.userId, cellEditor.day, {
+      shift: cellEditor.shift,
+      highlightColor: cellEditor.highlightColor,
+      note: cellEditor.note,
+    });
+    if (ok) setCellEditor(null);
+  };
+
+  const handleCellClick = async (userId, day, meta = {}) => {
+    if (!isEditor) {
+      if (meta.note) alert(`Catatan:\n${meta.note}`);
+      return;
+    }
 
     if (swapMode) {
       if (!swapA) {
@@ -197,15 +217,24 @@ export default function SchedulesClient({
       return;
     }
 
-    const options = ["OFF", ...shiftTypes.map((s) => s.name), ...(shiftTypes.some((s) => s.name === "S1") ? [] : ["S1", "S2", "S3", "S1+OC"])];
-    const unique = [...new Set(options)];
-    const choice = prompt(
-      `Shift untuk tgl ${day} (user #${userId}).\nPilihan: ${unique.join(", ")}`,
-      "OFF"
-    );
-    if (choice == null) return;
-    const shift = choice.trim().toUpperCase() === "OFF" ? "OFF" : choice.trim();
-    await patchCell(userId, day, shift);
+    const userRow = Object.values(gridData).find((r) => r.user.id === userId);
+    const cell = meta.exists
+      ? meta
+      : { shiftType: null, highlightColor: null, note: "", exists: false };
+    const shiftName =
+      cell.shiftType && cell.shiftType.name
+        ? cell.shiftType.name
+        : cell.exists
+          ? "OFF"
+          : "OFF";
+    setCellEditor({
+      userId,
+      userName: userRow?.user?.name || userRow?.user?.email || `#${userId}`,
+      day,
+      shift: shiftName,
+      highlightColor: cell.highlightColor || null,
+      note: cell.note || "",
+    });
   };
 
   const saveAutoConfig = async () => {
@@ -290,7 +319,12 @@ export default function SchedulesClient({
     if (!gridData[s.userId]) gridData[s.userId] = { user: s.user, days: {} };
     const dateStr = toDateOnlyString(s.date);
     const day = dateStr ? parseInt(dateStr.slice(8, 10), 10) : new Date(s.date).getUTCDate();
-    gridData[s.userId].days[day] = s.shiftType;
+    gridData[s.userId].days[day] = {
+      shiftType: s.shiftType,
+      highlightColor: s.highlightColor || null,
+      note: s.note || null,
+      exists: true,
+    };
   });
 
   // Group employees by department (stable order from departments prop, then leftovers)
@@ -371,7 +405,7 @@ export default function SchedulesClient({
         >
           Schedule Grid
         </button>
-        {isAdminOrManager && (
+        {isScheduleAdmin && (
           <button
             onClick={() => setActiveTab("pola")}
             className={activeTab === "pola" ? "primary-btn" : "secondary-btn"}
@@ -380,7 +414,7 @@ export default function SchedulesClient({
             Pola & Auto-Gen
           </button>
         )}
-        {isAdminOrManager && (
+        {isScheduleAdmin && (
           <button
             onClick={() => setActiveTab("preferences")}
             className={activeTab === "preferences" ? "primary-btn" : "secondary-btn"}
@@ -389,7 +423,7 @@ export default function SchedulesClient({
             User Preferences
           </button>
         )}
-        {isAdminOrManager && (
+        {isScheduleAdmin && (
           <button
             onClick={() => setActiveTab("types")}
             className={activeTab === "types" ? "primary-btn" : "secondary-btn"}
@@ -458,7 +492,7 @@ export default function SchedulesClient({
                   </option>
                 ))}
               </select>
-              {isAdminOrManager && (
+              {isScheduleAdmin && (
                 <select
                   value={genPola}
                   onChange={(e) => setGenPola(e.target.value)}
@@ -474,16 +508,16 @@ export default function SchedulesClient({
                 </select>
               )}
             </div>
-            {isAdminOrManager && (
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  style={{ width: "auto" }}
-                  onClick={handleExportExcel}
-                >
-                  Export Excel
-                </button>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="secondary-btn"
+                style={{ width: "auto" }}
+                onClick={handleExportExcel}
+              >
+                Export Excel
+              </button>
+              {isEditor && (
                 <button
                   type="button"
                   className="secondary-btn"
@@ -503,6 +537,8 @@ export default function SchedulesClient({
                       : "Swap: pilih sel ke-1…"
                     : "Mode Swap"}
                 </button>
+              )}
+              {isScheduleAdmin && (
                 <button
                   onClick={handleGenerate}
                   disabled={generating}
@@ -511,14 +547,14 @@ export default function SchedulesClient({
                 >
                   {generating ? "Generating…" : "Generate POLA Roster"}
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-          {isAdminOrManager && (
-            <p style={{ margin: "0 1.5rem", fontSize: "0.8rem", color: "#64748b" }}>
-              Klik sel untuk edit shift. Aktifkan Mode Swap lalu klik dua sel untuk tukar.
-            </p>
-          )}
+          <p style={{ margin: "0 1.5rem", fontSize: "0.8rem", color: "#64748b" }}>
+            {isEditor
+              ? "Klik sel untuk ubah shift, stabilo, atau catatan. Mode Swap untuk tukar dua sel."
+              : "Klik sel yang bertanda catatan untuk membaca catatan."}
+          </p>
 
           <div style={{ overflowX: "auto", padding: "1.5rem" }}>
             {loadingCal ? (
@@ -621,30 +657,49 @@ export default function SchedulesClient({
                               </span>
                             </td>
                             {dayHeaders.map((d) => {
-                              const shift = row.days[d];
-                              const isOff =
-                                Object.prototype.hasOwnProperty.call(row.days, d) && shift === null;
-                              const isPending = !Object.prototype.hasOwnProperty.call(row.days, d);
+                              const cell = row.days[d];
+                              const isPending = !cell;
+                              const isOff = cell && cell.shiftType == null;
+                              const shift = cell?.shiftType;
                               const selected =
                                 swapA && swapA.userId === row.user.id && swapA.day === d;
+                              const bg = selected
+                                ? "#fef3c7"
+                                : cell?.highlightColor
+                                  ? cell.highlightColor
+                                  : isOff
+                                    ? colors.off
+                                    : isPending
+                                      ? colors.bg
+                                      : colors.cell;
                               return (
                                 <td
                                   key={d}
-                                  onClick={() => handleCellClick(row.user.id, d)}
-                                  title={isAdminOrManager ? "Klik untuk edit / swap" : undefined}
+                                  onClick={() =>
+                                    handleCellClick(row.user.id, d, {
+                                      ...(cell || { exists: false }),
+                                      exists: !!cell,
+                                    })
+                                  }
+                                  title={
+                                    cell?.note
+                                      ? cell.note
+                                      : isEditor
+                                        ? "Klik untuk edit / swap"
+                                        : undefined
+                                  }
                                   style={{
                                     padding: "0.5rem",
-                                    border: selected ? "2px solid #f59e0b" : "1px solid #cbd5e1",
+                                    border: selected
+                                      ? "2px solid #f59e0b"
+                                      : cell?.highlightColor
+                                        ? `2px solid ${colors.accent}`
+                                        : "1px solid #cbd5e1",
                                     fontSize: "0.75rem",
-                                    background: selected
-                                      ? "#fef3c7"
-                                      : isOff
-                                        ? colors.off
-                                        : isPending
-                                          ? colors.bg
-                                          : colors.cell,
-                                    cursor: isAdminOrManager ? "pointer" : "default",
+                                    background: bg,
+                                    cursor: isEditor || cell?.note ? "pointer" : "default",
                                     color: colors.text,
+                                    position: "relative",
                                   }}
                                 >
                                   {isOff ? (
@@ -654,6 +709,20 @@ export default function SchedulesClient({
                                   ) : (
                                     <div style={{ fontWeight: "bold" }}>{shift?.name}</div>
                                   )}
+                                  {cell?.note ? (
+                                    <span
+                                      style={{
+                                        position: "absolute",
+                                        top: 2,
+                                        right: 3,
+                                        fontSize: "0.65rem",
+                                        opacity: 0.8,
+                                      }}
+                                      aria-hidden
+                                    >
+                                      ✎
+                                    </span>
+                                  ) : null}
                                 </td>
                               );
                             })}
@@ -717,7 +786,7 @@ export default function SchedulesClient({
         </div>
       )}
 
-      {activeTab === "pola" && isAdminOrManager && (
+      {activeTab === "pola" && isScheduleAdmin && (
         <div style={{ display: "grid", gap: "1.5rem" }}>
           <div className="card">
             <h2 style={{ marginTop: 0 }}>Default Pola per Departemen</h2>
@@ -830,7 +899,7 @@ export default function SchedulesClient({
         </div>
       )}
 
-      {activeTab === "preferences" && isAdminOrManager && (
+      {activeTab === "preferences" && isScheduleAdmin && (
         <div className="card">
           <h2 style={{ marginTop: 0 }}>Team Roster Preferences</h2>
           <p style={{ color: "#64748b", marginBottom: "1.5rem" }}>
@@ -996,7 +1065,7 @@ export default function SchedulesClient({
         </div>
       )}
 
-      {activeTab === "types" && isAdminOrManager && (
+      {activeTab === "types" && isScheduleAdmin && (
         <div className="card" style={{ maxWidth: 600 }}>
           <h2 style={{ marginTop: 0 }}>Shift Types</h2>
           <p style={{ color: "#64748b", fontSize: "0.9rem" }}>
@@ -1072,6 +1141,145 @@ export default function SchedulesClient({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {cellEditor && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: "1rem",
+          }}
+          onClick={() => setCellEditor(null)}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 8,
+              padding: "1.25rem 1.5rem",
+              width: "100%",
+              maxWidth: 420,
+              boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: "0 0 0.25rem", fontSize: "1.1rem" }}>Edit sel</h3>
+            <p style={{ margin: "0 0 1rem", color: "#64748b", fontSize: "0.875rem" }}>
+              {cellEditor.userName} · tgl {cellEditor.day}/
+              {calMonth + 1}/{calYear}
+            </p>
+
+            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>
+              Shift
+            </label>
+            <select
+              value={cellEditor.shift}
+              onChange={(e) => setCellEditor((c) => ({ ...c, shift: e.target.value }))}
+              style={{
+                width: "100%",
+                padding: "0.5rem",
+                marginBottom: "1rem",
+                borderRadius: 4,
+                border: "1px solid #cbd5e1",
+              }}
+            >
+              <option value="OFF">OFF</option>
+              {[...new Set(["S1", "S2", "S3", "S1+OC", ...shiftTypes.map((s) => s.name)])].map(
+                (name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                )
+              )}
+            </select>
+
+            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 6 }}>
+              Stabilo
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: "1rem" }}>
+              <button
+                type="button"
+                onClick={() => setCellEditor((c) => ({ ...c, highlightColor: null }))}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 4,
+                  border: !cellEditor.highlightColor ? "2px solid #0f172a" : "1px solid #cbd5e1",
+                  background: "#fff",
+                  cursor: "pointer",
+                  fontSize: 11,
+                }}
+                title="Tanpa warna"
+              >
+                ✕
+              </button>
+              {HIGHLIGHT_COLORS.filter((c) => c.hex).map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  title={c.label}
+                  onClick={() => setCellEditor((ed) => ({ ...ed, highlightColor: c.hex }))}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 4,
+                    border:
+                      cellEditor.highlightColor === c.hex
+                        ? "2px solid #0f172a"
+                        : "1px solid #94a3b8",
+                    background: c.hex,
+                    cursor: "pointer",
+                  }}
+                />
+              ))}
+            </div>
+
+            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>
+              Catatan
+            </label>
+            <textarea
+              value={cellEditor.note}
+              onChange={(e) => setCellEditor((c) => ({ ...c, note: e.target.value }))}
+              rows={3}
+              placeholder="Catatan untuk sel ini…"
+              style={{
+                width: "100%",
+                padding: "0.5rem",
+                marginBottom: "1.25rem",
+                borderRadius: 4,
+                border: "1px solid #cbd5e1",
+                resize: "vertical",
+                fontFamily: "inherit",
+              }}
+            />
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                className="secondary-btn"
+                style={{ width: "auto" }}
+                onClick={() => setCellEditor(null)}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                className="primary-btn"
+                style={{ width: "auto" }}
+                onClick={saveCellEditor}
+              >
+                Simpan
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAppConfig } from "@/lib/config";
+import { canEditSchedules, canManageScheduleEngine } from "@/lib/schedules/access";
 import SchedulesClient from "./SchedulesClient";
 
 export default async function SchedulesPage() {
@@ -11,6 +12,14 @@ export default async function SchedulesPage() {
   if (!session) redirect("/login");
 
   const currentUser = session.user;
+  const canEdit = canEditSchedules(currentUser);
+  const canEngine = canManageScheduleEngine(currentUser);
+  const canManageTeam =
+    currentUser.role === "Admin" ||
+    currentUser.permissions?.includes("manage_users") ||
+    currentUser.permissions?.includes("manage_roles") ||
+    currentUser.permissions?.includes("manage_departments");
+
   const shiftTypes = await prisma.shiftType.findMany({ orderBy: { startTime: "asc" } });
   const locations = await prisma.location.findMany({ select: { id: true, city: true } });
   const departments = await prisma.department.findMany({
@@ -29,8 +38,12 @@ export default async function SchedulesPage() {
   return (
     <main className="container">
       <header className="page-header" style={{ marginBottom: "1rem" }}>
-        <h1>Roster & Shift Scheduler</h1>
-        <p>POLA engine (OR-Tools) + auto-generate tiap tanggal 15</p>
+        <h1>Roster & Shift</h1>
+        <p>
+          {canEdit
+            ? "Lihat jadwal · ubah shift · stabilo · catatan"
+            : "Lihat jadwal shift tim (read-only)"}
+        </p>
       </header>
 
       <div
@@ -41,12 +54,14 @@ export default async function SchedulesPage() {
           borderBottom: "2px solid #e2e8f0",
         }}
       >
-        <Link
-          href="/team"
-          style={{ padding: "0.75rem 1.5rem", textDecoration: "none", color: "#64748b", fontWeight: 500 }}
-        >
-          Members & Access
-        </Link>
+        {canManageTeam && (
+          <Link
+            href="/team"
+            style={{ padding: "0.75rem 1.5rem", textDecoration: "none", color: "#64748b", fontWeight: 500 }}
+          >
+            Members & Access
+          </Link>
+        )}
         <Link
           href="/team/schedules"
           style={{
@@ -69,6 +84,8 @@ export default async function SchedulesPage() {
         departments={departments}
         currentUser={currentUser}
         scheduleConfig={scheduleConfig}
+        canEdit={canEdit}
+        canEngine={canEngine}
       />
     </main>
   );

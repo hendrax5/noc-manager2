@@ -58,6 +58,7 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
         <div className={`nav-links ${isMobileMenuOpen ? "open" : ""}`} style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
           <Link href="/dashboard" className={pathname === "/dashboard" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
           <Link href="/tickets" className={pathname.startsWith("/tickets") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Tickets</Link>
+          <Link href="/team/schedules" className={pathname.startsWith("/team/schedules") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Shifts</Link>
           <Link href="/meetings" className={pathname.startsWith("/meetings") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Meetings</Link>
 
           <div className="nav-dropdown">
