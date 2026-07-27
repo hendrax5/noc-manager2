@@ -24,7 +24,18 @@ export async function PATCH(req) {
     if (!hasPermission) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const body = await req.json();
-    const { userId, scheduleMode, fixedShiftId, fixedOffDays } = body;
+    const { userId, scheduleMode, fixedShiftId, fixedOffDays, scheduleFlag } = body;
+
+    if (scheduleFlag) {
+      const allowed = ["Umum", "Kristen", "Kuliah"];
+      if (!allowed.includes(scheduleFlag)) {
+        return NextResponse.json({ error: "Invalid scheduleFlag" }, { status: 400 });
+      }
+      await prisma.user.update({
+        where: { id: parseInt(userId) },
+        data: { scheduleFlag },
+      });
+    }
     
     const updated = await prisma.userSchedulePreference.upsert({
       where: { userId: parseInt(userId) },
@@ -39,7 +50,7 @@ export async function PATCH(req) {
         fixedShiftId: fixedShiftId ? parseInt(fixedShiftId) : null,
         fixedOffDays: JSON.stringify(fixedOffDays || [])
       },
-      include: { user: { select: { id: true, name: true, email: true, location: true } }, fixedShift: true }
+      include: { user: { select: { id: true, name: true, email: true, location: true, scheduleFlag: true } }, fixedShift: true }
     });
     
     return NextResponse.json(updated);

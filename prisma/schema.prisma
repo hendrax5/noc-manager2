@@ -15,13 +15,14 @@ model Role {
 }
 
 model Department {
-  id        Int       @id @default(autoincrement())
-  name      String    @unique
-  locations Location[]
-  users     User[]
-  tickets   Ticket[]
-  actionItems ActionItem[]
-  queues    TicketQueue[]
+  id           Int       @id @default(autoincrement())
+  name         String    @unique
+  schedulePola String    @default("POLA_1") // POLA_1 … POLA_6 (absen OR-Tools engine)
+  locations    Location[]
+  users        User[]
+  tickets      Ticket[]
+  actionItems  ActionItem[]
+  queues       TicketQueue[]
 }
 
 model Location {
@@ -46,6 +47,7 @@ model User {
   locationId   Int?
   location     Location?   @relation(fields: [locationId], references: [id])
   skillTags    String      @default("[]")
+  scheduleFlag String      @default("Umum") // Umum | Kristen | Kuliah — bias untuk generator pola
   tickets      Ticket[]    @relation("AssignedUser")
   reports      DailyReport[]
   comments     Comment[]

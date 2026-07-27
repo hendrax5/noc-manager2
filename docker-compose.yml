@@ -14,6 +14,13 @@ services:
       - noc_db_data:/var/lib/postgresql/data
     restart: always
 
+  shift-solver:
+    build: ./services/shift-solver
+    container_name: noc_shift_solver
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
   app:
     build:
       context: .
@@ -25,14 +32,17 @@ services:
       - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/nocticketing?schema=public
       - HOSTNAME=0.0.0.0
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-my_super_secret_key_123}
+      - SHIFT_SOLVER_URL=http://shift-solver:8000
+      - SCHEDULE_CRON_SECRET=${SCHEDULE_CRON_SECRET:-noc-schedule-cron}
+      - APP_INTERNAL_URL=http://127.0.0.1:3000
     volumes:
       - .:/app
       - /app/node_modules
       - /app/.next
     depends_on:
       - db
-    # On start, wait a bit for DB, run Prisma migration, and start dev server
-    command: sh -c "sleep 3 && npx prisma db push --accept-data-loss && npm run dev"
+      - shift-solver
+    command: sh -c "sleep 3 && npx prisma db push --accept-data-loss && (node scripts/schedule_cron.js & npm run dev)"
     restart: unless-stopped
 
 volumes:

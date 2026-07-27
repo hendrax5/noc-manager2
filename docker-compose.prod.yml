@@ -11,6 +11,12 @@ services:
     ports:
       - "5432:5432"
 
+  shift-solver:
+    build: ./services/shift-solver
+    restart: always
+    ports:
+      - "8000:8000"
+
   app:
     build: .
     restart: always
@@ -21,11 +27,15 @@ services:
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-my_super_secret_key_123}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
       - HOSTNAME=0.0.0.0
-    # Build once at container start, push additive schema, then serve.
+      - SHIFT_SOLVER_URL=http://shift-solver:8000
+      - SCHEDULE_CRON_SECRET=${SCHEDULE_CRON_SECRET:-noc-schedule-cron}
+      - APP_INTERNAL_URL=http://127.0.0.1:3000
+    # Build once at container start, push additive schema, then serve + schedule cron.
     # Do NOT swallow prisma db push failures — missing columns take the app down.
-    command: sh -c "sleep 5 && npx prisma db push --accept-data-loss && (node scripts/normalize_ticket_statuses.js || true) && npm run build && npm start"
+    command: sh -c "sleep 5 && npx prisma db push --accept-data-loss && (node scripts/normalize_ticket_statuses.js || true) && npm run build && (node scripts/schedule_cron.js & npm start)"
     depends_on:
       - db
+      - shift-solver
     volumes:
       - noc_uploads:/app/public/uploads
 

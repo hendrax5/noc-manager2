@@ -26,8 +26,18 @@ export async function PATCH(req, { params }) {
 
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
-    const { name } = await req.json();
-    const dept = await prisma.department.update({ where: { id }, data: { name } });
+    const body = await req.json();
+    const data = {};
+    if (body.name != null) data.name = body.name;
+    if (body.schedulePola != null) {
+      const pola = String(body.schedulePola).toUpperCase();
+      const allowed = ["POLA_1", "POLA_2", "POLA_3", "POLA_4", "POLA_5", "POLA_6"];
+      if (!allowed.includes(pola)) {
+        return NextResponse.json({ error: "Invalid schedulePola" }, { status: 400 });
+      }
+      data.schedulePola = pola;
+    }
+    const dept = await prisma.department.update({ where: { id }, data });
     return NextResponse.json(dept);
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

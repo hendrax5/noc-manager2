@@ -24,7 +24,7 @@ export async function GET(req) {
     const schedules = await prisma.shiftSchedule.findMany({
       where: whereClause,
       include: {
-        user: { select: { id: true, name: true, email: true, location: true } },
+        user: { select: { id: true, name: true, email: true, location: true, departmentId: true } },
         shiftType: true
       },
       orderBy: { date: 'asc' }
