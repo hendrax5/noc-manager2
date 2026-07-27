@@ -1,8 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { SCHEDULE_POLAS, SCHEDULE_FLAGS } from "@/lib/schedules/pola";
 import { exportScheduleMatrixExcel } from "@/lib/schedules/exportExcel";
+import { departmentColor } from "@/lib/schedules/deptColors";
+import { toDateOnlyString } from "@/lib/schedules/dates";
 
 export default function SchedulesClient({
   initialShiftTypes,
@@ -124,16 +126,25 @@ export default function SchedulesClient({
     `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
   const handleExportExcel = () => {
-    const rows = Object.values(gridData).map((row) => ({
-      name: row.user.name || row.user.email,
-      cells: Object.fromEntries(
-        dayHeaders.map((d) => {
-          if (!Object.prototype.hasOwnProperty.call(row.days, d)) return [d, ""];
-          const shift = row.days[d];
-          return [d, shift == null ? "OFF" : shift.name];
-        })
-      ),
-    }));
+    const rows = [];
+    for (const group of groupedRows) {
+      rows.push({
+        name: `▸ ${group.deptName}`,
+        cells: Object.fromEntries(dayHeaders.map((d) => [d, ""])),
+      });
+      for (const row of group.rows) {
+        rows.push({
+          name: row.user.name || row.user.email,
+          cells: Object.fromEntries(
+            dayHeaders.map((d) => {
+              if (!Object.prototype.hasOwnProperty.call(row.days, d)) return [d, ""];
+              const shift = row.days[d];
+              return [d, shift == null ? "OFF" : shift.name];
+            })
+          ),
+        });
+      }
+    }
     exportScheduleMatrixExcel({
       title: "Jadwal Shift NOC",
       year: calYear,
@@ -277,8 +288,36 @@ export default function SchedulesClient({
   schedules.forEach((s) => {
     if (calDepartment && String(s.user?.departmentId) !== String(calDepartment)) return;
     if (!gridData[s.userId]) gridData[s.userId] = { user: s.user, days: {} };
-    const day = new Date(s.date).getDate();
+    const dateStr = toDateOnlyString(s.date);
+    const day = dateStr ? parseInt(dateStr.slice(8, 10), 10) : new Date(s.date).getUTCDate();
     gridData[s.userId].days[day] = s.shiftType;
+  });
+
+  // Group employees by department (stable order from departments prop, then leftovers)
+  const deptOrder = new Map(departments.map((d, i) => [d.id, i]));
+  const byDept = {};
+  Object.values(gridData).forEach((row) => {
+    const deptId = row.user?.departmentId ?? 0;
+    const deptName =
+      row.user?.department?.name ||
+      departments.find((d) => d.id === deptId)?.name ||
+      "Tanpa Departemen";
+    if (!byDept[deptId]) byDept[deptId] = { deptId, deptName, rows: [] };
+    byDept[deptId].rows.push(row);
+  });
+  Object.values(byDept).forEach((g) => {
+    g.rows.sort((a, b) =>
+      String(a.user?.name || a.user?.email || "").localeCompare(
+        String(b.user?.name || b.user?.email || ""),
+        "id"
+      )
+    );
+  });
+  const groupedRows = Object.values(byDept).sort((a, b) => {
+    const ai = deptOrder.has(a.deptId) ? deptOrder.get(a.deptId) : 999;
+    const bi = deptOrder.has(b.deptId) ? deptOrder.get(b.deptId) : 999;
+    if (ai !== bi) return ai - bi;
+    return a.deptName.localeCompare(b.deptName, "id");
   });
 
   return (
@@ -532,63 +571,98 @@ export default function SchedulesClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.values(gridData).map((row) => (
-                    <tr key={row.user.id}>
-                      <td
-                        style={{
-                          padding: "0.75rem",
-                          border: "1px solid var(--border-color)",
-                          textAlign: "left",
-                          fontWeight: "bold",
-                          background: "var(--table-header-bg)",
-                          position: "sticky",
-                          left: 0,
-                        }}
-                      >
-                        {row.user.name || row.user.email}
-                        <br />
-                        <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: "normal" }}>
-                          {row.user.location?.city || "No Location"}
-                        </span>
-                      </td>
-                      {dayHeaders.map((d) => {
-                        const shift = row.days[d];
-                        const isOff = Object.prototype.hasOwnProperty.call(row.days, d) && shift === null;
-                        const isPending = !Object.prototype.hasOwnProperty.call(row.days, d);
-                        const selected =
-                          swapA && swapA.userId === row.user.id && swapA.day === d;
-                        return (
+                  {groupedRows.map((group) => {
+                    const colors = departmentColor(group.deptId);
+                    return (
+                      <Fragment key={`dept-${group.deptId}`}>
+                        <tr>
                           <td
-                            key={d}
-                            onClick={() => handleCellClick(row.user.id, d)}
-                            title={isAdminOrManager ? "Klik untuk edit / swap" : undefined}
+                            colSpan={daysInMonth + 1}
                             style={{
-                              padding: "0.5rem",
-                              border: selected ? "2px solid #f59e0b" : "1px solid #cbd5e1",
-                              fontSize: "0.75rem",
-                              background: selected
-                                ? "#fef3c7"
-                                : isOff
-                                  ? "#f8fafc"
-                                  : isPending
-                                    ? "white"
-                                    : "#dbeafe",
-                              cursor: isAdminOrManager ? "pointer" : "default",
+                              padding: "0.55rem 0.75rem",
+                              textAlign: "left",
+                              fontWeight: 700,
+                              fontSize: "0.85rem",
+                              letterSpacing: "0.02em",
+                              color: colors.text,
+                              background: colors.header,
+                              border: `1px solid ${colors.accent}33`,
+                              position: "sticky",
+                              left: 0,
+                              zIndex: 2,
                             }}
                           >
-                            {isOff ? (
-                              <span style={{ color: "#94a3b8" }}>OFF</span>
-                            ) : isPending ? (
-                              <span style={{ color: "#cbd5e1" }}>-</span>
-                            ) : (
-                              <div style={{ fontWeight: "bold", color: "#1e40af" }}>{shift?.name}</div>
-                            )}
+                            {group.deptName}
+                            <span style={{ fontWeight: 500, opacity: 0.75, marginLeft: 8 }}>
+                              ({group.rows.length} orang)
+                            </span>
                           </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                  {Object.keys(gridData).length === 0 && (
+                        </tr>
+                        {group.rows.map((row) => (
+                          <tr key={row.user.id} style={{ background: colors.bg }}>
+                            <td
+                              style={{
+                                padding: "0.75rem",
+                                border: "1px solid #cbd5e1",
+                                textAlign: "left",
+                                fontWeight: "bold",
+                                background: colors.bg,
+                                color: colors.text,
+                                position: "sticky",
+                                left: 0,
+                                zIndex: 1,
+                                borderLeft: `4px solid ${colors.accent}`,
+                              }}
+                            >
+                              {row.user.name || row.user.email}
+                              <br />
+                              <span style={{ fontSize: "0.7rem", opacity: 0.75, fontWeight: "normal" }}>
+                                {row.user.location?.city || "No Location"}
+                              </span>
+                            </td>
+                            {dayHeaders.map((d) => {
+                              const shift = row.days[d];
+                              const isOff =
+                                Object.prototype.hasOwnProperty.call(row.days, d) && shift === null;
+                              const isPending = !Object.prototype.hasOwnProperty.call(row.days, d);
+                              const selected =
+                                swapA && swapA.userId === row.user.id && swapA.day === d;
+                              return (
+                                <td
+                                  key={d}
+                                  onClick={() => handleCellClick(row.user.id, d)}
+                                  title={isAdminOrManager ? "Klik untuk edit / swap" : undefined}
+                                  style={{
+                                    padding: "0.5rem",
+                                    border: selected ? "2px solid #f59e0b" : "1px solid #cbd5e1",
+                                    fontSize: "0.75rem",
+                                    background: selected
+                                      ? "#fef3c7"
+                                      : isOff
+                                        ? colors.off
+                                        : isPending
+                                          ? colors.bg
+                                          : colors.cell,
+                                    cursor: isAdminOrManager ? "pointer" : "default",
+                                    color: colors.text,
+                                  }}
+                                >
+                                  {isOff ? (
+                                    <span style={{ opacity: 0.55 }}>OFF</span>
+                                  ) : isPending ? (
+                                    <span style={{ opacity: 0.35 }}>-</span>
+                                  ) : (
+                                    <div style={{ fontWeight: "bold" }}>{shift?.name}</div>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </Fragment>
+                    );
+                  })}
+                  {groupedRows.length === 0 && (
                     <tr>
                       <td colSpan={daysInMonth + 1} style={{ padding: "2rem", color: "#94a3b8" }}>
                         No schedules generated for this range.
@@ -597,6 +671,47 @@ export default function SchedulesClient({
                   )}
                 </tbody>
               </table>
+            )}
+            {groupedRows.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "0.75rem",
+                  marginTop: "1rem",
+                  fontSize: "0.8rem",
+                }}
+              >
+                {groupedRows.map((g) => {
+                  const c = departmentColor(g.deptId);
+                  return (
+                    <span
+                      key={`leg-${g.deptId}`}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "0.25rem 0.6rem",
+                        borderRadius: 999,
+                        background: c.header,
+                        color: c.text,
+                        border: `1px solid ${c.accent}44`,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 2,
+                          background: c.accent,
+                          display: "inline-block",
+                        }}
+                      />
+                      {g.deptName}
+                    </span>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>

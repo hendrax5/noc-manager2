@@ -26,7 +26,14 @@ export async function GET(req) {
       where: whereClause,
       include: {
         user: {
-          select: { id: true, name: true, email: true, location: true, departmentId: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            location: true,
+            departmentId: true,
+            department: { select: { id: true, name: true } },
+          },
         },
         shiftType: true,
       },
