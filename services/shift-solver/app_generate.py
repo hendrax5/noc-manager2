@@ -353,17 +353,20 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 
         for e in range(num_employees):
             for wg in weekday_groups:
-                # Libur weekday: wajib jika blok Senin-Jumat penuh (5 hari)
+                # Libur weekday: tepat 1x jika blok Senin-Jumat penuh (5 hari)
                 if len(wg) >= 5:
-                    model.Add(sum(x[e, d, 0] for d in wg) >= 1)
+                    model.Add(sum(x[e, d, 0] for d in wg) == 1)
                 elif len(wg) >= 3:
-                    # Blok partial (awal/akhir bulan): usahakan libur, tidak wajib
+                    # Blok partial (awal/akhir bulan): usahakan 1 libur, tidak wajib
                     has_off = model.NewBoolVar(f'core_partial_off_e{e}_d{wg[0]}')
                     model.Add(sum(x[e, d, 0] for d in wg) >= 1).OnlyEnforceIf(has_off)
                     bonus_vars.append(has_off * 500)
                     
-        # Demand Shift — scaled for team size (classic design ~5; also works for 6–8+)
-        # Hard coverage: 1× S1+OC every day. Weekday fills remaining with S1/S2.
+        # Demand Shift — aturan klasik NOC Core (absen POLA_2):
+        # - Tiap hari: tepat 1× S1+OC (on-call 22:00–pagi), bagian dari slot S1
+        # - Weekday: tepat 1 plain S1 + 1 S1+OC; S2 mengisi sisa yang kerja
+        # - Weekend (WFH): 1 S1+OC + 1 S2 (2 org); sisanya OFF
+        # - Per orang: 1 libur weekday / minggu + ≥1 libur weekend (→ ~1x WFH)
         for d in range(num_days):
             s1_count = sum(x[e, d, 1] for e in range(num_employees))
             s2_count = sum(x[e, d, 2] for e in range(num_employees))
@@ -372,48 +375,41 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
             working_cnt = model.NewIntVar(0, num_employees, f'core_working_d{d}')
             model.Add(working_cnt == num_employees - off_count)
 
-            # Tepat 1 orang S1+OC (On Call 22:00-pagi)
+            # Tepat 1 orang S1+OC setiap hari (On Call 22:00–pagi)
             model.Add(oc_count == 1)
 
             curr = start_date + timedelta(days=d)
             if curr.weekday() < 5:
-                # Tim kecil (≤5): max 1 OFF. Tim lebih besar: max 2 OFF agar feasible.
-                max_off = 1 if num_employees <= 5 else 2
-                min_working = max(4, num_employees - max_off)
-                if min_working > num_employees:
-                    min_working = num_employees
-                model.Add(working_cnt >= min_working)
+                # Slot S1 selalu 2 org: 1 plain S1 + 1 S1+OC
+                model.Add(s1_count == 1)
+                model.Add(s1_count + oc_count == 2)
 
-                # Minimal 1 plain S1 + 1 S2; S1 boleh naik jika tim besar
-                model.Add(s1_count >= 1)
+                # Sisanya yang kerja = S2 (minimal 1)
+                model.Add(s2_count == working_cnt - 2)
                 model.Add(s2_count >= 1)
-                model.Add(s2_count <= max(2, (num_employees + 2) // 3))
 
-                # Soft: prefer hampir penuh (n atau n-1 kerja) dengan komposisi klasik
+                # Tim ≤5: max 1 OFF/hari (classic). Tim lebih besar: boleh lebih banyak OFF
+                # agar tiap orang tetap dapat tepat 1 libur weekday / minggu.
+                max_off = 1 if num_employees <= 5 else max(1, (num_employees + 4) // 5)
+                model.Add(off_count <= max_off)
+                model.Add(working_cnt >= num_employees - max_off)
+
+                # Soft prefer: classic full (1 S1 + 1 OC + 2 S2) atau understaffed (+1 S2)
                 full_team = model.NewBoolVar(f'core_full_team_d{d}')
-                model.Add(working_cnt == num_employees).OnlyEnforceIf(full_team)
-                model.Add(working_cnt < num_employees).OnlyEnforceIf(full_team.Not())
+                model.Add(s2_count == 2).OnlyEnforceIf(full_team)
+                model.Add(s2_count != 2).OnlyEnforceIf(full_team.Not())
                 bonus_vars.append(full_team * 1000)
 
-                nearly_full = model.NewBoolVar(f'core_nearly_full_d{d}')
-                model.Add(working_cnt == num_employees - 1).OnlyEnforceIf(nearly_full)
-                model.Add(working_cnt != num_employees - 1).OnlyEnforceIf(nearly_full.Not())
-                bonus_vars.append(nearly_full * 5000)
-
-                # Soft: usahakan tepat 1 plain S1 (pola klasik) bila tim kecil
-                classic_s1 = model.NewBoolVar(f'core_classic_s1_d{d}')
-                model.Add(s1_count == 1).OnlyEnforceIf(classic_s1)
-                model.Add(s1_count != 1).OnlyEnforceIf(classic_s1.Not())
-                bonus_vars.append(classic_s1 * 800)
+                partial_ok = model.NewBoolVar(f'core_partial_ok_d{d}')
+                model.Add(s2_count == 1).OnlyEnforceIf(partial_ok)
+                model.Add(s2_count != 1).OnlyEnforceIf(partial_ok.Not())
+                bonus_vars.append(partial_ok * 5000)
             elif curr.weekday() >= 5:
-                # Sabtu-Minggu WFH: 1 S1+OC + 1 S2 (usahakan tepat 2 org kerja)
-                model.Add(working_cnt <= 2)
+                # Sabtu-Minggu WFH: tepat 2 org kerja = 1 S1+OC + 1 S2
+                model.Add(working_cnt == 2)
                 model.Add(s2_count == 1)
                 model.Add(s1_count == 0)
-                weekend_full = model.NewBoolVar(f'core_weekend_full_d{d}')
-                model.Add(working_cnt == 2).OnlyEnforceIf(weekend_full)
-                model.Add(working_cnt < 2).OnlyEnforceIf(weekend_full.Not())
-                bonus_vars.append(weekend_full * 2000)
+                bonus_vars.append(2000)  # weekend coverage achieved (hard)
                 
         # Libur 1x Sabtu atau Minggu
         weekends = []

@@ -664,6 +664,25 @@ export default function SchedulesClient({
                               const shift = cell?.shiftType;
                               const selected =
                                 swapA && swapA.userId === row.user.id && swapA.day === d;
+                              const cellDate = new Date(calYear, calMonth, d);
+                              const isWeekend =
+                                cellDate.getDay() === 0 || cellDate.getDay() === 6;
+                              const rowPola =
+                                departments.find(
+                                  (dep) => String(dep.id) === String(row.user.departmentId)
+                                )?.schedulePola || "";
+                              const isCorePola =
+                                rowPola === "POLA_2" || rowPola === "NOC_CORE";
+                              const shiftLabel = isOff
+                                ? "OFF"
+                                : isPending
+                                  ? "-"
+                                  : isCorePola &&
+                                      isWeekend &&
+                                      shift?.name &&
+                                      ["S1", "S2", "S1+OC"].includes(shift.name)
+                                    ? `${shift.name} (WFH)`
+                                    : shift?.name;
                               const shiftColor = isPending
                                 ? null
                                 : shiftCellColor(isOff ? null : shift?.name);
@@ -712,7 +731,9 @@ export default function SchedulesClient({
                                   ) : isPending ? (
                                     <span style={{ opacity: 0.35 }}>-</span>
                                   ) : (
-                                    <div style={{ fontWeight: "bold" }}>{shift?.name}</div>
+                                    <div style={{ fontWeight: "bold", lineHeight: 1.15 }}>
+                                      {shiftLabel}
+                                    </div>
                                   )}
                                   {cell?.note ? (
                                     <span
@@ -776,6 +797,20 @@ export default function SchedulesClient({
                     {sc.label}
                   </span>
                 ))}
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "0.25rem 0.6rem",
+                    borderRadius: 4,
+                    border: "1px dashed #94a3b8",
+                    color: "#475569",
+                    fontSize: "0.75rem",
+                  }}
+                  title="Khusus POLA_2 / NOC Core di Sabtu–Minggu"
+                >
+                  (WFH) = weekend duty
+                </span>
                 <span style={{ color: "#94a3b8", margin: "0 0.25rem" }}>|</span>
                 <span style={{ color: "#64748b", fontWeight: 600, marginRight: 4 }}>Dept:</span>
                 {groupedRows.map((g) => {
