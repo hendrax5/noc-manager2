@@ -27,6 +27,8 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
     session?.user?.permissions?.includes("view_reports") ||
     session?.user?.role === "Admin" ||
     session?.user?.role === "Manager";
+  const canViewOpsReport =
+    session?.user?.role === "Admin" || session?.user?.role === "Manager";
   const canManageTeam =
     session?.user?.permissions?.includes("manage_users") ||
     session?.user?.permissions?.includes("manage_roles") ||
@@ -36,7 +38,11 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
     session?.user?.permissions?.includes("manage_settings") ||
     session?.user?.role === "Admin";
   const showAdmin =
-    canViewReports || canManageTeam || canManageSettings || session?.user?.role === "Manager";
+    canViewReports ||
+    canViewOpsReport ||
+    canManageTeam ||
+    canManageSettings ||
+    session?.user?.role === "Manager";
 
   return (
     <nav className="navbar">
@@ -82,6 +88,15 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
                     <Link href="/reports" className={pathname === "/reports" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Daily Reports</Link>
                     <Link href="/reports/sla" className={pathname.startsWith("/reports/sla") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>SLA & Analytics</Link>
                   </>
+                )}
+                {canViewOpsReport && (
+                  <Link
+                    href="/reports/ops"
+                    className={pathname.startsWith("/reports/ops") ? "active" : ""}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Ops Report
+                  </Link>
                 )}
                 {canManageTeam && (
                   <Link href="/team" className={pathname === "/team" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Team Management</Link>
