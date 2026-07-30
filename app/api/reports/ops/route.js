@@ -9,6 +9,10 @@ import {
   DOWNTIME_THRESHOLD_MINUTES,
 } from "@/lib/reports/opsCategories";
 import { TERMINAL_STATUSES } from "@/lib/tickets/status";
+import {
+  effectiveDowntimeMinutes,
+  parseDowntimeDate,
+} from "@/lib/tickets/downtime";
 
 function customerLabel(ticket) {
   const fromServices = (ticket.services || [])
@@ -26,7 +30,7 @@ function customerLabel(ticket) {
 }
 
 function serializeTicket(t, extra = {}) {
-  const mins = parseInt(t.customData?.downtimeMinutes, 10) || 0;
+  const mins = effectiveDowntimeMinutes(t.customData);
   return {
     id: t.id,
     ticketNumber: t.trackingId || t.id,
@@ -41,8 +45,26 @@ function serializeTicket(t, extra = {}) {
     resolvedAt: t.resolvedAt,
     downtimeMinutes: mins,
     downtimeHours: Math.round((mins / 60) * 10) / 10,
+    downtimeOngoing: !!(t.customData?.hasDowntime && t.customData?.startDowntime && !t.customData?.endDowntime),
     ...extra,
   };
+}
+
+/**
+ * Event time for attributing a downtime ticket to an ops period.
+ * Prefer endDowntime; else resolvedAt; else (ongoing) "now"; else updatedAt.
+ */
+function downtimeEventAt(t, now = new Date()) {
+  const endRaw = t.customData?.endDowntime;
+  if (endRaw) {
+    const parsed = parseDowntimeDate(endRaw);
+    if (parsed) return parsed;
+  }
+  if (t.resolvedAt) return new Date(t.resolvedAt);
+  if (t.customData?.hasDowntime && t.customData?.startDowntime && !t.customData?.endDowntime) {
+    return now;
+  }
+  return t.updatedAt ? new Date(t.updatedAt) : now;
 }
 
 /**
@@ -60,6 +82,7 @@ export async function GET(req) {
     const period = searchParams.get("period") === "month" ? "month" : "week";
     const anchor = searchParams.get("anchor") || null;
     const { start, end, startDate, endDate } = resolveOpsPeriod(period, anchor);
+    const now = new Date();
 
     const terminal = [...TERMINAL_STATUSES];
 
@@ -110,16 +133,13 @@ export async function GET(req) {
     const downtime = [];
     const seen = new Set();
     for (const t of downtimeCandidates) {
-      const mins = parseInt(t.customData?.downtimeMinutes, 10) || 0;
+      const cd = t.customData && typeof t.customData === "object" ? t.customData : {};
+      if (!cd.hasDowntime && !cd.startDowntime) continue;
+
+      const mins = effectiveDowntimeMinutes(cd, { now });
       if (mins <= DOWNTIME_THRESHOLD_MINUTES) continue;
 
-      // Attribute to period via endDowntime date if present, else resolvedAt, else updatedAt
-      const endRaw = t.customData?.endDowntime;
-      let eventAt = t.resolvedAt || t.updatedAt;
-      if (endRaw) {
-        const parsed = new Date(endRaw);
-        if (!Number.isNaN(parsed.getTime())) eventAt = parsed;
-      }
+      const eventAt = downtimeEventAt(t, now);
       if (eventAt < start || eventAt > end) continue;
       if (seen.has(t.id)) continue;
       seen.add(t.id);

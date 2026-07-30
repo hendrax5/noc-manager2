@@ -218,6 +218,7 @@ export default function OpsReportClient() {
                           {r.downtimeHours} jam
                           <div style={{ fontWeight: 400, color: "#64748b", fontSize: "0.75rem" }}>
                             ({r.downtimeMinutes} mnt)
+                            {r.downtimeOngoing ? " · masih berjalan" : ""}
                           </div>
                         </td>
                       )}
@@ -236,7 +237,8 @@ export default function OpsReportClient() {
 
           <p style={{ marginTop: "1rem", fontSize: "0.8rem", color: "#94a3b8" }}>
             New / Terminate / Upgrade: tiket Resolved/Closed + Job Category cocok. Downtime: dari field
-            &quot;Catat Waktu Outage / Downtime&quot; (&gt; {data.thresholdHours} jam).
+            &quot;Catat Waktu Outage / Downtime&quot; (durasi efektif, termasuk outage yang masih berjalan) &gt;{" "}
+            {data.thresholdHours} jam.
           </p>
         </>
       )}

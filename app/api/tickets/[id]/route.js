@@ -11,6 +11,10 @@ import {
 } from "@/lib/tickets/status";
 import { notifyTicketEvent, collectTicketNotifyEmails } from "@/lib/notify";
 import { dispatchIntegrationWebhook } from "@/lib/integration/webhooks";
+import {
+  normalizeDowntimeCustomData,
+  closeOpenDowntimeOnResolve,
+} from "@/lib/tickets/downtime";
 
 export async function PATCH(req, { params }) {
   try {
@@ -200,6 +204,14 @@ export async function PATCH(req, { params }) {
           ? { ...oldTicket.customData }
           : {};
 
+    if (body.customData !== undefined) {
+      const downtimeNorm = normalizeDowntimeCustomData(finalCustomData);
+      if (!downtimeNorm.ok) {
+        return NextResponse.json({ error: downtimeNorm.error }, { status: 400 });
+      }
+      finalCustomData = downtimeNorm.customData;
+    }
+
     if (body.customData && JSON.stringify(oldTicket.customData) !== JSON.stringify(body.customData)) {
       const oldCust =
         oldTicket.customData && typeof oldTicket.customData === "object"
@@ -245,6 +257,33 @@ export async function PATCH(req, { params }) {
         ...(finalCustomData && typeof finalCustomData === "object" ? finalCustomData : {}),
         reopenedAt: new Date().toISOString(),
       };
+    }
+
+    // Close open outage when resolving/closing (start set, end still empty)
+    if (
+      (nextStatus === "Resolved" || nextStatus === "Closed") &&
+      oldTicket.status !== nextStatus
+    ) {
+      const closed = closeOpenDowntimeOnResolve(finalCustomData);
+      if (closed.changed) {
+        finalCustomData = closed.customData;
+        logs.push({
+          action: `Outage downtime auto-closed (end set on ${nextStatus})`,
+          actorId: userId,
+        });
+      }
+    }
+
+    // Recalc stored minutes when downtime is present (strict only if client sent customData)
+    if (finalCustomData && typeof finalCustomData === "object" && finalCustomData.hasDowntime) {
+      const downtimeNorm = normalizeDowntimeCustomData(finalCustomData);
+      if (!downtimeNorm.ok) {
+        if (body.customData !== undefined) {
+          return NextResponse.json({ error: downtimeNorm.error }, { status: 400 });
+        }
+      } else {
+        finalCustomData = downtimeNorm.customData;
+      }
     }
 
     const ticketData = {

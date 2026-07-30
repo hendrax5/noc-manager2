@@ -3,6 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
 import SearchableSelect from "@/components/SearchableSelect";
+import {
+  getDowntimeDuration as calcDowntimeDuration,
+  nowDatetimeLocal,
+} from "@/lib/tickets/downtime";
 
 export default function TicketForm({ departments, categories, users = [], customFields, services, serviceTemplates, companies = ["ION", "SDC", "Sistercompany"], defaultTargetDeptId }) {
   const router = useRouter();
@@ -26,18 +30,10 @@ export default function TicketForm({ departments, categories, users = [], custom
   const [downtimeEnd, setDowntimeEnd] = useState("");
 
   const getDowntimeDuration = () => {
-    if (!downtimeStart || !downtimeEnd) return null;
-    const start = new Date(downtimeStart);
-    const end = new Date(downtimeEnd);
-    const diffMs = end - start;
-    if (diffMs < 0) return { error: "Waktu selesai tidak boleh sebelum waktu mulai!" };
-    const diffMins = Math.floor(diffMs / 60000);
-    const hrs = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    return {
-      minutes: diffMins,
-      text: `${hrs > 0 ? `${hrs} jam ` : ''}${mins} menit (${diffMins} menit)`
-    };
+    if (!downtimeStart) return null;
+    return calcDowntimeDuration(downtimeStart, downtimeEnd || null, {
+      live: !downtimeEnd,
+    });
   };
 
   const [visibleCustomFieldIds, setVisibleCustomFieldIds] = useState([]);
@@ -127,12 +123,22 @@ export default function TicketForm({ departments, categories, users = [], custom
     }
 
     const duration = hasDowntime ? getDowntimeDuration() : null;
+    if (hasDowntime && duration?.error) {
+      alert(duration.error);
+      setIsSubmitting(false);
+      return;
+    }
+    if (hasDowntime && !downtimeStart) {
+      alert("Mulai Downtime wajib diisi.");
+      setIsSubmitting(false);
+      return;
+    }
     const finalCustomData = {
       ...customDataState,
       hasDowntime: hasDowntime,
       startDowntime: hasDowntime ? downtimeStart : null,
-      endDowntime: hasDowntime ? downtimeEnd : null,
-      downtimeMinutes: (hasDowntime && duration && !duration.error) ? duration.minutes : 0
+      endDowntime: hasDowntime && downtimeEnd ? downtimeEnd : null,
+      downtimeMinutes: (hasDowntime && duration && !duration.error && !duration.ongoing) ? duration.minutes : 0
     };
 
     const res = await fetch("/api/tickets", {
@@ -450,18 +456,30 @@ export default function TicketForm({ departments, categories, users = [], custom
               />
             </div>
             <div>
-              <label style={{ display: 'block', color: '#475569', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Selesai Downtime</label>
-              <input 
-                type="datetime-local" 
-                value={downtimeEnd} 
-                onChange={e => setDowntimeEnd(e.target.value)} 
-                required={hasDowntime}
-                style={{ width: '100%', padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
-              />
+              <label style={{ display: 'block', color: '#475569', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                Selesai Downtime <span style={{ fontWeight: 'normal', color: '#94a3b8' }}>(opsional — kosong = masih down)</span>
+              </label>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <input 
+                  type="datetime-local" 
+                  value={downtimeEnd} 
+                  onChange={e => setDowntimeEnd(e.target.value)} 
+                  style={{ flex: 1, padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                />
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  style={{ width: 'auto', whiteSpace: 'nowrap', padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}
+                  onClick={() => setDowntimeEnd(nowDatetimeLocal())}
+                  disabled={!downtimeStart}
+                >
+                  Pulih sekarang
+                </button>
+              </div>
             </div>
             
-            {downtimeStart && downtimeEnd && (
-              <div style={{ gridColumn: '1 / -1', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.9rem', color: '#166534', fontWeight: 'bold' }}>
+            {downtimeStart && (
+              <div style={{ gridColumn: '1 / -1', background: downtimeEnd ? '#f0fdf4' : '#fff7ed', border: `1px solid ${downtimeEnd ? '#bbf7d0' : '#fed7aa'}`, padding: '0.75rem 1rem', borderRadius: '6px', fontSize: '0.9rem', color: downtimeEnd ? '#166534' : '#9a3412', fontWeight: 'bold' }}>
                 {(() => {
                   const duration = getDowntimeDuration();
                   if (duration?.error) {

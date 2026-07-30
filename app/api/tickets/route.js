@@ -6,6 +6,7 @@ import { buildSlaDeadlines } from "@/lib/tickets/sla";
 import { pickLeastBusyAssignee } from "@/lib/tickets/routing";
 import { notifyTicketEvent } from "@/lib/notify";
 import { TICKET_TYPES, TICKET_PRIORITIES, assertValidStatus } from "@/lib/tickets/status";
+import { normalizeDowntimeCustomData } from "@/lib/tickets/downtime";
 
 function generateTrackingId() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -85,13 +86,18 @@ export async function POST(req) {
     const type = TICKET_TYPES.includes(ticketType) ? ticketType : "Incident";
     const needsApproval = approvalRequired || type === "Change";
 
+    const downtimeNorm = normalizeDowntimeCustomData(customData || {});
+    if (!downtimeNorm.ok) {
+      return NextResponse.json({ error: downtimeNorm.error }, { status: 400 });
+    }
+
     let ticketData = {
       trackingId: generateTrackingId(),
       title,
       description,
       priority: priority || "Medium",
       ticketType: type,
-      customData: customData || {},
+      customData: downtimeNorm.customData,
       departmentId: parseInt(departmentId),
       queueId: queueId ? parseInt(queueId) : null,
       jobCategoryId: jobCategoryId ? parseInt(jobCategoryId) : null,

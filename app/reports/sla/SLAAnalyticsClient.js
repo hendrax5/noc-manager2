@@ -124,7 +124,7 @@ export default function SLAAnalyticsClient() {
             </div>
             <div className="card" style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#f59e0b' }}>{data.summary.totalDowntimeHours}h</div>
-              <div style={{ color: '#64748b', fontWeight: 'bold' }}>Total Downtime (High/Crit)</div>
+              <div style={{ color: '#64748b', fontWeight: 'bold' }}>Total Downtime (Outage field)</div>
             </div>
           </div>
 
@@ -173,7 +173,7 @@ export default function SLAAnalyticsClient() {
                     <th style={{ padding: '0.8rem' }}>Ticket</th>
                     <th style={{ padding: '0.8rem' }}>Priority</th>
                     <th style={{ padding: '0.8rem' }}>Dept / Assignee</th>
-                    <th style={{ padding: '0.8rem' }}>Downtime/Resolution</th>
+                    <th style={{ padding: '0.8rem' }}>Outage / Resolution</th>
                     <th style={{ padding: '0.8rem' }}>SLA Breach</th>
                   </tr>
                 </thead>
@@ -194,7 +194,9 @@ export default function SLAAnalyticsClient() {
                         <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{inc.assignee}</span>
                       </td>
                       <td style={{ padding: '0.8rem', fontWeight: 'bold' }}>
-                        {inc.resolutionTimeHours !== '-' ? `${inc.resolutionTimeHours} hrs` : 'Active'}
+                        {inc.hasOutage
+                          ? `${inc.downtimeHours}h outage${inc.downtimeOngoing ? ' (live)' : ''}`
+                          : (inc.resolutionTimeHours !== '-' ? `${inc.resolutionTimeHours} hrs resolve` : 'Active')}
                       </td>
                       <td style={{ padding: '0.8rem' }}>
                         {inc.hasBreach === 'Yes' ? <span style={{ color: '#ef4444', fontWeight: 'bold' }}>Yes ({inc.slaBreaches})</span> : <span style={{ color: '#10b981' }}>No</span>}

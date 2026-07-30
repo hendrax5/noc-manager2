@@ -2,6 +2,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
+import {
+  getDowntimeDuration as calcDowntimeDuration,
+  toDatetimeLocalValue,
+  nowDatetimeLocal,
+  effectiveDowntimeMinutes,
+} from "@/lib/tickets/downtime";
 
 
 function linkify(text) {
@@ -184,19 +190,9 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     setIsCustomerDropdownOpen(false);
   };
 
-  const getDowntimeDuration = (startDt, endDt) => {
-    if (!startDt || !endDt) return null;
-    const start = new Date(startDt);
-    const end = new Date(endDt);
-    const diffMs = end - start;
-    if (diffMs < 0) return { error: "Waktu selesai tidak boleh sebelum waktu mulai!" };
-    const diffMins = Math.floor(diffMs / 60000);
-    const hrs = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    return {
-      minutes: diffMins,
-      text: `${hrs > 0 ? `${hrs} jam ` : ''}${mins} menit (${diffMins} menit)`
-    };
+  const getDowntimeDuration = (startDt, endDt, live = false) => {
+    if (!startDt) return null;
+    return calcDowntimeDuration(startDt, endDt || null, { live: live || !endDt });
   };
 
   const formatDate = (dateStr) => {
@@ -453,8 +449,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                   👤 <strong>{extractedName}</strong>
                 </span>
                 {ticket.customData && ticket.customData.hasDowntime && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#fef3c7', padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #fde68a', color: '#92400e', fontWeight: 'bold' }}>
-                    ⏱️ Downtime Outage: {formatDate(ticket.customData.startDowntime)} s/d {ticket.customData.endDowntime ? formatDate(ticket.customData.endDowntime) : 'Belum Selesai'} ({ticket.customData.downtimeMinutes || 0} menit)
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: ticket.customData.endDowntime ? '#fef3c7' : '#fff7ed', padding: '0.3rem 0.75rem', borderRadius: '4px', border: `1px solid ${ticket.customData.endDowntime ? '#fde68a' : '#fed7aa'}`, color: '#92400e', fontWeight: 'bold' }}>
+                    ⏱️ Downtime Outage: {formatDate(ticket.customData.startDowntime)} s/d {ticket.customData.endDowntime ? formatDate(ticket.customData.endDowntime) : 'Belum Selesai'} ({effectiveDowntimeMinutes(ticket.customData)} menit{ticket.customData.endDowntime ? '' : ' — live'})
                   </span>
                 )}
                 {ticket.customData && ticket.customData["Order Origin"] && (
@@ -587,7 +583,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                         <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>Mulai Downtime</label>
                         <input 
                           type="datetime-local" 
-                          value={formData.customData?.startDowntime || ''} 
+                          value={toDatetimeLocalValue(formData.customData?.startDowntime)} 
                           onChange={e => {
                             const val = e.target.value;
                             const endDt = formData.customData?.endDowntime || '';
@@ -597,7 +593,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                               customData: {
                                 ...(formData.customData || {}),
                                 startDowntime: val,
-                                downtimeMinutes: (duration && !duration.error) ? duration.minutes : 0
+                                downtimeMinutes: (duration && !duration.error && !duration.ongoing) ? duration.minutes : 0
                               }
                             });
                           }} 
@@ -605,29 +601,55 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>Selesai Downtime</label>
-                        <input 
-                          type="datetime-local" 
-                          value={formData.customData?.endDowntime || ''} 
-                          onChange={e => {
-                            const val = e.target.value;
-                            const startDt = formData.customData?.startDowntime || '';
-                            const duration = getDowntimeDuration(startDt, val);
-                            setFormData({
-                              ...formData,
-                              customData: {
-                                ...(formData.customData || {}),
-                                endDowntime: val,
-                                downtimeMinutes: (duration && !duration.error) ? duration.minutes : 0
-                              }
-                            });
-                          }} 
-                          style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
-                        />
+                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
+                          Selesai Downtime <span style={{ fontWeight: 'normal', color: '#94a3b8' }}>(opsional)</span>
+                        </label>
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                          <input 
+                            type="datetime-local" 
+                            value={toDatetimeLocalValue(formData.customData?.endDowntime)} 
+                            onChange={e => {
+                              const val = e.target.value;
+                              const startDt = formData.customData?.startDowntime || '';
+                              const duration = getDowntimeDuration(startDt, val);
+                              setFormData({
+                                ...formData,
+                                customData: {
+                                  ...(formData.customData || {}),
+                                  endDowntime: val || null,
+                                  downtimeMinutes: (duration && !duration.error && !duration.ongoing) ? duration.minutes : 0
+                                }
+                              });
+                            }} 
+                            style={{ flex: 1, padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                          />
+                          <button
+                            type="button"
+                            className="secondary-btn"
+                            style={{ width: 'auto', padding: '0.4rem 0.6rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+                            title="Set selesai = sekarang (WIB)"
+                            onClick={() => {
+                              const val = nowDatetimeLocal();
+                              const startDt = formData.customData?.startDowntime || '';
+                              const duration = getDowntimeDuration(startDt, val);
+                              setFormData({
+                                ...formData,
+                                customData: {
+                                  ...(formData.customData || {}),
+                                  endDowntime: val,
+                                  downtimeMinutes: (duration && !duration.error) ? duration.minutes : 0
+                                }
+                              });
+                            }}
+                            disabled={!formData.customData?.startDowntime}
+                          >
+                            Pulih sekarang
+                          </button>
+                        </div>
                       </div>
                       
-                      {formData.customData?.startDowntime && formData.customData?.endDowntime && (
-                        <div style={{ gridColumn: '1 / -1', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.5rem 0.75rem', borderRadius: '4px', fontSize: '0.85rem', color: '#166534', fontWeight: 'bold' }}>
+                      {formData.customData?.startDowntime && (
+                        <div style={{ gridColumn: '1 / -1', background: formData.customData?.endDowntime ? '#f0fdf4' : '#fff7ed', border: `1px solid ${formData.customData?.endDowntime ? '#bbf7d0' : '#fed7aa'}`, padding: '0.5rem 0.75rem', borderRadius: '4px', fontSize: '0.85rem', color: formData.customData?.endDowntime ? '#166534' : '#9a3412', fontWeight: 'bold' }}>
                           {(() => {
                             const duration = getDowntimeDuration(formData.customData.startDowntime, formData.customData.endDowntime);
                             if (duration?.error) {

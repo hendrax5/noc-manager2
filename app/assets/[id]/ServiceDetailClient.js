@@ -4,6 +4,27 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { downtimeMinutesInRange, parseDowntimeDate } from '@/lib/tickets/downtime';
+
+function monthBounds(yrMonth) {
+  const [year, month] = yrMonth.split('-').map(Number);
+  const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+  const end = new Date(year, month, 1, 0, 0, 0, 0);
+  return { start, end, daysInMonth: new Date(year, month, 0).getDate() };
+}
+
+/** Ticket overlaps selected month via outage window or createdAt. */
+function ticketOverlapsMonth(t, yrMonth) {
+  const { start, end } = monthBounds(yrMonth);
+  const cd = t.customData && typeof t.customData === 'object' ? t.customData : {};
+  if (cd.hasDowntime && cd.startDowntime) {
+    const s = parseDowntimeDate(cd.startDowntime);
+    let e = parseDowntimeDate(cd.endDowntime) || new Date();
+    if (s && e && s < end && e > start) return true;
+  }
+  const created = new Date(t.createdAt);
+  return created >= start && created < end;
+}
 
 export default function ServiceDetailClient({ service, session }) {
   const router = useRouter();
@@ -36,26 +57,15 @@ export default function ServiceDetailClient({ service, session }) {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  const monthlyTickets = (service.tickets || []).filter(t => {
-    let dateStr = t.createdAt;
-    if (t.customData && typeof t.customData === 'object' && t.customData.startDowntime) {
-      dateStr = t.customData.startDowntime;
-    }
-    const d = new Date(dateStr);
-    const yrMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    return yrMonth === selectedMonth;
-  });
+  const monthlyTickets = (service.tickets || []).filter(t => ticketOverlapsMonth(t, selectedMonth));
 
+  const { start: monthStart, end: monthEnd } = monthBounds(selectedMonth);
   const totalDowntimeMins = monthlyTickets.reduce((acc, t) => {
-    if (t.customData && typeof t.customData === 'object' && t.customData.hasDowntime) {
-      return acc + (parseInt(t.customData.downtimeMinutes) || 0);
-    }
-    return acc;
+    return acc + downtimeMinutesInRange(t.customData, monthStart, monthEnd);
   }, 0);
 
   const getMinutesInSelectedMonth = () => {
-    const [year, month] = selectedMonth.split('-').map(Number);
-    const daysInMonth = new Date(year, month, 0).getDate();
+    const { daysInMonth } = monthBounds(selectedMonth);
     return daysInMonth * 24 * 60;
   };
 
@@ -72,25 +82,14 @@ export default function ServiceDetailClient({ service, session }) {
     const d = new Date(nowForTrend.getFullYear(), nowForTrend.getMonth() - i, 1);
     const yrMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     const label = d.toLocaleString('id-ID', { month: 'short' });
-    
-    // Find tickets for this month
-    const mTickets = (service.tickets || []).filter(t => {
-      let dateStr = t.createdAt;
-      if (t.customData && typeof t.customData === 'object' && t.customData.startDowntime) {
-        dateStr = t.customData.startDowntime;
-      }
-      const tD = new Date(dateStr);
-      return `${tD.getFullYear()}-${String(tD.getMonth() + 1).padStart(2, '0')}` === yrMonth;
-    });
+    const { start: mStart, end: mEnd, daysInMonth: daysInM } = monthBounds(yrMonth);
 
-    const mDowntimeMins = mTickets.reduce((acc, t) => {
-      if (t.customData && typeof t.customData === 'object' && t.customData.hasDowntime) {
-        return acc + (parseInt(t.customData.downtimeMinutes) || 0);
-      }
-      return acc;
-    }, 0);
+    const mTickets = (service.tickets || []).filter(t => ticketOverlapsMonth(t, yrMonth));
+    const mDowntimeMins = mTickets.reduce(
+      (acc, t) => acc + downtimeMinutesInRange(t.customData, mStart, mEnd),
+      0
+    );
 
-    const daysInM = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
     const mMins = daysInM * 24 * 60;
     const mUptime = mMins > 0 ? Math.max(0, ((mMins - mDowntimeMins) / mMins) * 100) : 100;
     
@@ -319,7 +318,7 @@ export default function ServiceDetailClient({ service, session }) {
                     {monthlyTickets.filter(t => t.customData?.hasDowntime).map(t => {
                       const dStart = t.customData.startDowntime ? new Date(t.customData.startDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
                       const dEnd = t.customData.endDowntime ? new Date(t.customData.endDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Belum Selesai';
-                      const dtMins = parseInt(t.customData.downtimeMinutes) || 0;
+                      const dtMins = downtimeMinutesInRange(t.customData, monthStart, monthEnd);
                       const hrs = Math.floor(dtMins / 60);
                       const mins = dtMins % 60;
                       const durText = hrs > 0 ? `${hrs}j ${mins}m` : `${mins}m`;
@@ -590,7 +589,7 @@ export default function ServiceDetailClient({ service, session }) {
                 monthlyTickets.filter(t => t.customData?.hasDowntime).map(t => {
                   const dStart = t.customData.startDowntime ? new Date(t.customData.startDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
                   const dEnd = t.customData.endDowntime ? new Date(t.customData.endDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Unresolved';
-                  const dtMins = parseInt(t.customData.downtimeMinutes) || 0;
+                  const dtMins = downtimeMinutesInRange(t.customData, monthStart, monthEnd);
                   return (
                     <tr key={t.id}>
                       <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>#{t.trackingId ? t.trackingId.split('-')[0] : t.id}</td>
