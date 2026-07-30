@@ -12,7 +12,7 @@ Admin sets **default pola per department** (`Department.schedulePola`: `POLA_1`�
 
 Toggle **Generate** (`Department.scheduleEnabled`): uncheck departments that should **not** get roster/auto-absen (e.g. Admin, Sales). Auto-generate and “generate all” only include enabled departments. Generating a single selected department still works even if unchecked (manual override).
 
-Users with role **Manager** are **excluded from POLA generate** (not put in the night/OC pool). If a Manager must appear on the roster, set Shift preference **FIXED → S1** and assign cells manually, or temporarily change role.
+Users with role **Manager** are **excluded from POLA generate** (not put in the night/OC pool). On successful regenerate (or skip with no pool users), the engine **deletes the whole department month** for every member in that dept first — so Managers and leftover rows disappear from the grid, then only the pool is written. If a Manager must appear on the roster, assign cells manually after generate (they will be wiped again on the next regenerate).
 
 Minimum staff before solve: POLA_1/2/3/6 ≥3, POLA_4/5 ≥4 (clear error if below).
 
