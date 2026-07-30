@@ -651,7 +651,7 @@ export default function SchedulesClient({
                                 borderLeft: `4px solid ${colors.accent}`,
                               }}
                             >
-                              {row.user.name || row.user.email}
+                              {row.user.name || row.user.email || `#${row.user.id}`}
                               <br />
                               <span style={{ fontSize: "0.7rem", opacity: 0.75, fontWeight: "normal" }}>
                                 {row.user.location?.city || "No Location"}
