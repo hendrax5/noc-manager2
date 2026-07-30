@@ -15,6 +15,8 @@ export default function TeamAccessManager({ users, roles, departments, companies
   const [newDept, setNewDept] = useState("");
   const [userPage, setUserPage] = useState(1);
   const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [deptFilter, setDeptFilter] = useState("");
+  const [userSort, setUserSort] = useState("name"); // name | department
   const userPageSize = 10;
 
   const [newUser, setNewUser] = useState({
@@ -109,10 +111,28 @@ export default function TeamAccessManager({ users, roles, departments, companies
     router.refresh();
   };
 
-  const filteredUsers = users.filter(u => 
-    (u.name && u.name.toLowerCase().includes(userSearchQuery.toLowerCase())) || 
-    (u.email && u.email.toLowerCase().includes(userSearchQuery.toLowerCase()))
-  );
+  const filteredUsers = users
+    .filter((u) => {
+      const q = userSearchQuery.toLowerCase().trim();
+      const matchSearch =
+        !q ||
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q));
+      const matchDept = !deptFilter || String(u.departmentId) === String(deptFilter);
+      return matchSearch && matchDept;
+    })
+    .slice()
+    .sort((a, b) => {
+      if (userSort === "department") {
+        const da = departments.find((d) => d.id === a.departmentId)?.name || "";
+        const db = departments.find((d) => d.id === b.departmentId)?.name || "";
+        const cmp = da.localeCompare(db, "id", { sensitivity: "base" });
+        if (cmp !== 0) return cmp;
+      }
+      const na = a.name || a.email || "";
+      const nb = b.name || b.email || "";
+      return na.localeCompare(nb, "id", { sensitivity: "base" });
+    });
 
   return (
     <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
@@ -135,15 +155,43 @@ export default function TeamAccessManager({ users, roles, departments, companies
       <div style={{ padding: '2rem' }}>
         {activeTab === 'users' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
-              <h2>Manage Users</h2>
-              <input 
-                type="search" 
-                placeholder="🔍 Search users by name or email..." 
-                value={userSearchQuery}
-                onChange={e => {setUserSearchQuery(e.target.value); setUserPage(1);}}
-                style={{ width: '300px', padding: '0.6rem 1rem', borderRadius: '50px', border: '1px solid #cbd5e1', outline: 'none' }}
-              />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <h2 style={{ margin: 0 }}>Manage Users</h2>
+                <span style={{ fontSize: '0.8rem', color: '#64748b', background: '#f1f5f9', padding: '0.25rem 0.65rem', borderRadius: 999, border: '1px solid #e2e8f0' }}>
+                  {filteredUsers.length} user{filteredUsers.length === 1 ? '' : 's'}
+                  {deptFilter ? ` · ${departments.find(d => String(d.id) === String(deptFilter))?.name || 'dept'}` : ''}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <select
+                  value={deptFilter}
+                  onChange={(e) => { setDeptFilter(e.target.value); setUserPage(1); }}
+                  style={{ padding: '0.55rem 0.75rem', borderRadius: 8, border: '1px solid #cbd5e1', background: 'white', minWidth: 180 }}
+                  title="Filter by department"
+                >
+                  <option value="">All departments</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={userSort}
+                  onChange={(e) => { setUserSort(e.target.value); setUserPage(1); }}
+                  style={{ padding: '0.55rem 0.75rem', borderRadius: 8, border: '1px solid #cbd5e1', background: 'white' }}
+                  title="Sort users"
+                >
+                  <option value="name">Sort: Name A–Z</option>
+                  <option value="department">Sort: Department</option>
+                </select>
+                <input 
+                  type="search" 
+                  placeholder="Search name or email…" 
+                  value={userSearchQuery}
+                  onChange={e => {setUserSearchQuery(e.target.value); setUserPage(1);}}
+                  style={{ width: '260px', padding: '0.6rem 1rem', borderRadius: '50px', border: '1px solid #cbd5e1', outline: 'none' }}
+                />
+              </div>
             </div>
             <form onSubmit={handleAddUser} style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '1rem', marginBottom: '2rem', background: '#f1f5f9', padding: '1.5rem', borderRadius: '6px' }}>
               <input type="text" placeholder="Full Name" required value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} style={{ padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
@@ -176,7 +224,9 @@ export default function TeamAccessManager({ users, roles, departments, companies
             
             {filteredUsers.length === 0 && (
               <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', fontStyle: 'italic', border: '1px dashed #cbd5e1', borderRadius: '8px' }}>
-                No users found matching "{userSearchQuery}".
+                No users found
+                {userSearchQuery ? ` matching "${userSearchQuery}"` : ''}
+                {deptFilter ? ` in selected department` : ''}.
               </div>
             )}
           </div>

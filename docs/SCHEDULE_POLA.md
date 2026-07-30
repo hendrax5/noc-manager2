@@ -12,6 +12,8 @@ Admin sets **default pola per department** (`Department.schedulePola`: `POLA_1`�
 
 Toggle **Generate** (`Department.scheduleEnabled`): uncheck departments that should **not** get roster/auto-absen (e.g. Admin, Sales). Auto-generate and “generate all” only include enabled departments. Generating a single selected department still works even if unchecked (manual override).
 
+Users with role **Manager** are **excluded from POLA generate** (not put in the night/OC pool). If a Manager must appear on the roster, set Shift preference **FIXED → S1** and assign cells manually, or temporarily change role.
+
 Minimum staff before solve: POLA_1/2/3/6 ≥3, POLA_4/5 ≥4 (clear error if below).
 
 Day/hour for auto-generate use **Asia/Jakarta**. `lastScheduleAutoGenerateKey` is saved only when every enabled department succeeds (or is skipped for no users).
