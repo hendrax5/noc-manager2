@@ -7,7 +7,7 @@
 
 ## Goal
 
-Make monthly POLA_2 (NOC Core) rosters fair across people on **kerja/OFF**, **OC**, **plain S1**, and **S1-band vs S2**, so cases like Putra/Septi getting +2 working days (22 vs 20) do not happen after Generate.
+Make monthly POLA_2 (NOC Core) rosters fair across people on **kerja/OFF**, **OC**, **plain S1**, and **S1-band vs S2**, so cases like Putra/Septi getting +2 working days (22 vs 20) do not happen after Generate. Within a month, a **≤1 day / ≤8 jam** gap is acceptable when `total_kerja` is not divisible by pool size; across months, the people who receive the extra day must **rotate**.
 
 ## Decisions (confirmed)
 
@@ -17,6 +17,8 @@ Make monthly POLA_2 (NOC Core) rosters fair across people on **kerja/OFF**, **OC
 | Approach | **Hard constraints in OR-Tools** (not soft-only, not post-process swap) |
 | S1 vs S2 meaning | Per person: **(Plain S1 + OC) ≈ S2** with \|diff\| ≤ 1 |
 | Kerja/OFF | Per person band floor/ceil of equal share (max−min ≤ 1) |
+| Jam gap in-month | **≤8 jam** OK (1 hari × 8 jam POLA_2) when remainder forces it |
+| Extra-day rotation | **Gantian lintas bulan** via previous-month kerja history (soft, strong weight) |
 | Other polas | Unchanged |
 
 ## Problem (observed)
@@ -52,7 +54,20 @@ Let `n` = number of employees in the solve pool, `D` = days in month.
 
 Equivalent OFF band follows automatically.
 
-For classic 5-person August: total 104 → each person **20 or 21** only (no 22).
+For classic 5-person August: total 104 → each person **20 or 21** only (no 22).  
+Hours: **160 atau 168** (selisih max 8 jam). Exact equal jam for all is impossible when `total_kerja % n ≠ 0` without changing demand.
+
+### 1b. Rotasi “kursi +1” lintas bulan
+
+When `max_k > min_k`, some people must get `max_k` (extra day / +8 jam). Use **previous month** schedules already loaded into the solver (`history` / `history_counts`):
+
+1. For each employee `e`, compute `prev_kerja_e` = count of non-OFF days in the previous calendar month (from history payload). Missing history → treat as `0` (new joiners get priority for fewer extras only after veterans who already had extras).
+2. Soft (strong): penalize `kerja_e == max_k` proportional to `prev_kerja_e` (and/or a flag `prev_kerja_e == prev_max_k`).  
+   Example: `bonus -= is_max_k_e * (prev_kerja_e * W)` with `W` large enough to beat weak tie-breaks but not override hard constraints.
+3. Goal: people who sat at 21/168 last month prefer 20/160 this month; those who sat at 20 prefer the leftover 21 seats.
+4. Not a multi-year ledger in v1 — **one month lookback** is enough for “bulan berikutnya harus gantian.” Optional later: rolling 3-month average.
+
+Do **not** hard-forbid repeating `max_k` (can be infeasible if pool/demand changes); strong soft + hard in-month band is enough.
 
 ### 2. S1-band vs S2
 
@@ -100,21 +115,24 @@ If the model is infeasible under these hards:
 ## Acceptance criteria
 
 1. Unit/integration test: solve POLA_2 for **5 fictional employees**, August 2026 (or fixed calendar), classic demand →  
-   - every person `kerja ∈ {20, 21}`  
+   - every person `kerja ∈ {20, 21}` (jam 160 atau 168; no 176)  
    - every person `|S1+OC − S2| ≤ 1`  
    - weekend work max−min ≤ 1  
-2. Existing daily demand / transition rules still hold on the solution.  
-3. Regenerate NOC Core on staging/prod for a target month → Shift Fairness ringkasan shows kerja spread ≤ 1.  
-4. Docs: short note in `docs/SCHEDULE_POLA.md` under POLA_2 fairness.
+2. Rotation test: same pool, two consecutive months (or August solve with synthetic July history where A,B had `prev_kerja = max`) → A,B prefer `min_k` in August when feasible; extras go to others.  
+3. Existing daily demand / transition rules still hold on the solution.  
+4. Regenerate NOC Core on staging/prod for a target month → Shift Fairness ringkasan shows kerja spread ≤ 1.  
+5. Docs: short note in `docs/SCHEDULE_POLA.md` under POLA_2 fairness (in-month ±1 day / ±8 jam; rotate extras next month).
 
 ## Implementation sketch
 
-**File:** `services/shift-solver/app_generate.py` (POLA_2 block ~312–529)
+**File:** `services/shift-solver/app_generate.py` (POLA_2 block ~312–529)  
+**History already passed from:** `lib/schedules/generatePola.js` → solver `history` / prev month rows
 
 After existing OC / plain S1 hard bands and before `model.Maximize`:
 
 1. Add kerja/OFF hard band from assignment sums (and/or from closed-form total if easier and proven equal).  
-2. Replace soft-only S1−S2 balance with hard `|diff| ≤ 1`.  
-3. Add hard weekend spread ≤ 1 (keep soft penalty optional).  
-4. Add pytest (or solver smoke script) under `services/shift-solver/` that calls the solve path and asserts counts.  
-5. Deploy shift-solver image; regenerate affected months.
+2. Soft-strong: penalize `max_k` seats using `prev_kerja` from history (rotasi gantian).  
+3. Replace soft-only S1−S2 balance with hard `|diff| ≤ 1`.  
+4. Add hard weekend spread ≤ 1 (keep soft penalty optional).  
+5. Add pytest (or solver smoke script) under `services/shift-solver/` for in-month bands + rotation preference.  
+6. Deploy shift-solver image; regenerate affected months.
