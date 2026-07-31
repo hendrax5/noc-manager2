@@ -1112,6 +1112,17 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
             model.Add(kerja_counts[e] < max_kerja).OnlyEnforceIf(is_max_k.Not())
             bonus_vars.append(is_max_k * (-PREV_KERJA_WEIGHT * prev_kerja))
 
+        # FAIRNESS S1 vs S2: |S1 - S2| <= 1 per person
+        for e in range(num_employees):
+            s1_sum = sum(x[e, d, 1] for d in range(num_days))
+            s2_sum = sum(x[e, d, 2] for d in range(num_days))
+            s1_s2_diff = model.NewIntVar(-num_days, num_days, f'p5_s1_s2_diff_{e}')
+            model.Add(s1_s2_diff == s1_sum - s2_sum)
+            s1_s2_abs = model.NewIntVar(0, num_days, f'p5_s1_s2_abs_{e}')
+            model.AddAbsEquality(s1_s2_abs, s1_s2_diff)
+            model.Add(s1_s2_abs <= 1)
+            bonus_vars.append(s1_s2_abs * -500)
+
         model.Maximize(sum(bonus_vars))
         
         shift_map = {0: "OFF", 1: "S1", 2: "S2"}
