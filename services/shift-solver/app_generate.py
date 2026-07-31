@@ -1104,6 +1104,14 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
         model.AddMinEquality(min_kerja, kerja_counts)
         model.Add(max_kerja - min_kerja <= 1)
 
+        PREV_KERJA_WEIGHT = 8000
+        for e in range(num_employees):
+            prev_kerja = history_counts[e][1] + history_counts[e][2]
+            is_max_k = model.NewBoolVar(f'p5_is_max_kerja_e{e}')
+            model.Add(kerja_counts[e] == max_kerja).OnlyEnforceIf(is_max_k)
+            model.Add(kerja_counts[e] < max_kerja).OnlyEnforceIf(is_max_k.Not())
+            bonus_vars.append(is_max_k * (-PREV_KERJA_WEIGHT * prev_kerja))
+
         model.Maximize(sum(bonus_vars))
         
         shift_map = {0: "OFF", 1: "S1", 2: "S2"}
