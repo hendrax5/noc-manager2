@@ -7,6 +7,7 @@ import { departmentColor } from "@/lib/schedules/deptColors";
 import { shiftCellColor, SHIFT_COLOR_LEGEND } from "@/lib/schedules/shiftColors";
 import { toDateOnlyString } from "@/lib/schedules/dates";
 import { HIGHLIGHT_COLORS } from "@/lib/schedules/access";
+import { buildDeptSummaries, isWorkingShiftName } from "@/lib/schedules/fairness";
 
 export default function SchedulesClient({
   initialShiftTypes,
@@ -38,7 +39,7 @@ export default function SchedulesClient({
   const [swapMode, setSwapMode] = useState(false);
   const [swapA, setSwapA] = useState(null); // { userId, day }
   const [cellEditor, setCellEditor] = useState(null);
-  // { userId, userName, day, shift, highlightColor, note }
+  // { userId, userName, day, shift, highlightColor, note, isLembur, generatedShiftTypeId }
 
   const [editPrefId, setEditPrefId] = useState(null);
   const [prefFormData, setPrefFormData] = useState({});
@@ -139,8 +140,11 @@ export default function SchedulesClient({
         cells: Object.fromEntries(dayHeaders.map((d) => [d, ""])),
       });
       for (const row of group.rows) {
+        const userId = row.user.id;
+        const hours = totalHoursByUserId.get(userId);
         rows.push({
           name: row.user.name || row.user.email,
+          ...(hours != null ? { totalHours: hours } : {}),
           cells: Object.fromEntries(
             dayHeaders.map((d) => {
               if (!Object.prototype.hasOwnProperty.call(row.days, d)) return [d, ""];
@@ -152,12 +156,33 @@ export default function SchedulesClient({
         });
       }
     }
+
+    let summary;
+    if (fairnessCards.length > 0) {
+      if (calDepartment) {
+        summary = fairnessCards[0].fairness;
+      } else {
+        const columnsMap = new Map();
+        for (const card of fairnessCards) {
+          for (const col of card.fairness.columns) {
+            if (!columnsMap.has(col.key)) columnsMap.set(col.key, col);
+          }
+        }
+        summary = {
+          columns: [...columnsMap.values()],
+          rows: fairnessCards.flatMap((c) => c.fairness.rows),
+          hoursPerShift: fairnessCards[0].fairness.hoursPerShift,
+        };
+      }
+    }
+
     exportScheduleMatrixExcel({
       title: "Jadwal Shift NOC",
       year: calYear,
       month: calMonth + 1,
       dayHeaders,
       rows,
+      summary,
       filename: `Jadwal_${calYear}-${String(calMonth + 1).padStart(2, "0")}.xls`,
     });
   };
@@ -183,6 +208,7 @@ export default function SchedulesClient({
       shift: cellEditor.shift,
       highlightColor: cellEditor.highlightColor,
       note: cellEditor.note,
+      isLembur: cellEditor.isLembur,
     });
     if (ok) setCellEditor(null);
   };
@@ -235,6 +261,8 @@ export default function SchedulesClient({
       shift: shiftName,
       highlightColor: cell.highlightColor || null,
       note: cell.note || "",
+      isLembur: !!cell.isLembur,
+      generatedShiftTypeId: cell.generatedShiftTypeId ?? null,
     });
   };
 
@@ -324,6 +352,8 @@ export default function SchedulesClient({
       shiftType: s.shiftType,
       highlightColor: s.highlightColor || null,
       note: s.note || null,
+      isLembur: !!s.isLembur,
+      generatedShiftTypeId: s.generatedShiftTypeId ?? null,
       exists: true,
     };
   });
@@ -354,6 +384,41 @@ export default function SchedulesClient({
     if (ai !== bi) return ai - bi;
     return a.deptName.localeCompare(b.deptName, "id");
   });
+
+  const monthName = new Date(calYear, calMonth, 1).toLocaleDateString("id-ID", {
+    month: "long",
+  });
+
+  const fairnessCards = (() => {
+    const buildForDept = (deptId, deptName) => {
+      const pola =
+        departments.find((d) => String(d.id) === String(deptId))?.schedulePola || "POLA_1";
+      return {
+        deptId,
+        deptName,
+        fairness: buildDeptSummaries({
+          schedules: schedules.filter(
+            (s) => String(s.user?.departmentId) === String(deptId)
+          ),
+          pola,
+          year: calYear,
+          month: calMonth + 1,
+        }),
+      };
+    };
+    if (calDepartment) {
+      const dept = departments.find((d) => String(d.id) === String(calDepartment));
+      return [buildForDept(calDepartment, dept?.name || "Departemen")];
+    }
+    return groupedRows.map((g) => buildForDept(g.deptId, g.deptName));
+  })();
+
+  const totalHoursByUserId = new Map();
+  for (const card of fairnessCards) {
+    for (const r of card.fairness.rows) {
+      totalHoursByUserId.set(r.userId, r.totalHours);
+    }
+  }
 
   return (
     <div>
@@ -558,6 +623,105 @@ export default function SchedulesClient({
           </p>
 
           <div style={{ overflowX: "auto", padding: "1.5rem" }}>
+            {!loadingCal && fairnessCards.length > 0 && (
+              <div style={{ marginBottom: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                {fairnessCards.map((card) => (
+                  <div
+                    key={`fairness-${card.deptId}`}
+                    style={{
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 8,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div style={{ background: "#0f172a", color: "#fff", padding: "0.5rem 0.75rem" }}>
+                      <strong>
+                        {card.deptName} — Ringkasan fairness {monthName} {calYear}
+                      </strong>
+                      <div style={{ fontSize: "0.8rem", opacity: 0.75 }}>
+                        Distribusi shift per orang (fairness)
+                      </div>
+                    </div>
+                    <div style={{ overflowX: "auto" }}>
+                      <table
+                        style={{
+                          width: "100%",
+                          borderCollapse: "collapse",
+                          fontSize: "0.85rem",
+                        }}
+                      >
+                        <thead>
+                          <tr>
+                            <th
+                              style={{
+                                padding: "0.5rem 0.75rem",
+                                textAlign: "left",
+                                borderBottom: "1px solid #e2e8f0",
+                                background: "#f8fafc",
+                              }}
+                            >
+                              Nama
+                            </th>
+                            {card.fairness.columns.map((col) => (
+                              <th
+                                key={col.key}
+                                style={{
+                                  padding: "0.5rem 0.75rem",
+                                  textAlign: "center",
+                                  borderBottom: "1px solid #e2e8f0",
+                                  background: "#f8fafc",
+                                }}
+                              >
+                                {col.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {card.fairness.rows.length === 0 ? (
+                            <tr>
+                              <td
+                                colSpan={card.fairness.columns.length + 1}
+                                style={{ padding: "0.75rem", color: "#94a3b8" }}
+                              >
+                                Belum ada data jadwal.
+                              </td>
+                            </tr>
+                          ) : (
+                            card.fairness.rows.map((r) => (
+                              <tr key={r.userId}>
+                                <td
+                                  style={{
+                                    padding: "0.45rem 0.75rem",
+                                    borderBottom: "1px solid #f1f5f9",
+                                    textAlign: "left",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {r.name}
+                                </td>
+                                {card.fairness.columns.map((col) => (
+                                  <td
+                                    key={col.key}
+                                    style={{
+                                      padding: "0.45rem 0.75rem",
+                                      borderBottom: "1px solid #f1f5f9",
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    {r[col.key]}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {loadingCal ? (
               <p>Loading Schedule Matrix...</p>
             ) : (
@@ -583,6 +747,18 @@ export default function SchedulesClient({
                       }}
                     >
                       Employee / Team
+                    </th>
+                    <th
+                      style={{
+                        padding: "0.5rem",
+                        background: "#e2e8f0",
+                        border: "1px solid #cbd5e1",
+                        fontSize: "0.8rem",
+                        minWidth: 72,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Total Jam
                     </th>
                     {dayHeaders.map((d) => {
                       const dateObj = new Date(calYear, calMonth, d);
@@ -614,7 +790,7 @@ export default function SchedulesClient({
                       <Fragment key={`dept-${group.deptId}`}>
                         <tr>
                           <td
-                            colSpan={daysInMonth + 1}
+                            colSpan={daysInMonth + 2}
                             style={{
                               padding: "0.55rem 0.75rem",
                               textAlign: "left",
@@ -656,6 +832,21 @@ export default function SchedulesClient({
                               <span style={{ fontSize: "0.7rem", opacity: 0.75, fontWeight: "normal" }}>
                                 {row.user.location?.city || "No Location"}
                               </span>
+                            </td>
+                            <td
+                              style={{
+                                padding: "0.5rem",
+                                border: "1px solid #cbd5e1",
+                                background: colors.bg,
+                                color: colors.text,
+                                fontWeight: 600,
+                                fontSize: "0.8rem",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {totalHoursByUserId.has(row.user.id)
+                                ? totalHoursByUserId.get(row.user.id)
+                                : "—"}
                             </td>
                             {dayHeaders.map((d) => {
                               const cell = row.days[d];
@@ -759,7 +950,7 @@ export default function SchedulesClient({
                   })}
                   {groupedRows.length === 0 && (
                     <tr>
-                      <td colSpan={daysInMonth + 1} style={{ padding: "2rem", color: "#94a3b8" }}>
+                      <td colSpan={daysInMonth + 2} style={{ padding: "2rem", color: "#94a3b8" }}>
                         No schedules generated for this range.
                       </td>
                     </tr>
@@ -1244,7 +1435,15 @@ export default function SchedulesClient({
             </label>
             <select
               value={cellEditor.shift}
-              onChange={(e) => setCellEditor((c) => ({ ...c, shift: e.target.value }))}
+              onChange={(e) => {
+                const shift = e.target.value;
+                setCellEditor((c) => ({
+                  ...c,
+                  shift,
+                  isLembur:
+                    shift === "OFF" || !isWorkingShiftName(shift) ? false : c.isLembur,
+                }));
+              }}
               style={{
                 width: "100%",
                 padding: "0.5rem",
@@ -1262,6 +1461,35 @@ export default function SchedulesClient({
                 )
               )}
             </select>
+
+            {cellEditor.shift !== "OFF" && isWorkingShiftName(cellEditor.shift) && (
+              <div style={{ marginBottom: "1rem" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!cellEditor.isLembur}
+                    onChange={(e) =>
+                      setCellEditor((c) => ({ ...c, isLembur: e.target.checked }))
+                    }
+                  />
+                  Lembur (panggil dari OFF)
+                </label>
+                {cellEditor.generatedShiftTypeId == null && (
+                  <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: 4 }}>
+                    Baseline generate: OFF — default dianggap lembur jika diisi shift kerja.
+                  </div>
+                )}
+              </div>
+            )}
 
             <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 6 }}>
               Stabilo

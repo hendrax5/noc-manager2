@@ -245,6 +245,7 @@ model ShiftType {
   endTime   String 
   preferences UserSchedulePreference[]
   schedules   ShiftSchedule[]
+  generatedSchedules ShiftSchedule[] @relation("GeneratedShiftBaseline")
   active    Boolean  @default(true)
 }
 
@@ -265,6 +266,9 @@ model ShiftSchedule {
   date           DateTime  @db.Date
   shiftTypeId    Int?
   shiftType      ShiftType? @relation(fields: [shiftTypeId], references: [id])
+  generatedShiftTypeId Int?
+  generatedShiftType   ShiftType? @relation("GeneratedShiftBaseline", fields: [generatedShiftTypeId], references: [id])
+  isLembur             Boolean   @default(false)
   highlightColor String?   // e.g. #fef08a — manager/staff marker (stabilo)
   note           String?   @db.Text
   noteUpdatedBy  Int?
