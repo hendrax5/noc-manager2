@@ -485,6 +485,19 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
         model.Add(s1_plain_spread == max_s1_plain - min_s1_plain)
         bonus_vars.append(s1_plain_spread * -4000)
 
+        # FAIRNESS total kerja / OFF: max - min <= 1 (≤8 jam gap for POLA_2)
+        kerja_counts = []
+        for e in range(num_employees):
+            kerja_e = model.NewIntVar(0, num_days, f'core_kerja_e{e}')
+            model.Add(kerja_e == sum(x[e, d, 1] + x[e, d, 2] + x[e, d, 3] for d in range(num_days)))
+            kerja_counts.append(kerja_e)
+
+        max_kerja = model.NewIntVar(0, num_days, 'core_max_kerja')
+        min_kerja = model.NewIntVar(0, num_days, 'core_min_kerja')
+        model.AddMaxEquality(max_kerja, kerja_counts)
+        model.AddMinEquality(min_kerja, kerja_counts)
+        model.Add(max_kerja - min_kerja <= 1)
+
         # FAIRNESS S2 (shift malam, sering menyusul hari OC)
         s2_counts = []
         for e in range(num_employees):
