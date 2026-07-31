@@ -4,6 +4,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { dateOnlyToUtcDate, toDateOnlyString } from "@/lib/schedules/dates";
 import { canEditSchedules } from "@/lib/schedules/access";
+import { computeIsLembur } from "@/lib/schedules/fairness";
+
+const scheduleInclude = {
+  shiftType: true,
+  generatedShiftType: { select: { id: true, name: true } },
+  user: { select: { id: true, name: true, email: true } },
+};
 
 export async function GET(req) {
   try {
@@ -37,6 +44,7 @@ export async function GET(req) {
           },
         },
         shiftType: true,
+        generatedShiftType: { select: { id: true, name: true } },
       },
       orderBy: { date: "asc" },
     });
@@ -48,7 +56,7 @@ export async function GET(req) {
 }
 
 /**
- * PATCH — edit cell (shift / highlight / note) or swap two cells.
+ * PATCH — edit cell (shift / highlight / note / isLembur) or swap two cells.
  * Editors: Admin, Manager, manage_schedules
  */
 export async function PATCH(req) {
@@ -70,6 +78,11 @@ export async function PATCH(req) {
     if (!userId || !dateStr) {
       return NextResponse.json({ error: "userId and date required" }, { status: 400 });
     }
+
+    const date = dateOnlyToUtcDate(dateStr);
+    const existing = await prisma.shiftSchedule.findUnique({
+      where: { userId_date: { userId, date } },
+    });
 
     const data = {};
 
@@ -109,11 +122,31 @@ export async function PATCH(req) {
       data.noteUpdatedAt = new Date();
     }
 
+    const explicit =
+      body.isLembur === true || body.isLembur === false ? body.isLembur : undefined;
+    const nextShiftTypeId =
+      data.shiftTypeId !== undefined ? data.shiftTypeId : existing?.shiftTypeId ?? null;
+    const generatedId = existing?.generatedShiftTypeId ?? null;
+
+    if (explicit === true && nextShiftTypeId == null) {
+      return NextResponse.json(
+        { error: "isLembur tidak boleh true saat shift OFF" },
+        { status: 400 }
+      );
+    }
+
+    if (body.shift != null || body.shiftTypeId !== undefined || body.isLembur !== undefined) {
+      data.isLembur = computeIsLembur({
+        shiftTypeId: nextShiftTypeId,
+        generatedShiftTypeId: generatedId,
+        explicit,
+      });
+    }
+
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });
     }
 
-    const date = dateOnlyToUtcDate(dateStr);
     const row = await prisma.shiftSchedule.upsert({
       where: { userId_date: { userId, date } },
       update: data,
@@ -125,8 +158,10 @@ export async function PATCH(req) {
         note: data.note !== undefined ? data.note : null,
         noteUpdatedBy: data.noteUpdatedBy ?? null,
         noteUpdatedAt: data.noteUpdatedAt ?? null,
+        isLembur: data.isLembur !== undefined ? data.isLembur : false,
+        generatedShiftTypeId: null,
       },
-      include: { shiftType: true, user: { select: { id: true, name: true, email: true } } },
+      include: scheduleInclude,
     });
 
     return NextResponse.json(row);
@@ -155,33 +190,48 @@ async function swapCells(body) {
     prisma.shiftSchedule.findUnique({ where: { userId_date: { userId: bUser, date: bDate } } }),
   ]);
 
+  const aShift = aRow?.shiftTypeId ?? null;
+  const bShift = bRow?.shiftTypeId ?? null;
+  const aGenerated = aRow?.generatedShiftTypeId ?? null;
+  const bGenerated = bRow?.generatedShiftTypeId ?? null;
+
+  // Cell A gets B's shift/highlight/note; keeps A's generatedShiftTypeId
   const aPayload = {
-    shiftTypeId: aRow?.shiftTypeId ?? null,
-    highlightColor: aRow?.highlightColor ?? null,
-    note: aRow?.note ?? null,
-    noteUpdatedBy: aRow?.noteUpdatedBy ?? null,
-    noteUpdatedAt: aRow?.noteUpdatedAt ?? null,
-  };
-  const bPayload = {
-    shiftTypeId: bRow?.shiftTypeId ?? null,
+    shiftTypeId: bShift,
     highlightColor: bRow?.highlightColor ?? null,
     note: bRow?.note ?? null,
     noteUpdatedBy: bRow?.noteUpdatedBy ?? null,
     noteUpdatedAt: bRow?.noteUpdatedAt ?? null,
+    isLembur: computeIsLembur({
+      shiftTypeId: bShift,
+      generatedShiftTypeId: aGenerated,
+    }),
+  };
+  // Cell B gets A's shift/highlight/note; keeps B's generatedShiftTypeId
+  const bPayload = {
+    shiftTypeId: aShift,
+    highlightColor: aRow?.highlightColor ?? null,
+    note: aRow?.note ?? null,
+    noteUpdatedBy: aRow?.noteUpdatedBy ?? null,
+    noteUpdatedAt: aRow?.noteUpdatedAt ?? null,
+    isLembur: computeIsLembur({
+      shiftTypeId: aShift,
+      generatedShiftTypeId: bGenerated,
+    }),
   };
 
   const [aOut, bOut] = await prisma.$transaction([
     prisma.shiftSchedule.upsert({
       where: { userId_date: { userId: aUser, date: aDate } },
-      update: bPayload,
-      create: { userId: aUser, date: aDate, ...bPayload },
-      include: { shiftType: true },
+      update: aPayload,
+      create: { userId: aUser, date: aDate, generatedShiftTypeId: null, ...aPayload },
+      include: { shiftType: true, generatedShiftType: { select: { id: true, name: true } } },
     }),
     prisma.shiftSchedule.upsert({
       where: { userId_date: { userId: bUser, date: bDate } },
-      update: aPayload,
-      create: { userId: bUser, date: bDate, ...aPayload },
-      include: { shiftType: true },
+      update: bPayload,
+      create: { userId: bUser, date: bDate, generatedShiftTypeId: null, ...bPayload },
+      include: { shiftType: true, generatedShiftType: { select: { id: true, name: true } } },
     }),
   ]);
 
