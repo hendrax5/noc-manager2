@@ -32,3 +32,9 @@ Default: every month on day **15** at hour **1** (server time), generate roster 
 - Idempotent key: `lastScheduleAutoGenerateKey` (e.g. `2026-08`)
 
 Force: `POST /api/schedules/auto-generate` with `{ "force": true }` (admin session).
+
+## Fairness report
+
+Ringkasan per orang (S1/S2/OC/OFF, lembur, total jam) di **Shifts** dan **Reports → Shift Fairness**.
+Lembur = masuk pada hari yang baseline Generate-nya OFF (`generatedShiftTypeId` null), atau dicentang manual.
+Setelah deploy, regenerate bulan berjalan agar baseline terisi.
