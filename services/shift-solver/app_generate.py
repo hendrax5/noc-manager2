@@ -521,7 +521,8 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
             model.Add(s1_s2_diff == s1_band_sum - s2_sum)
             s1_s2_abs_diff = model.NewIntVar(0, num_days, f'core_s1_s2_abs_diff_{e}')
             model.AddAbsEquality(s1_s2_abs_diff, s1_s2_diff)
-            bonus_vars.append(s1_s2_abs_diff * -2000)
+            model.Add(s1_s2_abs_diff <= 1)
+            bonus_vars.append(s1_s2_abs_diff * -500)
 
         max_s2_team = model.NewIntVar(0, num_days, 'core_max_s2')
         min_s2_team = model.NewIntVar(0, num_days, 'core_min_s2')
