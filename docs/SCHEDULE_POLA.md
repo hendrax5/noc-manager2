@@ -48,3 +48,12 @@ Generate POLA_2 menyeimbangkan per orang dalam bulan:
 - Kursi +1 hari digilir lewat history bulan sebelumnya (soft kuat)
 
 Regenerate bulan target setelah deploy `shift-solver` agar roster lama (mis. 22 vs 20) diganti.
+
+## POLA_5 fairness (solver)
+
+Generate POLA_5 menyeimbangkan per orang dalam bulan:
+- Kerja / OFF: selisih max 1 hari (jam POLA_5: selisih max 12 jam bila total slot tidak habis dibagi)
+- S1 vs S2: selisih max 1
+- Kursi +1 hari digilir lewat history bulan sebelumnya (soft kuat)
+
+Regenerate dept POLA_5 (mis. NOC Sisterc) setelah deploy `shift-solver`.
