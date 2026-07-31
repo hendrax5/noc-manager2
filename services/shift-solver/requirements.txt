@@ -3,3 +3,5 @@ uvicorn
 ortools
 sqlalchemy
 pydantic
+pytest
+httpx
