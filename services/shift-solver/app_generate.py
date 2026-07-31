@@ -975,7 +975,18 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
         model.AddMinEquality(min_work, work_counts)
         work_spread = model.NewIntVar(0, num_days, 'p4_work_spread')
         model.Add(work_spread == max_work - min_work)
-        bonus_vars.append(work_spread * -4000)
+        # HARD: kerja/OFF ±1 (≤12 jam gap); soft kept as weak tie-break
+        model.Add(work_spread <= 1)
+        bonus_vars.append(work_spread * -500)
+
+        # Rotasi lintas bulan: yang banyak kerja bulan lalu jarang dapat kursi +1
+        PREV_KERJA_WEIGHT = 8000
+        for e in range(num_employees):
+            prev_kerja = history_counts[e][1] + history_counts[e][2]
+            is_max_k = model.NewBoolVar(f'p4_is_max_kerja_e{e}')
+            model.Add(work_counts[e] == max_work).OnlyEnforceIf(is_max_k)
+            model.Add(work_counts[e] < max_work).OnlyEnforceIf(is_max_k.Not())
+            bonus_vars.append(is_max_k * (-PREV_KERJA_WEIGHT * prev_kerja))
 
         max_off = model.NewIntVar(0, num_days, 'p4_max_off')
         min_off = model.NewIntVar(0, num_days, 'p4_min_off')
@@ -983,7 +994,8 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
         model.AddMinEquality(min_off, off_counts)
         off_spread = model.NewIntVar(0, num_days, 'p4_off_spread')
         model.Add(off_spread == max_off - min_off)
-        bonus_vars.append(off_spread * -3000)
+        model.Add(off_spread <= 1)
+        bonus_vars.append(off_spread * -500)
 
         max_s1_emp = model.NewIntVar(0, num_days, 'p4_max_s1_emp')
         min_s1_emp = model.NewIntVar(0, num_days, 'p4_min_s1_emp')
@@ -991,7 +1003,9 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
         model.AddMinEquality(min_s1_emp, s1_emp_counts)
         s1_emp_spread = model.NewIntVar(0, num_days, 'p4_s1_emp_spread')
         model.Add(s1_emp_spread == max_s1_emp - min_s1_emp)
-        bonus_vars.append(s1_emp_spread * -5000)
+        # HARD antar orang (bukan |S1-S2| per orang — aman untuk tim besar)
+        model.Add(s1_emp_spread <= 1)
+        bonus_vars.append(s1_emp_spread * -500)
 
         max_s2_emp = model.NewIntVar(0, num_days, 'p4_max_s2_emp')
         min_s2_emp = model.NewIntVar(0, num_days, 'p4_min_s2_emp')
@@ -999,7 +1013,8 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
         model.AddMinEquality(min_s2_emp, s2_emp_counts)
         s2_emp_spread = model.NewIntVar(0, num_days, 'p4_s2_emp_spread')
         model.Add(s2_emp_spread == max_s2_emp - min_s2_emp)
-        bonus_vars.append(s2_emp_spread * -5000)
+        model.Add(s2_emp_spread <= 1)
+        bonus_vars.append(s2_emp_spread * -500)
 
         model.Maximize(sum(bonus_vars))
         
@@ -1293,6 +1308,15 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 detail=(
                     "POLA_5 fairness tidak solvable untuk pool/bulan ini "
                     "(kerja/OFF ±1, S1 vs S2 ±1). "
+                    "Sesuaikan jumlah anggota roster atau edit manual."
+                ),
+            )
+        if selected_pola == "POLA_4":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "POLA_4 fairness tidak solvable untuk pool/bulan ini "
+                    "(kerja/OFF ±1, S1 antar orang ±1, S2 antar orang ±1). "
                     "Sesuaikan jumlah anggota roster atau edit manual."
                 ),
             )
