@@ -29,6 +29,11 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
     session?.user?.role === "Manager";
   const canViewOpsReport =
     session?.user?.role === "Admin" || session?.user?.role === "Manager";
+  const canViewShiftFairness =
+    session?.user?.role === "Admin" ||
+    session?.user?.role === "Manager" ||
+    session?.user?.permissions?.includes("view_reports") ||
+    session?.user?.permissions?.includes("manage_schedules");
   const canManageTeam =
     session?.user?.permissions?.includes("manage_users") ||
     session?.user?.permissions?.includes("manage_roles") ||
@@ -40,6 +45,7 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
   const showAdmin =
     canViewReports ||
     canViewOpsReport ||
+    canViewShiftFairness ||
     canManageTeam ||
     canManageSettings ||
     session?.user?.role === "Manager";
@@ -96,6 +102,15 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Ops Report
+                  </Link>
+                )}
+                {canViewShiftFairness && (
+                  <Link
+                    href="/reports/shifts"
+                    className={pathname.startsWith("/reports/shifts") ? "active" : ""}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Shift Fairness
                   </Link>
                 )}
                 {canManageTeam && (
