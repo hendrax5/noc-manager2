@@ -1088,6 +1088,22 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
             bonus_vars.append(s1_count * day_weight * 10)
             bonus_vars.append(s2_count * day_weight * 10)
 
+        # FAIRNESS total kerja / OFF: max - min <= 1 (≤12 jam gap for POLA_5)
+        kerja_counts = []
+        for e in range(num_employees):
+            kerja_e = model.NewIntVar(0, num_days, f'p5_kerja_e{e}')
+            model.Add(
+                kerja_e
+                == sum(x[e, d, 1] + x[e, d, 2] for d in range(num_days))
+            )
+            kerja_counts.append(kerja_e)
+
+        max_kerja = model.NewIntVar(0, num_days, 'p5_max_kerja')
+        min_kerja = model.NewIntVar(0, num_days, 'p5_min_kerja')
+        model.AddMaxEquality(max_kerja, kerja_counts)
+        model.AddMinEquality(min_kerja, kerja_counts)
+        model.Add(max_kerja - min_kerja <= 1)
+
         model.Maximize(sum(bonus_vars))
         
         shift_map = {0: "OFF", 1: "S1", 2: "S2"}
