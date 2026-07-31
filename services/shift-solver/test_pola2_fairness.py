@@ -90,5 +90,9 @@ def test_pola2_kerja_extras_prefer_lower_previous_month_work():
     max_kerja = max(kerja.values())
     min_kerja = min(kerja.values())
 
-    if max_kerja > min_kerja:
-        assert any(kerja[employee_id] == max_kerja for employee_id in {3, 4, 5})
+    assert sum(kerja.values()) == 104
+    assert max_kerja > min_kerja
+    at_min = {employee_id for employee_id, count in kerja.items() if count == min_kerja}
+    assert at_min & {1, 2}, (
+        f"expected A or B (high previous kerja) at min kerja, got {kerja}"
+    )
