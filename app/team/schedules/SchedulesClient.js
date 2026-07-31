@@ -140,8 +140,11 @@ export default function SchedulesClient({
         cells: Object.fromEntries(dayHeaders.map((d) => [d, ""])),
       });
       for (const row of group.rows) {
+        const userId = row.user.id;
+        const hours = totalHoursByUserId.get(userId);
         rows.push({
           name: row.user.name || row.user.email,
+          ...(hours != null ? { totalHours: hours } : {}),
           cells: Object.fromEntries(
             dayHeaders.map((d) => {
               if (!Object.prototype.hasOwnProperty.call(row.days, d)) return [d, ""];
@@ -153,12 +156,33 @@ export default function SchedulesClient({
         });
       }
     }
+
+    let summary;
+    if (fairnessCards.length > 0) {
+      if (calDepartment) {
+        summary = fairnessCards[0].fairness;
+      } else {
+        const columnsMap = new Map();
+        for (const card of fairnessCards) {
+          for (const col of card.fairness.columns) {
+            if (!columnsMap.has(col.key)) columnsMap.set(col.key, col);
+          }
+        }
+        summary = {
+          columns: [...columnsMap.values()],
+          rows: fairnessCards.flatMap((c) => c.fairness.rows),
+          hoursPerShift: fairnessCards[0].fairness.hoursPerShift,
+        };
+      }
+    }
+
     exportScheduleMatrixExcel({
       title: "Jadwal Shift NOC",
       year: calYear,
       month: calMonth + 1,
       dayHeaders,
       rows,
+      summary,
       filename: `Jadwal_${calYear}-${String(calMonth + 1).padStart(2, "0")}.xls`,
     });
   };
