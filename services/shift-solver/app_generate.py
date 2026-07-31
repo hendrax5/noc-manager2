@@ -1287,6 +1287,15 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                     "Sesuaikan jumlah anggota roster atau edit manual."
                 ),
             )
+        if selected_pola == "POLA_5":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "POLA_5 fairness tidak solvable untuk pool/bulan ini "
+                    "(kerja/OFF ±1, S1 vs S2 ±1). "
+                    "Sesuaikan jumlah anggota roster atau edit manual."
+                ),
+            )
         raise HTTPException(
             status_code=400,
             detail="Tidak dapat menemukan jadwal yang sesuai.",
