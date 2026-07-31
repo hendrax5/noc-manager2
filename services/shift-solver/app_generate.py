@@ -1240,7 +1240,19 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
         db.commit()
         return {"msg": f"Jadwal {dept.name} berhasil digenerate!"}
     else:
-        raise HTTPException(status_code=400, detail="Tidak dapat menemukan jadwal yang sesuai.")
+        if selected_pola == "POLA_2":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "POLA_2 fairness tidak solvable untuk pool/bulan ini "
+                    "(kerja/OFF ±1, S1+OC vs S2 ±1, weekend ±1). "
+                    "Sesuaikan jumlah anggota roster atau edit manual."
+                ),
+            )
+        raise HTTPException(
+            status_code=400,
+            detail="Tidak dapat menemukan jadwal yang sesuai.",
+        )
 
 @app.get("/view")
 def view(year: int, month: int, department_id: int, db: Session = Depends(get_db)):
