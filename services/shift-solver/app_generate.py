@@ -547,6 +547,7 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
         model.AddMinEquality(min_we, weekend_duty)
         we_spread = model.NewIntVar(0, num_days, 'core_weekend_spread')
         model.Add(we_spread == max_we - min_we)
+        model.Add(we_spread <= 1)
         bonus_vars.append(we_spread * -2500)
 
         model.Maximize(sum(bonus_vars))
