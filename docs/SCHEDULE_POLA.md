@@ -38,3 +38,13 @@ Force: `POST /api/schedules/auto-generate` with `{ "force": true }` (admin sessi
 Ringkasan per orang (S1/S2/OC/OFF, lembur, total jam) di **Shifts** dan **Reports → Shift Fairness**.
 Lembur = masuk pada hari yang baseline Generate-nya OFF (`generatedShiftTypeId` null), atau dicentang manual.
 Setelah deploy, regenerate bulan berjalan agar baseline terisi.
+
+## POLA_2 fairness (solver)
+
+Generate POLA_2 menyeimbangkan per orang dalam bulan:
+- Kerja / OFF: selisih max 1 hari (jam POLA_2: selisih max 8 jam bila total slot tidak habis dibagi)
+- (Plain S1 + OC) vs S2: selisih max 1
+- Weekend duty: selisih max 1
+- Kursi +1 hari digilir lewat history bulan sebelumnya (soft kuat)
+
+Regenerate bulan target setelah deploy `shift-solver` agar roster lama (mis. 22 vs 20) diganti.

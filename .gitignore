@@ -8,3 +8,5 @@ build/
 *.log
 public/uploads/
 internal.md
+services/shift-solver/data/
+**/__pycache__/
