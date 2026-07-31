@@ -498,6 +498,15 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
         model.AddMinEquality(min_kerja, kerja_counts)
         model.Add(max_kerja - min_kerja <= 1)
 
+        # Rotasi lintas bulan: yang banyak kerja bulan lalu lebih jarang dapat max_k
+        PREV_KERJA_WEIGHT = 8000  # strong vs OC/S1 soft history (~200), below infeasibility
+        for e in range(num_employees):
+            prev_kerja = (
+                history_counts[e][1] + history_counts[e][2] + history_counts[e][3]
+            )
+            # Linear: higher prev_kerja → prefer fewer kerja this month
+            bonus_vars.append(kerja_counts[e] * (-PREV_KERJA_WEIGHT * prev_kerja))
+
         # FAIRNESS S2 (shift malam, sering menyusul hari OC)
         s2_counts = []
         for e in range(num_employees):
