@@ -189,7 +189,7 @@ export async function POST(req, { params }) {
     await prisma.ticketHistory.createMany({
       data: [
         { ticketId, action: transitionReason, actorId: userId },
-        { ticketId, ...replyPointsLog({ actorId: userId, isPublic: commentData.isPublic }) },
+        { ticketId, ...replyPointsLog({ actorId: userId, isPublic: commentData.isPublic, commentId: comment.id }) },
       ],
     });
 
