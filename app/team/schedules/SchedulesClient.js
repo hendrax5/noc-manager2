@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SCHEDULE_POLAS, SCHEDULE_FLAGS } from "@/lib/schedules/pola";
 import { exportScheduleMatrixExcel } from "@/lib/schedules/exportExcel";
@@ -215,7 +215,6 @@ export default function SchedulesClient({
 
   const handleCellClick = async (userId, day, meta = {}) => {
     if (!isEditor) {
-      if (meta.note) alert(`Catatan:\n${meta.note}`);
       return;
     }
 
@@ -420,6 +419,119 @@ export default function SchedulesClient({
     }
   }
 
+  const fairnessByDeptId = new Map(
+    fairnessCards.map((card) => [String(card.deptId), card])
+  );
+
+  const NAME_STICKY_W = 180;
+  const JAM_STICKY_W = 72;
+
+  const renderFairnessBlock = (card) => {
+    if (!card) return null;
+    return (
+      <div
+        style={{
+          border: "1px solid #e4e4e7",
+          borderRadius: "0.5rem",
+          overflow: "hidden",
+          marginBottom: "0.75rem",
+          background: "#fff",
+        }}
+      >
+        <div
+          style={{
+            background: "#18181b",
+            color: "#e4e4e7",
+            padding: "0.45rem 0.75rem",
+            fontSize: "0.85rem",
+          }}
+        >
+          <strong>
+            Ringkasan fairness — {card.deptName} · {monthName} {calYear}
+          </strong>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "0.82rem",
+            }}
+          >
+            <thead>
+              <tr>
+                <th
+                  style={{
+                    padding: "0.45rem 0.65rem",
+                    textAlign: "left",
+                    borderBottom: "1px solid #e4e4e7",
+                    background: "#f4f4f5",
+                  }}
+                >
+                  Nama
+                </th>
+                {card.fairness.columns.map((col) => (
+                  <th
+                    key={col.key}
+                    style={{
+                      padding: "0.45rem 0.65rem",
+                      textAlign: "center",
+                      borderBottom: "1px solid #e4e4e7",
+                      background: "#f4f4f5",
+                      fontFamily: "var(--font-mono, ui-monospace, monospace)",
+                    }}
+                  >
+                    {col.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {card.fairness.rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={card.fairness.columns.length + 1}
+                    style={{ padding: "0.65rem", color: "#71717a" }}
+                  >
+                    Belum ada data jadwal.
+                  </td>
+                </tr>
+              ) : (
+                card.fairness.rows.map((r) => (
+                  <tr key={r.userId}>
+                    <td
+                      style={{
+                        padding: "0.4rem 0.65rem",
+                        borderBottom: "1px solid #f4f4f5",
+                        textAlign: "left",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {r.name}
+                    </td>
+                    {card.fairness.columns.map((col) => (
+                      <td
+                        key={col.key}
+                        style={{
+                          padding: "0.4rem 0.65rem",
+                          borderBottom: "1px solid #f4f4f5",
+                          textAlign: "center",
+                          fontFamily: "var(--font-mono, ui-monospace, monospace)",
+                        }}
+                      >
+                        {r[col.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
       <div
@@ -618,345 +730,313 @@ export default function SchedulesClient({
           </div>
           <p style={{ margin: "0 1.5rem", fontSize: "0.8rem", color: "#64748b" }}>
             {isEditor
-              ? "Klik sel untuk ubah shift, stabilo, atau catatan. Mode Swap untuk tukar dua sel."
-              : "Klik sel yang bertanda catatan untuk membaca catatan."}
+              ? "Klik sel untuk ubah shift, stabilo, atau catatan. Mode Swap untuk tukar dua sel. Titik oranye = ada catatan (hover untuk teks penuh)."
+              : "Titik oranye di sel = ada catatan. Hover (atau tekan lama di mobile) untuk membaca. Catatan pendek juga tampil di bawah label shift."}
           </p>
 
-          <div style={{ overflowX: "auto", padding: "1.5rem" }}>
-            {!loadingCal && fairnessCards.length > 0 && (
-              <div style={{ marginBottom: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {fairnessCards.map((card) => (
-                  <div
-                    key={`fairness-${card.deptId}`}
-                    style={{
-                      border: "1px solid #e2e8f0",
-                      borderRadius: 8,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div style={{ background: "#0f172a", color: "#fff", padding: "0.5rem 0.75rem" }}>
-                      <strong>
-                        {card.deptName} — Ringkasan fairness {monthName} {calYear}
-                      </strong>
-                      <div style={{ fontSize: "0.8rem", opacity: 0.75 }}>
-                        Distribusi shift per orang (fairness)
+          <div
+            style={{
+              maxHeight: "min(70vh, 900px)",
+              overflow: "auto",
+              padding: "1.5rem",
+              borderTop: "1px solid #e2e8f0",
+            }}
+          >
+            {loadingCal ? (
+              <p>Loading Schedule Matrix...</p>
+            ) : groupedRows.length === 0 ? (
+              <p style={{ padding: "2rem", color: "#94a3b8", textAlign: "center" }}>
+                No schedules generated for this range.
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                {groupedRows.map((group) => {
+                  const colors = departmentColor(group.deptId);
+                  const fairnessCard = fairnessByDeptId.get(String(group.deptId));
+                  return (
+                    <section key={`dept-${group.deptId}`}>
+                      <div
+                        style={{
+                          padding: "0.55rem 0.75rem",
+                          textAlign: "left",
+                          fontWeight: 700,
+                          fontSize: "0.9rem",
+                          letterSpacing: "0.02em",
+                          color: colors.text,
+                          background: colors.header,
+                          border: `1px solid ${colors.accent}33`,
+                          borderRadius: "0.5rem 0.5rem 0 0",
+                          borderBottom: "none",
+                        }}
+                      >
+                        {group.deptName}
+                        <span style={{ fontWeight: 500, opacity: 0.75, marginLeft: 8 }}>
+                          ({group.rows.length} orang)
+                        </span>
                       </div>
-                    </div>
-                    <div style={{ overflowX: "auto" }}>
+                      {renderFairnessBlock(fairnessCard)}
                       <table
                         style={{
                           width: "100%",
-                          borderCollapse: "collapse",
-                          fontSize: "0.85rem",
+                          borderCollapse: "separate",
+                          borderSpacing: 0,
+                          textAlign: "center",
+                          minWidth: 1200,
                         }}
                       >
                         <thead>
                           <tr>
                             <th
                               style={{
-                                padding: "0.5rem 0.75rem",
-                                textAlign: "left",
-                                borderBottom: "1px solid #e2e8f0",
-                                background: "#f8fafc",
-                              }}
-                            >
-                              Nama
-                            </th>
-                            {card.fairness.columns.map((col) => (
-                              <th
-                                key={col.key}
-                                style={{
-                                  padding: "0.5rem 0.75rem",
-                                  textAlign: "center",
-                                  borderBottom: "1px solid #e2e8f0",
-                                  background: "#f8fafc",
-                                }}
-                              >
-                                {col.label}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {card.fairness.rows.length === 0 ? (
-                            <tr>
-                              <td
-                                colSpan={card.fairness.columns.length + 1}
-                                style={{ padding: "0.75rem", color: "#94a3b8" }}
-                              >
-                                Belum ada data jadwal.
-                              </td>
-                            </tr>
-                          ) : (
-                            card.fairness.rows.map((r) => (
-                              <tr key={r.userId}>
-                                <td
-                                  style={{
-                                    padding: "0.45rem 0.75rem",
-                                    borderBottom: "1px solid #f1f5f9",
-                                    textAlign: "left",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  {r.name}
-                                </td>
-                                {card.fairness.columns.map((col) => (
-                                  <td
-                                    key={col.key}
-                                    style={{
-                                      padding: "0.45rem 0.75rem",
-                                      borderBottom: "1px solid #f1f5f9",
-                                      textAlign: "center",
-                                    }}
-                                  >
-                                    {r[col.key]}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {loadingCal ? (
-              <p>Loading Schedule Matrix...</p>
-            ) : (
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  textAlign: "center",
-                  minWidth: 1200,
-                }}
-              >
-                <thead>
-                  <tr>
-                    <th
-                      style={{
-                        padding: "0.75rem",
-                        background: "#e2e8f0",
-                        border: "1px solid #cbd5e1",
-                        textAlign: "left",
-                        position: "sticky",
-                        left: 0,
-                        zIndex: 1,
-                      }}
-                    >
-                      Employee / Team
-                    </th>
-                    <th
-                      style={{
-                        padding: "0.5rem",
-                        background: "#e2e8f0",
-                        border: "1px solid #cbd5e1",
-                        fontSize: "0.8rem",
-                        minWidth: 72,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      Total Jam
-                    </th>
-                    {dayHeaders.map((d) => {
-                      const dateObj = new Date(calYear, calMonth, d);
-                      const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-                      return (
-                        <th
-                          key={d}
-                          style={{
-                            padding: "0.5rem",
-                            background: isWeekend ? "#fecaca" : "#f1f5f9",
-                            border: "1px solid #cbd5e1",
-                            fontSize: "0.8rem",
-                            minWidth: 40,
-                          }}
-                        >
-                          <div>{d}</div>
-                          <div style={{ fontSize: "0.65rem", color: "#64748b" }}>
-                            {dateObj.toLocaleDateString("en-US", { weekday: "short" })}
-                          </div>
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {groupedRows.map((group) => {
-                    const colors = departmentColor(group.deptId);
-                    return (
-                      <Fragment key={`dept-${group.deptId}`}>
-                        <tr>
-                          <td
-                            colSpan={daysInMonth + 2}
-                            style={{
-                              padding: "0.55rem 0.75rem",
-                              textAlign: "left",
-                              fontWeight: 700,
-                              fontSize: "0.85rem",
-                              letterSpacing: "0.02em",
-                              color: colors.text,
-                              background: colors.header,
-                              border: `1px solid ${colors.accent}33`,
-                              position: "sticky",
-                              left: 0,
-                              zIndex: 2,
-                            }}
-                          >
-                            {group.deptName}
-                            <span style={{ fontWeight: 500, opacity: 0.75, marginLeft: 8 }}>
-                              ({group.rows.length} orang)
-                            </span>
-                          </td>
-                        </tr>
-                        {group.rows.map((row) => (
-                          <tr key={row.user.id} style={{ background: colors.bg }}>
-                            <td
-                              style={{
                                 padding: "0.75rem",
+                                background: "#e2e8f0",
                                 border: "1px solid #cbd5e1",
                                 textAlign: "left",
-                                fontWeight: "bold",
-                                background: colors.bg,
-                                color: colors.text,
                                 position: "sticky",
+                                top: 0,
                                 left: 0,
-                                zIndex: 1,
-                                borderLeft: `4px solid ${colors.accent}`,
+                                zIndex: 5,
+                                minWidth: NAME_STICKY_W,
+                                width: NAME_STICKY_W,
+                                boxShadow: "2px 0 0 #cbd5e1",
                               }}
                             >
-                              {row.user.name || row.user.email || `#${row.user.id}`}
-                              <br />
-                              <span style={{ fontSize: "0.7rem", opacity: 0.75, fontWeight: "normal" }}>
-                                {row.user.location?.city || "No Location"}
-                              </span>
-                            </td>
-                            <td
+                              Employee / Team
+                            </th>
+                            <th
                               style={{
                                 padding: "0.5rem",
+                                background: "#e2e8f0",
                                 border: "1px solid #cbd5e1",
-                                background: colors.bg,
-                                color: colors.text,
-                                fontWeight: 600,
                                 fontSize: "0.8rem",
+                                minWidth: JAM_STICKY_W,
+                                width: JAM_STICKY_W,
                                 whiteSpace: "nowrap",
+                                position: "sticky",
+                                top: 0,
+                                left: NAME_STICKY_W,
+                                zIndex: 5,
+                                boxShadow: "2px 0 0 #cbd5e1",
                               }}
                             >
-                              {totalHoursByUserId.has(row.user.id)
-                                ? totalHoursByUserId.get(row.user.id)
-                                : "—"}
-                            </td>
+                              Total Jam
+                            </th>
                             {dayHeaders.map((d) => {
-                              const cell = row.days[d];
-                              const isPending = !cell;
-                              const isOff = cell && cell.shiftType == null;
-                              const shift = cell?.shiftType;
-                              const selected =
-                                swapA && swapA.userId === row.user.id && swapA.day === d;
-                              const cellDate = new Date(calYear, calMonth, d);
+                              const dateObj = new Date(calYear, calMonth, d);
                               const isWeekend =
-                                cellDate.getDay() === 0 || cellDate.getDay() === 6;
-                              const rowPola =
-                                departments.find(
-                                  (dep) => String(dep.id) === String(row.user.departmentId)
-                                )?.schedulePola || "";
-                              const isCorePola =
-                                rowPola === "POLA_2" || rowPola === "NOC_CORE";
-                              const shiftLabel = isOff
-                                ? "OFF"
-                                : isPending
-                                  ? "-"
-                                  : isCorePola &&
-                                      isWeekend &&
-                                      shift?.name &&
-                                      ["S1", "S2", "S1+OC"].includes(shift.name)
-                                    ? `${shift.name} (WFH)`
-                                    : shift?.name;
-                              const shiftColor = isPending
-                                ? null
-                                : shiftCellColor(isOff ? null : shift?.name);
-                              const bg = selected
-                                ? "#fef3c7"
-                                : cell?.highlightColor
-                                  ? cell.highlightColor
-                                  : isPending
-                                    ? colors.bg
-                                    : shiftColor.bg;
-                              const cellText = cell?.highlightColor
-                                ? colors.text
-                                : shiftColor?.text || colors.text;
+                                dateObj.getDay() === 0 || dateObj.getDay() === 6;
                               return (
-                                <td
+                                <th
                                   key={d}
-                                  onClick={() =>
-                                    handleCellClick(row.user.id, d, {
-                                      ...(cell || { exists: false }),
-                                      exists: !!cell,
-                                    })
-                                  }
-                                  title={
-                                    cell?.note
-                                      ? cell.note
-                                      : isEditor
-                                        ? "Klik untuk edit / swap"
-                                        : undefined
-                                  }
                                   style={{
                                     padding: "0.5rem",
-                                    border: selected
-                                      ? "2px solid #f59e0b"
-                                      : cell?.highlightColor
-                                        ? `2px solid ${colors.accent}`
-                                        : "1px solid #cbd5e1",
-                                    fontSize: "0.75rem",
-                                    background: bg,
-                                    cursor: isEditor || cell?.note ? "pointer" : "default",
-                                    color: cellText,
-                                    position: "relative",
+                                    background: isWeekend ? "#fecaca" : "#f1f5f9",
+                                    border: "1px solid #cbd5e1",
+                                    fontSize: "0.8rem",
+                                    minWidth: 40,
+                                    position: "sticky",
+                                    top: 0,
+                                    zIndex: 4,
                                   }}
                                 >
-                                  {isOff ? (
-                                    <span style={{ fontWeight: 600, opacity: 0.85 }}>OFF</span>
-                                  ) : isPending ? (
-                                    <span style={{ opacity: 0.35 }}>-</span>
-                                  ) : (
-                                    <div style={{ fontWeight: "bold", lineHeight: 1.15 }}>
-                                      {shiftLabel}
-                                    </div>
-                                  )}
-                                  {cell?.note ? (
-                                    <span
-                                      style={{
-                                        position: "absolute",
-                                        top: 2,
-                                        right: 3,
-                                        fontSize: "0.65rem",
-                                        opacity: 0.8,
-                                      }}
-                                      aria-hidden
-                                    >
-                                      ✎
-                                    </span>
-                                  ) : null}
-                                </td>
+                                  <div>{d}</div>
+                                  <div style={{ fontSize: "0.65rem", color: "#64748b" }}>
+                                    {dateObj.toLocaleDateString("en-US", {
+                                      weekday: "short",
+                                    })}
+                                  </div>
+                                </th>
                               );
                             })}
                           </tr>
-                        ))}
-                      </Fragment>
-                    );
-                  })}
-                  {groupedRows.length === 0 && (
-                    <tr>
-                      <td colSpan={daysInMonth + 2} style={{ padding: "2rem", color: "#94a3b8" }}>
-                        No schedules generated for this range.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        </thead>
+                        <tbody>
+                          {group.rows.map((row) => (
+                            <tr key={row.user.id} style={{ background: colors.bg }}>
+                              <td
+                                style={{
+                                  padding: "0.75rem",
+                                  border: "1px solid #cbd5e1",
+                                  textAlign: "left",
+                                  fontWeight: "bold",
+                                  background: colors.bg,
+                                  color: colors.text,
+                                  position: "sticky",
+                                  left: 0,
+                                  zIndex: 2,
+                                  minWidth: NAME_STICKY_W,
+                                  width: NAME_STICKY_W,
+                                  borderLeft: `4px solid ${colors.accent}`,
+                                  boxShadow: "2px 0 0 #cbd5e1",
+                                }}
+                              >
+                                {row.user.name || row.user.email || `#${row.user.id}`}
+                                <br />
+                                <span
+                                  style={{
+                                    fontSize: "0.7rem",
+                                    opacity: 0.75,
+                                    fontWeight: "normal",
+                                  }}
+                                >
+                                  {row.user.location?.city || "No Location"}
+                                </span>
+                              </td>
+                              <td
+                                style={{
+                                  padding: "0.5rem",
+                                  border: "1px solid #cbd5e1",
+                                  background: colors.bg,
+                                  color: colors.text,
+                                  fontWeight: 600,
+                                  fontSize: "0.8rem",
+                                  whiteSpace: "nowrap",
+                                  position: "sticky",
+                                  left: NAME_STICKY_W,
+                                  zIndex: 2,
+                                  minWidth: JAM_STICKY_W,
+                                  width: JAM_STICKY_W,
+                                  boxShadow: "2px 0 0 #cbd5e1",
+                                }}
+                              >
+                                {totalHoursByUserId.has(row.user.id)
+                                  ? totalHoursByUserId.get(row.user.id)
+                                  : "—"}
+                              </td>
+                              {dayHeaders.map((d) => {
+                                const cell = row.days[d];
+                                const isPending = !cell;
+                                const isOff = cell && cell.shiftType == null;
+                                const shift = cell?.shiftType;
+                                const selected =
+                                  swapA &&
+                                  swapA.userId === row.user.id &&
+                                  swapA.day === d;
+                                const cellDate = new Date(calYear, calMonth, d);
+                                const isWeekend =
+                                  cellDate.getDay() === 0 || cellDate.getDay() === 6;
+                                const rowPola =
+                                  departments.find(
+                                    (dep) =>
+                                      String(dep.id) === String(row.user.departmentId)
+                                  )?.schedulePola || "";
+                                const isCorePola =
+                                  rowPola === "POLA_2" || rowPola === "NOC_CORE";
+                                const shiftLabel = isOff
+                                  ? "OFF"
+                                  : isPending
+                                    ? "-"
+                                    : isCorePola &&
+                                        isWeekend &&
+                                        shift?.name &&
+                                        ["S1", "S2", "S1+OC"].includes(shift.name)
+                                      ? `${shift.name} (WFH)`
+                                      : shift?.name;
+                                const shiftColor = isPending
+                                  ? null
+                                  : shiftCellColor(isOff ? null : shift?.name);
+                                const bg = selected
+                                  ? "#fef3c7"
+                                  : cell?.highlightColor
+                                    ? cell.highlightColor
+                                    : isPending
+                                      ? colors.bg
+                                      : shiftColor.bg;
+                                const cellText = cell?.highlightColor
+                                  ? colors.text
+                                  : shiftColor?.text || colors.text;
+                                const noteText =
+                                  typeof cell?.note === "string" ? cell.note.trim() : "";
+                                const hasNote = noteText.length > 0;
+                                const shortPreview =
+                                  hasNote && noteText.length <= 24 ? noteText : null;
+                                return (
+                                  <td
+                                    key={d}
+                                    onClick={() =>
+                                      handleCellClick(row.user.id, d, {
+                                        ...(cell || { exists: false }),
+                                        exists: !!cell,
+                                      })
+                                    }
+                                    title={
+                                      hasNote
+                                        ? noteText
+                                        : isEditor
+                                          ? "Klik untuk edit / swap"
+                                          : undefined
+                                    }
+                                    style={{
+                                      padding: "0.5rem",
+                                      border: selected
+                                        ? "2px solid #f59e0b"
+                                        : cell?.highlightColor
+                                          ? `2px solid ${colors.accent}`
+                                          : "1px solid #cbd5e1",
+                                      fontSize: "0.75rem",
+                                      background: bg,
+                                      cursor: isEditor ? "pointer" : "default",
+                                      color: cellText,
+                                      position: "relative",
+                                      verticalAlign: "middle",
+                                    }}
+                                  >
+                                    {isOff ? (
+                                      <span style={{ fontWeight: 600, opacity: 0.85 }}>
+                                        OFF
+                                      </span>
+                                    ) : isPending ? (
+                                      <span style={{ opacity: 0.35 }}>-</span>
+                                    ) : (
+                                      <div style={{ fontWeight: "bold", lineHeight: 1.15 }}>
+                                        {shiftLabel}
+                                      </div>
+                                    )}
+                                    {shortPreview ? (
+                                      <div
+                                        style={{
+                                          marginTop: 2,
+                                          fontSize: "0.62rem",
+                                          fontWeight: 500,
+                                          lineHeight: 1.2,
+                                          opacity: 0.85,
+                                          maxWidth: 56,
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                          whiteSpace: "nowrap",
+                                          marginLeft: "auto",
+                                          marginRight: "auto",
+                                        }}
+                                      >
+                                        {shortPreview}
+                                      </div>
+                                    ) : null}
+                                    {hasNote ? (
+                                      <span
+                                        style={{
+                                          position: "absolute",
+                                          top: 3,
+                                          right: 4,
+                                          width: 7,
+                                          height: 7,
+                                          borderRadius: "50%",
+                                          background: "#ea580c",
+                                          boxShadow: "0 0 0 1px #fff",
+                                        }}
+                                        aria-label="Ada catatan"
+                                      />
+                                    ) : null}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </section>
+                  );
+                })}
+              </div>
             )}
             {groupedRows.length > 0 && (
               <div
