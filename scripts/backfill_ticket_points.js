@@ -4,16 +4,12 @@
  *
  * Usage: node scripts/backfill_ticket_points.js
  */
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, Prisma } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 const CREATE_POINTS = 1;
 const REPLY_POINTS = 1;
 const BATCH = 500;
-
-function isCreatePointsAction(action) {
-  return typeof action === "string" && action.startsWith("Ticket created: [+1 Pts]");
-}
 
 function isReplyPointsAction(action) {
   return (
@@ -42,8 +38,14 @@ async function backfillCreates() {
   const hasCreatePts = new Set(already.map((r) => r.ticketId));
   console.log(`Tickets already with create pts: ${hasCreatePts.size}`);
 
+  // Prefer explicit create logs; also treat meeting/system instantiate as create.
   const createLogs = await prisma.ticketHistory.findMany({
-    where: { action: { startsWith: "Ticket created" } },
+    where: {
+      OR: [
+        { action: { startsWith: "Ticket created" } },
+        { action: { startsWith: "Ticket systemically instantiated" } },
+      ],
+    },
     orderBy: [{ ticketId: "asc" }, { createdAt: "asc" }, { id: "asc" }],
     select: { ticketId: true, actorId: true, createdAt: true, action: true },
   });
@@ -58,10 +60,6 @@ async function backfillCreates() {
   const toInsert = [];
   for (const [ticketId, row] of firstCreateByTicket) {
     if (hasCreatePts.has(ticketId)) continue;
-    if (isCreatePointsAction(row.action)) {
-      // Old path never had this; if present without awardedScore, still insert? skip.
-      continue;
-    }
     if (!row.actorId) continue;
     toInsert.push({
       ticketId,
@@ -70,15 +68,62 @@ async function backfillCreates() {
       awardedScore: CREATE_POINTS,
       createdAt: row.createdAt,
     });
+    hasCreatePts.add(ticketId);
   }
 
-  // Tickets with no "Ticket created" history at all — skip (unknown creator)
-  console.log(`Create backfill rows to insert: ${toInsert.length}`);
+  // Fallback: tickets with no create-style log — credit first history actor.
+  const tickets = await prisma.ticket.findMany({
+    select: { id: true, createdAt: true },
+    orderBy: { id: "asc" },
+  });
+
+  let fallbackQueued = 0;
+  for (let i = 0; i < tickets.length; i += BATCH) {
+    const chunk = tickets.slice(i, i + BATCH);
+    const missing = chunk.filter((t) => !hasCreatePts.has(t.id));
+    if (missing.length === 0) continue;
+
+    const ids = missing.map((t) => t.id);
+    const firstActors = await prisma.$queryRaw`
+      SELECT DISTINCT ON ("ticketId")
+        "ticketId",
+        "actorId",
+        "createdAt"
+      FROM "TicketHistory"
+      WHERE "ticketId" IN (${Prisma.join(ids)})
+        AND "actorId" IS NOT NULL
+      ORDER BY "ticketId", "createdAt" ASC, id ASC
+    `;
+
+    const byTicket = new Map(
+      firstActors.map((r) => [Number(r.ticketId), r])
+    );
+
+    for (const t of missing) {
+      const row = byTicket.get(t.id);
+      if (!row?.actorId) continue;
+      toInsert.push({
+        ticketId: t.id,
+        actorId: Number(row.actorId),
+        action: "Ticket created: [+1 Pts] (backfill from first actor)",
+        awardedScore: CREATE_POINTS,
+        createdAt: row.createdAt || t.createdAt,
+      });
+      hasCreatePts.add(t.id);
+      fallbackQueued += 1;
+    }
+  }
+
+  console.log(
+    `Create backfill rows to insert: ${toInsert.length} (fallback from first actor: ${fallbackQueued})`
+  );
 
   for (let i = 0; i < toInsert.length; i += BATCH) {
     const chunk = toInsert.slice(i, i + BATCH);
     await prisma.ticketHistory.createMany({ data: chunk });
-    console.log(`  create inserted ${Math.min(i + BATCH, toInsert.length)}/${toInsert.length}`);
+    console.log(
+      `  create inserted ${Math.min(i + BATCH, toInsert.length)}/${toInsert.length}`
+    );
   }
 
   return toInsert.length;
