@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { createTicketPointsLog } from "@/lib/tickets/points";
 
 function generateTrackingId() {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -40,9 +41,12 @@ export async function POST(req) {
           departmentId: targetDeptId || 1, // Fallback if no department somehow
           assigneeId: assigneeId ? parseInt(assigneeId) : undefined,
           historyLogs: {
-            create: { action: 'Ticket systemically instantiated from Meeting Control Room' }
-          }
-        }
+            create: createTicketPointsLog({
+              actorId: session.user.id ? parseInt(session.user.id) : null,
+              detail: " from Meeting Control Room",
+            }),
+          },
+        },
       });
       linkedTicketId = newTicket.id;
     }

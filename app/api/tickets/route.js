@@ -7,6 +7,7 @@ import { pickLeastBusyAssignee } from "@/lib/tickets/routing";
 import { notifyTicketEvent } from "@/lib/notify";
 import { TICKET_TYPES, TICKET_PRIORITIES, assertValidStatus } from "@/lib/tickets/status";
 import { normalizeDowntimeCustomData } from "@/lib/tickets/downtime";
+import { createTicketPointsLog } from "@/lib/tickets/points";
 
 function generateTrackingId() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -110,13 +111,12 @@ export async function POST(req) {
       responseDueAt: sla.responseDueAt,
       resolutionDueAt: sla.resolutionDueAt,
       historyLogs: {
-        create: {
-          action:
-            "Ticket created" +
+        create: createTicketPointsLog({
+          actorId: userId,
+          detail:
             (finalAssigneeId ? ` & auto-assigned to ID ${finalAssigneeId}` : "") +
             (queueId ? ` via queue ${queueId}` : ""),
-          actorId: userId,
-        },
+        }),
       },
     };
 

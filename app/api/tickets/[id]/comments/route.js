@@ -7,6 +7,7 @@ import { refreshFollowUpDeadline } from "@/lib/tickets/sla";
 import { pickLeastBusyAssignee } from "@/lib/tickets/routing";
 import { notifyTicketEvent, collectTicketNotifyEmails } from "@/lib/notify";
 import { dispatchIntegrationWebhook } from "@/lib/integration/webhooks";
+import { replyPointsLog } from "@/lib/tickets/points";
 
 export async function POST(req, { params }) {
   try {
@@ -185,8 +186,11 @@ export async function POST(req, { params }) {
       }
     }
 
-    await prisma.ticketHistory.create({
-      data: { ticketId, action: transitionReason, actorId: userId },
+    await prisma.ticketHistory.createMany({
+      data: [
+        { ticketId, action: transitionReason, actorId: userId },
+        { ticketId, ...replyPointsLog({ actorId: userId, isPublic: commentData.isPublic }) },
+      ],
     });
 
     if (commentData.isPublic) {

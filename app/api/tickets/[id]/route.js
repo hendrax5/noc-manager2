@@ -15,6 +15,7 @@ import {
   normalizeDowntimeCustomData,
   closeOpenDowntimeOnResolve,
 } from "@/lib/tickets/downtime";
+import { resolveJobRecipientId } from "@/lib/tickets/points";
 
 export async function PATCH(req, { params }) {
   try {
@@ -334,10 +335,11 @@ export async function PATCH(req, { params }) {
           where: { id: ticketData.jobCategoryId },
         });
         if (cat) {
-          const recipientId = ticketData.assigneeId || oldTicket.assigneeId;
+          const fallbackAssigneeId = ticketData.assigneeId || oldTicket.assigneeId;
+          const recipientId = await resolveJobRecipientId(prisma, id, fallbackAssigneeId);
           if (recipientId && !logs.some((l) => l.awardedScore)) {
             logs.push({
-              action: `Ticket Resolved: [+${cat.score} Pts] for [${cat.name}] automatically locked.`,
+              action: `Ticket Resolved: [+${cat.score} Pts] for [${cat.name}] → last reply author.`,
               actorId: recipientId,
               jobCategoryId: cat.id,
               awardedScore: cat.score,
