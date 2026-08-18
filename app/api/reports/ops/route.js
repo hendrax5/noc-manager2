@@ -68,7 +68,7 @@ function downtimeEventAt(t, now = new Date()) {
 }
 
 /**
- * GET /api/reports/ops?period=week|month&anchor=YYYY-MM-DD
+ * GET /api/reports/ops?period=week|month|custom&anchor=YYYY-MM-DD&start=&end=
  */
 export async function GET(req) {
   try {
@@ -79,9 +79,12 @@ export async function GET(req) {
     }
 
     const { searchParams } = new URL(req.url);
-    const period = searchParams.get("period") === "month" ? "month" : "week";
+    const periodRaw = searchParams.get("period");
+    const period = periodRaw === "month" || periodRaw === "custom" ? periodRaw : "week";
     const anchor = searchParams.get("anchor") || null;
-    const { start, end, startDate, endDate } = resolveOpsPeriod(period, anchor);
+    const startYmd = searchParams.get("start") || null;
+    const endYmd = searchParams.get("end") || null;
+    const { start, end, startDate, endDate } = resolveOpsPeriod(period, anchor, startYmd, endYmd);
     const now = new Date();
 
     const terminal = [...TERMINAL_STATUSES];

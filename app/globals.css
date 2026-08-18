@@ -1341,3 +1341,243 @@ body {
     text-align: left;
   }
 }
+
+.sla-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.sla-filter-presets {
+  display: flex;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.sla-filter-presets button {
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.sla-filter-presets button.is-active {
+  background: var(--heading-color);
+  border-color: var(--heading-color);
+  color: var(--card-bg);
+}
+
+.sla-filter label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted-text);
+}
+
+.sla-filter input[type="date"],
+.sla-filter input[type="text"] {
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-family: inherit;
+}
+
+.sla-filter-customer {
+  min-width: 200px;
+  flex: 1;
+}
+
+.sla-filter-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.sla-letter {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 2rem 2.25rem;
+  color: var(--heading-color);
+}
+
+.sla-letter-kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-text);
+}
+
+.sla-letter-cover h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.sla-letter-customer {
+  margin: 0.75rem 0 0.15rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.sla-letter-period,
+.sla-letter-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted-text);
+}
+
+.sla-letter-intro,
+.sla-letter-section,
+.sla-letter-close {
+  margin-top: 2rem;
+}
+
+.sla-letter h2 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sla-letter-intro p {
+  margin: 0 0 0.75rem;
+  max-width: 72ch;
+  line-height: 1.55;
+  color: var(--text-color);
+}
+
+.sla-letter-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.sla-letter-meta-grid dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted-text);
+}
+
+.sla-letter-meta-grid dd {
+  margin: 0.15rem 0 0;
+  font-weight: 700;
+}
+
+.sla-letter-table-wrap {
+  overflow-x: auto;
+}
+
+.sla-letter-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.sla-letter-table th,
+.sla-letter-table td {
+  border: 1px solid var(--border-color);
+  padding: 0.45rem 0.5rem;
+  vertical-align: top;
+  text-align: left;
+}
+
+.sla-letter-table th {
+  background: var(--hover-bg);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sla-letter-sub {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+}
+
+.sla-letter-sub a {
+  color: var(--secondary-color);
+  text-decoration: none;
+}
+
+.sla-letter-footnote,
+.sla-letter-empty {
+  font-size: 0.75rem;
+  color: var(--muted-text);
+}
+
+.sla-letter-sign {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2.5rem;
+}
+
+.sla-letter-sign p {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-color);
+}
+
+.sla-internal {
+  margin-top: 1.5rem;
+}
+
+.sla-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.sla-kpis div {
+  border: 1px solid var(--border-color);
+  padding: 0.85rem 1rem;
+}
+
+.sla-kpis strong {
+  display: block;
+  font-size: 1.4rem;
+}
+
+.sla-kpis span {
+  font-size: 0.75rem;
+  color: var(--muted-text);
+}
+
+.sla-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .sla-letter-meta-grid,
+  .sla-kpis,
+  .sla-charts,
+  .sla-letter-sign {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media print {
+  .sla-letter {
+    border: none;
+    padding: 0;
+  }
+  .sla-letter-section {
+    break-inside: avoid;
+  }
+}

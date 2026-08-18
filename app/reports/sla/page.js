@@ -16,7 +16,10 @@ export default async function SLAPage() {
   }
 
   // Allow access for Admins or those with reports permission
-  const hasAccess = session.user.role === 'Admin' || session.user.permissions?.includes('view_reports');
+  const hasAccess =
+    session.user.role === "Admin" ||
+    session.user.role === "Manager" ||
+    session.user.permissions?.includes("view_reports");
   
   if (!hasAccess) {
     redirect('/dashboard');
@@ -25,8 +28,8 @@ export default async function SLAPage() {
   return (
     <main className="container">
       <header className="page-header no-print">
-        <h1>SLA & Downtime Analytics</h1>
-        <p>Monitor service availability, resolution times, and compliance across your infrastructure.</p>
+        <h1>SLA &amp; laporan pelanggan</h1>
+        <p>Surat ketersediaan jaringan per periode — pilih bulan atau rentang tanggal custom, lalu cetak PDF.</p>
       </header>
 
       <SLAAnalyticsClient />

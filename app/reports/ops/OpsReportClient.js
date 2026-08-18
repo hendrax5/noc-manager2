@@ -49,6 +49,8 @@ function fmtDate(v) {
 export default function OpsReportClient() {
   const [period, setPeriod] = useState("week");
   const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
+  const [customStart, setCustomStart] = useState(() => new Date().toISOString().slice(0, 10));
+  const [customEnd, setCustomEnd] = useState(() => new Date().toISOString().slice(0, 10));
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,6 +61,10 @@ export default function OpsReportClient() {
     setError(null);
     try {
       const q = new URLSearchParams({ period, anchor });
+      if (period === "custom") {
+        q.set("start", customStart);
+        q.set("end", customEnd);
+      }
       const res = await fetch(`/api/reports/ops?${q}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Gagal memuat Ops Report");
@@ -69,7 +75,7 @@ export default function OpsReportClient() {
     } finally {
       setLoading(false);
     }
-  }, [period, anchor]);
+  }, [period, anchor, customStart, customEnd]);
 
   useEffect(() => {
     load();
@@ -110,8 +116,17 @@ export default function OpsReportClient() {
             >
               Bulanan
             </button>
+            <button
+              type="button"
+              className={period === "custom" ? "primary-btn" : "secondary-btn"}
+              style={{ width: "auto" }}
+              onClick={() => setPeriod("custom")}
+            >
+              Custom
+            </button>
           </div>
         </div>
+        {period !== "custom" && (
         <div>
           <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>
             Tanggal acuan
@@ -123,13 +138,36 @@ export default function OpsReportClient() {
             style={{ padding: "0.5rem", borderRadius: 4, border: "1px solid #cbd5e1" }}
           />
         </div>
+        )}
+        {period === "custom" && (
+          <>
+            <div>
+              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>Dari</label>
+              <input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                style={{ padding: "0.5rem", borderRadius: 4, border: "1px solid #cbd5e1" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>Sampai</label>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                style={{ padding: "0.5rem", borderRadius: 4, border: "1px solid #cbd5e1" }}
+              />
+            </div>
+          </>
+        )}
         <button type="button" className="secondary-btn" style={{ width: "auto" }} onClick={load}>
           Muat ulang
         </button>
         {data && (
           <p style={{ margin: 0, color: "#64748b", fontSize: "0.875rem", alignSelf: "center" }}>
             Rentang: <strong>{data.startDate}</strong> → <strong>{data.endDate}</strong>
-            {period === "week" ? " (Sen–Min)" : " (bulan kalender)"} · hitung per tiket
+            {period === "week" ? " (Sen–Min)" : period === "month" ? " (bulan kalender)" : " (custom)"} · hitung per tiket
           </p>
         )}
       </div>

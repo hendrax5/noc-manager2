@@ -2,10 +2,55 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { parseDowntimeDate } from "@/lib/tickets/downtime";
 import {
-  effectiveDowntimeMinutes,
-  parseDowntimeDate,
-} from "@/lib/tickets/downtime";
+  SLA_TARGET_PERCENT,
+  SLA_LETTER_COMPANY,
+  parseRangeWib,
+  formatPeriodLabel,
+  monthKeyWib,
+  monthLabelFromKey,
+  monthWindow,
+  formatDateWib,
+  formatTimeWib,
+  formatDurationHhMm,
+  stripHtml,
+  truncate,
+  availabilityPercents,
+  buildIntro,
+  ymdWib,
+} from "@/lib/reports/slaLetter";
+
+function customerLabel(ticket) {
+  const fromServices = (ticket.services || [])
+    .map((s) => s.customer?.name)
+    .filter(Boolean);
+  if (fromServices.length) return [...new Set(fromServices)].join(", ");
+  const cd = ticket.customData && typeof ticket.customData === "object" ? ticket.customData : {};
+  return (
+    cd["Customer Name"] ||
+    cd.customerName ||
+    cd.Customer ||
+    cd.customer ||
+    ticket.title ||
+    "—"
+  );
+}
+
+function matchesCustomer(ticket, q) {
+  if (!q) return true;
+  const needle = q.trim().toLowerCase();
+  if (!needle) return true;
+  const hay = [
+    customerLabel(ticket),
+    ticket.title,
+    ticket.trackingId,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return hay.includes(needle);
+}
 
 export async function GET(req) {
   try {
@@ -13,40 +58,47 @@ export async function GET(req) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const hasAccess =
-      session.user.role === "Admin" || session.user.permissions?.includes("view_reports");
+      session.user.role === "Admin" ||
+      session.user.role === "Manager" ||
+      session.user.permissions?.includes("view_reports");
     if (!hasAccess) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const { searchParams } = new URL(req.url);
     const startParam = searchParams.get("startDate");
     const endParam = searchParams.get("endDate");
-
-    const startDate = startParam
-      ? new Date(startParam)
-      : new Date(new Date().setDate(new Date().getDate() - 30));
-    const endDate = endParam ? new Date(endParam) : new Date();
-
-    // Ensure endDate covers the whole day
-    endDate.setHours(23, 59, 59, 999);
+    const customerQ = searchParams.get("customer") || "";
+    const { start: startDate, end: endDate } = parseRangeWib(startParam, endParam);
     const now = new Date();
 
     const tickets = await prisma.ticket.findMany({
       where: {
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
+        OR: [
+          { createdAt: { gte: startDate, lte: endDate } },
+          { resolvedAt: { gte: startDate, lte: endDate } },
+          { updatedAt: { gte: startDate, lte: endDate } },
+        ],
       },
       include: {
         department: true,
         assignee: true,
-        services: true,
+        services: { include: { customer: { select: { name: true } } } },
+        comments: {
+          orderBy: { createdAt: "desc" },
+          take: 4,
+          select: { text: true, createdAt: true, isPublic: true },
+        },
+        notes: {
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          select: { content: true },
+        },
       },
-      orderBy: {
-        createdAt: "asc",
-      },
+      orderBy: { createdAt: "asc" },
     });
 
-    let totalTickets = tickets.length;
+    const inScope = tickets.filter((t) => matchesCustomer(t, customerQ));
+
+    let totalTickets = inScope.length;
     let resolvedTickets = 0;
     let totalResolutionTimeHours = 0;
     let slaBreaches = 0;
@@ -55,9 +107,10 @@ export async function GET(req) {
     const dailyTrend = {};
     const departmentStats = {};
     const incidents = [];
+    const outageRows = [];
 
-    tickets.forEach((ticket) => {
-      const dateStr = ticket.createdAt.toISOString().split("T")[0];
+    inScope.forEach((ticket) => {
+      const dateStr = ymdWib(ticket.createdAt);
 
       if (!dailyTrend[dateStr]) {
         dailyTrend[dateStr] = { date: dateStr, total: 0, resolved: 0, breached: 0 };
@@ -86,43 +139,52 @@ export async function GET(req) {
         resolvedTickets++;
         dailyTrend[dateStr].resolved++;
         departmentStats[deptName].resolved++;
-
         const diffMs = new Date(ticket.resolvedAt) - new Date(ticket.createdAt);
         resolutionHours = diffMs / (1000 * 60 * 60);
         totalResolutionTimeHours += resolutionHours;
       }
 
-      // Source of truth: Catat Waktu Outage / Downtime (not ticket age)
-      const cd = ticket.customData && typeof ticket.customData === "object" ? ticket.customData : {};
+      const cd =
+        ticket.customData && typeof ticket.customData === "object" ? ticket.customData : {};
       const hasOutage = !!(cd.hasDowntime && cd.startDowntime);
       let downtimeHours = 0;
       let downtimeMinutes = 0;
       let downtimeOngoing = false;
+      let downAt = null;
+      let upAt = null;
+      let cappedMs = 0;
+
       if (hasOutage) {
-        // Cap "live" end at report endDate so open outages don't inflate beyond the selected window
         const startDt = parseDowntimeDate(cd.startDowntime);
         let endDt = parseDowntimeDate(cd.endDowntime);
         if (!endDt) {
           endDt = now < endDate ? now : endDate;
           downtimeOngoing = true;
         }
+        downAt = startDt;
+        upAt = parseDowntimeDate(cd.endDowntime);
         if (startDt && endDt) {
-          const cappedStart = startDt < startDate ? startDate : startDt;
-          const cappedEnd = endDt > endDate ? endDate : endDt;
-          const ms = Math.max(0, cappedEnd - cappedStart);
-          downtimeMinutes = Math.floor(ms / 60000);
-          downtimeHours = downtimeMinutes / 60;
-          totalDowntimeHours += downtimeHours;
-        } else {
-          downtimeMinutes = effectiveDowntimeMinutes(cd, { now });
+          const overlapStart = startDt < startDate ? startDate : startDt;
+          const overlapEnd = endDt > endDate ? endDate : endDt;
+          cappedMs = Math.max(0, overlapEnd - overlapStart);
+          downtimeMinutes = Math.floor(cappedMs / 60000);
           downtimeHours = downtimeMinutes / 60;
           totalDowntimeHours += downtimeHours;
         }
       }
 
-      incidents.push({
+      const cause = truncate(stripHtml(ticket.description), 480);
+      const correctiveBits = [
+        ...(ticket.notes || []).map((n) => stripHtml(n.content)),
+        ...(ticket.comments || []).map((c) => stripHtml(c.text)),
+      ].filter(Boolean);
+      const corrective = truncate(correctiveBits[0] || "", 420);
+
+      const row = {
         id: ticket.trackingId,
+        dbId: ticket.id,
         title: ticket.title,
+        customer: customerLabel(ticket),
         priority: ticket.priority,
         department: deptName,
         assignee: ticket.assignee?.name || "Unassigned",
@@ -137,34 +199,71 @@ export async function GET(req) {
         slaBreaches: ticket.slaBreaches,
         hasBreach: ticket.slaBreaches > 0 ? "Yes" : "No",
         servicesAffected: ticket.services.map((s) => s.name).join(", ") || "N/A",
-      });
+        incidentDate: downAt ? formatDateWib(downAt) : formatDateWib(ticket.createdAt),
+        downAt: downAt ? formatTimeWib(downAt) : "—",
+        upAt: upAt ? formatTimeWib(upAt) : downtimeOngoing ? "ongoing" : "—",
+        duration: hasOutage ? formatDurationHhMm(cappedMs) : "—",
+        cause: cause || "—",
+        corrective: corrective || "—",
+        monthKey: monthKeyWib(downAt || ticket.createdAt),
+      };
+
+      incidents.push(row);
+      if (hasOutage && cappedMs > 0) outageRows.push(row);
     });
 
-    // Prefer real outage duration; fallback to resolution time for sorting
     incidents.sort((a, b) => {
       const valA =
-        a.downtimeMinutes != null
-          ? a.downtimeMinutes
-          : parseFloat(a.resolutionTimeHours) || 0;
+        a.downtimeMinutes != null ? a.downtimeMinutes : parseFloat(a.resolutionTimeHours) || 0;
       const valB =
-        b.downtimeMinutes != null
-          ? b.downtimeMinutes
-          : parseFloat(b.resolutionTimeHours) || 0;
+        b.downtimeMinutes != null ? b.downtimeMinutes : parseFloat(b.resolutionTimeHours) || 0;
       return valB - valA;
+    });
+
+    const monthKeys = [...new Set(outageRows.map((r) => r.monthKey))].sort();
+    const monthSections = monthKeys.map((key) => {
+      const { start, end } = monthWindow(key, startDate, endDate);
+      const rows = outageRows
+        .filter((r) => r.monthKey === key)
+        .sort((a, b) => String(a.incidentDate).localeCompare(String(b.incidentDate)));
+      const downMs = rows.reduce((s, r) => s + (r.downtimeMinutes || 0) * 60000, 0);
+      const av = availabilityPercents(end - start + 1, downMs, SLA_TARGET_PERCENT);
+      return {
+        monthKey: key,
+        monthLabel: monthLabelFromKey(key),
+        incidents: rows.map((r, i) => ({ ...r, no: i + 1 })),
+        ...av,
+      };
     });
 
     const averageResolutionTime =
       resolvedTickets > 0 ? totalResolutionTimeHours / resolvedTickets : 0;
     const slaComplianceRate =
       totalTickets > 0 ? ((totalTickets - slaBreaches) / totalTickets) * 100 : 100;
-
     const totalPeriodHours = (endDate - startDate) / (1000 * 60 * 60) || 24;
     const uptimePercentage = Math.max(
       0,
       ((totalPeriodHours - totalDowntimeHours) / totalPeriodHours) * 100
     );
 
+    const periodLabel = formatPeriodLabel(startDate, endDate);
+    const letterCustomer = customerQ.trim() || "Semua pelanggan";
+
     return NextResponse.json({
+      letter: {
+        customer: letterCustomer,
+        periodLabel,
+        startDate: ymdWib(startDate),
+        endDate: ymdWib(endDate),
+        slaTarget: SLA_TARGET_PERCENT,
+        intro: buildIntro(periodLabel),
+        company: SLA_LETTER_COMPANY,
+        signatory: {
+          customerName: letterCustomer,
+          nocName: session.user.name || "NOC",
+          nocTitle: session.user.role === "Admin" ? "NOC Manager" : session.user.role || "NOC",
+        },
+      },
       summary: {
         totalTickets,
         resolvedTickets,
@@ -173,10 +272,12 @@ export async function GET(req) {
         slaComplianceRate: slaComplianceRate.toFixed(1),
         totalDowntimeHours: totalDowntimeHours.toFixed(2),
         uptimePercentage: uptimePercentage.toFixed(3),
+        outageCount: outageRows.length,
       },
+      monthSections,
       dailyTrend: Object.values(dailyTrend),
       departmentStats: Object.values(departmentStats),
-      incidents: incidents,
+      incidents,
     });
   } catch (error) {
     console.error("Error generating SLA report:", error);
