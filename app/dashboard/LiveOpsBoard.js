@@ -43,6 +43,20 @@ function getDuration(start, end) {
   return `${hours}h ${mins}m`;
 }
 
+function getDurationMs(t) {
+  const hasDt = t.customData && typeof t.customData === "object" && t.customData.hasDowntime;
+  const start = hasDt && t.customData.startDowntime
+    ? t.customData.startDowntime
+    : (t.customData?.reopenedAt || t.createdAt);
+  const end = hasDt && t.customData.startDowntime
+    ? (t.customData.endDowntime || null)
+    : (t.resolvedAt && t.status === "Resolved" ? t.resolvedAt : null);
+  const startTime = new Date(start).getTime();
+  const endTime = end ? new Date(end).getTime() : Date.now();
+  if (Number.isNaN(startTime) || Number.isNaN(endTime)) return 0;
+  return Math.max(0, endTime - startTime);
+}
+
 export default function LiveOpsBoard({ initialData = [], jobCategories = [], defaultScope = "all" }) {
   const [tickets, setTickets] = useState(initialData);
   const [loading, setLoading] = useState(false);
@@ -101,6 +115,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
       case 'assignee': valA = a.assignee?.name || ''; valB = b.assignee?.name || ''; break;
       case 'updatedAt': valA = new Date(a.updatedAt).getTime(); valB = new Date(b.updatedAt).getTime(); break;
       case 'createdAt': valA = new Date(a.customData?.reopenedAt || a.createdAt).getTime(); valB = new Date(b.customData?.reopenedAt || b.createdAt).getTime(); break;
+      case 'duration': valA = getDurationMs(a); valB = getDurationMs(b); break;
       case 'slaBreaches': valA = a.slaBreaches || 0; valB = b.slaBreaches || 0; break;
       default: valA = new Date(a.updatedAt).getTime(); valB = new Date(b.updatedAt).getTime();
     }
@@ -265,7 +280,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
               <SortHeader field="category">Category</SortHeader>
               <SortHeader field="status">Status</SortHeader>
               <SortHeader field="createdAt">Time Down</SortHeader>
-              <th style={{ fontSize: '0.75rem', padding: '0.6rem 0.5rem', textAlign: 'left', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold', borderBottom: '2px solid var(--border-color)' }}>Duration</th>
+              <SortHeader field="duration">Duration</SortHeader>
               <SortHeader field="assignee">PIC</SortHeader>
               <th style={{ fontSize: '0.75rem', padding: '0.6rem 0.5rem', textAlign: 'left', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold', borderBottom: '2px solid var(--border-color)' }}>Last Note</th>
               <SortHeader field="slaBreaches">SLA</SortHeader>
