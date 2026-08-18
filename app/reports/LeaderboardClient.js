@@ -26,45 +26,49 @@ export default function LeaderboardClient({
 
   const [csPage, setCsPage] = useState(1);
   const [techPage, setTechPage] = useState(1);
+  const [activeTab, setActiveTab] = useState("leaderboard");
 
-  const pageSize = 5;
+  const pageSize = 10;
 
-  // Filter lists based on search name and department select
-  const filteredCs = initialCsLeaderboard.filter(u => {
+  const filteredCs = initialCsLeaderboard.filter((u) => {
     const matchesName = u.name.toLowerCase().includes(search.toLowerCase());
     const matchesDept = department ? u.department === department : true;
     return matchesName && matchesDept;
   });
 
-  const filteredTech = initialTechLeaderboard.filter(u => {
+  const filteredTech = initialTechLeaderboard.filter((u) => {
     const matchesName = u.name.toLowerCase().includes(search.toLowerCase());
     const matchesDept = department ? u.department === department : true;
     return matchesName && matchesDept;
   });
 
-  // Extract Top 3 for Podium
-  const csPodium = filteredCs.slice(0, 3);
-  const csTableList = filteredCs.slice(3);
+  const paginatedCs = filteredCs.slice((csPage - 1) * pageSize, csPage * pageSize);
+  const paginatedTech = filteredTech.slice((techPage - 1) * pageSize, techPage * pageSize);
+  const totalCsPages = Math.ceil(filteredCs.length / pageSize);
+  const totalTechPages = Math.ceil(filteredTech.length / pageSize);
 
-  const techPodium = filteredTech.slice(0, 3);
-  const techTableList = filteredTech.slice(3);
-
-  // Paginated lists for tables
-  const paginatedCsTable = csTableList.slice((csPage - 1) * pageSize, csPage * pageSize);
-  const paginatedTechTable = techTableList.slice((techPage - 1) * pageSize, techPage * pageSize);
-
-  const totalCsPages = Math.ceil(csTableList.length / pageSize);
-  const totalTechPages = Math.ceil(techTableList.length / pageSize);
-
-  // Reset pagination pages when filters change
   useEffect(() => {
     setCsPage(1);
     setTechPage(1);
   }, [search, department]);
 
+  const periodQuery = (() => {
+    const params = new URLSearchParams();
+    if (startDate) params.set("start", startDate);
+    if (endDate) params.set("end", endDate);
+    const q = params.toString();
+    return q ? `?${q}` : "";
+  })();
+
+  const personHref = (id) => `/reports/${id}${periodQuery}`;
+
+  const periodLabel = startDate || endDate
+    ? `${startDate || "Awal"} – ${endDate || "Sekarang"}`
+    : "Semua waktu";
+
   const handleSelectUserForCompare = (userId) => {
     if (selectedUsers.includes(userId)) {
-      setSelectedUsers(selectedUsers.filter(id => id !== userId));
+      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
     } else {
       if (selectedUsers.length >= 4) {
         alert("Anda hanya dapat membandingkan maksimal 4 orang sekaligus.");
@@ -87,107 +91,112 @@ export default function LeaderboardClient({
     return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   };
 
-  const getInitials = (name) => {
-    if (!name) return "?";
-    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  const openPerson = (userId) => {
+    if (compareMode) return;
+    setDrawerUserId(userId);
   };
 
-  // Reusable podium renderer
-  const renderPodium = (podiumList, isCSLeaderboard) => {
-    if (podiumList.length === 0) return null;
-    
-    // Sort podium specifically to order: 2nd, 1st, 3rd for correct layout display
-    const orderedPodium = [];
-    if (podiumList[1]) orderedPodium.push({ ...podiumList[1], position: "second", badge: "🥈" });
-    if (podiumList[0]) orderedPodium.push({ ...podiumList[0], position: "first", badge: "👑" });
-    if (podiumList[2]) orderedPodium.push({ ...podiumList[2], position: "third", badge: "🥉" });
+  const renderTable = ({ rows, page, totalPages, setPage, emptyLabel, columns }) => (
+    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <table className="data-table">
+        <thead>
+          <tr>
+            {compareMode && <th style={{ width: 44, textAlign: "center" }}>Pilih</th>}
+            <th style={{ width: 52 }}>#</th>
+            <th>Nama</th>
+            {columns.map((col) => (
+              <th key={col.key} style={{ textAlign: col.align || "right" }}>{col.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={(compareMode ? 3 : 2) + columns.length} className="report-empty-cell">
+                {emptyLabel}
+              </td>
+            </tr>
+          ) : (
+            rows.map((l, index) => {
+              const rank = (page - 1) * pageSize + index + 1;
+              return (
+                <tr key={l.id}>
+                  {compareMode && (
+                    <td style={{ textAlign: "center" }}>
+                      <input
+                        type="checkbox"
+                        className="compare-checkbox"
+                        checked={selectedUsers.includes(l.id)}
+                        onChange={() => handleSelectUserForCompare(l.id)}
+                      />
+                    </td>
+                  )}
+                  <td className="kpi-value" style={{ color: "var(--muted-text)", fontWeight: rank <= 3 ? 700 : 500 }}>
+                    {rank}
+                  </td>
+                  <td>
+                    {compareMode ? (
+                      <span style={{ fontWeight: 600, color: "var(--heading-color)" }}>{l.name}</span>
+                    ) : (
+                      <button type="button" className="report-name-btn" onClick={() => openPerson(l.id)}>
+                        {l.name}
+                      </button>
+                    )}
+                    <div style={{ fontSize: "0.8rem", color: "var(--muted-text)" }}>{l.department}</div>
+                  </td>
+                  {columns.map((col) => (
+                    <td key={col.key} className="kpi-value" style={{ textAlign: col.align || "right" }}>
+                      {col.value(l)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
 
-    return (
-      <div className="podium-container">
-        {orderedPodium.map((user) => (
-          <div key={user.id} className={`podium-card ${user.position}`}>
-            <span className="podium-badge">{user.badge}</span>
-            
-            {compareMode && (
-              <div style={{ position: "absolute", top: "10px", left: "10px" }}>
-                <input 
-                  type="checkbox" 
-                  className="compare-checkbox"
-                  checked={selectedUsers.includes(user.id)}
-                  onChange={() => handleSelectUserForCompare(user.id)}
-                />
-              </div>
-            )}
-
-            <div className="podium-avatar">
-              {getInitials(user.name)}
-            </div>
-            
-            <a 
-              onClick={() => !compareMode && setDrawerUserId(user.id)}
-              className="podium-name"
-              style={{ pointerEvents: compareMode ? "none" : "auto" }}
-            >
-              {user.name}
-            </a>
-            <div className="podium-dept">{user.department}</div>
-            
-            <div className="podium-points">
-              {isCSLeaderboard ? user.csEngagementScore : user.taskPoints}
-              <span style={{ fontSize: "0.7rem", color: "#94a3b8", marginLeft: "0.2rem" }}>pts</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const [activeTab, setActiveTab] = useState("leaderboard");
+      {totalPages > 1 && (
+        <div className="report-pager">
+          <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+            Sebelumnya
+          </button>
+          <span>Halaman {page} dari {totalPages}</span>
+          <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+            Selanjutnya
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <main className="container">
-      <header className="page-header" style={{ marginBottom: "1.5rem" }}>
-        <h1 style={{ fontSize: "2rem", fontWeight: "800", color: "var(--heading-color)", margin: "0 0 0.35rem 0" }}>
-          📊 Performance Leaderboard & Report Analytics
-        </h1>
-        <p style={{ color: "#64748b", margin: 0 }}>
-          Sky View pemantauan aktivitas, kecepatan penyelesaian (TTR), dan skor performa operator.
+      <header className="page-header" style={{ marginBottom: "1.25rem" }}>
+        <h1>Performance</h1>
+        <p style={{ color: "var(--muted-text)", margin: 0 }}>
+          Skor operator dan waktu resolusi. Periode: {periodLabel}.
         </p>
       </header>
 
-      {/* Tab Switcher */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '2px solid var(--border-color)' }}>
-        <button 
-          onClick={() => setActiveTab("leaderboard")} 
-          style={{ 
-            padding: '0.75rem 1.5rem', 
-            background: 'transparent',
-            border: 'none',
-            borderBottom: activeTab === 'leaderboard' ? '3px solid var(--secondary-color)' : 'none', 
-            fontWeight: activeTab === 'leaderboard' ? 'bold' : '500', 
-            color: activeTab === 'leaderboard' ? 'var(--heading-color)' : '#64748b', 
-            marginBottom: '-2px',
-            cursor: 'pointer',
-            fontSize: '1.05rem'
-          }}
+      <div className="report-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "leaderboard"}
+          className={activeTab === "leaderboard" ? "is-active" : ""}
+          onClick={() => setActiveTab("leaderboard")}
         >
-          🏆 Leaderboard Performa
+          Leaderboard
         </button>
-        <button 
-          onClick={() => setActiveTab("workhours")} 
-          style={{ 
-            padding: '0.75rem 1.5rem', 
-            background: 'transparent',
-            border: 'none',
-            borderBottom: activeTab === 'workhours' ? '3px solid var(--secondary-color)' : 'none', 
-            fontWeight: activeTab === 'workhours' ? 'bold' : '500', 
-            color: activeTab === 'workhours' ? 'var(--heading-color)' : '#64748b', 
-            marginBottom: '-2px',
-            cursor: 'pointer',
-            fontSize: '1.05rem'
-          }}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "workhours"}
+          className={activeTab === "workhours" ? "is-active" : ""}
+          onClick={() => setActiveTab("workhours")}
         >
-          🕒 Waktu Kerja Tim
+          Waktu kerja
         </button>
       </div>
 
@@ -195,8 +204,7 @@ export default function LeaderboardClient({
         <TeamWorkHours departments={departments} isAdmin={isAdmin} />
       ) : (
         <>
-          {/* Leaderboard Filters Component */}
-          <LeaderboardFilter 
+          <LeaderboardFilter
             departments={departments}
             initialSearch={search}
             initialDepartment={department}
@@ -204,337 +212,136 @@ export default function LeaderboardClient({
             onDepartmentChange={setDepartment}
           />
 
-          {/* Sky View Dashboard */}
           {isAdmin && (
-            <section style={{ marginBottom: "2rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "var(--heading-color)", margin: 0 }}>
-                  🛸 Sky View: Ringkasan Performa Tim
-                </h2>
-                {startDate || endDate ? (
-                  <span style={{ fontSize: "0.8rem", color: "#64748b", background: "var(--border-color)", padding: "0.25rem 0.6rem", borderRadius: "12px" }}>
-                    Filter: {startDate || "Awal"} s/d {endDate || "Sekarang"}
-                  </span>
-                ) : null}
-              </div>
-
-              <div className="sky-view-grid">
-                <div className="kpi-card">
-                  <div className="kpi-icon" style={{ background: "#dcfce7", color: "#15803d" }}>✔️</div>
-                  <div className="kpi-content">
-                    <span className="kpi-value">{skyViewStats.resolvedCount}</span>
-                    <span className="kpi-label">Tiket Resolved</span>
-                  </div>
+            <section style={{ marginBottom: "1.75rem" }}>
+              <h2 className="report-section-title">Ringkasan tim</h2>
+              <div className="report-stat-row">
+                <div>
+                  <span>Tiket resolved</span>
+                  <strong className="kpi-value">{skyViewStats.resolvedCount ?? 0}</strong>
                 </div>
-                <div className="kpi-card">
-                  <div className="kpi-icon" style={{ background: "#e0f2fe", color: "#0369a1" }}>⚡</div>
-                  <div className="kpi-content">
-                    <span className="kpi-value">{formatMins(skyViewStats.avgTtrMins)}</span>
-                    <span className="kpi-label">Rata-rata TTR Global</span>
-                  </div>
+                <div>
+                  <span>Rata-rata TTR</span>
+                  <strong className="kpi-value">{formatMins(skyViewStats.avgTtrMins || 0)}</strong>
                 </div>
-                <div className="kpi-card">
-                  <div className="kpi-icon" style={{ background: "#fef3c7", color: "#b45309" }}>👥</div>
-                  <div className="kpi-content">
-                    <span className="kpi-value">{skyViewStats.activeOperators}</span>
-                    <span className="kpi-label">Operator Aktif</span>
-                  </div>
+                <div>
+                  <span>Operator aktif</span>
+                  <strong className="kpi-value">{skyViewStats.activeOperators ?? 0}</strong>
                 </div>
-                <div className="kpi-card">
-                  <div className="kpi-icon" style={{ background: "#f3e8ff", color: "#6b21a8" }}>🏆</div>
-                  <div className="kpi-content">
-                    <span className="kpi-value" style={{ fontSize: "1.1rem", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", maxWidth: "150px" }} title={skyViewStats.leadingDept}>
-                      {skyViewStats.leadingDept}
-                    </span>
-                    <span className="kpi-label">Departemen Unggul</span>
-                  </div>
+                <div>
+                  <span>Departemen teratas</span>
+                  <strong title={skyViewStats.leadingDept}>{skyViewStats.leadingDept || "—"}</strong>
                 </div>
               </div>
 
-              {/* Global Average TTR by Category breakdown */}
-              <div className="card" style={{ margin: 0, padding: "1.25rem" }}>
-                <h3 style={{ margin: "0 0 1rem 0", fontSize: "0.95rem", fontWeight: "700", color: "var(--heading-color)" }}>
-                  Breakdown Waktu Resolusi (TTR) Rata-rata per Kategori Tiket
+              <div className="card" style={{ marginTop: "1rem" }}>
+                <h3 style={{ margin: "0 0 0.85rem", fontSize: "0.95rem", fontWeight: 600, color: "var(--heading-color)" }}>
+                  TTR rata-rata per kategori
                 </h3>
                 {globalCategoryTtr.length === 0 ? (
-                  <div style={{ textAlign: "center", color: "#64748b", padding: "1rem" }}>Tidak ada data resolusi tiket kategori.</div>
+                  <p className="report-empty" style={{ padding: "0.5rem 0" }}>Tidak ada data resolusi pada periode ini.</p>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
-                    {globalCategoryTtr.map(cat => {
-                      const isSlow = cat.avgMins > 120;
-                      const isMedium = cat.avgMins > 60 && cat.avgMins <= 120;
-                      const barColor = isSlow ? "#ef4444" : isMedium ? "#f59e0b" : "#10b981";
-                      const maxVal = 240; // Reference for 100% width (4 hours)
-                      const pct = Math.min(100, (cat.avgMins / maxVal) * 100);
-
+                  <ul className="report-ttr-list">
+                    {globalCategoryTtr.map((cat) => {
+                      const pct = Math.min(100, (cat.avgMins / 240) * 100);
                       return (
-                        <div key={cat.name} style={{ display: "flex", flexDirection: "column", gap: "0.25rem", padding: "0.75rem", border: "1px solid var(--border-color)", borderRadius: "8px", background: "var(--bg-color)" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "var(--heading-color)" }}>{cat.name}</span>
-                            <span style={{ fontSize: "0.8rem", fontWeight: "700", color: barColor }}>{formatMins(cat.avgMins)}</span>
+                        <li key={cat.name}>
+                          <div className="report-ttr-meta">
+                            <span>{cat.name}</span>
+                            <span className="kpi-value">
+                              {formatMins(cat.avgMins)} <small>({cat.count})</small>
+                            </span>
                           </div>
-                          <div className="ttr-bar-container" style={{ margin: "0.25rem 0 0 0" }}>
-                            <div className="ttr-bar" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+                          <div className="ttr-bar-container">
+                            <div className="ttr-bar" style={{ width: `${pct}%` }} />
                           </div>
-                          <span style={{ fontSize: "0.7rem", color: "#94a3b8", textAlign: "right" }}>Jumlah tiket: {cat.count}</span>
-                        </div>
+                        </li>
                       );
                     })}
-                  </div>
+                  </ul>
                 )}
               </div>
             </section>
           )}
 
-          {/* Comparison Mode Float Bar / Toggle */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "1rem" }}>
-            <div>
-              {compareMode ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                  <span style={{ fontSize: "0.9rem", fontWeight: "bold", color: "var(--secondary-color)", background: "rgba(59, 130, 246, 0.1)", padding: "0.4rem 0.8rem", borderRadius: "6px" }}>
-                    Mode Bandingkan Aktif: Pilih 2-4 orang
-                  </span>
-                  <button 
-                    onClick={handleStartCompare} 
-                    className="primary-btn" 
-                    style={{ width: "auto", padding: "0.45rem 1.25rem", fontSize: "0.85rem", background: "#10b981" }}
-                    disabled={selectedUsers.length < 2}
-                  >
-                    Bandingkan Sekarang ({selectedUsers.length})
-                  </button>
-                  <button 
-                    onClick={() => { setCompareMode(false); setSelectedUsers([]); }}
-                    className="logout-btn" 
-                    style={{ margin: 0, padding: "0.4rem 1rem", fontSize: "0.85rem", height: "36px" }}
-                  >
-                    Batal
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => setCompareMode(true)}
+          <div className="report-toolbar">
+            {compareMode ? (
+              <div className="report-compare-active">
+                <span>Pilih 2–4 orang</span>
+                <button
+                  type="button"
                   className="primary-btn"
-                  style={{ width: "auto", padding: "0.5rem 1.5rem", fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "0.4rem" }}
+                  style={{ width: "auto", padding: "0.45rem 1rem", minHeight: 36, fontSize: "0.85rem" }}
+                  onClick={handleStartCompare}
+                  disabled={selectedUsers.length < 2}
                 >
-                  <span>📊</span> Aktifkan Mode Perbandingan
+                  Bandingkan ({selectedUsers.length})
                 </button>
-              )}
-            </div>
+                <button
+                  type="button"
+                  className="logout-btn"
+                  style={{ margin: 0, padding: "0.4rem 0.9rem", height: 36, fontSize: "0.85rem" }}
+                  onClick={() => { setCompareMode(false); setSelectedUsers([]); }}
+                >
+                  Batal
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="logout-btn"
+                style={{ margin: 0, padding: "0.45rem 1rem", height: 36, fontSize: "0.85rem" }}
+                onClick={() => setCompareMode(true)}
+              >
+                Bandingkan orang
+              </button>
+            )}
           </div>
 
-          {/* Two Columns Grid for Tables & Podiums */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
-            
-            {/* CS Engagement Column */}
+          <div className="report-split">
             <div>
-              <h2 style={{ fontSize: "1.25rem", color: "var(--heading-color)", marginBottom: "0.75rem", borderBottom: "2px solid #3b82f6", paddingBottom: "0.35rem" }}>
-                💬 CS Engagement
-              </h2>
-              
-              {/* Render top 3 CS Podium */}
-              {renderPodium(csPodium, true)}
-
-              {/* Render rest CS operators */}
-              <div className="card" style={{ padding: "0", overflow: "hidden" }}>
-                <table className="data-table">
-                  <thead>
-                    <tr style={{ background: "var(--table-header-bg)" }}>
-                      {compareMode && <th style={{ width: "40px", textAlign: "center" }}>Pilih</th>}
-                      <th style={{ width: "60px", textAlign: "center" }}>Rank</th>
-                      <th>Operator</th>
-                      <th style={{ textAlign: "center" }}>Tickets</th>
-                      <th style={{ textAlign: "center" }}>Msgs</th>
-                      <th style={{ textAlign: "right" }}>Score</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCs.length === 0 ? (
-                      <tr>
-                        <td colSpan={compareMode ? "6" : "5"} style={{ textAlign: "center", padding: "2rem", color: "#64748b" }}>
-                          Tidak ada operator CS ditemukan.
-                        </td>
-                      </tr>
-                    ) : (
-                      <>
-                        {/* Render table list */}
-                        {csTableList.length === 0 && filteredCs.length <= 3 && (
-                          <tr>
-                            <td colSpan={compareMode ? "6" : "5"} style={{ textAlign: "center", padding: "1rem", fontSize: "0.85rem", color: "#64748b" }}>
-                              Semua peringkat teratas sudah ditampilkan pada podium di atas.
-                            </td>
-                          </tr>
-                        )}
-                        {paginatedCsTable.map((l, index) => {
-                          const rank = 4 + (csPage - 1) * pageSize + index;
-                          return (
-                            <tr key={l.id}>
-                              {compareMode && (
-                                <td style={{ textAlign: "center" }}>
-                                  <input 
-                                    type="checkbox" 
-                                    className="compare-checkbox"
-                                    checked={selectedUsers.includes(l.id)}
-                                    onChange={() => handleSelectUserForCompare(l.id)}
-                                  />
-                                </td>
-                              )}
-                              <td style={{ textAlign: "center", fontWeight: "bold", fontSize: "0.9rem", color: "#64748b" }}>
-                                #{rank}
-                              </td>
-                              <td style={{ fontWeight: "600", fontSize: "0.9rem" }}>
-                                <a 
-                                  onClick={() => !compareMode && setDrawerUserId(l.id)} 
-                                  style={{ color: "var(--primary-color)", textDecoration: "none", cursor: compareMode ? "default" : "pointer" }}
-                                >
-                                  {l.name}
-                                </a>
-                              </td>
-                              <td style={{ textAlign: "center", fontWeight: "500", color: "#64748b" }}>{l.createdCount}</td>
-                              <td style={{ textAlign: "center", fontWeight: "500", color: "#64748b" }}>{l.replyCount}</td>
-                              <td style={{ textAlign: "right", fontWeight: "800", color: "#3b82f6", fontSize: "0.95rem" }}>{l.csEngagementScore}</td>
-                            </tr>
-                          );
-                        })}
-                      </>
-                    )}
-                  </tbody>
-                </table>
-
-                {/* Pagination for CS Table */}
-                {totalCsPages > 1 && (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem 1rem", borderTop: "1px solid var(--border-color)", background: "var(--card-bg)" }}>
-                    <button 
-                      onClick={() => setCsPage(prev => Math.max(1, prev - 1))}
-                      disabled={csPage === 1}
-                      style={{ padding: "0.35rem 0.75rem", borderRadius: "4px", border: "1px solid var(--border-color)", cursor: csPage === 1 ? "not-allowed" : "pointer", fontSize: "0.8rem", opacity: csPage === 1 ? 0.5 : 1 }}
-                    >
-                      Sebelumnya
-                    </button>
-                    <span style={{ fontSize: "0.8rem", color: "#64748b" }}>Halaman {csPage} dari {totalCsPages}</span>
-                    <button 
-                      onClick={() => setCsPage(prev => Math.min(totalCsPages, prev + 1))}
-                      disabled={csPage === totalCsPages}
-                      style={{ padding: "0.35rem 0.75rem", borderRadius: "4px", border: "1px solid var(--border-color)", cursor: csPage === totalCsPages ? "not-allowed" : "pointer", fontSize: "0.8rem", opacity: csPage === totalCsPages ? 0.5 : 1 }}
-                    >
-                      Selanjutnya
-                    </button>
-                  </div>
-                )}
-              </div>
+              <h2 className="report-section-title">CS engagement</h2>
+              {renderTable({
+                rows: paginatedCs,
+                page: csPage,
+                totalPages: totalCsPages,
+                setPage: setCsPage,
+                emptyLabel: "Tidak ada operator CS pada filter ini.",
+                columns: [
+                  { key: "tickets", label: "Tiket", value: (l) => l.createdCount },
+                  { key: "msgs", label: "Balasan", value: (l) => l.replyCount },
+                  { key: "score", label: "Skor", value: (l) => l.csEngagementScore }
+                ]
+              })}
             </div>
-
-            {/* Technical Resolves Column */}
             <div>
-              <h2 style={{ fontSize: "1.25rem", color: "var(--heading-color)", marginBottom: "0.75rem", borderBottom: "2px solid #10b981", paddingBottom: "0.35rem" }}>
-                🔧 Tech Resolves
-              </h2>
-              
-              {/* Render top 3 Tech Podium */}
-              {renderPodium(techPodium, false)}
-
-              {/* Render rest Tech operators */}
-              <div className="card" style={{ padding: "0", overflow: "hidden" }}>
-                <table className="data-table">
-                  <thead>
-                    <tr style={{ background: "var(--table-header-bg)" }}>
-                      {compareMode && <th style={{ width: "40px", textAlign: "center" }}>Pilih</th>}
-                      <th style={{ width: "60px", textAlign: "center" }}>Rank</th>
-                      <th>Technician</th>
-                      <th style={{ textAlign: "right" }}>Solved</th>
-                      <th style={{ textAlign: "right" }}>Pts</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTech.length === 0 ? (
-                      <tr>
-                        <td colSpan={compareMode ? "5" : "4"} style={{ textAlign: "center", padding: "2rem", color: "#64748b" }}>
-                          Tidak ada teknisi ditemukan.
-                        </td>
-                      </tr>
-                    ) : (
-                      <>
-                        {/* Render table list */}
-                        {techTableList.length === 0 && filteredTech.length <= 3 && (
-                          <tr>
-                            <td colSpan={compareMode ? "5" : "4"} style={{ textAlign: "center", padding: "1rem", fontSize: "0.85rem", color: "#64748b" }}>
-                              Semua peringkat teratas sudah ditampilkan pada podium di atas.
-                            </td>
-                          </tr>
-                        )}
-                        {paginatedTechTable.map((l, index) => {
-                          const rank = 4 + (techPage - 1) * pageSize + index;
-                          return (
-                            <tr key={l.id}>
-                              {compareMode && (
-                                <td style={{ textAlign: "center" }}>
-                                  <input 
-                                    type="checkbox" 
-                                    className="compare-checkbox"
-                                    checked={selectedUsers.includes(l.id)}
-                                    onChange={() => handleSelectUserForCompare(l.id)}
-                                  />
-                                </td>
-                              )}
-                              <td style={{ textAlign: "center", fontWeight: "bold", fontSize: "0.9rem", color: "#64748b" }}>
-                                #{rank}
-                              </td>
-                              <td style={{ fontWeight: "600", fontSize: "0.9rem" }}>
-                                <a 
-                                  onClick={() => !compareMode && setDrawerUserId(l.id)} 
-                                  style={{ color: "var(--primary-color)", textDecoration: "none", cursor: compareMode ? "default" : "pointer" }}
-                                >
-                                  {l.name}
-                                </a>
-                                <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "normal" }}>{l.department}</div>
-                              </td>
-                              <td style={{ textAlign: "right", fontWeight: "500", color: "#64748b" }}>{l.resolvedCount}</td>
-                              <td style={{ textAlign: "right", fontWeight: "800", color: "#10b981", fontSize: "0.95rem" }}>{l.taskPoints}</td>
-                            </tr>
-                          );
-                        })}
-                      </>
-                    )}
-                  </tbody>
-                </table>
-
-                {/* Pagination for Tech Table */}
-                {totalTechPages > 1 && (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.75rem 1rem", borderTop: "1px solid var(--border-color)", background: "var(--card-bg)" }}>
-                    <button 
-                      onClick={() => setTechPage(prev => Math.max(1, prev - 1))}
-                      disabled={techPage === 1}
-                      style={{ padding: "0.35rem 0.75rem", borderRadius: "4px", border: "1px solid var(--border-color)", cursor: techPage === 1 ? "not-allowed" : "pointer", fontSize: "0.8rem", opacity: techPage === 1 ? 0.5 : 1 }}
-                    >
-                      Sebelumnya
-                    </button>
-                    <span style={{ fontSize: "0.8rem", color: "#64748b" }}>Halaman {techPage} dari {totalTechPages}</span>
-                    <button 
-                      onClick={() => setTechPage(prev => Math.min(totalTechPages, prev + 1))}
-                      disabled={techPage === totalTechPages}
-                      style={{ padding: "0.35rem 0.75rem", borderRadius: "4px", border: "1px solid var(--border-color)", cursor: techPage === totalTechPages ? "not-allowed" : "pointer", fontSize: "0.8rem", opacity: techPage === totalTechPages ? 0.5 : 1 }}
-                    >
-                      Selanjutnya
-                    </button>
-                  </div>
-                )}
-              </div>
+              <h2 className="report-section-title">Tech resolves</h2>
+              {renderTable({
+                rows: paginatedTech,
+                page: techPage,
+                totalPages: totalTechPages,
+                setPage: setTechPage,
+                emptyLabel: "Tidak ada teknisi pada filter ini.",
+                columns: [
+                  { key: "solved", label: "Selesai", value: (l) => l.resolvedCount },
+                  { key: "pts", label: "Poin", value: (l) => l.taskPoints }
+                ]
+              })}
             </div>
-
           </div>
         </>
       )}
 
-      {/* Performance sliding drawer */}
-      <PerformanceDrawer 
+      <PerformanceDrawer
         userId={drawerUserId}
         startDate={startDate}
         endDate={endDate}
+        reportHref={drawerUserId ? personHref(drawerUserId) : ""}
         onClose={() => setDrawerUserId(null)}
       />
 
-      {/* Performance comparison side-by-side modal */}
       {isComparisonOpen && (
-        <ComparisonModal 
+        <ComparisonModal
           selectedUserIds={selectedUsers}
           startDate={startDate}
           endDate={endDate}

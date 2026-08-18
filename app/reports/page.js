@@ -4,15 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import LeaderboardClient from "./LeaderboardClient";
 import ServiceDeskMetrics from "./ServiceDeskMetrics";
+import { canViewAllPerformance } from "@/lib/reports/performanceAccess";
+import { isReplyPointsAction, sumReplyAwardedScore } from "@/lib/tickets/points";
 
 export default async function ReportsPage({ searchParams }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
 
   const { user } = session;
-  const hasPermission = user.permissions?.includes('view_reports') || user.role === 'Admin';
-  if (!hasPermission) {
-    redirect("/dashboard");
+  if (!canViewAllPerformance(user)) {
+    redirect(`/reports/${user.id}`);
   }
 
   const params = await searchParams;
@@ -62,13 +63,14 @@ export default async function ReportsPage({ searchParams }) {
     let createdCount = 0;
     let statusActionsCount = 0;
     u.historyLogs.forEach(h => {
+      if (isReplyPointsAction(h.action)) return;
       if (h.action?.includes('instantiated')) createdCount++;
       else statusActionsCount++;
     });
     
     const replyCount = u.comments.length;
-    // Base 5 pts per created ticket, 2 per reply, 1 per action
-    const csEngagementScore = (createdCount * 5) + (replyCount * 2) + statusActionsCount;
+    const replyPoints = sumReplyAwardedScore(u.historyLogs);
+    const csEngagementScore = (createdCount * 5) + replyPoints + statusActionsCount;
 
     const entry = {
       id: u.id,
@@ -138,10 +140,11 @@ export default async function ReportsPage({ searchParams }) {
       let createdCount = 0;
       let statusActionsCount = 0;
       u.historyLogs.forEach(h => {
+        if (isReplyPointsAction(h.action)) return;
         if (h.action?.includes('instantiated')) createdCount++;
         else statusActionsCount++;
       });
-      const csScore = (createdCount * 5) + (u.comments.length * 2) + statusActionsCount;
+      const csScore = (createdCount * 5) + sumReplyAwardedScore(u.historyLogs) + statusActionsCount;
       return csScore > 0;
     } else {
       const legacyTaskPoints = u.tickets.reduce((sum, t) => sum + (t.awardedScore || 0), 0);
@@ -160,10 +163,11 @@ export default async function ReportsPage({ searchParams }) {
     let csCreatedCount = 0;
     let csStatusActionsCount = 0;
     u.historyLogs.forEach(h => {
+      if (isReplyPointsAction(h.action)) return;
       if (h.action?.includes('instantiated')) csCreatedCount++;
       else csStatusActionsCount++;
     });
-    const csScore = (csCreatedCount * 5) + (u.comments.length * 2) + csStatusActionsCount;
+    const csScore = (csCreatedCount * 5) + sumReplyAwardedScore(u.historyLogs) + csStatusActionsCount;
     const score = isCS ? csScore : taskPoints;
     deptPoints[deptName] = (deptPoints[deptName] || 0) + score;
   });

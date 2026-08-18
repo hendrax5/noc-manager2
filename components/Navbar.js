@@ -158,6 +158,15 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
                   <Link href="/profile" onClick={() => setShowProfileMenu(false)} className="profile-dropdown-link">
                     Account Settings
                   </Link>
+                  {session.user?.id && (
+                    <Link
+                      href={`/reports/${session.user.id}`}
+                      onClick={() => setShowProfileMenu(false)}
+                      className="profile-dropdown-link"
+                    >
+                      Poin saya
+                    </Link>
+                  )}
                   <button
                     type="button"
                     className="profile-dropdown-logout"

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]/route";
+import { canViewUserPerformance } from "@/lib/reports/performanceAccess";
+import { sumReplyAwardedScore } from "@/lib/tickets/points";
 
 export async function GET(req, { params }) {
   try {
@@ -14,6 +16,10 @@ export async function GET(req, { params }) {
     const targetUserId = parseInt(resolvedParams.userId);
     if (isNaN(targetUserId)) {
       return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
+    }
+
+    if (!canViewUserPerformance(session.user, targetUserId)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -74,7 +80,7 @@ export async function GET(req, { params }) {
       where: { authorId: targetUserId, ...dateCondition }
     });
 
-    // Activities ledger
+    // Activities ledger (exclude reply award rows; those are summed separately)
     const allActivities = await prisma.ticketHistory.findMany({
       where: {
         actorId: targetUserId,
@@ -84,11 +90,24 @@ export async function GET(req, { params }) {
       select: { id: true, action: true, createdAt: true, awardedScore: true, ticket: { select: { id: true, trackingId: true, title: true } } }
     });
 
+    const replyLogs = await prisma.ticketHistory.findMany({
+      where: {
+        actorId: targetUserId,
+        OR: [
+          { action: { startsWith: "Public reply:" } },
+          { action: { startsWith: "Internal reply:" } }
+        ],
+        ...dateCondition
+      },
+      select: { action: true, awardedScore: true }
+    });
+
     // Calculate score
     const resolvedTickets = tickets.filter(t => t.status === 'Resolved');
     const legacyTaskPoints = resolvedTickets.reduce((sum, t) => sum + (t.awardedScore || 0), 0);
     const ledgerTaskPoints = allActivities.reduce((sum, h) => sum + (h.awardedScore || 0), 0);
     const taskPoints = legacyTaskPoints + ledgerTaskPoints;
+    const replyPoints = sumReplyAwardedScore(replyLogs);
 
     let csCreatedCount = 0;
     let csStatusActionsCount = 0;
@@ -98,7 +117,7 @@ export async function GET(req, { params }) {
     });
 
     const totalActivitiesPoints = (csCreatedCount * 5) + csStatusActionsCount;
-    const finalScore = taskPoints + (totalComments * 2) + (isCS ? totalActivitiesPoints : 0);
+    const finalScore = taskPoints + replyPoints + (isCS ? totalActivitiesPoints : 0);
 
     // Compute Personal TTR per category for resolved tickets
     const personalCategoryTTRRaw = {};
@@ -133,6 +152,7 @@ export async function GET(req, { params }) {
       metrics: {
         finalScore,
         taskPoints,
+        replyPoints,
         totalComments,
         resolvedCount: resolvedTickets.length,
         totalInvolvedCount: tickets.length,

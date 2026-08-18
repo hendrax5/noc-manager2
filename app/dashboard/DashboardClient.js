@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import LiveOpsBoard from "./LiveOpsBoard";
 import DashboardCharts from "./DashboardCharts";
+import MyPointsCard from "@/components/MyPointsCard";
 
 export default function DashboardClient({
   session,
@@ -218,12 +219,14 @@ export default function DashboardClient({
         </div>
       </header>
 
+      {session?.user?.id && <MyPointsCard userId={session.user.id} />}
+
       {/* ========================================================================================= */}
       {/* VIEW 1: MY WORKSPACE DASHBOARD */}
       {/* ========================================================================================= */}
       {activeTab === "workspace" && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          
+
           {/* KPI Cards Widget */}
           {showKPIs && (
             <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem' }}>

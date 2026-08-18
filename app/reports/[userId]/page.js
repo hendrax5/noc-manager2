@@ -4,16 +4,50 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
+import { canViewAllPerformance, canViewUserPerformance } from "@/lib/reports/performanceAccess";
+import { sumReplyAwardedScore } from "@/lib/tickets/points";
 
 import ReportFilter from "./ReportFilter";
 
+function formatDuration(start, end) {
+  const diffMs = new Date(end).getTime() - new Date(start).getTime();
+  if (diffMs < 0) return "0m";
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  const remainingMins = mins % 60;
+  return `${hrs}h ${remainingMins}m`;
+}
+
+function formatPeriodLabel(startFilter, endFilter) {
+  if (!startFilter && !endFilter) return "Semua waktu";
+  const fmt = (d) => d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+  const from = startFilter ? fmt(startFilter) : "Awal";
+  const to = endFilter ? fmt(endFilter) : "Sekarang";
+  return `${from} – ${to}`;
+}
+
 export default async function UserReportDetail({ params, searchParams }) {
   const session = await getServerSession(authOptions);
-  if (!session) redirect('/login');
+  if (!session) redirect("/login");
 
   const resolvedParams = await params;
-  const targetUserId = parseInt(resolvedParams.userId);
-  
+  const targetUserId = parseInt(resolvedParams.userId, 10);
+  if (!Number.isInteger(targetUserId)) {
+    return (
+      <main className="container">
+        <h1>User not found</h1>
+      </main>
+    );
+  }
+
+  if (!canViewUserPerformance(session.user, targetUserId)) {
+    redirect(`/reports/${session.user.id}`);
+  }
+
+  const canSeeLeaderboard = canViewAllPerformance(session.user);
+  const isOwnReport = parseInt(session.user.id, 10) === targetUserId;
+
   const resolvedSearchParams = await searchParams;
   const startFilter = resolvedSearchParams.start ? new Date(resolvedSearchParams.start) : undefined;
   const endFilter = resolvedSearchParams.end ? new Date(resolvedSearchParams.end) : undefined;
@@ -21,82 +55,88 @@ export default async function UserReportDetail({ params, searchParams }) {
 
   const dateCondition = {};
   if (startFilter || endFilter) {
-    dateCondition.createdAt = {}; 
+    dateCondition.createdAt = {};
     if (startFilter) dateCondition.createdAt.gte = startFilter;
     if (endFilter) dateCondition.createdAt.lte = endFilter;
   }
 
   const ticketDateCondition = {};
   if (startFilter || endFilter) {
-    ticketDateCondition.updatedAt = {}; 
+    ticketDateCondition.updatedAt = {};
     if (startFilter) ticketDateCondition.updatedAt.gte = startFilter;
     if (endFilter) ticketDateCondition.updatedAt.lte = endFilter;
   }
 
   const targetUser = await prisma.user.findUnique({
     where: { id: targetUserId },
-    include: { 
+    include: {
       department: true,
-      comments: { 
+      comments: {
         where: dateCondition,
-        select: { id: true, createdAt: true, ticket: { select: { title: true, id: true, trackingId: true } } }, 
-        orderBy: { createdAt: 'desc' }, 
-        take: 10 
+        select: { id: true, createdAt: true, ticket: { select: { title: true, id: true, trackingId: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 12
       },
-      historyLogs: { 
-        where: { action: { not: { contains: 'Reply' } }, ...dateCondition },
-        select: { id: true, action: true, createdAt: true, ticket: { select: { title: true, id: true, trackingId: true } } }, 
-        orderBy: { createdAt: 'desc' }, 
-        take: 10 
+      historyLogs: {
+        where: { action: { not: { contains: "Reply" } }, ...dateCondition },
+        select: { id: true, action: true, createdAt: true, awardedScore: true, ticket: { select: { title: true, id: true, trackingId: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 12
       },
       meetingsAttending: { where: dateCondition, select: { id: true } },
       presentSessions: { where: dateCondition, select: { id: true } }
     }
   });
 
-  if (!targetUser) return <main className="container"><h1>User Not Found</h1></main>;
-
-  const hasPermission = session.user.permissions?.includes('view_reports') || session.user.role === 'Admin';
-  if (!hasPermission) {
-    redirect("/dashboard");
+  if (!targetUser) {
+    return (
+      <main className="container">
+        <h1>User not found</h1>
+      </main>
+    );
   }
 
-  const isCSTarget = targetUser.department?.name?.includes('CS') || targetUser.department?.name?.toLowerCase().includes('customer');
+  const isCSTarget = targetUser.department?.name?.includes("CS") || targetUser.department?.name?.toLowerCase().includes("customer");
 
   const tickets = await prisma.ticket.findMany({
-    where: { assigneeId: targetUserId, status: 'Resolved', awardedScore: { not: null }, ...ticketDateCondition },
+    where: { assigneeId: targetUserId, status: "Resolved", awardedScore: { not: null }, ...ticketDateCondition },
     include: { jobCategory: true },
-    orderBy: { updatedAt: 'desc' }
+    orderBy: { updatedAt: "desc" }
   });
-
-  function formatDuration(start, end) {
-    const diffMs = new Date(end).getTime() - new Date(start).getTime();
-    if (diffMs < 0) return '0m';
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 60) return `${mins}m`;
-    const hrs = Math.floor(mins / 60);
-    const remainingMins = mins % 60;
-    return `${hrs}h ${remainingMins}m`;
-  }
 
   const totalComments = await prisma.comment.count({ where: { authorId: targetUserId, ...dateCondition } });
-  
-  const allActivities = await prisma.ticketHistory.findMany({ 
-    where: { actorId: targetUserId, action: { not: { contains: 'Reply' } }, ...dateCondition },
-    select: { action: true, awardedScore: true } 
+
+  const allActivities = await prisma.ticketHistory.findMany({
+    where: { actorId: targetUserId, action: { not: { contains: "Reply" } }, ...dateCondition },
+    select: { action: true, awardedScore: true }
   });
 
-  const taskPoints = tickets.reduce((acc, t) => acc + (t.awardedScore || 0), 0) + allActivities.reduce((acc, h) => acc + (h.awardedScore || 0), 0);
-  
-  const totalActivitiesPoints = allActivities.reduce((sum, log) => {
-    return sum + (log.action && log.action.includes('instantiated') ? 5 : 1);
-  }, 0);
+  const replyLogs = await prisma.ticketHistory.findMany({
+    where: {
+      actorId: targetUserId,
+      OR: [
+        { action: { startsWith: "Public reply:" } },
+        { action: { startsWith: "Internal reply:" } }
+      ],
+      ...dateCondition
+    },
+    select: { action: true, awardedScore: true }
+  });
 
-  const finalScore = taskPoints + totalComments + (isCSTarget ? totalActivitiesPoints : 0);
+  const jobPoints = tickets.reduce((acc, t) => acc + (t.awardedScore || 0), 0) + allActivities.reduce((acc, h) => acc + (h.awardedScore || 0), 0);
+  const replyPoints = sumReplyAwardedScore(replyLogs);
 
-  // Compute Personal TTR per Category
+  let createdCount = 0;
+  let statusActionsCount = 0;
+  allActivities.forEach((h) => {
+    if (h.action?.includes("instantiated")) createdCount++;
+    else statusActionsCount++;
+  });
+  const adminActionPoints = isCSTarget ? (createdCount * 5) + statusActionsCount : 0;
+  const headlineScore = isCSTarget ? jobPoints + replyPoints + adminActionPoints : jobPoints;
+
   const personalCategoryTTRRaw = {};
-  tickets.forEach(t => {
+  tickets.forEach((t) => {
     if (!t.jobCategory) return;
     const catName = t.jobCategory.name;
     const end = t.resolvedAt || t.updatedAt;
@@ -113,128 +153,176 @@ export default async function UserReportDetail({ params, searchParams }) {
     return { name, avgMins, count: data.count };
   }).sort((a, b) => b.avgMins - a.avgMins);
 
-  const page = parseInt(resolvedSearchParams?.page) || 1;
-  const pageSize = 5; // Aggressive scale-down to avoid scroll
+  const page = parseInt(resolvedSearchParams?.page, 10) || 1;
+  const pageSize = parseInt(resolvedSearchParams?.limit, 10) || 10;
   const totalTicketsCount = tickets.length;
   const paginatedTickets = tickets.slice((page - 1) * pageSize, page * pageSize);
+  const periodLabel = formatPeriodLabel(startFilter, endFilter);
+  const querySuffix = (() => {
+    const p = new URLSearchParams();
+    if (resolvedSearchParams.start) p.set("start", resolvedSearchParams.start);
+    if (resolvedSearchParams.end) p.set("end", resolvedSearchParams.end);
+    const q = p.toString();
+    return q ? `?${q}` : "";
+  })();
+
+  const backHref = canSeeLeaderboard ? `/reports${querySuffix}` : "/dashboard";
+  const backLabel = canSeeLeaderboard ? "Kembali ke leaderboard" : "Kembali ke dashboard";
 
   return (
-    <main className="container">
-      <Link href="/reports" className="no-print" style={{ display: 'inline-block', marginBottom: '1rem', color: '#64748b', textDecoration: 'none', fontWeight: 'bold' }}>
-        ← Back to Leaderboard
+    <main className="container report-detail">
+      <Link href={backHref} className="no-print report-back">
+        {backLabel}
       </Link>
-      
-      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ marginBottom: '0.25rem' }}>Performance Report: {targetUser.name || targetUser.email}</h1>
-          <p style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 0 }}>
-            <span className="badge" style={{ backgroundColor: '#64748b' }}>{targetUser.department?.name}</span>
-            <span>Cumulative Impact Score: <strong style={{color: '#10b981', fontSize: '1.2rem'}}>{finalScore} pts</strong></span>
-          </p>
-          {(startFilter || endFilter) && (
-            <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem', fontStyle: 'italic' }}>
-              Filtered from {startFilter ? startFilter.toLocaleDateString() : 'Beginning'} to {endFilter ? endFilter.toLocaleDateString() : 'Now'}
-            </p>
-          )}
-        </div>
+
+      <header className="page-header" style={{ marginBottom: "1.25rem" }}>
+        <p className="report-kicker">{targetUser.department?.name || "General"}</p>
+        <h1 style={{ marginBottom: "0.35rem" }}>
+          {isOwnReport ? "Poin saya" : (targetUser.name || targetUser.email)}
+        </h1>
+        <p style={{ margin: 0, color: "var(--muted-text)" }}>
+          {isOwnReport ? (targetUser.name || targetUser.email) + " · " : null}
+          Periode {periodLabel}
+        </p>
       </header>
 
       <ReportFilter userId={targetUserId} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '1rem' }}>
-          <h3 style={{ margin: 0, color: '#64748b', fontSize: '0.8rem' }}>Job Categories Resolved</h3>
-          <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b' }}>{taskPoints} <small style={{fontSize: '0.8rem', color: '#94a3b8'}}>pts</small></span>
+      <section className="card report-score-block">
+        <div className="report-score-main">
+          <span className="report-score-label">Total poin</span>
+          <span className="report-score-value kpi-value">{headlineScore}</span>
         </div>
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '1rem' }}>
-          <h3 style={{ margin: 0, color: '#64748b', fontSize: '0.8rem' }}>Ticket Responses</h3>
-          <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6' }}>{totalComments} <small style={{fontSize: '0.8rem', color: '#94a3b8'}}>pts</small></span>
-        </div>
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '1rem', opacity: isCSTarget ? 1 : 0.5 }}>
-          <h3 style={{ margin: 0, color: '#64748b', fontSize: '0.8rem' }}>Administrative Actions</h3>
-          <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>{isCSTarget ? totalActivitiesPoints : 0} <small style={{fontSize: '0.8rem', color: '#94a3b8'}}>{isCSTarget ? 'pts' : '(N/A)'}</small></span>
-        </div>
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '1rem' }}>
-          <h3 style={{ margin: 0, color: '#64748b', fontSize: '0.8rem' }}>Meeting Attendance</h3>
-          <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#8b5cf6' }}>{targetUser.presentSessions.length} <small style={{fontSize: '0.8rem', color: '#94a3b8'}}>/ {targetUser.meetingsAttending.length}</small></span>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        
-        {/* Personal Category TTR */}
-        {personalCategoryTtr.length > 0 && (
-          <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-            <h3 style={{ padding: '1rem', margin: 0, background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#1e293b', fontSize: '1rem' }}>Personal TTR Averages</h3>
-            <div style={{ padding: '1rem', display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-              {personalCategoryTtr.map(cat => {
-                const isSlow = cat.avgMins > 120;
-                return (
-                  <div key={cat.name} style={{ padding: '0.75rem', borderRadius: '6px', border: `1px solid ${isSlow ? '#fca5a5' : '#e2e8f0'}`, background: isSlow ? '#fef2f2' : '#f8fafc', flex: '1 1 150px' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.2rem' }}>{cat.name}</div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: isSlow ? '#ef4444' : '#0f172a' }}>{formatDuration(0, cat.avgMins * 60000)}</span>
-                      <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>({cat.count} tkts)</span>
-                    </div>
-                  </div>
-                );
-              })}
+        <dl className="report-score-breakdown">
+          <div>
+            <dt>Job</dt>
+            <dd className="kpi-value">{jobPoints}</dd>
+          </div>
+          <div>
+            <dt>Balasan</dt>
+            <dd className="kpi-value">{replyPoints}</dd>
+          </div>
+          {isCSTarget && (
+            <div>
+              <dt>Aksi CS</dt>
+              <dd className="kpi-value">{adminActionPoints}</dd>
             </div>
+          )}
+          <div>
+            <dt>Meeting</dt>
+            <dd className="kpi-value">{targetUser.presentSessions.length}<span className="report-score-sub">/{targetUser.meetingsAttending.length}</span></dd>
+          </div>
+        </dl>
+      </section>
+
+      {personalCategoryTtr.length > 0 && (
+        <section className="card" style={{ marginTop: "1.25rem" }}>
+          <h2 style={{ margin: "0 0 1rem", fontSize: "1rem" }}>Rata-rata TTR per kategori</h2>
+          <ul className="report-ttr-list">
+            {personalCategoryTtr.map((cat) => {
+              const pct = Math.min(100, (cat.avgMins / 240) * 100);
+              return (
+                <li key={cat.name}>
+                  <div className="report-ttr-meta">
+                    <span>{cat.name}</span>
+                    <span className="kpi-value">{formatDuration(0, cat.avgMins * 60000)} <small>({cat.count})</small></span>
+                  </div>
+                  <div className="ttr-bar-container">
+                    <div className="ttr-bar" style={{ width: `${pct}%` }} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      <section className="card" style={{ marginTop: "1.25rem", padding: 0, overflow: "hidden" }}>
+        <div className="report-section-head">
+          <h2>Tiket terselesaikan</h2>
+          <span>{totalTicketsCount} tiket</span>
+        </div>
+        {paginatedTickets.length === 0 ? (
+          <p className="report-empty">Tidak ada tiket terskor pada periode ini.</p>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>TTR</th>
+                <th>Tiket</th>
+                <th style={{ textAlign: "right" }}>Poin</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedTickets.map((t) => (
+                <tr key={t.id}>
+                  <td style={{ color: "var(--muted-text)" }}>{new Date(t.updatedAt).toLocaleDateString("id-ID")}</td>
+                  <td className="kpi-value">{formatDuration(t.customData?.reopenedAt || t.createdAt, t.resolvedAt || t.updatedAt)}</td>
+                  <td>
+                    <Link href={`/tickets/${t.id}`}>{t.trackingId}</Link>
+                    {t.jobCategory?.name ? (
+                      <div style={{ fontSize: "0.8rem", color: "var(--muted-text)", fontWeight: 400 }}>{t.jobCategory.name}</div>
+                    ) : null}
+                  </td>
+                  <td className="kpi-value" style={{ textAlign: "right" }}>+{t.awardedScore}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        {totalTicketsCount > pageSize && (
+          <div style={{ borderTop: "1px solid var(--border-color)" }}>
+            <Pagination totalCount={totalTicketsCount} pageSize={pageSize} />
           </div>
         )}
+      </section>
 
-        {/* 2-Columns Layout for Tables */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-          {/* Resolved Tickets Table */}
-          <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-            <h3 style={{ padding: '1rem', margin: 0, background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#1e293b', fontSize: '1rem' }}>Technician Resolves</h3>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ padding: '0.5rem 1rem' }}>Date</th>
-                  <th style={{ padding: '0.5rem 1rem' }}>TTR</th>
-                  <th style={{ padding: '0.5rem 1rem' }}>Ticket</th>
-                  <th style={{ textAlign: 'right', padding: '0.5rem 1rem' }}>Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedTickets.length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>No scored tickets found.</td></tr>}
-                {paginatedTickets.map(t => (
-                  <tr key={t.id}>
-                    <td style={{ color: '#64748b', fontSize: '0.85rem' }}>{new Date(t.updatedAt).toLocaleDateString()}</td>
-                    <td style={{ fontWeight: 'bold', color: '#3b82f6', fontSize: '0.85rem' }}>{formatDuration(t.customData?.reopenedAt || t.createdAt, t.resolvedAt || t.updatedAt)}</td>
-                    <td style={{ fontWeight: 'bold', fontSize: '0.85rem' }}><Link href={`/tickets/${t.id}`} style={{color: 'var(--primary-color)'}}>{t.trackingId}</Link></td>
-                    <td style={{ textAlign: 'right', fontWeight: 'bold', color: '#10b981', fontSize: '0.85rem' }}>+{t.awardedScore} pts</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {totalTicketsCount > pageSize && <div style={{ borderTop: '1px solid var(--border-color)', background: 'var(--card-bg)' }}><Pagination totalCount={totalTicketsCount} pageSize={pageSize} /></div>}
+      <div className="report-split">
+        <section className="card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="report-section-head">
+            <h2>Balasan terbaru</h2>
+            <span>{totalComments} balasan</span>
           </div>
+          {targetUser.comments.length === 0 ? (
+            <p className="report-empty">Belum ada balasan pada periode ini.</p>
+          ) : (
+            <ul className="report-activity">
+              {targetUser.comments.map((c) => (
+                <li key={c.id}>
+                  <Link href={`/tickets/${c.ticket.id}`}>{c.ticket.trackingId}</Link>
+                  <span>{c.ticket.title}</span>
+                  <time>{new Date(c.createdAt).toLocaleDateString("id-ID")}</time>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-          {/* Recent Responses Table */}
-          <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-            <h3 style={{ padding: '1rem', margin: 0, background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#1e293b', fontSize: '1rem' }}>Recent Responses</h3>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th style={{ padding: '0.5rem 1rem' }}>Time</th>
-                  <th style={{ padding: '0.5rem 1rem' }}>Ticket</th>
-                </tr>
-              </thead>
-              <tbody>
-                {targetUser.comments.length === 0 && <tr><td colSpan="2" style={{ textAlign: 'center', padding: '2rem' }}>No responses logged.</td></tr>}
-                {targetUser.comments.map(c => (
-                  <tr key={c.id}>
-                    <td style={{ color: '#64748b', fontSize: '0.85rem' }}>{new Date(c.createdAt).toLocaleDateString()}</td>
-                    <td style={{ fontSize: '0.85rem' }}><Link href={`/tickets/${c.ticket.id}`} style={{color: '#3b82f6'}}>{c.ticket.trackingId}</Link> - {c.ticket.title}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <section className="card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="report-section-head">
+            <h2>Aktivitas</h2>
+            <span>{allActivities.length} aksi</span>
           </div>
-        </div>
-
+          {targetUser.historyLogs.length === 0 ? (
+            <p className="report-empty">Belum ada aktivitas pada periode ini.</p>
+          ) : (
+            <ul className="report-activity">
+              {targetUser.historyLogs.map((h) => (
+                <li key={h.id}>
+                  <span className="report-activity-action">{h.action}</span>
+                  {h.ticket && (
+                    <Link href={`/tickets/${h.ticket.id}`}>{h.ticket.trackingId}</Link>
+                  )}
+                  <time>
+                    {new Date(h.createdAt).toLocaleDateString("id-ID")}
+                    {h.awardedScore ? ` · +${h.awardedScore}` : ""}
+                  </time>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </main>
   );

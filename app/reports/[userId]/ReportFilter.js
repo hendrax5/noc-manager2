@@ -2,6 +2,25 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+function formatDate(date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function weekStart() {
+  const today = new Date();
+  const day = today.getDay();
+  const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+  return formatDate(new Date(today.getFullYear(), today.getMonth(), diff));
+}
+
+function monthStart() {
+  const d = new Date();
+  return formatDate(new Date(d.getFullYear(), d.getMonth(), 1));
+}
+
 export default function ReportFilter({ userId }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -11,48 +30,82 @@ export default function ReportFilter({ userId }) {
     end: searchParams.get("end") || ""
   });
 
+  const applyDates = (start, end) => {
+    const params = new URLSearchParams();
+    if (start) params.set("start", start);
+    if (end) params.set("end", end);
+    const q = params.toString();
+    router.push(`/reports/${userId}${q ? `?${q}` : ""}`);
+  };
+
   const handleApply = (e) => {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (dateRange.start) params.set("start", dateRange.start);
-    if (dateRange.end) params.set("end", dateRange.end);
-    router.push(`/reports/${userId}?${params.toString()}`);
+    applyDates(dateRange.start, dateRange.end);
   };
 
-  const handlePrint = () => {
-    window.print();
+  const setPreset = (type) => {
+    const today = new Date();
+    let start = "";
+    let end = formatDate(today);
+
+    if (type === "week") {
+      const day = today.getDay();
+      const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+      start = formatDate(new Date(today.getFullYear(), today.getMonth(), diff));
+    } else if (type === "month") {
+      start = monthStart();
+    } else if (type === "all") {
+      start = "";
+      end = "";
+    }
+
+    setDateRange({ start, end });
+    applyDates(start, end);
   };
+
+  const currentStart = searchParams.get("start") || "";
+  const isMonth = currentStart === monthStart();
+  const isWeek = currentStart === weekStart();
+  const isAll = !currentStart;
 
   return (
-    <div className="card no-print" style={{ marginBottom: "2rem", display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem" }}>
-      <form onSubmit={handleApply} style={{ display: "flex", gap: "1rem", alignItems: "flex-end", flexWrap: "wrap" }}>
-        <div>
-          <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "bold", marginBottom: "0.25rem", color: "#64748b" }}>Date From</label>
-          <input 
-            type="date" 
-            value={dateRange.start} 
-            onChange={e => setDateRange({...dateRange, start: e.target.value})} 
-            style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #cbd5e1" }}
-          />
-        </div>
-        <div>
-          <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "bold", marginBottom: "0.25rem", color: "#64748b" }}>Date To</label>
-          <input 
-            type="date" 
-            value={dateRange.end} 
-            onChange={e => setDateRange({...dateRange, end: e.target.value})} 
-            style={{ padding: "0.5rem", borderRadius: "6px", border: "1px solid #cbd5e1" }}
-          />
-        </div>
-        <button type="submit" className="primary-btn" style={{ padding: "0.5rem 1rem", width: "auto" }}>Apply Filter</button>
-      </form>
+    <div className="card no-print report-filter">
+      <div className="report-filter-presets">
+        <button type="button" className={isMonth ? "is-active" : ""} onClick={() => setPreset("month")}>
+          Bulan ini
+        </button>
+        <button type="button" className={isWeek ? "is-active" : ""} onClick={() => setPreset("week")}>
+          Minggu ini
+        </button>
+        <button type="button" className={isAll ? "is-active" : ""} onClick={() => setPreset("all")}>
+          Semua waktu
+        </button>
+      </div>
 
-      <button onClick={handlePrint} className="primary-btn" style={{ padding: "0.5rem 1.5rem", width: "auto", background: "#10b981", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-        </svg>
-        Export PDF
-      </button>
+      <form onSubmit={handleApply} className="report-filter-form">
+        <label>
+          Dari
+          <input
+            type="date"
+            value={dateRange.start}
+            onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+          />
+        </label>
+        <label>
+          Sampai
+          <input
+            type="date"
+            value={dateRange.end}
+            onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+          />
+        </label>
+        <button type="submit" className="primary-btn" style={{ width: "auto", padding: "0.5rem 1rem", minHeight: 40 }}>
+          Terapkan
+        </button>
+        <button type="button" className="logout-btn" style={{ margin: 0, padding: "0.5rem 1rem", height: 40 }} onClick={() => window.print()}>
+          Cetak
+        </button>
+      </form>
     </div>
   );
 }
