@@ -85,6 +85,45 @@ function serviceSid(service) {
   return hit && cd[hit] ? String(cd[hit]) : '';
 }
 
+function serviceReportLogoUrl(service) {
+  const cd = service.customData && typeof service.customData === 'object' ? service.customData : {};
+  return cd.slaReportLogoUrl || cd.reportLogoUrl || '';
+}
+
+function monthKeyFromDate(date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
+}
+
+function monthLabelLong(yrMonth) {
+  const [year, month] = yrMonth.split('-').map(Number);
+  return new Date(year, month - 1, 1).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+}
+
+function monthLabelUpper(yrMonth) {
+  return monthLabelLong(yrMonth).toUpperCase();
+}
+
+function listMonthsInRange(startYmd, endYmd) {
+  const months = [];
+  const start = dayStart(startYmd);
+  const end = dayStart(endYmd);
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  const last = new Date(end.getFullYear(), end.getMonth(), 1);
+  while (cursor <= last) {
+    months.push(monthKeyFromDate(cursor));
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return months;
+}
+
+function companyFooterLines() {
+  return [
+    'Head Office: Graha PGD - Jl. Taman Marga Satwa No. 3, Pasar Minggu Jakarta Selatan 12550',
+    'Network Operation Center: JL. Kelapa Dua Wetan No. 30 Jakarta Timur 13730 - Indonesia',
+    '021-3000-1555  support@ionnetwork.co.id',
+  ];
+}
+
 const SLA_TARGET_PCT = 99.9;
 
 export default function ServiceDetailClient({ service, session }) {
@@ -104,6 +143,7 @@ export default function ServiceDetailClient({ service, session }) {
 
   const [mounted, setMounted] = useState(false);
   const [hints, setHints] = useState({ locations: [], devices: [], ports: [] });
+  const [logoUploading, setLogoUploading] = useState(false);
   
   useEffect(() => { 
     setMounted(true); 
@@ -157,6 +197,22 @@ export default function ServiceDetailClient({ service, session }) {
   const slaMet = slaPercentage >= SLA_TARGET_PCT;
   const allowedDowntimeMins = Math.floor(periodMinutes * (1 - SLA_TARGET_PCT / 100));
   const sid = serviceSid(service);
+  const reportLogoUrl = serviceReportLogoUrl(service);
+  const reportMonths = listMonthsInRange(rangeStartYmd, rangeEndYmd);
+  const outageTicketsByMonth = reportMonths.map((yrMonth) => {
+    const { start: mStart, end: mEnd } = monthBounds(yrMonth);
+    const monthOutages = outageTickets
+      .filter((t) => downtimeMinutesInRange(t.customData, mStart, mEnd) > 0)
+      .map((t) => {
+        const monthDowntimeMins = downtimeMinutesInRange(t.customData, mStart, mEnd);
+        const { daysInMonth } = monthBounds(yrMonth);
+        const monthMinutes = daysInMonth * 24 * 60;
+        const uptimePct = monthMinutes > 0 ? ((monthMinutes - monthDowntimeMins) / monthMinutes) * 100 : 100;
+        const tdownPct = monthMinutes > 0 ? (monthDowntimeMins / monthMinutes) * 100 : 0;
+        return { ticket: t, monthDowntimeMins, uptimePct, tdownPct };
+      });
+    return { yrMonth, monthOutages };
+  });
 
   // Calculate 12-month trend
   const yearlyTrend = [];
@@ -186,6 +242,38 @@ export default function ServiceDetailClient({ service, session }) {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleLogoUpload = async (file) => {
+    if (!file) return;
+    setLogoUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: fd });
+      const uploadJson = await uploadRes.json().catch(() => ({}));
+      if (!uploadRes.ok) throw new Error(uploadJson.error || 'Upload logo gagal');
+
+      const currentCustomData =
+        service.customData && typeof service.customData === 'object' ? service.customData : {};
+      const patchRes = await fetch(`/api/assets/services/${service.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customData: {
+            ...currentCustomData,
+            slaReportLogoUrl: uploadJson.url,
+          },
+        }),
+      });
+      const patchJson = await patchRes.json().catch(() => ({}));
+      if (!patchRes.ok) throw new Error(patchJson.error || 'Simpan logo gagal');
+      router.refresh();
+    } catch (err) {
+      alert(err.message || 'Upload logo gagal');
+    } finally {
+      setLogoUploading(false);
+    }
   };
 
   const templateFields = service.template?.fields ? (typeof service.template.fields === 'string' ? JSON.parse(service.template.fields) : service.template.fields) : [];
@@ -369,6 +457,27 @@ export default function ServiceDetailClient({ service, session }) {
               <p style={{ margin: '0 0 1rem', fontSize: '0.85rem', color: 'var(--text-color)' }}>
                 Periode {periodLabel(rangeStartYmd, rangeEndYmd)}
               </p>
+
+              {isAdmin && (
+                <div style={{ margin: '0 0 1rem', padding: '0.85rem 1rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--hover-bg)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--heading-color)' }}>Logo PDF klien</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-color)', marginTop: '0.2rem' }}>
+                      Upload logo agar cover laporan sesuai dokumen resmi.
+                    </div>
+                  </div>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: '#18181b', color: 'white', borderRadius: '6px', padding: '0.5rem 0.8rem', cursor: logoUploading ? 'wait' : 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                      style={{ display: 'none' }}
+                      disabled={logoUploading}
+                      onChange={(e) => handleLogoUpload(e.target.files?.[0])}
+                    />
+                    {logoUploading ? 'Uploading...' : (reportLogoUrl ? 'Ganti logo' : 'Upload logo')}
+                  </label>
+                </div>
+              )}
 
               {/* KPI Cards Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
@@ -629,128 +738,139 @@ export default function ServiceDetailClient({ service, session }) {
       </datalist>
       {/* PRINT REPORT - HIDDEN FROM UI */}
       <div id="client-formal-report" style={{ display: 'none' }}>
-        <div style={{ borderBottom: '2px solid #111', paddingBottom: '0.75rem', marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#555' }}>Network Operations Center</div>
-          <h1 style={{ margin: '0.25rem 0 0', color: '#111', fontSize: '1.5rem' }}>Laporan Service Level Agreement</h1>
+        <div className="sla-print-page">
+          {reportLogoUrl ? (
+            <img src={reportLogoUrl} alt="Company logo" className="sla-print-company-logo" />
+          ) : (
+            <div className="sla-print-company-logo-slot">LOGO PERUSAHAAN</div>
+          )}
+          <div className="sla-print-cover-title">LAPORAN</div>
+          <div className="sla-print-cover-title">PENGGUNAAN</div>
+          <div className="sla-print-cover-title">BANDWIDTH</div>
+          <div className="sla-print-cover-customer">{service.customer?.name || service.name}</div>
+          <div className="sla-print-cover-period">Periode :</div>
+          <div className="sla-print-cover-range">{monthLabelUpper(reportMonths[0])}{reportMonths.length > 1 ? ` – ${monthLabelUpper(reportMonths[reportMonths.length - 1])}` : ''}</div>
+          <div className="sla-print-footer">
+            {companyFooterLines().map((line) => (
+              <div key={line}>{line}</div>
+            ))}
+          </div>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
-          <tbody>
-            <tr>
-              <td style={{ padding: '0.35rem 0', fontWeight: 'bold', width: '32%' }}>Pelanggan</td>
-              <td style={{ padding: '0.35rem 0' }}>: {service.customer?.name || '-'}</td>
-            </tr>
-            <tr>
-              <td style={{ padding: '0.35rem 0', fontWeight: 'bold' }}>Layanan / sirkit</td>
-              <td style={{ padding: '0.35rem 0' }}>: {service.name}</td>
-            </tr>
-            {sid ? (
-              <tr>
-                <td style={{ padding: '0.35rem 0', fontWeight: 'bold' }}>SID</td>
-                <td style={{ padding: '0.35rem 0' }}>: {sid}</td>
-              </tr>
-            ) : null}
-            <tr>
-              <td style={{ padding: '0.35rem 0', fontWeight: 'bold' }}>Tipe</td>
-              <td style={{ padding: '0.35rem 0' }}>: {service.template?.name || '-'}</td>
-            </tr>
-            <tr>
-              <td style={{ padding: '0.35rem 0', fontWeight: 'bold' }}>Periode laporan</td>
-              <td style={{ padding: '0.35rem 0' }}>: {periodLabel(rangeStartYmd, rangeEndYmd)}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="sla-print-page">
+          <div className="sla-print-footer-spacer" />
+          <h2 className="sla-print-section-title">PENDAHULUAN</h2>
+          <p className="sla-print-paragraph">
+            ION Network memberikan laporan ketersediaan jaringan untuk periode {monthLabelUpper(reportMonths[0])}
+            {reportMonths.length > 1 ? ` – ${monthLabelUpper(reportMonths[reportMonths.length - 1])}` : ''}. Laporan ini berisi
+            durasi gangguan, penyebab gangguan, dan tindakan perbaikan yang dilakukan pada layanan {service.name}.
+          </p>
+          <p className="sla-print-paragraph">
+            Laporan dibuat sebagai data teknis untuk menilai kesesuaian layanan terhadap SLA (Service Level Agreement).
+            Jika terdapat gangguan yang menyebabkan SLA tidak terpenuhi, laporan ini dapat menjadi dasar evaluasi teknis
+            dan tindak lanjut layanan.
+          </p>
+          <p className="sla-print-paragraph">
+            ION Network selalu berupaya menjaga kualitas layanan melalui perawatan berkala, prioritas perbaikan pada jalur backbone
+            dan local loop, serta penyampaian informasi gangguan kepada pelanggan. Detail laporan kami sampaikan sebagai berikut.
+          </p>
+          <div className="sla-print-footer">
+            {companyFooterLines().map((line) => (
+              <div key={line}>{line}</div>
+            ))}
+          </div>
+        </div>
 
-        <h2 style={{ borderBottom: '1px solid #ccc', paddingBottom: '0.4rem', marginBottom: '0.75rem', fontSize: '1.05rem' }}>Ringkasan kinerja SLA</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-          <thead>
-            <tr>
-              <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'left', background: '#f4f4f5' }}>Metrik</th>
-              <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right', background: '#f4f4f5' }}>Nilai</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Target uptime</td>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{SLA_TARGET_PCT}%</td>
-            </tr>
-            <tr>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Uptime aktual</td>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right', fontWeight: 'bold', color: slaMet ? '#047857' : '#b91c1c' }}>{slaPercentage.toFixed(3)}%</td>
-            </tr>
-            <tr>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Status</td>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{slaMet ? 'Memenuhi SLA' : 'Tidak memenuhi SLA'}</td>
-            </tr>
-            <tr>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Batas downtime (sesuai target)</td>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{formatDurationMins(allowedDowntimeMins)}</td>
-            </tr>
-            <tr>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Total downtime</td>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{formatDurationMins(totalDowntimeMins)}</td>
-            </tr>
-            <tr>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Jumlah gangguan (outage)</td>
-              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{outageTickets.length}</td>
-            </tr>
-          </tbody>
-        </table>
+        {outageTicketsByMonth.map(({ yrMonth, monthOutages }) => (
+          <div key={yrMonth} className="sla-print-page">
+            <div className="sla-print-footer-spacer" />
+            <h2 className="sla-print-section-title">Detail Outage Information</h2>
+            <div className="sla-print-meta">Customer {service.customer?.name || '-'}</div>
+            <div className="sla-print-meta">Periode {monthLabelUpper(yrMonth)}</div>
+            <div className="sla-print-meta">Service {service.template?.name || service.name}</div>
+            <div className="sla-print-meta" style={{ marginBottom: '0.75rem' }}>Problem side ION Network</div>
 
-        <h2 style={{ borderBottom: '1px solid #ccc', paddingBottom: '0.4rem', marginBottom: '0.75rem', fontSize: '1.05rem' }}>Kronologi gangguan</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', marginBottom: '1.5rem' }}>
-          <thead>
-            <tr style={{ background: '#f4f4f5' }}>
-              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'left' }}>No</th>
-              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'left' }}>Tiket</th>
-              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'left' }}>Mulai</th>
-              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'left' }}>Selesai</th>
-              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'right' }}>Durasi</th>
-              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'left' }}>Keterangan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {outageTickets.length > 0 ? (
-              outageTickets.map((t, i) => {
-                const startDt = t.customData.startDowntime ? new Date(t.customData.startDowntime) : null;
-                const endDt = t.customData.endDowntime ? new Date(t.customData.endDowntime) : null;
-                const dtMins = downtimeMinutesInRange(t.customData, rangeStart, rangeEnd);
-                const fmt = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
-                return (
-                  <tr key={t.id}>
-                    <td style={{ border: '1px solid #ccc', padding: '0.4rem' }}>{i + 1}</td>
-                    <td style={{ border: '1px solid #ccc', padding: '0.4rem' }}>{t.trackingId || t.id}</td>
-                    <td style={{ border: '1px solid #ccc', padding: '0.4rem', whiteSpace: 'nowrap' }}>{startDt ? startDt.toLocaleString('id-ID', fmt) : '-'}</td>
-                    <td style={{ border: '1px solid #ccc', padding: '0.4rem', whiteSpace: 'nowrap' }}>{endDt ? endDt.toLocaleString('id-ID', fmt) : 'Berjalan'}</td>
-                    <td style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'right', whiteSpace: 'nowrap' }}>{formatDurationMins(dtMins)}</td>
-                    <td style={{ border: '1px solid #ccc', padding: '0.4rem' }}>{t.title}</td>
+            <table className="sla-print-table">
+              <thead>
+                <tr>
+                  <th>NO</th>
+                  <th>Customer</th>
+                  <th>Incident Date</th>
+                  <th>Incident Timelines (GMT +7)</th>
+                  <th>Problem Cause</th>
+                  <th>Corrective Actions</th>
+                  <th>SLA Avail (%)</th>
+                  <th>Tdown (%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthOutages.length > 0 ? monthOutages.map(({ ticket, monthDowntimeMins, uptimePct, tdownPct }, i) => {
+                  const startDt = ticket.customData?.startDowntime ? new Date(ticket.customData.startDowntime) : null;
+                  const endDt = ticket.customData?.endDowntime ? new Date(ticket.customData.endDowntime) : null;
+                  const notes = String(ticket.description || '').split(/\r?\n+/).filter(Boolean);
+                  const cause = notes[0] || ticket.title || '-';
+                  const action = notes.slice(1).join(' ') || 'Dilakukan penanganan oleh tim NOC';
+                  return (
+                    <tr key={ticket.id}>
+                      <td>{i + 1}</td>
+                      <td>{service.customer?.name || '-'}</td>
+                      <td>{startDt ? startDt.toLocaleDateString('id-ID') : '-'}</td>
+                      <td>
+                        {startDt ? startDt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                        {' - '}
+                        {endDt ? endDt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Berjalan'}
+                        <div>{formatDurationMins(monthDowntimeMins)}</div>
+                      </td>
+                      <td>{cause}</td>
+                      <td>{action}</td>
+                      <td>{uptimePct.toFixed(1)}%</td>
+                      <td>{tdownPct.toFixed(1)}%</td>
+                    </tr>
+                  );
+                }) : (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: 'center' }}>Tidak ada outage pada periode ini.</td>
                   </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan="6" style={{ border: '1px solid #ccc', padding: '0.75rem', textAlign: 'center' }}>Tidak ada gangguan pada periode ini.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                )}
+              </tbody>
+            </table>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '3rem' }}>
-          <tbody>
-            <tr>
-              <td style={{ width: '50%', verticalAlign: 'top' }}>
-                <p style={{ marginBottom: '3.5rem' }}>Disiapkan oleh,</p>
-                <p style={{ fontWeight: 'bold', textDecoration: 'underline', margin: 0 }}>{session?.user?.name || 'NOC Team'}</p>
-                <p style={{ margin: '0.2rem 0 0' }}>Network Operations Center</p>
-              </td>
-              <td style={{ width: '50%', verticalAlign: 'top', textAlign: 'right' }}>
-                <p style={{ marginBottom: '3.5rem' }}>Diketahui oleh,</p>
-                <p style={{ fontWeight: 'bold', textDecoration: 'underline', margin: 0 }}>Perwakilan pelanggan</p>
-                <p style={{ margin: '0.2rem 0 0' }}>{service.customer?.name}</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+            <div className="sla-print-footer">
+              {companyFooterLines().map((line) => (
+                <div key={line}>{line}</div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <div className="sla-print-page">
+          <div className="sla-print-footer-spacer" />
+          <p className="sla-print-paragraph">
+            Demikian laporan performasi jaringan kami sampaikan sesuai dengan data yang terdapat pada sistem monitoring ION Network.
+            Atas perhatiannya kami mengucapkan terima kasih.
+          </p>
+          <table className="sla-print-sign-table">
+            <tbody>
+              <tr>
+                <td>{service.customer?.name || 'Pelanggan'}</td>
+                <td>PT. PARSAORAN GLOBAL DATATRANS (ION NETWORK)</td>
+              </tr>
+              <tr>
+                <td className="sla-print-sign-space">Nama :</td>
+                <td className="sla-print-sign-space">Nama : Hendra Utomo</td>
+              </tr>
+              <tr>
+                <td>NIP :</td>
+                <td>Jabatan : NOC Manager</td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="sla-print-footer">
+            {companyFooterLines().map((line) => (
+              <div key={line}>{line}</div>
+            ))}
+          </div>
+        </div>
       </div>
 
       <style dangerouslySetInnerHTML={{__html:`
@@ -767,6 +887,111 @@ export default function ServiceDetailClient({ service, session }) {
             left: 0;
             top: 0;
             width: 100%;
+            color: #111;
+            font-size: 12px;
+            line-height: 1.4;
+          }
+          .sla-print-page {
+            position: relative;
+            min-height: 100vh;
+            padding: 24px 28px 88px;
+            page-break-after: always;
+            break-after: page;
+          }
+          .sla-print-page:last-child {
+            page-break-after: auto;
+            break-after: auto;
+          }
+          .sla-print-company-logo-slot {
+            width: 180px;
+            height: 58px;
+            border: 1px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 42px;
+          }
+          .sla-print-company-logo {
+            width: 180px;
+            max-height: 64px;
+            object-fit: contain;
+            margin-bottom: 42px;
+          }
+          .sla-print-cover-title {
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            line-height: 1.1;
+          }
+          .sla-print-cover-customer {
+            margin-top: 18px;
+            font-size: 24px;
+            font-weight: 700;
+          }
+          .sla-print-cover-period {
+            margin-top: 48px;
+            font-size: 16px;
+          }
+          .sla-print-cover-range {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 4px;
+          }
+          .sla-print-section-title {
+            margin: 0 0 12px;
+            font-size: 20px;
+            font-weight: 700;
+          }
+          .sla-print-paragraph {
+            margin: 0 0 12px;
+            text-align: justify;
+          }
+          .sla-print-meta {
+            margin-bottom: 2px;
+            font-size: 13px;
+          }
+          .sla-print-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+          }
+          .sla-print-table th,
+          .sla-print-table td {
+            border: 1px solid #a1a1aa;
+            padding: 6px;
+            vertical-align: top;
+          }
+          .sla-print-table th {
+            background: #f4f4f5;
+            font-weight: 700;
+            text-align: left;
+          }
+          .sla-print-sign-table {
+            width: 100%;
+            margin-top: 40px;
+            border-collapse: collapse;
+          }
+          .sla-print-sign-table td {
+            width: 50%;
+            vertical-align: top;
+            padding-right: 20px;
+          }
+          .sla-print-sign-space {
+            padding-top: 72px;
+          }
+          .sla-print-footer-spacer {
+            height: 10px;
+          }
+          .sla-print-footer {
+            position: absolute;
+            left: 28px;
+            right: 28px;
+            bottom: 20px;
+            text-align: center;
+            font-size: 10px;
+            line-height: 1.35;
           }
         }
       `}} />
