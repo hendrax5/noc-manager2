@@ -6,6 +6,24 @@ import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { downtimeMinutesInRange, parseDowntimeDate } from '@/lib/tickets/downtime';
 
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function toYmd(d) {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function dayStart(ymd) {
+  const [y, m, d] = ymd.split('-').map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0, 0);
+}
+
+function dayEndExclusive(ymd) {
+  const start = dayStart(ymd);
+  return new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+}
+
 function monthBounds(yrMonth) {
   const [year, month] = yrMonth.split('-').map(Number);
   const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
@@ -13,9 +31,19 @@ function monthBounds(yrMonth) {
   return { start, end, daysInMonth: new Date(year, month, 0).getDate() };
 }
 
-/** Ticket overlaps selected month via outage window or createdAt. */
-function ticketOverlapsMonth(t, yrMonth) {
-  const { start, end } = monthBounds(yrMonth);
+function monthLastYmd(yrMonth) {
+  const [year, month] = yrMonth.split('-').map(Number);
+  return toYmd(new Date(year, month, 0));
+}
+
+function periodBounds(startYmd, endYmd) {
+  const start = dayStart(startYmd);
+  const end = dayEndExclusive(endYmd);
+  return { start, end, periodMinutes: Math.max(0, Math.round((end - start) / 60000)) };
+}
+
+/** Ticket overlaps range via outage window or createdAt. `end` is exclusive. */
+function ticketOverlapsRange(t, start, end) {
   const cd = t.customData && typeof t.customData === 'object' ? t.customData : {};
   if (cd.hasDowntime && cd.startDowntime) {
     const s = parseDowntimeDate(cd.startDowntime);
@@ -25,6 +53,39 @@ function ticketOverlapsMonth(t, yrMonth) {
   const created = new Date(t.createdAt);
   return created >= start && created < end;
 }
+
+function ticketOverlapsMonth(t, yrMonth) {
+  const { start, end } = monthBounds(yrMonth);
+  return ticketOverlapsRange(t, start, end);
+}
+
+function formatIdDate(d) {
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function periodLabel(startYmd, endYmd) {
+  const a = dayStart(startYmd);
+  const b = dayStart(endYmd);
+  if (a.getTime() === b.getTime()) return formatIdDate(a);
+  return `${formatIdDate(a)} – ${formatIdDate(b)}`;
+}
+
+function formatDurationMins(mins) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h <= 0) return `${m} menit`;
+  return `${h} jam ${m} menit`;
+}
+
+function serviceSid(service) {
+  const cd = service.customData && typeof service.customData === 'object' ? service.customData : {};
+  const hit = Object.keys(cd).find((k) =>
+    /^(sid|cid|id layanan|service id|circuit(\s*id)?)$/i.test(k.trim())
+  );
+  return hit && cd[hit] ? String(cd[hit]) : '';
+}
+
+const SLA_TARGET_PCT = 99.9;
 
 export default function ServiceDetailClient({ service, session }) {
   const router = useRouter();
@@ -54,26 +115,48 @@ export default function ServiceDetailClient({ service, session }) {
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}`;
   });
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-01`;
+  });
+  const [endDate, setEndDate] = useState(() => monthLastYmd(
+    `${new Date().getFullYear()}-${pad2(new Date().getMonth() + 1)}`
+  ));
 
-  const monthlyTickets = (service.tickets || []).filter(t => ticketOverlapsMonth(t, selectedMonth));
-
-  const { start: monthStart, end: monthEnd } = monthBounds(selectedMonth);
-  const totalDowntimeMins = monthlyTickets.reduce((acc, t) => {
-    return acc + downtimeMinutesInRange(t.customData, monthStart, monthEnd);
-  }, 0);
-
-  const getMinutesInSelectedMonth = () => {
-    const { daysInMonth } = monthBounds(selectedMonth);
-    return daysInMonth * 24 * 60;
+  const applyMonth = (yrMonth) => {
+    setSelectedMonth(yrMonth);
+    setStartDate(`${yrMonth}-01`);
+    setEndDate(monthLastYmd(yrMonth));
   };
 
-  const totalMinsInMonth = getMinutesInSelectedMonth();
-  
-  const slaPercentage = totalMinsInMonth > 0 
-    ? Math.max(0, ((totalMinsInMonth - totalDowntimeMins) / totalMinsInMonth) * 100) 
+  const ymdOk = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
+  const validStart = ymdOk(startDate) ? startDate : `${selectedMonth}-01`;
+  const validEnd = ymdOk(endDate) ? endDate : monthLastYmd(selectedMonth);
+  const rangeStartYmd = validStart <= validEnd ? validStart : validEnd;
+  const rangeEndYmd = validStart <= validEnd ? validEnd : validStart;
+  const { start: rangeStart, end: rangeEnd, periodMinutes } = periodBounds(rangeStartYmd, rangeEndYmd);
+
+  const periodTickets = (service.tickets || []).filter((t) => ticketOverlapsRange(t, rangeStart, rangeEnd));
+  const outageTickets = periodTickets
+    .filter((t) => t.customData?.hasDowntime && t.customData?.startDowntime)
+    .sort((a, b) => {
+      const as = parseDowntimeDate(a.customData.startDowntime)?.getTime() || 0;
+      const bs = parseDowntimeDate(b.customData.startDowntime)?.getTime() || 0;
+      return as - bs;
+    });
+
+  const totalDowntimeMins = outageTickets.reduce((acc, t) => {
+    return acc + downtimeMinutesInRange(t.customData, rangeStart, rangeEnd);
+  }, 0);
+
+  const slaPercentage = periodMinutes > 0
+    ? Math.max(0, ((periodMinutes - totalDowntimeMins) / periodMinutes) * 100)
     : 100;
+  const slaMet = slaPercentage >= SLA_TARGET_PCT;
+  const allowedDowntimeMins = Math.floor(periodMinutes * (1 - SLA_TARGET_PCT / 100));
+  const sid = serviceSid(service);
 
   // Calculate 12-month trend
   const yearlyTrend = [];
@@ -238,60 +321,84 @@ export default function ServiceDetailClient({ service, session }) {
 
           {activeTab === 'sla' && (
             <div className="bg-white-card scale-in" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', flexWrap: 'wrap' }}>
                 <h3 style={{ margin: 0, color: 'var(--heading-color)' }}>Analisis SLA & Downtime</h3>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <select 
-                    value={selectedMonth} 
-                    onChange={e => setSelectedMonth(e.target.value)}
-                    style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer' }}
-                  >
-                    {(() => {
-                      const options = [];
-                      const now = new Date();
-                      for (let i = 0; i < 12; i++) {
-                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                        const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                        const label = d.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-                        options.push(<option key={val} value={val}>{label}</option>);
-                      }
-                      return options;
-                    })()}
-                  </select>
-                  <button onClick={handlePrint} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🖨️ Export PDF Klien</button>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--text-color)', textTransform: 'uppercase' }}>
+                    Preset bulan
+                    <select
+                      value={selectedMonth}
+                      onChange={(e) => applyMonth(e.target.value)}
+                      style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer' }}
+                    >
+                      {(() => {
+                        const options = [];
+                        const now = new Date();
+                        for (let i = 0; i < 12; i++) {
+                          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                          const val = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+                          const label = d.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+                          options.push(<option key={val} value={val}>{label}</option>);
+                        }
+                        return options;
+                      })()}
+                    </select>
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--text-color)', textTransform: 'uppercase' }}>
+                    Dari
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      style={{ padding: '0.4rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-color)', fontSize: '0.85rem' }}
+                    />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--text-color)', textTransform: 'uppercase' }}>
+                    Sampai
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      style={{ padding: '0.4rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-color)', fontSize: '0.85rem' }}
+                    />
+                  </label>
+                  <button onClick={handlePrint} style={{ background: '#18181b', color: 'white', border: 'none', padding: '0.45rem 0.85rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>Export PDF klien</button>
                 </div>
               </div>
+
+              <p style={{ margin: '0 0 1rem', fontSize: '0.85rem', color: 'var(--text-color)' }}>
+                Periode {periodLabel(rangeStartYmd, rangeEndYmd)}
+              </p>
 
               {/* KPI Cards Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                 <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Tiket Gangguan</div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--heading-color)', marginTop: '0.25rem' }}>{monthlyTickets.length}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Tiket gangguan</div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--heading-color)', marginTop: '0.25rem' }}>{periodTickets.length}</div>
                 </div>
 
                 <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Total Downtime</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Total downtime</div>
                   <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--heading-color)', marginTop: '0.4rem' }}>
-                    {(() => {
-                      const hrs = Math.floor(totalDowntimeMins / 60);
-                      const mins = totalDowntimeMins % 60;
-                      return hrs > 0 ? `${hrs}j ${mins}m` : `${mins}m`;
-                    })()}
+                    {formatDurationMins(totalDowntimeMins)}
                   </div>
                 </div>
 
-                <div style={{ 
-                  background: slaPercentage >= 99 ? 'rgba(16, 185, 129, 0.1)' : (slaPercentage >= 97 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)'), 
-                  border: `1px solid ${slaPercentage >= 99 ? '#10b981' : (slaPercentage >= 97 ? '#f59e0b' : '#ef4444')}`,
-                  padding: '1rem', borderRadius: '8px', textAlign: 'center' 
+                <div style={{
+                  background: slaMet ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  border: `1px solid ${slaMet ? '#10b981' : '#ef4444'}`,
+                  padding: '1rem', borderRadius: '8px', textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '0.75rem', color: slaPercentage >= 99 ? '#065f46' : (slaPercentage >= 97 ? '#92400e' : '#991b1b'), fontWeight: 'bold', textTransform: 'uppercase' }}>SLA Uptime</div>
-                  <div style={{ 
-                    fontSize: '1.8rem', fontWeight: 'bold', 
-                    color: slaPercentage >= 99 ? '#10b981' : (slaPercentage >= 97 ? '#f59e0b' : '#ef4444'),
-                    marginTop: '0.3rem' 
+                  <div style={{ fontSize: '0.75rem', color: slaMet ? '#065f46' : '#991b1b', fontWeight: 'bold', textTransform: 'uppercase' }}>SLA uptime</div>
+                  <div style={{
+                    fontSize: '1.8rem', fontWeight: 'bold',
+                    color: slaMet ? '#10b981' : '#ef4444',
+                    marginTop: '0.3rem'
                   }}>
                     {slaPercentage.toFixed(3)}%
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-color)', marginTop: '0.25rem' }}>
+                    Target {SLA_TARGET_PCT}% · {slaMet ? 'Memenuhi' : 'Tidak memenuhi'}
                   </div>
                 </div>
               </div>
@@ -311,29 +418,24 @@ export default function ServiceDetailClient({ service, session }) {
               </div>
 
               {/* List of Outages in selectedMonth */}
-              {monthlyTickets.some(t => t.customData?.hasDowntime) ? (
+              {outageTickets.length > 0 ? (
                 <div>
-                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase' }}>Detail Outage Tiket</h4>
+                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase' }}>Kronologi outage</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
-                    {monthlyTickets.filter(t => t.customData?.hasDowntime).map(t => {
+                    {outageTickets.map(t => {
                       const dStart = t.customData.startDowntime ? new Date(t.customData.startDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-                      const dEnd = t.customData.endDowntime ? new Date(t.customData.endDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Belum Selesai';
-                      const dtMins = downtimeMinutesInRange(t.customData, monthStart, monthEnd);
-                      const hrs = Math.floor(dtMins / 60);
-                      const mins = dtMins % 60;
-                      const durText = hrs > 0 ? `${hrs}j ${mins}m` : `${mins}m`;
-                      
+                      const dEnd = t.customData.endDowntime ? new Date(t.customData.endDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Belum selesai';
+                      const dtMins = downtimeMinutesInRange(t.customData, rangeStart, rangeEnd);
                       return (
                         <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--hover-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
                           <div style={{ flex: 1, minWidth: 0, marginRight: '0.5rem' }}>
                             <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', color: 'var(--primary-color)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {t.trackingId ? `#${t.trackingId.split('-')[0]}` : `#${t.id}`} - {t.title}
+                              {t.trackingId ? `#${t.trackingId}` : `#${t.id}`} — {t.title}
                             </Link>
                             <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{dStart} s/d {dEnd}</span>
                           </div>
-                          <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #fca5a5', padding: '0.3rem 0.6rem', borderRadius: '4px', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                            <span>{durText}</span>
-                            <span style={{ fontSize: '0.65rem', textTransform: 'uppercase' }}>Breach</span>
+                          <span style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#b91c1c', border: '1px solid #fecaca', padding: '0.3rem 0.6rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                            {formatDurationMins(dtMins)}
                           </span>
                         </div>
                       );
@@ -341,8 +443,8 @@ export default function ServiceDetailClient({ service, session }) {
                   </div>
                 </div>
               ) : (
-                <div style={{ fontSize: '0.9rem', color: '#64748b', fontStyle: 'italic', textAlign: 'center', padding: '2rem', background: 'var(--hover-bg)', borderRadius: '8px' }}>
-                  Tidak ada riwayat downtime outage pada bulan ini. Uptime sempurna! 🎉
+                <div style={{ fontSize: '0.9rem', color: '#64748b', textAlign: 'center', padding: '2rem', background: 'var(--hover-bg)', borderRadius: '8px' }}>
+                  Tidak ada riwayat downtime pada periode ini.
                 </div>
               )}
             </div>
@@ -527,99 +629,128 @@ export default function ServiceDetailClient({ service, session }) {
       </datalist>
       {/* PRINT REPORT - HIDDEN FROM UI */}
       <div id="client-formal-report" style={{ display: 'none' }}>
-        <div style={{ borderBottom: '2px solid #333', paddingBottom: '1rem', marginBottom: '2rem' }}>
-          <h1 style={{ margin: 0, color: '#111' }}>Service Level Agreement (SLA) Report</h1>
-          <p style={{ margin: 0, color: '#555', fontSize: '1.2rem' }}>NOC Operations Management</p>
+        <div style={{ borderBottom: '2px solid #111', paddingBottom: '0.75rem', marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#555' }}>Network Operations Center</div>
+          <h1 style={{ margin: '0.25rem 0 0', color: '#111', fontSize: '1.5rem' }}>Laporan Service Level Agreement</h1>
         </div>
 
-        <div style={{ marginBottom: '2rem' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
-            <tbody>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem', marginBottom: '1.5rem' }}>
+          <tbody>
+            <tr>
+              <td style={{ padding: '0.35rem 0', fontWeight: 'bold', width: '32%' }}>Pelanggan</td>
+              <td style={{ padding: '0.35rem 0' }}>: {service.customer?.name || '-'}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '0.35rem 0', fontWeight: 'bold' }}>Layanan / sirkit</td>
+              <td style={{ padding: '0.35rem 0' }}>: {service.name}</td>
+            </tr>
+            {sid ? (
               <tr>
-                <td style={{ padding: '0.5rem', fontWeight: 'bold', width: '30%' }}>Customer Name</td>
-                <td style={{ padding: '0.5rem' }}>: {service.customer?.name}</td>
+                <td style={{ padding: '0.35rem 0', fontWeight: 'bold' }}>SID</td>
+                <td style={{ padding: '0.35rem 0' }}>: {sid}</td>
               </tr>
-              <tr>
-                <td style={{ padding: '0.5rem', fontWeight: 'bold' }}>Service / Circuit</td>
-                <td style={{ padding: '0.5rem' }}>: {service.name}</td>
-              </tr>
-              <tr>
-                <td style={{ padding: '0.5rem', fontWeight: 'bold' }}>Type</td>
-                <td style={{ padding: '0.5rem' }}>: {service.template?.name}</td>
-              </tr>
-              <tr>
-                <td style={{ padding: '0.5rem', fontWeight: 'bold' }}>Reporting Period</td>
-                <td style={{ padding: '0.5rem' }}>: {new Date(selectedMonth + '-01').toLocaleString('id-ID', { month: 'long', year: 'numeric' })}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+            ) : null}
+            <tr>
+              <td style={{ padding: '0.35rem 0', fontWeight: 'bold' }}>Tipe</td>
+              <td style={{ padding: '0.35rem 0' }}>: {service.template?.name || '-'}</td>
+            </tr>
+            <tr>
+              <td style={{ padding: '0.35rem 0', fontWeight: 'bold' }}>Periode laporan</td>
+              <td style={{ padding: '0.35rem 0' }}>: {periodLabel(rangeStartYmd, rangeEndYmd)}</td>
+            </tr>
+          </tbody>
+        </table>
 
-        <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ borderBottom: '1px solid #ccc', paddingBottom: '0.5rem', marginBottom: '1rem' }}>SLA Performance Summary</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', textAlign: 'center' }}>
-            <div style={{ border: '1px solid #ccc', padding: '1rem' }}>
-              <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#555' }}>Guaranteed Uptime</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>99.9%</div>
-            </div>
-            <div style={{ border: '1px solid #ccc', padding: '1rem' }}>
-              <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#555' }}>Actual Uptime</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: slaPercentage < 99 ? 'red' : 'green' }}>{slaPercentage.toFixed(3)}%</div>
-            </div>
-            <div style={{ border: '1px solid #ccc', padding: '1rem' }}>
-              <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#555' }}>Total Outage Duration</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{Math.floor(totalDowntimeMins / 60)}h {totalDowntimeMins % 60}m</div>
-            </div>
-          </div>
-        </div>
+        <h2 style={{ borderBottom: '1px solid #ccc', paddingBottom: '0.4rem', marginBottom: '0.75rem', fontSize: '1.05rem' }}>Ringkasan kinerja SLA</h2>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+          <thead>
+            <tr>
+              <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'left', background: '#f4f4f5' }}>Metrik</th>
+              <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right', background: '#f4f4f5' }}>Nilai</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Target uptime</td>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{SLA_TARGET_PCT}%</td>
+            </tr>
+            <tr>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Uptime aktual</td>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right', fontWeight: 'bold', color: slaMet ? '#047857' : '#b91c1c' }}>{slaPercentage.toFixed(3)}%</td>
+            </tr>
+            <tr>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Status</td>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{slaMet ? 'Memenuhi SLA' : 'Tidak memenuhi SLA'}</td>
+            </tr>
+            <tr>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Batas downtime (sesuai target)</td>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{formatDurationMins(allowedDowntimeMins)}</td>
+            </tr>
+            <tr>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Total downtime</td>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{formatDurationMins(totalDowntimeMins)}</td>
+            </tr>
+            <tr>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>Jumlah gangguan (outage)</td>
+              <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{outageTickets.length}</td>
+            </tr>
+          </tbody>
+        </table>
 
-        <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ borderBottom: '1px solid #ccc', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Incident Log</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-            <thead>
-              <tr style={{ background: '#eee' }}>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'left' }}>Ticket ID</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'left' }}>Issue Description</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'left' }}>Outage Period</th>
-                <th style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>Downtime</th>
+        <h2 style={{ borderBottom: '1px solid #ccc', paddingBottom: '0.4rem', marginBottom: '0.75rem', fontSize: '1.05rem' }}>Kronologi gangguan</h2>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', marginBottom: '1.5rem' }}>
+          <thead>
+            <tr style={{ background: '#f4f4f5' }}>
+              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'left' }}>No</th>
+              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'left' }}>Tiket</th>
+              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'left' }}>Mulai</th>
+              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'left' }}>Selesai</th>
+              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'right' }}>Durasi</th>
+              <th style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'left' }}>Keterangan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {outageTickets.length > 0 ? (
+              outageTickets.map((t, i) => {
+                const startDt = t.customData.startDowntime ? new Date(t.customData.startDowntime) : null;
+                const endDt = t.customData.endDowntime ? new Date(t.customData.endDowntime) : null;
+                const dtMins = downtimeMinutesInRange(t.customData, rangeStart, rangeEnd);
+                const fmt = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+                return (
+                  <tr key={t.id}>
+                    <td style={{ border: '1px solid #ccc', padding: '0.4rem' }}>{i + 1}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.4rem' }}>{t.trackingId || t.id}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.4rem', whiteSpace: 'nowrap' }}>{startDt ? startDt.toLocaleString('id-ID', fmt) : '-'}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.4rem', whiteSpace: 'nowrap' }}>{endDt ? endDt.toLocaleString('id-ID', fmt) : 'Berjalan'}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.4rem', textAlign: 'right', whiteSpace: 'nowrap' }}>{formatDurationMins(dtMins)}</td>
+                    <td style={{ border: '1px solid #ccc', padding: '0.4rem' }}>{t.title}</td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="6" style={{ border: '1px solid #ccc', padding: '0.75rem', textAlign: 'center' }}>Tidak ada gangguan pada periode ini.</td>
               </tr>
-            </thead>
-            <tbody>
-              {monthlyTickets.filter(t => t.customData?.hasDowntime).length > 0 ? (
-                monthlyTickets.filter(t => t.customData?.hasDowntime).map(t => {
-                  const dStart = t.customData.startDowntime ? new Date(t.customData.startDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-                  const dEnd = t.customData.endDowntime ? new Date(t.customData.endDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Unresolved';
-                  const dtMins = downtimeMinutesInRange(t.customData, monthStart, monthEnd);
-                  return (
-                    <tr key={t.id}>
-                      <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>#{t.trackingId ? t.trackingId.split('-')[0] : t.id}</td>
-                      <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{t.title}</td>
-                      <td style={{ border: '1px solid #ccc', padding: '0.5rem' }}>{dStart} - {dEnd}</td>
-                      <td style={{ border: '1px solid #ccc', padding: '0.5rem', textAlign: 'right' }}>{Math.floor(dtMins / 60)}h {dtMins % 60}m</td>
-                    </tr>
-                  )
-                })
-              ) : (
-                <tr>
-                  <td colSpan="4" style={{ border: '1px solid #ccc', padding: '1rem', textAlign: 'center', fontStyle: 'italic' }}>No outages reported in this period.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        <div style={{ marginTop: '4rem', display: 'flex', justifyContent: 'space-between' }}>
-          <div>
-            <p style={{ marginBottom: '4rem' }}>Prepared By,</p>
-            <p style={{ fontWeight: 'bold', textDecoration: 'underline' }}>{session?.user?.name || "NOC Team"}</p>
-            <p>Network Operations Center</p>
-          </div>
-          <div>
-            <p style={{ marginBottom: '4rem' }}>Acknowledged By,</p>
-            <p style={{ fontWeight: 'bold', textDecoration: 'underline' }}>Customer Representative</p>
-            <p>{service.customer?.name}</p>
-          </div>
-        </div>
+            )}
+          </tbody>
+        </table>
+
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '3rem' }}>
+          <tbody>
+            <tr>
+              <td style={{ width: '50%', verticalAlign: 'top' }}>
+                <p style={{ marginBottom: '3.5rem' }}>Disiapkan oleh,</p>
+                <p style={{ fontWeight: 'bold', textDecoration: 'underline', margin: 0 }}>{session?.user?.name || 'NOC Team'}</p>
+                <p style={{ margin: '0.2rem 0 0' }}>Network Operations Center</p>
+              </td>
+              <td style={{ width: '50%', verticalAlign: 'top', textAlign: 'right' }}>
+                <p style={{ marginBottom: '3.5rem' }}>Diketahui oleh,</p>
+                <p style={{ fontWeight: 'bold', textDecoration: 'underline', margin: 0 }}>Perwakilan pelanggan</p>
+                <p style={{ margin: '0.2rem 0 0' }}>{service.customer?.name}</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <style dangerouslySetInnerHTML={{__html:`
