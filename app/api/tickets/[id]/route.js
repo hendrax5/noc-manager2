@@ -15,7 +15,11 @@ import {
   normalizeDowntimeCustomData,
   closeOpenDowntimeOnResolve,
 } from "@/lib/tickets/downtime";
-import { resolveJobRecipientId } from "@/lib/tickets/points";
+import {
+  resolveJobRecipientId,
+  resolveJobPointsLog,
+  canAwardResolveJobPoints,
+} from "@/lib/tickets/points";
 
 export async function PATCH(req, { params }) {
   try {
@@ -329,7 +333,14 @@ export async function PATCH(req, { params }) {
       const explicitCategoryId = body.jobCategoryId
         ? parseInt(body.jobCategoryId)
         : oldTicket.jobCategoryId;
-      if (explicitCategoryId && oldTicket.status !== "Resolved") {
+      // Award on first resolve with a category, or when category is applied
+      // after the ticket is already Resolved (CS picked category late).
+      const newlyResolved = oldTicket.status !== "Resolved";
+      const categoryAppliedWhileResolved =
+        !newlyResolved &&
+        Boolean(explicitCategoryId) &&
+        oldTicket.jobCategoryId !== explicitCategoryId;
+      if (explicitCategoryId && (newlyResolved || categoryAppliedWhileResolved)) {
         ticketData.jobCategoryId = explicitCategoryId;
         const cat = await prisma.jobCategory.findUnique({
           where: { id: ticketData.jobCategoryId },
@@ -337,13 +348,8 @@ export async function PATCH(req, { params }) {
         if (cat) {
           const fallbackAssigneeId = ticketData.assigneeId || oldTicket.assigneeId;
           const recipientId = await resolveJobRecipientId(prisma, id, fallbackAssigneeId);
-          if (recipientId && !logs.some((l) => l.awardedScore)) {
-            logs.push({
-              action: `Ticket Resolved: [+${cat.score} Pts] for [${cat.name}] → last reply author.`,
-              actorId: recipientId,
-              jobCategoryId: cat.id,
-              awardedScore: cat.score,
-            });
+          if (recipientId && (await canAwardResolveJobPoints(prisma, id))) {
+            logs.push(resolveJobPointsLog({ recipientId, cat }));
           }
         }
       }

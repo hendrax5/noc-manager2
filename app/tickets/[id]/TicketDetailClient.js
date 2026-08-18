@@ -272,6 +272,13 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     if ((key === 'departmentId' || key === 'assigneeId') && !canAssign) return;
     if (key === 'jobCategoryId' && !canChangeJobCategory) return;
     if (!canModifyTicket) return;
+    if (key === "status" && newValue === "Resolved") {
+      const catId = formData.jobCategoryId || ticket.jobCategoryId;
+      if (!catId) {
+        alert("Pilih Job Phase Category dulu sebelum resolve, supaya poin teknisi (orang last reply) ikut masuk.");
+        return;
+      }
+    }
     setFormData(prev => ({ ...prev, [key]: newValue }));
     
     const updatedPayload = {
