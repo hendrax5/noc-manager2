@@ -4,6 +4,7 @@ import Link from "next/link";
 import LiveOpsBoard from "./LiveOpsBoard";
 import DashboardCharts from "./DashboardCharts";
 import MyPointsCard from "@/components/MyPointsCard";
+import { isPersonalCategoryName } from "@/lib/tickets/personalCategories";
 
 export default function DashboardClient({
   session,
@@ -344,7 +345,10 @@ export default function DashboardClient({
           {/* Live Operations Board */}
           {showLiveOps && (
             <section>
-              <LiveOpsBoard jobCategories={categoryMetrics} defaultScope={finalScope} />
+              <LiveOpsBoard
+                jobCategories={categoryMetrics.filter((c) => !isPersonalCategoryName(c.name))}
+                defaultScope={finalScope}
+              />
             </section>
           )}
 

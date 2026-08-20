@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getAppConfig } from "@/lib/config";
 import { expandStatusesForQuery } from "@/lib/tickets/status";
+import {
+  andWhere,
+  excludePersonalFromLiveOps,
+  getPersonalCategoryIds,
+} from "@/lib/tickets/personalCategories";
 
 export async function GET(request) {
   const session = await getServerSession(authOptions);
@@ -87,11 +92,10 @@ export async function GET(request) {
     where.status = { notIn: ['Closed'] };
   }
 
+  const personalCategoryIds = await getPersonalCategoryIds(prisma);
+
   const tickets = await prisma.ticket.findMany({
-    where: {
-      ...where,
-      ...scope
-    },
+    where: andWhere(where, scope, excludePersonalFromLiveOps(personalCategoryIds)),
     include: {
       assignee: { select: { id: true, name: true, email: true } },
       department: { select: { id: true, name: true } },

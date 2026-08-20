@@ -9,6 +9,10 @@ import TicketAdvancedFilter from "./TicketAdvancedFilter";
 import Pagination from "@/components/Pagination";
 import { getAppConfig } from "@/lib/config";
 import { DEFAULT_FILTER_STATUSES, expandStatusesForQuery } from "@/lib/tickets/status";
+import {
+  getPersonalCategoryIds,
+  personalTicketGuard,
+} from "@/lib/tickets/personalCategories";
 
 export default async function TicketsPage({ searchParams }) {
   const session = await getServerSession(authOptions);
@@ -117,6 +121,12 @@ export default async function TicketsPage({ searchParams }) {
   // Job Category Filter (Phase 5)
   if (jobCategoryParam) {
     filters.push({ jobCategory: { name: jobCategoryParam } });
+  }
+
+  const personalCategoryIds = await getPersonalCategoryIds(prisma);
+  const personalGuard = personalTicketGuard({ user, personalCategoryIds });
+  if (Object.keys(personalGuard).length > 0) {
+    filters.push(personalGuard);
   }
 
   const whereClause = filters.length > 0 ? { AND: filters } : {};

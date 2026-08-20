@@ -20,6 +20,7 @@ import {
   resolveJobPointsLog,
   canAwardResolveJobPoints,
 } from "@/lib/tickets/points";
+import { canAccessPersonalTicket } from "@/lib/tickets/personalCategories";
 
 export async function PATCH(req, { params }) {
   try {
@@ -39,8 +40,14 @@ export async function PATCH(req, { params }) {
       );
     }
 
-    const oldTicket = await prisma.ticket.findUnique({ where: { id } });
+    const oldTicket = await prisma.ticket.findUnique({
+      where: { id },
+      include: { jobCategory: { select: { name: true } } },
+    });
     if (!oldTicket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+    if (!canAccessPersonalTicket(session.user, oldTicket)) {
+      return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+    }
 
     const isCS =
       session.user.department?.includes("CS") ||
@@ -433,6 +440,13 @@ export async function DELETE(req, { params }) {
 
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
+    const existing = await prisma.ticket.findUnique({
+      where: { id },
+      include: { jobCategory: { select: { name: true } } },
+    });
+    if (!existing || !canAccessPersonalTicket(session.user, existing)) {
+      return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
+    }
 
     await prisma.ticketWatcher.deleteMany({ where: { ticketId: id } });
     await prisma.ticketNote.deleteMany({ where: { ticketId: id } });

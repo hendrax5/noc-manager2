@@ -369,7 +369,7 @@ export default function SettingsClient({ initialFields, initialCategories, initi
           <div>
             <div style={{ marginBottom: '1.5rem' }}>
               <h2>Job Performance Categories</h2>
-              <p style={{ color: '#64748b', marginBottom: '0.5rem' }}>Assign specific scores to various task domains. Score rewards are processed automatically upon resolution.</p>
+              <p style={{ color: '#64748b', marginBottom: '0.5rem' }}>Assign specific scores to various task domains. Score rewards are processed automatically upon resolution. Nama kategori yang mengandung &quot;Daily Report&quot; atau &quot;Laporan Harian&quot; hanya tampil di dashboard PIC-nya (Manager/Admin tetap melihat semua) dan disembunyikan dari Live Operations Board.</p>
             </div>
             
             <form onSubmit={handleAddCategory} style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 150px auto', gap: '1rem', marginBottom: '2rem', background: '#f1f5f9', padding: '1.5rem', borderRadius: '6px', alignItems: 'end' }}>

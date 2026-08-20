@@ -3,6 +3,7 @@ import { authOptions } from "../../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import TicketDetailClient from "./TicketDetailClient";
+import { canAccessPersonalTicket } from "@/lib/tickets/personalCategories";
 
 export default async function TicketDetailsPage({ params }) {
   const session = await getServerSession(authOptions);
@@ -23,10 +24,11 @@ export default async function TicketDetailsPage({ params }) {
       comments: { include: { author: true, attachments: true }, orderBy: { createdAt: 'asc' } },
       watchers: { include: { user: { select: { id: true, name: true, email: true } } } },
       notes: { include: { author: true }, orderBy: { createdAt: 'desc' } },
+      jobCategory: { select: { id: true, name: true } },
     }
   });
 
-  if (!ticket) {
+  if (!ticket || !canAccessPersonalTicket(session.user, ticket)) {
     return (
       <main className="container">
         <h1>Ticket Not Found</h1>
@@ -35,7 +37,6 @@ export default async function TicketDetailsPage({ params }) {
   }
 
   const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
-  const canView = true; // All authenticated staff can view any ticket if they have the link or use 'Show All'
 
   // Pre-fetch departments and users for re-assignment
   const departments = await prisma.department.findMany();

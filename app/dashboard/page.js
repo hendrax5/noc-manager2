@@ -3,6 +3,11 @@ import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { getAppConfig } from "@/lib/config";
 import DashboardClient from "./DashboardClient";
+import {
+  andWhere,
+  getPersonalCategoryIds,
+  personalTicketGuard,
+} from "@/lib/tickets/personalCategories";
 
 export default async function DashboardPage({ searchParams }) {
   const session = await getServerSession(authOptions);
@@ -57,6 +62,12 @@ export default async function DashboardPage({ searchParams }) {
   } else {
     scope = { assigneeId: parseInt(session?.user?.id) };
   }
+
+  const personalCategoryIds = await getPersonalCategoryIds(prisma);
+  scope = andWhere(
+    scope,
+    personalTicketGuard({ user: session?.user, personalCategoryIds })
+  );
 
   // Category filter based on department config
   const hasCategoryFilter = deptConfig.categories && deptConfig.categories.length > 0;
@@ -189,6 +200,11 @@ export default async function DashboardPage({ searchParams }) {
   let activeCustomerIncidents = [];
 
   if (hasSkyViewAccess) {
+    const skyTicketWhere = andWhere(
+      { status: { notIn: ['Resolved', 'Closed'] } },
+      personalTicketGuard({ user: session?.user, personalCategoryIds })
+    );
+
     // 1. NOC Staff workloads (active ticket counts assigned per staff)
     picWorkloads = await prisma.user.findMany({
       where: {
@@ -200,7 +216,7 @@ export default async function DashboardPage({ searchParams }) {
         email: true,
         department: { select: { name: true } },
         tickets: {
-          where: { status: { notIn: ['Resolved', 'Closed'] } },
+          where: skyTicketWhere,
           select: {
             id: true,
             trackingId: true,
@@ -220,7 +236,7 @@ export default async function DashboardPage({ searchParams }) {
         _count: {
           select: {
             tickets: {
-              where: { status: { notIn: ['Resolved', 'Closed'] } }
+              where: skyTicketWhere
             }
           }
         }
