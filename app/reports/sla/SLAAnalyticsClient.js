@@ -55,7 +55,6 @@ export default function SLAAnalyticsClient() {
   useEffect(() => {
     fetchData(startDate, endDate, customer);
     // initial load only — Apply / presets trigger fetch explicitly
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const applyPreset = (type) => {
