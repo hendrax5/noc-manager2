@@ -88,7 +88,10 @@ export default function AsyncSearchSelect({ value, onChange, placeholder, apiRou
               {options.map((opt, i) => (
                 <li 
                   key={i} 
-                  onClick={() => handleSelectOption(opt)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelectOption(opt);
+                  }}
                   style={{ padding: '0.75rem', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontSize: '0.9rem', color: 'var(--text-color)' }}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--hover-bg)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}

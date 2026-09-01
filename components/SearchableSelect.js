@@ -113,7 +113,7 @@ export default function SearchableSelect({ options = [], value, onChange, placeh
           border: '1px solid var(--border-color, #cbd5e1)', 
           borderRadius: '4px', 
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', 
-          zIndex: 99, 
+          zIndex: 200, 
           maxHeight: '200px', 
           overflowY: 'auto' 
         }}>
@@ -124,7 +124,10 @@ export default function SearchableSelect({ options = [], value, onChange, placeh
                 return (
                   <li 
                     key={opt.value || i} 
-                    onClick={() => handleSelectOption(opt)}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelectOption(opt);
+                    }}
                     style={{ 
                       padding: '0.75rem', 
                       cursor: 'pointer', 

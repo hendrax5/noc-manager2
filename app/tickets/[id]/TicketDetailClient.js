@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
+import SearchableSelect from "@/components/SearchableSelect";
 import {
   getDowntimeDuration as calcDowntimeDuration,
   toDatetimeLocalValue,
@@ -40,54 +41,6 @@ function htmlToPlainText(html) {
   return text;
 }
 
-function SearchableSelect({ options = [], value, onChange, disabled, placeholder }) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-
-  const safeOptions = (options || []).map(o => 
-    typeof o === 'object' && o !== null ? o : { value: o, label: o }
-  );
-
-  const selectedOption = safeOptions.find(o => {
-    if (value === undefined || value === null || value === '') {
-      return o.value === undefined || o.value === null || o.value === '';
-    }
-    return String(o.value) === String(value);
-  });
-  const displayValue = isOpen ? searchTerm : (selectedOption ? selectedOption.label : "");
-
-  const filteredOptions = safeOptions.filter(o => 
-    String(o.label || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <div style={{ position: 'relative', width: '100%', zIndex: isOpen ? 50 : 1 }}>
-      <input 
-        type="text" 
-        style={{ width: '100%', textOverflow: 'ellipsis', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: disabled ? 'var(--hover-bg)' : 'var(--input-bg)', color: value ? 'var(--heading-color)' : 'var(--text-color)', fontWeight: '600', cursor: disabled ? 'not-allowed' : 'pointer', fontSize: '0.85rem' }} 
-        placeholder={placeholder}
-        value={displayValue}
-        disabled={disabled}
-        onClick={() => { if(!disabled) setIsOpen(true); }}
-        onChange={e => { setSearchTerm(e.target.value); setIsOpen(true); }}
-        onBlur={() => setTimeout(() => { setIsOpen(false); setSearchTerm(''); }, 200)}
-      />
-      {isOpen && !disabled && (
-         <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, maxHeight: '250px', overflowY: 'auto', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '4px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 10 }}>
-           <div onClick={() => { onChange(""); setIsOpen(false); }} style={{ padding: '0.5rem', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem', color: 'var(--text-color)' }}>{placeholder}</div>
-           {filteredOptions.length === 0 ? (
-             <div style={{ padding: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>No results found</div>
-           ) : filteredOptions.map(o => (
-             <div key={o.value} onClick={() => { onChange(o.value); setIsOpen(false); setSearchTerm(''); }} className="hover-bg" style={{ padding: '0.5rem', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontSize: '0.85rem', color: 'var(--heading-color)' }}>
-               {o.label}
-             </div>
-           ))}
-         </div>
-      )}
-    </div>
-  );
-}
-
 export default function TicketDetailClient({ ticket, departments, users, jobCategories, customFields, canModifyTicket, currentUser, serviceTemplates, services = [] }) {
   const router = useRouter();
   
@@ -98,7 +51,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   
   const isCS = currentUserObj.department?.includes('CS') || currentUserObj.department?.toLowerCase().includes('customer');
   const isAdminOrManager = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager';
-  const isAuthorized = currentUserObj.role === 'Admin' || isCS || currentUserObj.permissions?.includes('manage_tickets');
+  const isAuthorized = currentUserObj.role === 'Admin' || currentUserObj.role === 'Manager' || isCS || currentUserObj.permissions?.includes('manage_tickets');
 
   const canChangeStatus = isAuthorized || currentUserObj.permissions?.includes('change_ticket_status') || currentUserObj.permissions?.includes('modify_tickets');
   const canAssign = isAuthorized || currentUserObj.permissions?.includes('assign_tickets') || currentUserObj.permissions?.includes('modify_tickets');
@@ -272,7 +225,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     if ((key === 'status' || key === 'priority') && !canChangeStatus) return;
     if ((key === 'departmentId' || key === 'assigneeId') && !canAssign) return;
     if (key === 'jobCategoryId' && !canChangeJobCategory) return;
-    if (!canModifyTicket) return;
+    const hasOwnGate = key === 'status' || key === 'priority' || key === 'departmentId' || key === 'assigneeId' || key === 'jobCategoryId';
+    if (!hasOwnGate && !canModifyTicket) return;
     if (key === "status" && newValue === "Resolved") {
       const catId = formData.jobCategoryId || ticket.jobCategoryId;
       if (!catId) {
