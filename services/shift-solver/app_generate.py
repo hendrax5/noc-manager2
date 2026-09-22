@@ -427,15 +427,27 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                     )
 
         # Aturan Transisi: Setelah S1+S3 (On-Call), keesokan harinya WAJIB masuk S2 (atau Libur).
+        # S2 tidak boleh langsung ke S1/OC tanpa libur — kecuali lintas batas bulan (d=-1→0),
+        # supaya awal bulan tetap feasible jika banyak yang end bulan lalu di S2.
         for e in range(num_employees):
             for d in range(-1, num_days - 1):
                 # Jika hari ini S3 (S1+OnCall), besok WAJIB S2 atau OFF. Tidak boleh S1 lagi.
-                model.AddImplication(x[e, d, 3], x[e, d+1, 1].Not())
-                model.AddImplication(x[e, d, 3], x[e, d+1, 3].Not())
-                
-                # Menghindari S2 pindah kembali ke S1 tanpa libur? (Boleh S2 berturut-turut)
-                model.AddImplication(x[e, d, 2], x[e, d+1, 1].Not())
-                model.AddImplication(x[e, d, 2], x[e, d+1, 3].Not())
+                model.AddImplication(x[e, d, 3], x[e, d + 1, 1].Not())
+                model.AddImplication(x[e, d, 3], x[e, d + 1, 3].Not())
+
+                if d == -1:
+                    continue
+                model.AddImplication(x[e, d, 2], x[e, d + 1, 1].Not())
+                model.AddImplication(x[e, d, 2], x[e, d + 1, 3].Not())
+
+        # Soft: prefer akhiri bulan di OFF/S1 agar bulan berikutnya punya kapasitas S1/OC
+        if num_days > 0:
+            last = num_days - 1
+            for e in range(num_employees):
+                soft_end = model.NewBoolVar(f'core_soft_end_e{e}')
+                model.Add(x[e, last, 0] + x[e, last, 1] >= 1).OnlyEnforceIf(soft_end)
+                model.Add(x[e, last, 0] + x[e, last, 1] == 0).OnlyEnforceIf(soft_end.Not())
+                bonus_vars.append(soft_end * 1500)
 
         # OC cooldown: maksimal 1x per 5 hari per orang (skip 3 hari awal bulan agar lintas bulan feasible)
         for e in range(num_employees):
