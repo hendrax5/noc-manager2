@@ -42,6 +42,8 @@ Setelah deploy, regenerate bulan berjalan agar baseline terisi.
 ## POLA_2 fairness (solver)
 
 Generate POLA_2 menyeimbangkan per orang dalam bulan:
+- **Hard:** tepat **2 OFF** per siklus Senin–Minggu penuh (= 5 kerja); minggu potong awal/akhir bulan proporsional
+- Weekend: minimal 2 orang kerja (1 OC + ≥1 S2); boleh >2 via extra S2 (soft prefer classic =2)
 - Kerja / OFF: selisih max 1 hari (jam POLA_2: selisih max 8 jam bila total slot tidak habis dibagi)
 - (Plain S1 + OC) vs S2: selisih max 1
 - Weekend duty: selisih max 1

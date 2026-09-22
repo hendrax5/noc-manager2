@@ -331,42 +331,14 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
         for e in range(num_employees):
             for d in range(-6, num_days):
                 model.AddExactlyOne(x[e, d, s] for s in range(4))
-                
-        # Libur 1x Senin - Jumat (Setiap minggu)
-        
-        # Cari kelompok hari Senin-Jumat per minggu
-        weekday_groups = []
-        d = 0
-        while d < num_days:
-            curr = start_date + timedelta(days=d)
-            if curr.weekday() < 5:
-                # Kumpulkan dari hari ini sampai Jumat (atau akhir bulan)
-                group = []
-                while d < num_days and (start_date + timedelta(days=d)).weekday() < 5:
-                    group.append(d)
-                    d += 1
-                weekday_groups.append(group)
-            else:
-                d += 1
 
         bonus_vars = []
-                
-        for e in range(num_employees):
-            for wg in weekday_groups:
-                # Libur weekday: tepat 1x jika blok Senin-Jumat penuh (5 hari)
-                if len(wg) >= 5:
-                    model.Add(sum(x[e, d, 0] for d in wg) == 1)
-                elif len(wg) >= 3:
-                    # Blok partial (awal/akhir bulan): usahakan 1 libur, tidak wajib
-                    has_off = model.NewBoolVar(f'core_partial_off_e{e}_d{wg[0]}')
-                    model.Add(sum(x[e, d, 0] for d in wg) >= 1).OnlyEnforceIf(has_off)
-                    bonus_vars.append(has_off * 500)
-                    
-        # Demand Shift — aturan klasik NOC Core (absen POLA_2):
-        # - Tiap hari: tepat 1× S1+OC (on-call 22:00–pagi), bagian dari slot S1
+
+        # Demand Shift — NOC Core POLA_2:
+        # - Tiap hari: tepat 1× S1+OC (on-call 22:00–pagi)
         # - Weekday: tepat 1 plain S1 + 1 S1+OC; S2 mengisi sisa yang kerja
-        # - Weekend (WFH): 1 S1+OC + 1 S2 (2 org); sisanya OFF
-        # - Per orang: 1 libur weekday / minggu + ≥1 libur weekend (→ ~1x WFH)
+        # - Weekend: min 2 kerja = 1 OC + ≥1 S2 (boleh >2 via extra S2); no plain S1
+        # - Per orang: tepat 2 OFF per Senin–Minggu (hard); partial minggu proporsional
         for d in range(num_days):
             s1_count = sum(x[e, d, 1] for e in range(num_employees))
             s2_count = sum(x[e, d, 2] for e in range(num_employees))
@@ -388,11 +360,12 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 model.Add(s2_count == working_cnt - 2)
                 model.Add(s2_count >= 1)
 
-                # Tim ≤5: max 1 OFF/hari (classic). Tim lebih besar: boleh lebih banyak OFF
-                # agar tiap orang tetap dapat tepat 1 libur weekday / minggu.
-                max_off = 1 if num_employees <= 5 else max(1, (num_employees + 4) // 5)
+                # Cap OFF/hari weekday: cukup ruang untuk 2 OFF Senin–Minggu
+                # (rata-rata ~2n/7 OFF slot/hari). Tim kecil boleh 2 OFF/hari.
+                max_off = 2 if num_employees <= 5 else max(2, (num_employees * 2 + 6) // 7)
                 model.Add(off_count <= max_off)
                 model.Add(working_cnt >= num_employees - max_off)
+                model.Add(working_cnt >= 3)  # keep 1 S1 + 1 OC + ≥1 S2
 
                 # Soft prefer: classic full (1 S1 + 1 OC + 2 S2) atau understaffed (+1 S2)
                 full_team = model.NewBoolVar(f'core_full_team_d{d}')
@@ -405,23 +378,54 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 model.Add(s2_count != 1).OnlyEnforceIf(partial_ok.Not())
                 bonus_vars.append(partial_ok * 5000)
             elif curr.weekday() >= 5:
-                # Sabtu-Minggu WFH: tepat 2 org kerja = 1 S1+OC + 1 S2
-                model.Add(working_cnt == 2)
-                model.Add(s2_count == 1)
+                # Sabtu-Minggu: min 2 kerja (1 OC + ≥1 S2); boleh >2 via extra S2
+                model.Add(working_cnt >= 2)
                 model.Add(s1_count == 0)
-                bonus_vars.append(2000)  # weekend coverage achieved (hard)
-                
-        # Libur 1x Sabtu atau Minggu
-        weekends = []
-        for d in range(num_days):
-            curr = start_date + timedelta(days=d)
-            if curr.weekday() == 5 and d + 1 < num_days:
-                weekends.append((d, d + 1))
-                
+                model.Add(s2_count == working_cnt - 1)
+                model.Add(s2_count >= 1)
+                classic_we = model.NewBoolVar(f'core_classic_weekend_d{d}')
+                model.Add(working_cnt == 2).OnlyEnforceIf(classic_we)
+                model.Add(working_cnt != 2).OnlyEnforceIf(classic_we.Not())
+                bonus_vars.append(classic_we * 2000)
+
+        # CALENDAR WEEKS HARD: Senin–Minggu tepat 2 OFF (= 5 kerja)
         for e in range(num_employees):
-            for sat, sun in weekends:
-                model.Add(x[e, sat, 0] + x[e, sun, 0] >= 1)
-                
+            first_monday_idx = -1
+            for i in range(min(7, num_days)):
+                if (start_date + timedelta(days=i)).weekday() == 0:
+                    first_monday_idx = i
+                    break
+
+            if first_monday_idx > 0:
+                partial_len = first_monday_idx
+                target_partial = int(round(partial_len * 2 / 7))
+                model.Add(
+                    sum(x[e, i, 0] for i in range(partial_len))
+                    >= max(0, target_partial - 1)
+                )
+                model.Add(
+                    sum(x[e, i, 0] for i in range(partial_len))
+                    <= min(partial_len, target_partial + 1)
+                )
+
+            if first_monday_idx != -1:
+                curr_monday = first_monday_idx
+                while curr_monday + 6 < num_days:
+                    model.Add(sum(x[e, curr_monday + i, 0] for i in range(7)) == 2)
+                    curr_monday += 7
+
+                if curr_monday < num_days:
+                    partial_len = num_days - curr_monday
+                    target_partial = int(round(partial_len * 2 / 7))
+                    model.Add(
+                        sum(x[e, i, 0] for i in range(curr_monday, num_days))
+                        >= max(0, target_partial - 1)
+                    )
+                    model.Add(
+                        sum(x[e, i, 0] for i in range(curr_monday, num_days))
+                        <= min(partial_len, target_partial + 1)
+                    )
+
         # Aturan Transisi: Setelah S1+S3 (On-Call), keesokan harinya WAJIB masuk S2 (atau Libur).
         for e in range(num_employees):
             for d in range(-1, num_days - 1):
@@ -1298,7 +1302,7 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 status_code=400,
                 detail=(
                     "POLA_2 fairness tidak solvable untuk pool/bulan ini "
-                    "(kerja/OFF ±1, S1+OC vs S2 ±1, weekend ±1). "
+                    "(2 OFF Senin–Minggu, kerja/OFF ±1, S1+OC vs S2 ±1, weekend ±1). "
                     "Sesuaikan jumlah anggota roster atau edit manual."
                 ),
             )
