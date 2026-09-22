@@ -55,11 +55,13 @@ Regenerate bulan target setelah deploy `shift-solver` agar roster lama (mis. 22 
 ## POLA_5 fairness (solver)
 
 Generate POLA_5 menyeimbangkan per orang dalam bulan:
+- **Hard:** tepat **3 OFF** per siklus Senin–Minggu penuh (= 4 kerja); minggu potong awal/akhir bulan proporsional
+- Soft: surplus staff ke S1 (prefer S1>S2), bobot tertinggi Selasa–Kamis; larangan S2→S1; max 2 OFF beruntun
 - Kerja / OFF: selisih max 1 hari (jam POLA_5: selisih max 12 jam bila total slot tidak habis dibagi)
 - S1 vs S2: selisih max 1
 - Kursi +1 hari digilir lewat history bulan sebelumnya (soft kuat)
 
-Regenerate dept POLA_5 (mis. NOC Sisterc) setelah deploy `shift-solver`.
+Regenerate dept POLA_5 (mis. CS) setelah deploy `shift-solver`.
 
 ## POLA_4 fairness (solver)
 

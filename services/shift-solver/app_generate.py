@@ -1038,74 +1038,113 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
         num_shifts = 3
 
     elif selected_pola == "POLA_5":
-        # POLA 5: Longshift 4 Kerja, 2 Libur (Siklus 6 Hari)
+        # POLA 5: Longshift 4 kerja / 3 OFF per Senin–Minggu (hard)
         # S1 (12 Jam), S2 (12 Jam), OFF
         x = {}
         for e in range(num_employees):
             for d in range(-6, num_days):
                 for s in range(3): # 0: OFF, 1: S1, 2: S2
                     x[e, d, s] = model.NewBoolVar(f'x_{e}_{d}_{s}')
-                    
+
         # Tiap orang 1 status per hari
         for e in range(num_employees):
             for d in range(-6, num_days):
                 model.AddExactlyOne(x[e, d, s] for s in range(3))
-                
+
         bonus_vars = []
-        
-        # Aturan Libur: Tepat 3 hari libur setiap 7 hari (Sliding Window)
+
         for e in range(num_employees):
-            for d in range(-6, num_days - 6):
-                model.Add(sum(x[e, d+i, 0] for i in range(7)) == 3)
-                
-            # HARD CONSTRAINT: Tidak boleh 3 hari libur beruntun
+            # HARD: Tidak boleh 3 hari libur beruntun (OFF dipecah 2+1 dalam minggu)
             for d in range(-2, num_days - 2):
-                model.Add(x[e, d, 0] + x[e, d+1, 0] + x[e, d+2, 0] <= 2)
-                
-            # SOFT CONSTRAINT: Usahakan ada 2 hari libur beruntun (karena dipecah 1 dan 2)
+                model.Add(x[e, d, 0] + x[e, d + 1, 0] + x[e, d + 2, 0] <= 2)
+
+            # SOFT: Usahakan 2 hari libur beruntun
             for d in range(-1, num_days - 1):
                 is_2_off = model.NewBoolVar(f'p5_2_off_e{e}_d{d}')
-                model.Add(x[e, d, 0] + x[e, d+1, 0] == 2).OnlyEnforceIf(is_2_off)
-                model.Add(x[e, d, 0] + x[e, d+1, 0] < 2).OnlyEnforceIf(is_2_off.Not())
+                model.Add(x[e, d, 0] + x[e, d + 1, 0] == 2).OnlyEnforceIf(is_2_off)
+                model.Add(x[e, d, 0] + x[e, d + 1, 0] < 2).OnlyEnforceIf(is_2_off.Not())
                 bonus_vars.append(is_2_off * 500)
-                
+
             # Transisi: Tidak boleh Malam -> Pagi keesokan harinya
             for d in range(-1, num_days - 1):
-                model.AddImplication(x[e, d, 2], x[e, d+1, 1].Not())
+                model.AddImplication(x[e, d, 2], x[e, d + 1, 1].Not())
+
+            # CALENDAR WEEKS HARD: Senin–Minggu tepat 3 OFF (= 4 kerja)
+            first_monday_idx = -1
+            for i in range(min(7, num_days)):
+                if (start_date + timedelta(days=i)).weekday() == 0:
+                    first_monday_idx = i
+                    break
+
+            if first_monday_idx > 0:
+                partial_len = first_monday_idx
+                target_partial = int(round(partial_len * 3 / 7))
+                model.Add(
+                    sum(x[e, i, 0] for i in range(partial_len))
+                    >= max(0, target_partial - 1)
+                )
+                model.Add(
+                    sum(x[e, i, 0] for i in range(partial_len))
+                    <= min(partial_len, target_partial + 1)
+                )
+
+            if first_monday_idx != -1:
+                curr_monday = first_monday_idx
+                while curr_monday + 6 < num_days:
+                    model.Add(sum(x[e, curr_monday + i, 0] for i in range(7)) == 3)
+                    curr_monday += 7
+
+                if curr_monday < num_days:
+                    partial_len = num_days - curr_monday
+                    target_partial = int(round(partial_len * 3 / 7))
+                    model.Add(
+                        sum(x[e, i, 0] for i in range(curr_monday, num_days))
+                        >= max(0, target_partial - 1)
+                    )
+                    model.Add(
+                        sum(x[e, i, 0] for i in range(curr_monday, num_days))
+                        <= min(partial_len, target_partial + 1)
+                    )
 
         for d in range(num_days):
             s1_count = sum(x[e, d, 1] for e in range(num_employees))
             s2_count = sum(x[e, d, 2] for e in range(num_employees))
-            
+
             # HARD CONSTRAINT: Minimal per shift 2 orang
             model.Add(s1_count >= 2)
             model.Add(s2_count >= 2)
 
             current_date = start_date + timedelta(days=d)
             is_weekend = current_date.weekday() >= 5
-            
+
             if is_weekend:
                 # Sabtu - Minggu
                 model.Add(s2_count <= 2)
-                
+
                 # Alokasikan S1 lebih banyak (S1 > S2) - prioritas sangat tinggi
                 s1_gt_s2 = model.NewBoolVar(f'p5_we_s1_gt_s2_d{d}')
                 model.Add(s1_count > s2_count).OnlyEnforceIf(s1_gt_s2)
                 model.Add(s1_count <= s2_count).OnlyEnforceIf(s1_gt_s2.Not())
                 bonus_vars.append(s1_gt_s2 * 5000)
-                
+
             else:
                 # Senin - Jumat
                 model.Add(s2_count <= 3)
-                
+
                 # Alokasikan S1 lebih banyak (S1 > S2) - prioritas sangat tinggi
                 s1_gt_s2 = model.NewBoolVar(f'p5_wd_s1_gt_s2_d{d}')
                 model.Add(s1_count > s2_count).OnlyEnforceIf(s1_gt_s2)
                 model.Add(s1_count <= s2_count).OnlyEnforceIf(s1_gt_s2.Not())
                 bonus_vars.append(s1_gt_s2 * 5000)
 
-            # Prioritas jumlah pekerja terbanyak: Senin dan Selasa dikurangi bobotnya agar tidak terlalu heavy.
-            # Distribusikan team ke Selasa-Jumat agar lebih merata. Jumat, Sabtu, Minggu tetap aman.
+                # Soft: surplus weekday diarahkan ke S1 (min 3) agar tidak menumpuk di S2
+                s1_min_3 = model.NewBoolVar(f'p5_wd_s1_min_3_d{d}')
+                model.Add(s1_count >= 3).OnlyEnforceIf(s1_min_3)
+                model.Add(s1_count < 3).OnlyEnforceIf(s1_min_3.Not())
+                wd = current_date.weekday()
+                bonus_vars.append(s1_min_3 * (9000 if wd in (1, 2, 3) else 4000))
+
+            # Prioritas surplus: Selasa–Kamis tertinggi; Senin/Jumat sedang; weekend rendah
             weekday_map = {
                 0: 3,  # Senin
                 1: 5,  # Selasa
@@ -1113,7 +1152,7 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 3: 5,  # Kamis
                 4: 4,  # Jumat
                 5: 2,  # Sabtu
-                6: 1   # Minggu
+                6: 1,  # Minggu
             }
             day_weight = weekday_map[current_date.weekday()]
             bonus_vars.append(s1_count * day_weight * 10)
@@ -1323,7 +1362,7 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 status_code=400,
                 detail=(
                     "POLA_5 fairness tidak solvable untuk pool/bulan ini "
-                    "(kerja/OFF ±1, S1 vs S2 ±1). "
+                    "(3 OFF Senin–Minggu, kerja/OFF ±1, S1 vs S2 ±1). "
                     "Sesuaikan jumlah anggota roster atau edit manual."
                 ),
             )

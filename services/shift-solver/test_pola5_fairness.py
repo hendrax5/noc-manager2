@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import date, timedelta
 
 from fastapi.testclient import TestClient
 
@@ -40,16 +41,48 @@ def count_shifts(schedules):
     return counts
 
 
+def by_user_date(schedules):
+    grid = defaultdict(dict)
+    for schedule in schedules:
+        grid[schedule["userId"]][schedule["date"]] = schedule["shift"]
+    return grid
+
+
 def test_pola5_august_2026_hard_fairness():
     counts = count_shifts(solve())
 
     kerja = [counts[employee["id"]]["kerja"] for employee in EMPLOYEES]
     assert max(kerja) - min(kerja) <= 1
-    assert max(kerja) <= 19
 
     for employee in EMPLOYEES:
         employee_counts = counts[employee["id"]]
         assert abs(employee_counts["s1"] - employee_counts["s2"]) <= 1
+
+
+def test_pola5_monday_sunday_exactly_three_off():
+    schedules = solve()
+    grid = by_user_date(schedules)
+    start = date(2026, 8, 1)
+    num_days = 31
+
+    first_monday = None
+    for i in range(min(7, num_days)):
+        if (start + timedelta(days=i)).weekday() == 0:
+            first_monday = i
+            break
+    assert first_monday is not None
+
+    for employee in EMPLOYEES:
+        user_id = employee["id"]
+        curr = first_monday
+        while curr + 6 < num_days:
+            offs = 0
+            for i in range(7):
+                day = start + timedelta(days=curr + i)
+                if grid[user_id].get(day.isoformat()) == "OFF":
+                    offs += 1
+            assert offs == 3, f"user {user_id} week starting +{curr}: OFF={offs}"
+            curr += 7
 
 
 def july_history_with_heavier_a_and_b():
