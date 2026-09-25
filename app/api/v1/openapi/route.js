@@ -26,6 +26,28 @@ const SPEC = {
             enum: ["Incident", "Problem", "Change", "Request"],
           },
           externalRef: { type: "string", nullable: true },
+          createdBy: {
+            type: "object",
+            nullable: true,
+            description:
+              "Ticket creator from first history log (user) or Integration App name when created via API",
+            properties: {
+              id: { type: "integer", nullable: true },
+              name: { type: "string" },
+              email: { type: "string", nullable: true },
+              source: { type: "string", enum: ["user", "integration"] },
+              integrationAppId: { type: "integer", nullable: true },
+            },
+          },
+          assignee: {
+            type: "object",
+            nullable: true,
+            properties: {
+              id: { type: "integer" },
+              name: { type: "string" },
+              email: { type: "string" },
+            },
+          },
           trackUrl: { type: "string", nullable: true },
         },
       },

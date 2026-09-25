@@ -58,7 +58,12 @@ curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/tickets/HSK-XXXX-XXXX"
 
 Query list: `status`, `hasHumanResponse`, `createdSince`, `updatedSince`, `respondedSince`, `departmentId`/`departmentCode`, `includeComments`, `limit`, `offset`.
 
-Field penting: `trackingId`, `status`, `firstRespondedAt`, `hasHumanResponse`, `publicCommentCount`, `assignee`, `updatedAt`, `trackUrl`.
+Field penting: `trackingId`, `status`, `createdBy` (pembuat tiket: user atau Integration App), `firstRespondedAt`, `hasHumanResponse`, `publicCommentCount`, `assignee`, `updatedAt`, `trackUrl`.
+
+`createdBy` contoh:
+- User UI: `{ "id": 12, "name": "Budi", "email": "...", "source": "user" }`
+- Via Integration API: `{ "id": null, "name": "AI Agent Bot", "email": null, "source": "integration", "integrationAppId": 2 }`
+- Tidak diketahui: `null`
 
 ## 4. Shift (schedules)
 

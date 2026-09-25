@@ -66,6 +66,13 @@ Response:
       "trackingId": "HSK-XXXX-XXXX",
       "title": "...",
       "status": "Pending",
+      "createdBy": {
+        "id": 12,
+        "name": "Budi Santoso",
+        "email": "budi@example.com",
+        "source": "user"
+      },
+      "assignee": { "id": 3, "name": "...", "email": "..." },
       "firstRespondedAt": "2026-09-25T10:00:00.000Z",
       "hasHumanResponse": true,
       "publicCommentCount": 2,
