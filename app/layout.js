@@ -36,7 +36,22 @@ export default async function RootLayout({ children }) {
       <body>
         <ThemeProvider>
           <AuthProvider>
-            <Toaster position="top-right" />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 3200,
+                style: {
+                  fontFamily: "var(--font-sans), system-ui, sans-serif",
+                  fontSize: "0.9rem",
+                  borderRadius: "0.65rem",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--card-bg)",
+                  color: "var(--heading-color)",
+                },
+                success: { iconTheme: { primary: "#059669", secondary: "#fff" } },
+                error: { iconTheme: { primary: "#dc2626", secondary: "#fff" } },
+              }}
+            />
             <Navbar appName={config.appName} appVersion={packageInfo.version} />
             <SlaAudioAlarm />
             {children}

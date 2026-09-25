@@ -148,37 +148,35 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
               <span className="nav-user-name">{session.user?.name || session.user?.email?.split("@")[0]}</span>
             </button>
 
-            {showProfileMenu && (
-              <div className="profile-dropdown">
-                <div className="profile-dropdown-header">
-                  <div className="profile-dropdown-label">Signed in as</div>
-                  <div className="profile-dropdown-email">{session.user?.email}</div>
-                </div>
-                <div className="profile-dropdown-actions">
-                  <Link href="/profile" onClick={() => setShowProfileMenu(false)} className="profile-dropdown-link">
-                    Account Settings
-                  </Link>
-                  {session.user?.id && (
-                    <Link
-                      href={`/reports/${session.user.id}`}
-                      onClick={() => setShowProfileMenu(false)}
-                      className="profile-dropdown-link"
-                    >
-                      Poin saya
-                    </Link>
-                  )}
-                  <button
-                    type="button"
-                    className="profile-dropdown-logout"
-                    onClick={async () => {
-                      await signOut({ callbackUrl: "/login" });
-                    }}
-                  >
-                    Log Out
-                  </button>
-                </div>
+            <div className={`profile-dropdown${showProfileMenu ? " open" : ""}`} aria-hidden={!showProfileMenu}>
+              <div className="profile-dropdown-header">
+                <div className="profile-dropdown-label">Signed in as</div>
+                <div className="profile-dropdown-email">{session.user?.email}</div>
               </div>
-            )}
+              <div className="profile-dropdown-actions">
+                <Link href="/profile" onClick={() => setShowProfileMenu(false)} className="profile-dropdown-link">
+                  Account Settings
+                </Link>
+                {session.user?.id && (
+                  <Link
+                    href={`/reports/${session.user.id}`}
+                    onClick={() => setShowProfileMenu(false)}
+                    className="profile-dropdown-link"
+                  >
+                    Poin saya
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  className="profile-dropdown-logout"
+                  onClick={async () => {
+                    await signOut({ callbackUrl: "/login" });
+                  }}
+                >
+                  Log Out
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

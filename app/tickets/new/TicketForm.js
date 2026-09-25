@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
 import SearchableSelect from "@/components/SearchableSelect";
 import {
@@ -116,7 +117,7 @@ export default function TicketForm({ departments, categories, users = [], custom
         attachmentUrl = json.url;
         attachmentName = json.filename;
       } else {
-        alert("File upload failed.");
+        toast.error("File upload failed.");
         setIsSubmitting(false);
         return;
       }
@@ -124,12 +125,12 @@ export default function TicketForm({ departments, categories, users = [], custom
 
     const duration = hasDowntime ? getDowntimeDuration() : null;
     if (hasDowntime && duration?.error) {
-      alert(duration.error);
+      toast.error(duration.error);
       setIsSubmitting(false);
       return;
     }
     if (hasDowntime && !downtimeStart) {
-      alert("Mulai Downtime wajib diisi.");
+      toast.error("Mulai Downtime wajib diisi.");
       setIsSubmitting(false);
       return;
     }
@@ -148,10 +149,11 @@ export default function TicketForm({ departments, categories, users = [], custom
     });
 
     if (res.ok) {
+      toast.success("Ticket created");
       router.push("/tickets");
       router.refresh();
     } else {
-      alert("Failed to create ticket.");
+      toast.error("Failed to create ticket.");
     }
     setIsSubmitting(false);
   };

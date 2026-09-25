@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, Fragment } from "react";
+import toast from "react-hot-toast";
 
 const DEFAULT_SCOPES = [
   "tickets:create",
@@ -75,7 +76,7 @@ export default function IntegrationsPanel({ departments = [] }) {
 
   const saveScopes = async (id) => {
     if (!editScopes.length) {
-      alert("Pilih minimal satu scope");
+      toast.error("Pilih minimal satu scope");
       return;
     }
     setSavingScopes(true);
@@ -87,11 +88,12 @@ export default function IntegrationsPanel({ departments = [] }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Gagal menyimpan scopes");
+        toast.error(data.error || "Gagal menyimpan scopes");
         return;
       }
       setEditingId(null);
       setEditScopes([]);
+      toast.success("Scopes updated");
       await load();
     } finally {
       setSavingScopes(false);
@@ -110,10 +112,11 @@ export default function IntegrationsPanel({ departments = [] }) {
     });
     const data = await res.json();
     if (!res.ok) {
-      alert(data.error || "Failed");
+      toast.error(data.error || "Failed");
       return;
     }
     setCreatedKey(data.apiKey);
+    toast.success("Integration app created");
     setForm({
       name: "",
       description: "",

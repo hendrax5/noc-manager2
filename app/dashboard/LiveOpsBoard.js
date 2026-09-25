@@ -270,7 +270,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
       </div>
 
       {/* Table */}
-      <div style={{ overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }}>
+      <div className={`live-ops-body${loading ? " is-refreshing" : ""}`} style={{ overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 5, background: 'var(--card-bg)' }}>
             <tr>

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
 import SearchableSelect from "@/components/SearchableSelect";
 import {
@@ -230,7 +231,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     if (key === "status" && newValue === "Resolved") {
       const catId = formData.jobCategoryId || ticket.jobCategoryId;
       if (!catId) {
-        alert("Pilih Job Phase Category dulu sebelum resolve, supaya poin teknisi (orang last reply) ikut masuk.");
+        toast.error("Pilih Job Phase Category dulu sebelum resolve, supaya poin teknisi (orang last reply) ikut masuk.");
         return;
       }
     }
@@ -254,7 +255,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       router.refresh(); 
     } else {
       const data = await res.json().catch(() => ({}));
-      alert(data.error || "Failed to auto-update ticket property.");
+      toast.error(data.error || "Failed to auto-update ticket property.");
     }
   };
 
@@ -273,10 +274,11 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     });
     if(res.ok) {
       setEditingTicket(false);
+      toast.success("Ticket saved");
       router.refresh();
     } else {
       const data = await res.json().catch(() => ({}));
-      alert(data.error || "Failed to save changes");
+      toast.error(data.error || "Failed to save changes");
     }
     setLoading(false);
   };
@@ -289,7 +291,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     if(res.ok) {
       setEditingCommentId(null);
       router.refresh();
-    } else alert("Failed to save comment edits");
+    } else toast.error("Failed to save comment edits");
   };
 
   const handleDelete = async () => {
@@ -299,7 +301,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
         window.location.href = "/tickets";
       } else {
         const data = await res.json();
-        alert("Failed to delete ticket: " + (data.error || "Unknown error"));
+        toast.error("Failed to delete ticket: " + (data.error || "Unknown error"));
       }
     }
   };
@@ -954,7 +956,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                  setSlaLoading(true);
                  const res = await fetch(`/api/tickets/${ticket.id}/sla-follow-up`, { method: "POST" });
                  if(res.ok) router.refresh();
-                 else alert("Failed to log follow-up.");
+                 else toast.error("Failed to log follow-up.");
                  setSlaLoading(false);
                }} 
                disabled={slaLoading}
@@ -1274,8 +1276,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       </div>
 
       {showHistoryModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem', backdropFilter: 'blur(2px)' }}>
-          <div style={{ background: 'var(--card-bg)', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '600px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+        <div className="modal-overlay" onClick={() => setShowHistoryModal(false)} role="presentation">
+          <div className="modal-panel" style={{ padding: '2rem' }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Full Audit History">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
               <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--heading-color)' }}>Full Audit History</h2>
               <button onClick={() => setShowHistoryModal(false)} style={{ background: 'var(--hover-bg)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: 'var(--heading-color)', fontWeight: 'bold' }}>✕</button>
