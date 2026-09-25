@@ -7,7 +7,7 @@ Referensi teknis: [API_V1.md](./API_V1.md) · OpenAPI: `GET /api/v1/openapi`
 ## 1. Buat API key
 
 1. Buka **Settings → Integrations**
-2. Buat Integration App (mis. `ai-agent`)
+2. Buat Integration App (mis. `ai-agent`) **atau** pada app yang sudah ada klik **Edit scopes**
 3. Centang scope yang dibutuhkan:
 
 | Scope | Fungsi |

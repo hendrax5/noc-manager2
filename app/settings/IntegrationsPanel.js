@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 
 const DEFAULT_SCOPES = [
   "tickets:create",
@@ -17,6 +17,9 @@ export default function IntegrationsPanel({ departments = [] }) {
   const [availableScopes, setAvailableScopes] = useState(DEFAULT_SCOPES);
   const [loading, setLoading] = useState(true);
   const [createdKey, setCreatedKey] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editScopes, setEditScopes] = useState([]);
+  const [savingScopes, setSavingScopes] = useState(false);
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -52,6 +55,47 @@ export default function IntegrationsPanel({ departments = [] }) {
         ? prev.scopes.filter((s) => s !== scope)
         : [...prev.scopes, scope],
     }));
+  };
+
+  const toggleEditScope = (scope) => {
+    setEditScopes((prev) =>
+      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope]
+    );
+  };
+
+  const startEditScopes = (app) => {
+    setEditingId(app.id);
+    setEditScopes([...(app.scopes || [])]);
+  };
+
+  const cancelEditScopes = () => {
+    setEditingId(null);
+    setEditScopes([]);
+  };
+
+  const saveScopes = async (id) => {
+    if (!editScopes.length) {
+      alert("Pilih minimal satu scope");
+      return;
+    }
+    setSavingScopes(true);
+    try {
+      const res = await fetch(`/api/integrations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scopes: editScopes }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Gagal menyimpan scopes");
+        return;
+      }
+      setEditingId(null);
+      setEditScopes([]);
+      await load();
+    } finally {
+      setSavingScopes(false);
+    }
   };
 
   const createApp = async (e) => {
@@ -203,29 +247,74 @@ export default function IntegrationsPanel({ departments = [] }) {
           </thead>
           <tbody>
             {apps.map((app) => (
-              <tr key={app.id}>
-                <td>
-                  <strong>{app.name}</strong>
-                  {app.description ? <div style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>{app.description}</div> : null}
-                </td>
-                <td>
-                  <code>{app.keyPrefix}…</code>
-                </td>
-                <td style={{ maxWidth: 200 }}>{(app.scopes || []).join(", ")}</td>
-                <td>{app.webhookUrl ? "Yes" : "—"}</td>
-                <td>{app.active ? "Active" : "Disabled"}</td>
-                <td style={{ whiteSpace: "nowrap" }}>
-                  <button type="button" className="btn" onClick={() => rotateKey(app.id)}>
-                    Rotate key
-                  </button>{" "}
-                  <button type="button" className="btn" onClick={() => toggleActive(app)}>
-                    {app.active ? "Disable" : "Enable"}
-                  </button>{" "}
-                  <button type="button" className="btn" onClick={() => remove(app.id)}>
-                    Delete
-                  </button>
-                </td>
-              </tr>
+              <Fragment key={app.id}>
+                <tr>
+                  <td>
+                    <strong>{app.name}</strong>
+                    {app.description ? (
+                      <div style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>{app.description}</div>
+                    ) : null}
+                  </td>
+                  <td>
+                    <code>{app.keyPrefix}…</code>
+                  </td>
+                  <td style={{ maxWidth: 240 }}>{(app.scopes || []).join(", ") || "—"}</td>
+                  <td>{app.webhookUrl ? "Yes" : "—"}</td>
+                  <td>{app.active ? "Active" : "Disabled"}</td>
+                  <td style={{ whiteSpace: "nowrap" }}>
+                    <button type="button" className="btn" onClick={() => startEditScopes(app)}>
+                      Edit scopes
+                    </button>{" "}
+                    <button type="button" className="btn" onClick={() => rotateKey(app.id)}>
+                      Rotate key
+                    </button>{" "}
+                    <button type="button" className="btn" onClick={() => toggleActive(app)}>
+                      {app.active ? "Disable" : "Enable"}
+                    </button>{" "}
+                    <button type="button" className="btn" onClick={() => remove(app.id)}>
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+                {editingId === app.id ? (
+                  <tr>
+                    <td colSpan={6} style={{ background: "var(--hover-bg, #f8fafc)", padding: "1rem" }}>
+                      <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>
+                        Edit scopes — {app.name}
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                        {availableScopes.map((s) => (
+                          <label
+                            key={s}
+                            style={{ fontSize: "0.85rem", display: "flex", gap: 6, alignItems: "center" }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={editScopes.includes(s)}
+                              onChange={() => toggleEditScope(s)}
+                            />
+                            {s}
+                          </label>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        disabled={savingScopes}
+                        onClick={() => saveScopes(app.id)}
+                      >
+                        {savingScopes ? "Saving…" : "Save scopes"}
+                      </button>{" "}
+                      <button type="button" className="btn" onClick={cancelEditScopes} disabled={savingScopes}>
+                        Cancel
+                      </button>
+                      <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 8 }}>
+                        Key tidak berubah — hanya permission scope yang diupdate.
+                      </div>
+                    </td>
+                  </tr>
+                ) : null}
+              </Fragment>
             ))}
           </tbody>
         </table>
