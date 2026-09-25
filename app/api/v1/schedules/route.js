@@ -1,0 +1,41 @@
+import { NextResponse } from "next/server";
+import {
+  authenticateIntegration,
+  writeIntegrationAudit,
+} from "@/lib/integration/auth";
+import { listSchedulesForIntegration } from "@/lib/integration/schedules";
+
+export async function GET(req) {
+  const auth = await authenticateIntegration(req, {
+    requireScopes: ["schedules:read"],
+  });
+  if (!auth.ok) return auth.response;
+
+  try {
+    const query = Object.fromEntries(new URL(req.url).searchParams.entries());
+    const result = await listSchedulesForIntegration(query);
+    await writeIntegrationAudit({
+      integrationAppId: auth.app.id,
+      method: auth.method,
+      path: auth.path,
+      statusCode: 200,
+      ip: auth.ip,
+      message: `schedules count=${result.count}`,
+    });
+    return NextResponse.json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    await writeIntegrationAudit({
+      integrationAppId: auth.app?.id,
+      method: auth.method,
+      path: auth.path,
+      statusCode: status,
+      ip: auth.ip,
+      message: error.message,
+    });
+    return NextResponse.json(
+      { error: status === 500 ? "Internal Server Error" : error.message },
+      { status }
+    );
+  }
+}

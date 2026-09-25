@@ -6,7 +6,7 @@ const SPEC = {
     title: "NOC Manager Integration API",
     version: "1.0.0",
     description:
-      "Server-to-server API for creating and syncing tickets. Authenticate with header X-API-Key.",
+      "Server-to-server API for tickets, schedules, meetings, and reports. Authenticate with header X-API-Key.",
   },
   servers: [{ url: "/", description: "Current host" }],
   components: {
@@ -168,6 +168,86 @@ const SPEC = {
           },
         },
         responses: { "201": { description: "Created" } },
+      },
+    },
+    "/api/v1/schedules": {
+      get: {
+        summary: "List shift schedules",
+        description: "Scope schedules:read. Requires start and end (YYYY-MM-DD).",
+        parameters: [
+          { name: "start", in: "query", required: true, schema: { type: "string", format: "date" } },
+          { name: "end", in: "query", required: true, schema: { type: "string", format: "date" } },
+          { name: "departmentId", in: "query", schema: { type: "integer" } },
+          { name: "locationId", in: "query", schema: { type: "integer" } },
+          { name: "userId", in: "query", schema: { type: "integer" } },
+        ],
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/schedules/types": {
+      get: {
+        summary: "List shift types",
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/meetings": {
+      get: {
+        summary: "List meetings",
+        parameters: [
+          { name: "from", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "to", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "status", in: "query", schema: { type: "string" } },
+          { name: "limit", in: "query", schema: { type: "integer", default: 50 } },
+          { name: "offset", in: "query", schema: { type: "integer", default: 0 } },
+        ],
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/meetings/{id}": {
+      get: {
+        summary: "Get meeting detail",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "integer" } },
+        ],
+        responses: { "200": { description: "OK" }, "404": { description: "Not found" } },
+      },
+    },
+    "/api/v1/reports/daily": {
+      get: {
+        summary: "List daily reports",
+        parameters: [
+          { name: "userId", in: "query", schema: { type: "integer" } },
+          { name: "from", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "to", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "limit", in: "query", schema: { type: "integer", default: 50 } },
+          { name: "offset", in: "query", schema: { type: "integer", default: 0 } },
+        ],
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/reports/daily/{id}": {
+      get: {
+        summary: "Get daily report",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "integer" } },
+        ],
+        responses: { "200": { description: "OK" }, "404": { description: "Not found" } },
+      },
+    },
+    "/api/v1/reports/ops": {
+      get: {
+        summary: "Ops report (downtime / new / upgrade / terminate)",
+        parameters: [
+          {
+            name: "period",
+            in: "query",
+            schema: { type: "string", enum: ["week", "month", "custom"], default: "week" },
+          },
+          { name: "anchor", in: "query", schema: { type: "string", format: "date" } },
+          { name: "start", in: "query", schema: { type: "string", format: "date" } },
+          { name: "end", in: "query", schema: { type: "string", format: "date" } },
+        ],
+        responses: { "200": { description: "OK" } },
       },
     },
     "/api/v1/meta/departments": {

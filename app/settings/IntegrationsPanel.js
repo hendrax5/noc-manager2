@@ -6,6 +6,10 @@ const DEFAULT_SCOPES = [
   "tickets:read",
   "tickets:comment",
   "tickets:update",
+  "schedules:read",
+  "meetings:read",
+  "reports:daily:read",
+  "reports:ops:read",
 ];
 
 export default function IntegrationsPanel({ departments = [] }) {

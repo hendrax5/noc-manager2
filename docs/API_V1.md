@@ -1,6 +1,6 @@
 # NOC Manager Integration API v1
 
-Server-to-server API for creating and syncing tickets.
+Server-to-server API for tickets, schedules, meetings, and reports (AI agents / connectors).
 
 ## Auth
 
@@ -23,9 +23,18 @@ Legacy fallback: `EXTERNAL_API_KEY` env or Settings `externalApiKey` (create + f
 | GET | `/api/v1/tickets/{trackingId}` | `tickets:read` |
 | PATCH | `/api/v1/tickets/{trackingId}` | `tickets:update` |
 | POST | `/api/v1/tickets/{trackingId}/comments` | `tickets:comment` |
+| GET | `/api/v1/schedules` | `schedules:read` |
+| GET | `/api/v1/schedules/types` | `schedules:read` |
+| GET | `/api/v1/meetings` | `meetings:read` |
+| GET | `/api/v1/meetings/{id}` | `meetings:read` |
+| GET | `/api/v1/reports/daily` | `reports:daily:read` |
+| GET | `/api/v1/reports/daily/{id}` | `reports:daily:read` |
+| GET | `/api/v1/reports/ops` | `reports:ops:read` |
 | GET | `/api/v1/meta/departments` | `tickets:create` or `tickets:read` |
 | GET | `/api/v1/openapi` | public |
 | POST | `/api/external/tickets` | legacy alias of create |
+
+Agent walkthrough: [AI_AGENT_TICKETS.md](./AI_AGENT_TICKETS.md)
 
 ### List / poll tickets (AI agent)
 
@@ -75,6 +84,41 @@ Typical agent poll:
 3. Full thread: `GET /api/v1/tickets/{trackingId}`
 
 Optional realtime: set Integration App `webhookUrl` for `ticket.created` / `ticket.commented` / `ticket.status_changed`, then GET detail by `trackingId`.
+
+### Schedules (read-only)
+
+```http
+GET /api/v1/schedules?start=2026-10-01&end=2026-10-31&departmentId=1
+GET /api/v1/schedules/types
+```
+
+Query: `start`+`end` (required), optional `departmentId`, `locationId`, `userId`.
+
+### Meetings (read-only)
+
+```http
+GET /api/v1/meetings?from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z&limit=50
+GET /api/v1/meetings/123
+```
+
+Query: `from`, `to`, `status`, `limit`, `offset`.
+
+### Daily reports (read-only)
+
+```http
+GET /api/v1/reports/daily?from=2026-09-01T00:00:00Z&userId=10&limit=50
+GET /api/v1/reports/daily/42
+```
+
+### Ops report (read-only)
+
+```http
+GET /api/v1/reports/ops?period=week&anchor=2026-09-25
+GET /api/v1/reports/ops?period=month&anchor=2026-09-01
+GET /api/v1/reports/ops?period=custom&start=2026-09-01&end=2026-09-30
+```
+
+Same shape as UI Ops Report: `counts`, `downtime`, `terminate`, `new`, `upgrade`.
 
 ### Create ticket
 
