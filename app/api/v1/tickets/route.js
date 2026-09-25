@@ -3,7 +3,49 @@ import {
   authenticateIntegration,
   writeIntegrationAudit,
 } from "@/lib/integration/auth";
-import { createTicketFromIntegration, publicTicketDto } from "@/lib/integration/tickets";
+import {
+  createTicketFromIntegration,
+  listTicketsForIntegration,
+  publicTicketDto,
+} from "@/lib/integration/tickets";
+
+export async function GET(req) {
+  const auth = await authenticateIntegration(req, {
+    requireScopes: ["tickets:read"],
+  });
+  if (!auth.ok) return auth.response;
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const query = Object.fromEntries(searchParams.entries());
+    const result = await listTicketsForIntegration(query);
+
+    await writeIntegrationAudit({
+      integrationAppId: auth.app.id,
+      method: auth.method,
+      path: auth.path,
+      statusCode: 200,
+      ip: auth.ip,
+      message: `list total=${result.pagination.total} returned=${result.tickets.length}`,
+    });
+
+    return NextResponse.json(result);
+  } catch (error) {
+    const status = error.status || 500;
+    await writeIntegrationAudit({
+      integrationAppId: auth.app?.id,
+      method: auth.method,
+      path: auth.path,
+      statusCode: status,
+      ip: auth.ip,
+      message: error.message,
+    });
+    return NextResponse.json(
+      { error: status === 500 ? "Internal Server Error" : error.message },
+      { status }
+    );
+  }
+}
 
 export async function POST(req) {
   const auth = await authenticateIntegration(req, {

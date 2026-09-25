@@ -34,6 +34,63 @@ const SPEC = {
   security: [{ ApiKeyAuth: [] }],
   paths: {
     "/api/v1/tickets": {
+      get: {
+        summary: "List / poll tickets",
+        description:
+          "Filter tickets for agents. Scope tickets:read. Use hasHumanResponse or status=Pending for staff-answered tickets.",
+        parameters: [
+          {
+            name: "status",
+            in: "query",
+            schema: { type: "string" },
+            description: "Single status or comma-separated list",
+          },
+          {
+            name: "hasHumanResponse",
+            in: "query",
+            schema: { type: "boolean" },
+            description: "Filter by firstRespondedAt set / unset",
+          },
+          {
+            name: "createdSince",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+          },
+          {
+            name: "updatedSince",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+          },
+          {
+            name: "respondedSince",
+            in: "query",
+            schema: { type: "string", format: "date-time" },
+          },
+          { name: "departmentId", in: "query", schema: { type: "integer" } },
+          { name: "departmentCode", in: "query", schema: { type: "string" } },
+          {
+            name: "includeComments",
+            in: "query",
+            schema: { type: "boolean" },
+            description: "Embed public comments (max 50) on each ticket",
+          },
+          {
+            name: "limit",
+            in: "query",
+            schema: { type: "integer", minimum: 1, maximum: 100, default: 50 },
+          },
+          {
+            name: "offset",
+            in: "query",
+            schema: { type: "integer", minimum: 0, default: 0 },
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK — { tickets, pagination }",
+          },
+        },
+      },
       post: {
         summary: "Create ticket",
         parameters: [

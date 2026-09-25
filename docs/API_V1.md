@@ -18,6 +18,7 @@ Legacy fallback: `EXTERNAL_API_KEY` env or Settings `externalApiKey` (create + f
 
 | Method | Path | Scope |
 |--------|------|--------|
+| GET | `/api/v1/tickets` | `tickets:read` |
 | POST | `/api/v1/tickets` | `tickets:create` |
 | GET | `/api/v1/tickets/{trackingId}` | `tickets:read` |
 | PATCH | `/api/v1/tickets/{trackingId}` | `tickets:update` |
@@ -25,6 +26,55 @@ Legacy fallback: `EXTERNAL_API_KEY` env or Settings `externalApiKey` (create + f
 | GET | `/api/v1/meta/departments` | `tickets:create` or `tickets:read` |
 | GET | `/api/v1/openapi` | public |
 | POST | `/api/external/tickets` | legacy alias of create |
+
+### List / poll tickets (AI agent)
+
+```http
+GET /api/v1/tickets?status=Pending&hasHumanResponse=true&updatedSince=2026-09-25T00:00:00Z&limit=50&offset=0
+X-API-Key: ...
+```
+
+Query params:
+
+| Param | Description |
+|-------|-------------|
+| `status` | One status or comma list (`New`, `Open`, `Pending`, …) |
+| `hasHumanResponse` | `true` / `false` — based on `firstRespondedAt` |
+| `createdSince` | ISO-8601 — tickets created at/after |
+| `updatedSince` | ISO-8601 — tickets updated at/after |
+| `respondedSince` | ISO-8601 — first human response at/after |
+| `departmentId` / `departmentCode` | Filter by department |
+| `includeComments` | `true` to embed public comments (max 50) on each item |
+| `limit` | 1–100 (default 50) |
+| `offset` | Pagination offset (default 0) |
+
+Response:
+
+```json
+{
+  "tickets": [
+    {
+      "trackingId": "HSK-XXXX-XXXX",
+      "title": "...",
+      "status": "Pending",
+      "firstRespondedAt": "2026-09-25T10:00:00.000Z",
+      "hasHumanResponse": true,
+      "publicCommentCount": 2,
+      "updatedAt": "...",
+      "trackUrl": "/track/HSK-XXXX-XXXX"
+    }
+  ],
+  "pagination": { "total": 12, "limit": 50, "offset": 0, "hasMore": false }
+}
+```
+
+Typical agent poll:
+
+1. New tickets: `?status=New&createdSince=...`
+2. Already answered by staff: `?hasHumanResponse=true&updatedSince=...` or `?status=Pending`
+3. Full thread: `GET /api/v1/tickets/{trackingId}`
+
+Optional realtime: set Integration App `webhookUrl` for `ticket.created` / `ticket.commented` / `ticket.status_changed`, then GET detail by `trackingId`.
 
 ### Create ticket
 
