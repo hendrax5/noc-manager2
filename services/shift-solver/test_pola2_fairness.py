@@ -72,79 +72,52 @@ def test_pola2_august_2026_hard_fairness():
     assert max(weekend_work) - min(weekend_work) <= 1
 
 
-def test_pola2_monday_sunday_exactly_two_off():
-    schedules = solve()
+def assert_weekly_off_and_standby(schedules, employees, year, month):
+    """Tiap minggu penuh: 1 OFF weekday; weekend 1 OFF, atau 2 OFF kalau standby.
+    Standby = (n - 4) orang/minggu, bergilir (maks sekali/bulan untuk n=5)."""
     grid = by_user_date(schedules)
-    start = date(2026, 8, 1)
-    num_days = 31
-
-    first_monday = None
-    for i in range(min(7, num_days)):
-        if (start + timedelta(days=i)).weekday() == 0:
-            first_monday = i
-            break
-    assert first_monday is not None
-
-    for employee in EMPLOYEES:
-        user_id = employee["id"]
-        curr = first_monday
-        while curr + 6 < num_days:
-            offs = 0
-            for i in range(7):
-                day = start + timedelta(days=curr + i)
-                if grid[user_id].get(day.isoformat()) == "OFF":
-                    offs += 1
-            assert offs == 2, f"user {user_id} week starting +{curr}: OFF={offs}"
-            curr += 7
-
-
-def test_pola2_one_weekday_off_and_one_weekend_off_per_week():
-    schedules = solve()
-    grid = by_user_date(schedules)
-    start = date(2026, 8, 1)
-    num_days = 31
-
-    first_monday = next(
-        i for i in range(7) if (start + timedelta(days=i)).weekday() == 0
-    )
-    for employee in EMPLOYEES:
-        user_id = employee["id"]
-        curr = first_monday
-        while curr + 6 < num_days:
-            days = [start + timedelta(days=curr + i) for i in range(7)]
-            wd_off = sum(1 for d in days[:5] if grid[user_id][d.isoformat()] == "OFF")
-            we_off = sum(1 for d in days[5:] if grid[user_id][d.isoformat()] == "OFF")
-            assert wd_off == 1, f"user {user_id} week +{curr}: weekday OFF={wd_off}"
-            assert we_off == 1, f"user {user_id} week +{curr}: weekend OFF={we_off}"
-            curr += 7
-
-
-@pytest.mark.parametrize(
-    "year,month,size",
-    [(2026, 9, 5), (2026, 10, 5), (2026, 11, 5), (2026, 12, 5)],
-)
-def test_pola2_weekday_weekend_off_rule_other_months(year, month, size):
-    employees = [
-        {"id": i, "name": f"P{i}", "religion": "Umum"} for i in range(1, size + 1)
-    ]
-    schedules = solve(employees=employees, year=year, month=month)
-    grid = by_user_date(schedules)
+    standby_flags = {
+        (s["userId"], s["date"]) for s in schedules if s.get("standby")
+    }
     start = date(year, month, 1)
     num_days = monthrange(year, month)[1]
     first_monday = next(
         i for i in range(7) if (start + timedelta(days=i)).weekday() == 0
     )
-    for employee in employees:
-        curr = first_monday
-        while curr + 6 < num_days:
-            days = [start + timedelta(days=curr + i) for i in range(7)]
-            shifts = [grid[employee["id"]][d.isoformat()] for d in days]
-            assert shifts[:5].count("OFF") == 1, (employee, curr, shifts)
-            assert shifts[5:].count("OFF") == 1, (employee, curr, shifts)
-            curr += 7
+    standby_weeks = defaultdict(int)
+    curr = first_monday
+    while curr + 6 < num_days:
+        days = [start + timedelta(days=curr + i) for i in range(7)]
+        standby_this_week = []
+        for employee in employees:
+            uid = employee["id"]
+            shifts = [grid[uid][d.isoformat()] for d in days]
+            assert shifts[:5].count("OFF") == 1, (uid, curr, shifts)
+            we_off = shifts[5:].count("OFF")
+            assert we_off in (1, 2), (uid, curr, shifts)
+            flagged = all((uid, d.isoformat()) in standby_flags for d in days[5:])
+            assert flagged == (we_off == 2), (uid, curr, shifts)
+            if we_off == 2:
+                standby_this_week.append(uid)
+                standby_weeks[uid] += 1
+        assert len(standby_this_week) == len(employees) - 4, (curr, standby_this_week)
+        curr += 7
+    if len(employees) == 5:
+        assert all(v <= 1 for v in standby_weeks.values()), dict(standby_weeks)
 
 
-def test_pola2_weekend_allows_at_least_two_workers():
+def test_pola2_weekly_off_rule_and_rotating_standby():
+    assert_weekly_off_and_standby(solve(), EMPLOYEES, 2026, 8)
+
+
+@pytest.mark.parametrize("year,month", [(2026, 9), (2026, 10), (2026, 11), (2026, 12)])
+def test_pola2_weekly_off_rule_other_months(year, month):
+    employees = [{"id": i, "name": f"P{i}", "religion": "Umum"} for i in range(1, 6)]
+    schedules = solve(employees=employees, year=year, month=month)
+    assert_weekly_off_and_standby(schedules, employees, year, month)
+
+
+def test_pola2_weekend_exactly_one_s2_and_one_oc():
     schedules = solve()
     by_day = defaultdict(list)
     for schedule in schedules:
@@ -154,29 +127,9 @@ def test_pola2_weekend_allows_at_least_two_workers():
 
     for day, shifts in by_day.items():
         working = [s for s in shifts if s in WORKING_SHIFTS]
-        assert len(working) >= 2, f"{day} weekend workers={len(working)}"
-        assert working.count("S1+OC") == 1
-        assert working.count("S1") == 0
-        assert working.count("S2") == len(working) - 1
-        assert 1 <= working.count("S2") <= 2, f"{day} weekend S2={working.count('S2')}"
-
-
-def test_pola2_weekend_prefers_single_s2():
-    schedules = solve()
-    by_day = defaultdict(list)
-    for schedule in schedules:
-        day = date.fromisoformat(schedule["date"])
-        if day.weekday() >= 5:
-            by_day[day].append(schedule["shift"])
-
-    # Tiap weekend penuh (Sabtu+Minggu) minimal satu hari hanya 1 S2
-    saturdays = sorted(d for d in by_day if d.weekday() == 5)
-    for sat in saturdays:
-        sun = sat + timedelta(days=1)
-        if sun not in by_day:
-            continue
-        s2_counts = [by_day[sat].count("S2"), by_day[sun].count("S2")]
-        assert min(s2_counts) == 1, f"weekend {sat}: S2={s2_counts}"
+        assert working.count("S1+OC") == 1, (day, shifts)
+        assert working.count("S2") == 1, (day, shifts)
+        assert len(working) == 2, (day, shifts)
 
 
 def july_history_with_heavier_a_and_b():
