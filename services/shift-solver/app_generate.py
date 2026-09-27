@@ -135,7 +135,7 @@ def delete_employee(emp_id: int, db: Session = Depends(get_db)):
     return {"detail": "Employee deleted"}
 
 @app.get("/generate")
-def generate(year: int, month: int, department_id: int, pola: Optional[str] = None, full_shift: Optional[str] = None, db: Session = Depends(get_db)):
+def generate(year: int, month: int, department_id: int, pola: Optional[str] = None, full_shift: Optional[str] = None, prev_standby_ids: Optional[str] = None, db: Session = Depends(get_db)):
     dept = db.query(models.Department).filter(models.Department.id == department_id).first()
     if not dept:
         raise HTTPException(status_code=404, detail="Department not found")
@@ -169,7 +169,6 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
     emp_id_to_idx = {emp.id: e for e, emp in enumerate(employees)}
     shift_str_to_id = {"OFF": 0, "S1": 1, "S2": 2, "S3": 3, "S1+OC": 3}
     
-    prev_shift_by_date = {}  # (e_idx, date) -> shift_id
     for sch in prev_schedules:
         if sch.employee_id in emp_id_to_idx:
             e_idx = emp_id_to_idx[sch.employee_id]
@@ -178,21 +177,16 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
             
             # offset from start_date
             sch_date = date.fromisoformat(sch.date)
-            prev_shift_by_date[(e_idx, sch_date)] = s_id
             delta_days = (sch_date - start_date).days
             if -6 <= delta_days < 0:
                 history_days[(e_idx, delta_days)] = s_id
 
-    # Weekend standby bulan lalu (Sabtu+Minggu dua-duanya OFF) — untuk rotasi POLA_2
+    # Hari cadangan weekend bulan lalu (employee id, dipisah koma, boleh berulang) — rotasi POLA_2
     prev_weekend_standby = {e: 0 for e in range(num_employees)}
-    for e in range(num_employees):
-        for (e_idx, sch_date), s_id in prev_shift_by_date.items():
-            if e_idx != e or sch_date.weekday() != 5 or s_id != 0:
-                continue
-            if prev_shift_by_date.get((e, sch_date + timedelta(days=1))) == 0:
-                prev_weekend_standby[e] += 1
-
-    standby_days = set()  # (e_idx, day_index) OFF standby weekend (POLA_2)
+    for raw in (prev_standby_ids or "").split(","):
+        raw = raw.strip()
+        if raw.isdigit() and int(raw) in emp_id_to_idx:
+            prev_weekend_standby[emp_id_to_idx[int(raw)]] += 1
                 
     model = cp_model.CpModel()
     
@@ -346,12 +340,13 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 model.AddExactlyOne(x[e, d, s] for s in range(4))
 
         bonus_vars = []
+        weekend_days = []
 
         # Demand Shift — NOC Core POLA_2:
         # - Tiap hari: tepat 1× S1+OC (on-call 22:00–pagi)
         # - Weekday: tepat 1 plain S1 + 1 S1+OC; S2 mengisi sisa yang kerja
-        # - Weekend: min 2 kerja = 1 OC + ≥1 S2 (boleh >2 via extra S2); no plain S1
-        # - Per orang: tepat 2 OFF per Senin–Minggu (hard); partial minggu proporsional
+        # - Weekend: 1 OC + 1 S2 inti, + maks 1 S2 cadangan; no plain S1
+        # - Per orang: 1 OFF weekday + 1 OFF Sabtu/Minggu per Senin–Minggu (hard)
         for d in range(num_days):
             s1_count = sum(x[e, d, 1] for e in range(num_employees))
             s2_count = sum(x[e, d, 2] for e in range(num_employees))
@@ -391,37 +386,34 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 model.Add(s2_count != 1).OnlyEnforceIf(partial_ok.Not())
                 bonus_vars.append(partial_ok * 5000)
             elif curr.weekday() >= 5:
-                # Sabtu-Minggu: tepat 1 OC + 1 S2; sisa orang OFF (standby)
+                # Sabtu-Minggu: 1 OC + 1 S2 inti; orang lebih tetap masuk sebagai S2 cadangan
                 model.Add(s1_count == 0)
-                model.Add(s2_count == 1)
-                model.Add(working_cnt == 2)
+                model.Add(s2_count == working_cnt - 1)
+                model.Add(s2_count >= 1)
+                model.Add(s2_count <= 2)
+                weekend_days.append(d)
 
-        # CALENDAR WEEKS HARD: Senin–Minggu = 1 OFF weekday + 1 OFF Sabtu/Minggu.
-        # Weekend hanya butuh 2 orang, jadi (n - 4) orang per minggu jadi standby:
-        # libur Sabtu+Minggu (3 OFF minggu itu), digilir antar minggu/bulan.
-        full_week_mondays = []
-        for i in range(min(7, num_days)):
-            if (start_date + timedelta(days=i)).weekday() == 0:
-                m = i
-                while m + 6 < num_days:
-                    full_week_mondays.append(m)
-                    m += 7
-                break
+        # S2 cadangan weekend: di hari dengan 2 S2, satu ditandai cadangan (bisa dipindah
+        # untuk isi jadwal kosong). Digilir: rata dalam bulan, hindari yang cadangan bulan lalu.
         standby = {}
-        max_standby_per_person = (
-            math.ceil(len(full_week_mondays) * max(0, num_employees - 4) / num_employees)
-            if full_week_mondays else 0
-        )
-        for e in range(num_employees):
-            for w, monday in enumerate(full_week_mondays):
-                standby[e, w] = model.NewBoolVar(f'core_standby_e{e}_w{w}')
-                bonus_vars.append(standby[e, w] * (-30000 * prev_weekend_standby[e]))
-            if full_week_mondays:
-                model.Add(
-                    sum(standby[e, w] for w in range(len(full_week_mondays)))
-                    <= max_standby_per_person
-                )
+        for d in weekend_days:
+            s2_today = sum(x[e, d, 2] for e in range(num_employees))
+            for e in range(num_employees):
+                standby[e, d] = model.NewBoolVar(f'core_backup_e{e}_d{d}')
+                model.AddImplication(standby[e, d], x[e, d, 2])
+                bonus_vars.append(standby[e, d] * (-30000 * prev_weekend_standby[e]))
+            model.Add(sum(standby[e, d] for e in range(num_employees)) == s2_today - 1)
+        if weekend_days:
+            backup_counts = [
+                sum(standby[e, d] for d in weekend_days) for e in range(num_employees)
+            ]
+            max_bk = model.NewIntVar(0, len(weekend_days), 'core_max_backup')
+            min_bk = model.NewIntVar(0, len(weekend_days), 'core_min_backup')
+            model.AddMaxEquality(max_bk, backup_counts)
+            model.AddMinEquality(min_bk, backup_counts)
+            model.Add(max_bk - min_bk <= 1)
 
+        # CALENDAR WEEKS HARD: Senin–Minggu = 1 OFF weekday + 1 OFF Sabtu/Minggu
         for e in range(num_employees):
             first_monday_idx = -1
             for i in range(min(7, num_days)):
@@ -443,13 +435,10 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
 
             if first_monday_idx != -1:
                 curr_monday = first_monday_idx
-                w = 0
                 while curr_monday + 6 < num_days:
-                    sb = standby[e, w]
                     model.Add(sum(x[e, curr_monday + i, 0] for i in range(5)) == 1)
-                    model.Add(x[e, curr_monday + 5, 0] + x[e, curr_monday + 6, 0] == 1 + sb)
+                    model.Add(x[e, curr_monday + 5, 0] + x[e, curr_monday + 6, 0] == 1)
                     curr_monday += 7
-                    w += 1
 
                 if curr_monday < num_days:
                     partial_len = num_days - curr_monday
@@ -1422,14 +1411,12 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
 
         standby_out = []
         if selected_pola == "POLA_2":
-            for (e, w), var in standby.items():
+            for (e, d), var in standby.items():
                 if solver.Value(var):
-                    sat = full_week_mondays[w] + 5
-                    for d in (sat, sat + 1):
-                        standby_out.append({
-                            "employee_id": employees[e].id,
-                            "date": (start_date + timedelta(days=d)).isoformat(),
-                        })
+                    standby_out.append({
+                        "employee_id": employees[e].id,
+                        "date": (start_date + timedelta(days=d)).isoformat(),
+                    })
         return {"msg": f"Jadwal {dept.name} berhasil digenerate!", "standby": standby_out}
     else:
         if selected_pola == "POLA_2":
@@ -1437,8 +1424,8 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 status_code=400,
                 detail=(
                     "POLA_2 fairness tidak solvable untuk pool/bulan ini "
-                    "(1 OFF weekday + 1 OFF Sabtu/Minggu per minggu, weekend 1 S2 + 1 OC "
-                    "dengan standby bergilir, kerja/OFF ±1, S1+OC vs S2 ±1, weekend ±1). "
+                    "(1 OFF weekday + 1 OFF Sabtu/Minggu per minggu, weekend 1 OC + 1 S2 "
+                    "+ S2 cadangan bergilir, kerja/OFF ±1, S1+OC vs S2 ±1, weekend ±1). "
                     "Sesuaikan jumlah anggota roster atau edit manual."
                 ),
             )
@@ -1541,6 +1528,7 @@ class SolveHistory(BaseModel):
     employee_id: int
     date: str
     shift: str
+    standby: bool = False
 
 
 class SolveRequest(BaseModel):
@@ -1602,6 +1590,12 @@ def solve(payload: SolveRequest, db: Session = Depends(get_db)):
         )
     db.commit()
 
+    prev_standby_ids = ",".join(
+        str(id_map[int(h.employee_id)])
+        for h in payload.history
+        if h.standby and int(h.employee_id) in id_map
+    )
+
     # Run existing generator (mutates schedules for this dept/month)
     gen_result = generate(
         year=payload.year,
@@ -1609,6 +1603,7 @@ def solve(payload: SolveRequest, db: Session = Depends(get_db)):
         department_id=dept.id,
         pola=pola,
         full_shift=None,
+        prev_standby_ids=prev_standby_ids or None,
         db=db,
     )
 

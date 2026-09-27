@@ -72,64 +72,52 @@ def test_pola2_august_2026_hard_fairness():
     assert max(weekend_work) - min(weekend_work) <= 1
 
 
-def assert_weekly_off_and_standby(schedules, employees, year, month):
-    """Tiap minggu penuh: 1 OFF weekday; weekend 1 OFF, atau 2 OFF kalau standby.
-    Standby = (n - 4) orang/minggu, bergilir (maks sekali/bulan untuk n=5)."""
+def assert_weekly_off_and_backup(schedules, employees, year, month):
+    """Tiap minggu penuh: 1 OFF weekday + 1 OFF weekend (tanpa libur tambahan).
+    Weekend: 1 OC + 1 S2 inti; kalau 2 S2, tepat satu ditandai cadangan, digilir."""
     grid = by_user_date(schedules)
-    standby_flags = {
-        (s["userId"], s["date"]) for s in schedules if s.get("standby")
-    }
+    backup = {(s["userId"], s["date"]) for s in schedules if s.get("standby")}
+    for uid, day in backup:
+        assert grid[uid][day] == "S2", (uid, day, grid[uid][day])
+
     start = date(year, month, 1)
     num_days = monthrange(year, month)[1]
     first_monday = next(
         i for i in range(7) if (start + timedelta(days=i)).weekday() == 0
     )
-    standby_weeks = defaultdict(int)
     curr = first_monday
     while curr + 6 < num_days:
         days = [start + timedelta(days=curr + i) for i in range(7)]
-        standby_this_week = []
         for employee in employees:
-            uid = employee["id"]
-            shifts = [grid[uid][d.isoformat()] for d in days]
-            assert shifts[:5].count("OFF") == 1, (uid, curr, shifts)
-            we_off = shifts[5:].count("OFF")
-            assert we_off in (1, 2), (uid, curr, shifts)
-            flagged = all((uid, d.isoformat()) in standby_flags for d in days[5:])
-            assert flagged == (we_off == 2), (uid, curr, shifts)
-            if we_off == 2:
-                standby_this_week.append(uid)
-                standby_weeks[uid] += 1
-        assert len(standby_this_week) == len(employees) - 4, (curr, standby_this_week)
+            shifts = [grid[employee["id"]][d.isoformat()] for d in days]
+            assert shifts[:5].count("OFF") == 1, (employee["id"], curr, shifts)
+            assert shifts[5:].count("OFF") == 1, (employee["id"], curr, shifts)
         curr += 7
-    if len(employees) == 5:
-        assert all(v <= 1 for v in standby_weeks.values()), dict(standby_weeks)
+
+    for i in range(num_days):
+        day = start + timedelta(days=i)
+        if day.weekday() < 5:
+            continue
+        shifts = [grid[e["id"]][day.isoformat()] for e in employees]
+        s2 = shifts.count("S2")
+        assert shifts.count("S1+OC") == 1 and shifts.count("S1") == 0, (day, shifts)
+        assert 1 <= s2 <= 2, (day, shifts)
+        flagged = sum(1 for e in employees if (e["id"], day.isoformat()) in backup)
+        assert flagged == s2 - 1, (day, shifts, flagged)
+
+    per_person = [sum(1 for (uid, _) in backup if uid == e["id"]) for e in employees]
+    assert max(per_person) - min(per_person) <= 1, per_person
 
 
-def test_pola2_weekly_off_rule_and_rotating_standby():
-    assert_weekly_off_and_standby(solve(), EMPLOYEES, 2026, 8)
+def test_pola2_weekly_off_rule_and_weekend_backup():
+    assert_weekly_off_and_backup(solve(), EMPLOYEES, 2026, 8)
 
 
 @pytest.mark.parametrize("year,month", [(2026, 9), (2026, 10), (2026, 11), (2026, 12)])
 def test_pola2_weekly_off_rule_other_months(year, month):
     employees = [{"id": i, "name": f"P{i}", "religion": "Umum"} for i in range(1, 6)]
     schedules = solve(employees=employees, year=year, month=month)
-    assert_weekly_off_and_standby(schedules, employees, year, month)
-
-
-def test_pola2_weekend_exactly_one_s2_and_one_oc():
-    schedules = solve()
-    by_day = defaultdict(list)
-    for schedule in schedules:
-        day = date.fromisoformat(schedule["date"])
-        if day.weekday() >= 5:
-            by_day[schedule["date"]].append(schedule["shift"])
-
-    for day, shifts in by_day.items():
-        working = [s for s in shifts if s in WORKING_SHIFTS]
-        assert working.count("S1+OC") == 1, (day, shifts)
-        assert working.count("S2") == 1, (day, shifts)
-        assert len(working) == 2, (day, shifts)
+    assert_weekly_off_and_backup(schedules, employees, year, month)
 
 
 def july_history_with_heavier_a_and_b():
