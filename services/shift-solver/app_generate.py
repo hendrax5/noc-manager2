@@ -412,6 +412,9 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 curr_monday = first_monday_idx
                 while curr_monday + 6 < num_days:
                     model.Add(sum(x[e, curr_monday + i, 0] for i in range(7)) == 2)
+                    # 2 OFF = 1 di Senin–Jumat + 1 di Sabtu/Minggu
+                    model.Add(sum(x[e, curr_monday + i, 0] for i in range(5)) == 1)
+                    model.Add(x[e, curr_monday + 5, 0] + x[e, curr_monday + 6, 0] == 1)
                     curr_monday += 7
 
                 if curr_monday < num_days:
@@ -425,6 +428,42 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                         sum(x[e, i, 0] for i in range(curr_monday, num_days))
                         <= min(partial_len, target_partial + 1)
                     )
+
+            # Minggu parsial dalam bulan (soft — hard bentrok dengan fairness S1 vs S2 ±1):
+            # usahakan maks 1 OFF weekday dan maks 1 OFF weekend
+            partial_ranges = []
+            if first_monday_idx > 0:
+                partial_ranges.append(range(0, first_monday_idx))
+            if first_monday_idx != -1:
+                tail_start = first_monday_idx + ((num_days - first_monday_idx) // 7) * 7
+                if tail_start < num_days:
+                    partial_ranges.append(range(tail_start, num_days))
+            for p_idx, days in enumerate(partial_ranges):
+                wd_days = [d for d in days if (start_date + timedelta(days=d)).weekday() < 5]
+                we_days = [d for d in days if (start_date + timedelta(days=d)).weekday() >= 5]
+                for label, group in (("wd", wd_days), ("we", we_days)):
+                    if len(group) < 2:
+                        continue
+                    over = model.NewBoolVar(f'core_partial_{label}_over_e{e}_p{p_idx}')
+                    model.Add(sum(x[e, d, 0] for d in group) <= 1 + over)
+                    bonus_vars.append(over * -6000)
+
+            # Minggu lintas bulan (pakai history): soft 1 OFF weekday + 1 OFF weekend
+            lead = start_date.weekday()
+            if lead > 0 and all((e, -i) in history_days for i in range(1, lead + 1)):
+                week = range(-lead, -lead + 7)
+                wd_off = sum(
+                    x[e, d, 0] for d in week
+                    if (start_date + timedelta(days=d)).weekday() < 5
+                )
+                we_off = sum(
+                    x[e, d, 0] for d in week
+                    if (start_date + timedelta(days=d)).weekday() >= 5
+                )
+                cross_ok = model.NewBoolVar(f'core_cross_week_ok_e{e}')
+                model.Add(wd_off == 1).OnlyEnforceIf(cross_ok)
+                model.Add(we_off == 1).OnlyEnforceIf(cross_ok)
+                bonus_vars.append(cross_ok * 3000)
 
         # Aturan Transisi: Setelah S1+S3 (On-Call), keesokan harinya WAJIB masuk S2 (atau Libur).
         # S2 tidak boleh langsung ke S1/OC tanpa libur — kecuali lintas batas bulan (d=-1→0),
@@ -1353,7 +1392,8 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 status_code=400,
                 detail=(
                     "POLA_2 fairness tidak solvable untuk pool/bulan ini "
-                    "(2 OFF Senin–Minggu, kerja/OFF ±1, S1+OC vs S2 ±1, weekend ±1). "
+                    "(2 OFF Senin–Minggu = 1 weekday + 1 Sabtu/Minggu, kerja/OFF ±1, "
+                    "S1+OC vs S2 ±1, weekend ±1). "
                     "Sesuaikan jumlah anggota roster atau edit manual."
                 ),
             )

@@ -1,6 +1,8 @@
+from calendar import monthrange
 from collections import defaultdict
 from datetime import date, timedelta
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app_generate import app
@@ -13,15 +15,15 @@ EMPLOYEES = [
 WORKING_SHIFTS = {"S1", "S2", "S1+OC"}
 
 
-def solve(history=None):
+def solve(history=None, employees=None, year=2026, month=8):
     with TestClient(app) as client:
         response = client.post(
             "/solve",
             json={
-                "year": 2026,
-                "month": 8,
+                "year": year,
+                "month": month,
                 "pola": "POLA_2",
-                "employees": EMPLOYEES,
+                "employees": employees or EMPLOYEES,
                 "history": history or [],
             },
         )
@@ -93,6 +95,52 @@ def test_pola2_monday_sunday_exactly_two_off():
                 if grid[user_id].get(day.isoformat()) == "OFF":
                     offs += 1
             assert offs == 2, f"user {user_id} week starting +{curr}: OFF={offs}"
+            curr += 7
+
+
+def test_pola2_one_weekday_off_and_one_weekend_off_per_week():
+    schedules = solve()
+    grid = by_user_date(schedules)
+    start = date(2026, 8, 1)
+    num_days = 31
+
+    first_monday = next(
+        i for i in range(7) if (start + timedelta(days=i)).weekday() == 0
+    )
+    for employee in EMPLOYEES:
+        user_id = employee["id"]
+        curr = first_monday
+        while curr + 6 < num_days:
+            days = [start + timedelta(days=curr + i) for i in range(7)]
+            wd_off = sum(1 for d in days[:5] if grid[user_id][d.isoformat()] == "OFF")
+            we_off = sum(1 for d in days[5:] if grid[user_id][d.isoformat()] == "OFF")
+            assert wd_off == 1, f"user {user_id} week +{curr}: weekday OFF={wd_off}"
+            assert we_off == 1, f"user {user_id} week +{curr}: weekend OFF={we_off}"
+            curr += 7
+
+
+@pytest.mark.parametrize(
+    "year,month,size",
+    [(2026, 9, 5), (2026, 10, 5), (2026, 11, 5), (2026, 12, 5)],
+)
+def test_pola2_weekday_weekend_off_rule_other_months(year, month, size):
+    employees = [
+        {"id": i, "name": f"P{i}", "religion": "Umum"} for i in range(1, size + 1)
+    ]
+    schedules = solve(employees=employees, year=year, month=month)
+    grid = by_user_date(schedules)
+    start = date(year, month, 1)
+    num_days = monthrange(year, month)[1]
+    first_monday = next(
+        i for i in range(7) if (start + timedelta(days=i)).weekday() == 0
+    )
+    for employee in employees:
+        curr = first_monday
+        while curr + 6 < num_days:
+            days = [start + timedelta(days=curr + i) for i in range(7)]
+            shifts = [grid[employee["id"]][d.isoformat()] for d in days]
+            assert shifts[:5].count("OFF") == 1, (employee, curr, shifts)
+            assert shifts[5:].count("OFF") == 1, (employee, curr, shifts)
             curr += 7
 
 
