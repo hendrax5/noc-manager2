@@ -378,15 +378,16 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                 model.Add(s2_count != 1).OnlyEnforceIf(partial_ok.Not())
                 bonus_vars.append(partial_ok * 5000)
             elif curr.weekday() >= 5:
-                # Sabtu-Minggu: min 2 kerja (1 OC + ≥1 S2); boleh >2 via extra S2
+                # Sabtu-Minggu: 1 OC + 1–2 S2; prefer S2 = 1 (soft)
                 model.Add(working_cnt >= 2)
                 model.Add(s1_count == 0)
                 model.Add(s2_count == working_cnt - 1)
                 model.Add(s2_count >= 1)
+                model.Add(s2_count <= 2)
                 classic_we = model.NewBoolVar(f'core_classic_weekend_d{d}')
                 model.Add(working_cnt == 2).OnlyEnforceIf(classic_we)
                 model.Add(working_cnt != 2).OnlyEnforceIf(classic_we.Not())
-                bonus_vars.append(classic_we * 2000)
+                bonus_vars.append(classic_we * 4000)
 
         # CALENDAR WEEKS HARD: Senin–Minggu tepat 2 OFF (= 5 kerja)
         for e in range(num_employees):

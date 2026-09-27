@@ -158,6 +158,25 @@ def test_pola2_weekend_allows_at_least_two_workers():
         assert working.count("S1+OC") == 1
         assert working.count("S1") == 0
         assert working.count("S2") == len(working) - 1
+        assert 1 <= working.count("S2") <= 2, f"{day} weekend S2={working.count('S2')}"
+
+
+def test_pola2_weekend_prefers_single_s2():
+    schedules = solve()
+    by_day = defaultdict(list)
+    for schedule in schedules:
+        day = date.fromisoformat(schedule["date"])
+        if day.weekday() >= 5:
+            by_day[day].append(schedule["shift"])
+
+    # Tiap weekend penuh (Sabtu+Minggu) minimal satu hari hanya 1 S2
+    saturdays = sorted(d for d in by_day if d.weekday() == 5)
+    for sat in saturdays:
+        sun = sat + timedelta(days=1)
+        if sun not in by_day:
+            continue
+        s2_counts = [by_day[sat].count("S2"), by_day[sun].count("S2")]
+        assert min(s2_counts) == 1, f"weekend {sat}: S2={s2_counts}"
 
 
 def july_history_with_heavier_a_and_b():
