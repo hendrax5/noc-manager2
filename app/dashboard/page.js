@@ -8,6 +8,7 @@ import {
   getPersonalCategoryIds,
   personalTicketGuard,
 } from "@/lib/tickets/personalCategories";
+import { buildDashboardOverview } from "@/lib/reports/dashboard";
 
 export default async function DashboardPage({ searchParams }) {
   const session = await getServerSession(authOptions);
@@ -69,40 +70,26 @@ export default async function DashboardPage({ searchParams }) {
     personalTicketGuard({ user: session?.user, personalCategoryIds })
   );
 
-  // Category filter based on department config
-  const hasCategoryFilter = deptConfig.categories && deptConfig.categories.length > 0;
-  const categoryFilterClause = hasCategoryFilter ? { jobCategory: { name: { in: deptConfig.categories } } } : {};
-
-  // Fetch metrics (canonical statuses; include legacy aliases until DB normalized)
-  const totalNewTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: 'New' } });
-  const totalPendingTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: { in: ['Pending', 'Waiting Reply'] } } });
-  const totalOpenTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: { in: ['Open', 'Replied'] } } });
-  const totalInProgressTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: 'In Progress' } });
-  const totalResolvedTickets = await prisma.ticket.count({ where: { ...scope, ...categoryFilterClause, status: { in: ['Resolved', 'Closed'] } } });
-  
-  const ticketStats = [
-    { status: 'New', count: totalNewTickets },
-    { status: 'Open', count: totalOpenTickets },
-    { status: 'In Progress', count: totalInProgressTickets },
-    { status: 'Pending', count: totalPendingTickets },
-    { status: 'Resolved', count: totalResolvedTickets }
-  ];
-
-  // Compute Average TTR (Time to Resolution)
-  const resolvedData = await prisma.ticket.findMany({
-    where: { ...scope, ...categoryFilterClause, status: 'Resolved' },
-    select: { createdAt: true, updatedAt: true, resolvedAt: true }
+  const {
+    totals,
+    ticketStats,
+    avgTtrObj,
+    resolvedData,
+    todayTickets,
+    todayResolved,
+    todayResolvedCount,
+    categoryMetrics,
+    categoryStats,
+    picWorkloads,
+    activeCustomerIncidents,
+    criticalSlaTickets,
+  } = await buildDashboardOverview({
+    scope,
+    categoryNames: deptConfig.categories || null,
+    includeSkyView: hasSkyViewAccess,
+    skyTicketGuard: personalTicketGuard({ user: session?.user, personalCategoryIds }),
   });
-  let totalTtrMs = 0;
-  resolvedData.forEach(t => {
-    const diff = new Date(t.resolvedAt || t.updatedAt).getTime() - new Date(t.createdAt).getTime();
-    if (diff > 0) totalTtrMs += diff;
-  });
-  const avgTtrMins = resolvedData.length > 0 ? Math.round((totalTtrMs / resolvedData.length) / 60000) : 0;
-  const avgTtrObj = {
-    h: Math.floor(avgTtrMins / 60),
-    m: avgTtrMins % 60
-  };
+  const reportStats = [];
 
   // Fetch pending Open Tickets specifically allocated to them
   const myOpenTickets = await prisma.ticket.findMany({
@@ -130,156 +117,6 @@ export default async function DashboardPage({ searchParams }) {
     take: 4
   });
 
-  // Auto-Report Logic (Today's Touched & Resolved Tickets)
-  const todayStart = new Date();
-  todayStart.setHours(0,0,0,0);
-  
-  const todayTickets = await prisma.ticket.findMany({
-    where: { 
-      ...scope,
-      ...categoryFilterClause,
-      updatedAt: { gte: todayStart }
-    },
-    select: { id: true, status: true }
-  });
-  const todayResolved = todayTickets.filter(t => t.status === 'Resolved').length;
-  
-  const reportStats = [];
-
-  const jobCategories = await prisma.jobCategory.findMany({
-    where: { active: true },
-    orderBy: { name: 'asc' }
-  });
-
-  // Filter job categories by department config
-  const filteredCategories = hasCategoryFilter 
-    ? jobCategories.filter(cat => deptConfig.categories.includes(cat.name))
-    : jobCategories;
-
-  // Count active tickets per category
-  const categoryMetrics = await Promise.all(
-    filteredCategories.map(async (cat) => {
-      const [activeCount, todayCount, resolvedTodayCount] = await Promise.all([
-        prisma.ticket.count({
-          where: { ...scope, jobCategoryId: cat.id, status: { notIn: ['Resolved', 'Closed'] } }
-        }),
-        prisma.ticket.count({
-          where: { ...scope, jobCategoryId: cat.id, updatedAt: { gte: todayStart } }
-        }),
-        prisma.ticket.count({
-          where: { ...scope, jobCategoryId: cat.id, status: 'Resolved', resolvedAt: { gte: todayStart } }
-        })
-      ]);
-      return {
-        id: cat.id,
-        name: cat.name,
-        score: cat.score,
-        active: activeCount,
-        today: todayCount,
-        resolvedToday: resolvedTodayCount
-      };
-    })
-  );
-
-  // Category stats for chart (only categories with active tickets)
-  const categoryStats = categoryMetrics
-    .filter(c => c.active > 0)
-    .map(c => ({ name: c.name, count: c.active }));
-
-  // Count today's resolved
-  const todayResolvedCount = await prisma.ticket.count({
-    where: { ...scope, ...categoryFilterClause, status: 'Resolved', resolvedAt: { gte: todayStart } }
-  });
-  ticketStats[4].count = todayResolvedCount;
-
-  // ================================================
-  // Sky View Specific Queries
-  // ================================================
-  let picWorkloads = [];
-  let criticalSlaTickets = [];
-  let activeCustomerIncidents = [];
-
-  if (hasSkyViewAccess) {
-    const skyTicketWhere = andWhere(
-      { status: { notIn: ['Resolved', 'Closed'] } },
-      personalTicketGuard({ user: session?.user, personalCategoryIds })
-    );
-
-    // 1. NOC Staff workloads (active ticket counts assigned per staff)
-    picWorkloads = await prisma.user.findMany({
-      where: {
-        role: { name: { in: ['Staff', 'Manager', 'Admin'] } }
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        department: { select: { name: true } },
-        tickets: {
-          where: skyTicketWhere,
-          select: {
-            id: true,
-            trackingId: true,
-            title: true,
-            priority: true,
-            status: true,
-            createdAt: true,
-            jobCategory: {
-              select: {
-                name: true,
-                score: true
-              }
-            }
-          },
-          orderBy: { createdAt: 'desc' }
-        },
-        _count: {
-          select: {
-            tickets: {
-              where: skyTicketWhere
-            }
-          }
-        }
-      },
-      orderBy: { name: 'asc' }
-    });
-
-    // Sort by workloads descending for better visibility
-    picWorkloads.sort((a, b) => b._count.tickets - a._count.tickets);
-
-    // 2. Active critical/high incidents grouped by customer/client
-    activeCustomerIncidents = await prisma.ticket.findMany({
-      where: {
-        status: { notIn: ['Resolved', 'Closed'] },
-        priority: { in: ['High', 'Critical'] }
-      },
-      include: {
-        services: {
-          include: {
-            customer: { select: { name: true } }
-          }
-        }
-      },
-      orderBy: { createdAt: 'asc' }
-    });
-
-    // 3. Early warning SLA countdown list (tickets closest to breach)
-    criticalSlaTickets = await prisma.ticket.findMany({
-      where: {
-        status: { notIn: ['Resolved', 'Closed'] },
-        enableSla: true,
-        nextSlaDeadline: { not: null }
-      },
-      include: {
-        assignee: { select: { name: true } },
-        department: { select: { name: true } },
-        jobCategory: { select: { name: true } }
-      },
-      orderBy: { nextSlaDeadline: 'asc' },
-      take: 10
-    });
-  }
-
   return (
     <main className="container" style={{ paddingBottom: '3rem' }}>
       <DashboardClient 
@@ -290,9 +127,9 @@ export default async function DashboardPage({ searchParams }) {
         allowedScopes={allowedScopes}
         
         // Workspace metrics
-        totalNewTickets={totalNewTickets}
-        totalInProgressTickets={totalInProgressTickets}
-        totalWaitingTickets={totalPendingTickets}
+        totalNewTickets={totals.new}
+        totalInProgressTickets={totals.inProgress}
+        totalWaitingTickets={totals.pending}
         totalRepliedTickets={0}
         todayResolvedCount={todayResolvedCount}
         avgTtrObj={avgTtrObj}

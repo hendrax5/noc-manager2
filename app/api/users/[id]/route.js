@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { hashPassword, omitPassword } from "@/lib/auth/password";
 
 export async function PATCH(req, { params }) {
   try {
@@ -29,8 +30,8 @@ export async function PATCH(req, { params }) {
       departmentId: parseInt(body.departmentId)
     };
 
-    if (body.password) {
-      data.password = body.password;
+    if (body.password && String(body.password).trim()) {
+      data.password = await hashPassword(body.password);
     }
 
     const user = await prisma.user.update({
@@ -38,7 +39,7 @@ export async function PATCH(req, { params }) {
       data
     });
 
-    return NextResponse.json(user);
+    return NextResponse.json(omitPassword(user));
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

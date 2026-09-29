@@ -6,12 +6,10 @@ export default async function TrackPage({ params }) {
   const resolved = await params;
   const trackingId = decodeURIComponent(resolved.trackingId);
 
-  const ticket = await prisma.ticket.findFirst({
-    where: {
-      OR: [{ trackingId }, ...(Number.isFinite(parseInt(trackingId, 10)) ? [{ id: parseInt(trackingId, 10) }] : [])],
-    },
+  // Public page: lookup by unguessable trackingId only, never by sequential id.
+  const ticket = await prisma.ticket.findUnique({
+    where: { trackingId },
     select: {
-      id: true,
       trackingId: true,
       title: true,
       status: true,

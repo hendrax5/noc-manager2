@@ -4,9 +4,9 @@ const SPEC = {
   openapi: "3.0.3",
   info: {
     title: "NOC Manager Integration API",
-    version: "1.0.0",
+    version: "1.1.0",
     description:
-      "Server-to-server API for tickets, schedules, meetings, and reports. Authenticate with header X-API-Key.",
+      "Server-to-server API for tickets, dashboard, schedules, meetings, and reports (daily, ops, performance, SLA). Authenticate with header X-API-Key.",
   },
   servers: [{ url: "/", description: "Current host" }],
   components: {
@@ -97,6 +97,35 @@ const SPEC = {
             description: "Embed public comments (max 50) on each ticket",
           },
           {
+            name: "priority",
+            in: "query",
+            schema: { type: "string" },
+            description: "Comma list of Low, Medium, High, Critical",
+          },
+          { name: "ticketType", in: "query", schema: { type: "string" }, description: "Comma list" },
+          {
+            name: "assigneeId",
+            in: "query",
+            schema: { type: "string" },
+            description: "User id, or `none` for unassigned",
+          },
+          { name: "jobCategoryId", in: "query", schema: { type: "integer" } },
+          { name: "queueId", in: "query", schema: { type: "integer" } },
+          { name: "slaBreached", in: "query", schema: { type: "boolean" } },
+          {
+            name: "q",
+            in: "query",
+            schema: { type: "string" },
+            description: "Search title, trackingId, externalRef, description",
+          },
+          {
+            name: "view",
+            in: "query",
+            schema: { type: "string", enum: ["full"] },
+            description:
+              "full = add customData, jobCategory, queue, services, csat, awardedScore, counts. Needs tickets:read:full",
+          },
+          {
             name: "limit",
             in: "query",
             schema: { type: "integer", minimum: 1, maximum: 100, default: 50 },
@@ -167,6 +196,16 @@ const SPEC = {
           { name: "trackingId", in: "path", required: true, schema: { type: "string" } },
         ],
         responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/tickets/{trackingId}/full": {
+      get: {
+        summary: "Full read-only ticket (internal comments, notes, history, attachments, watchers, services)",
+        description: "Scope tickets:read:full.",
+        parameters: [
+          { name: "trackingId", in: "path", required: true, schema: { type: "string" } },
+        ],
+        responses: { "200": { description: "OK" }, "404": { description: "Not found" } },
       },
     },
     "/api/v1/tickets/{trackingId}/comments": {
@@ -272,11 +311,125 @@ const SPEC = {
         responses: { "200": { description: "OK" } },
       },
     },
+    "/api/v1/reports/performance/{userId}": {
+      get: {
+        summary: "User points & performance (Poin saya)",
+        description: "Scope reports:performance:read.",
+        parameters: [
+          { name: "userId", in: "path", required: true, schema: { type: "integer" } },
+          { name: "start", in: "query", schema: { type: "string", format: "date" } },
+          { name: "end", in: "query", schema: { type: "string", format: "date" } },
+        ],
+        responses: { "200": { description: "OK" }, "404": { description: "User not found" } },
+      },
+    },
+    "/api/v1/reports/leaderboard": {
+      get: {
+        summary: "Leaderboard (tech + CS), category TTR, sky view stats",
+        description: "Scope reports:performance:read. start and end must be given together.",
+        parameters: [
+          { name: "start", in: "query", schema: { type: "string", format: "date" } },
+          { name: "end", in: "query", schema: { type: "string", format: "date" } },
+        ],
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/reports/work-hours": {
+      get: {
+        summary: "Team work-hours timeline for one day (active / idle / overtime, diligence)",
+        description: "Scope reports:performance:read.",
+        parameters: [
+          { name: "date", in: "query", schema: { type: "string", format: "date" } },
+          { name: "departmentId", in: "query", schema: { type: "integer" } },
+          { name: "locationId", in: "query", schema: { type: "integer" } },
+        ],
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/reports/sla": {
+      get: {
+        summary: "SLA & Analytics (summary, monthly availability, incidents, trend)",
+        description: "Scope reports:sla:read. Dates are WIB (UTC+7). Default: last 30 days.",
+        parameters: [
+          { name: "startDate", in: "query", schema: { type: "string", format: "date" } },
+          { name: "endDate", in: "query", schema: { type: "string", format: "date" } },
+          { name: "customer", in: "query", schema: { type: "string" } },
+        ],
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/reports/service-desk": {
+      get: {
+        summary: "Service-desk metrics: volume, SLA met %, TTR, CSAT",
+        description: "Scope reports:sla:read.",
+        parameters: [
+          { name: "days", in: "query", schema: { type: "integer", minimum: 1, maximum: 365, default: 30 } },
+        ],
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/dashboard": {
+      get: {
+        summary: "Dashboard KPIs, category monitor, sky view (PIC workload, customer incidents, SLA early warning)",
+        description: "Scope dashboard:read. Global view (not limited to one user).",
+        parameters: [
+          { name: "departmentId", in: "query", schema: { type: "integer" } },
+          { name: "assigneeId", in: "query", schema: { type: "integer" } },
+          { name: "categories", in: "query", schema: { type: "string" }, description: "Comma list of job category names" },
+          { name: "skyView", in: "query", schema: { type: "boolean", default: true } },
+        ],
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/dashboard/live-ops": {
+      get: {
+        summary: "Live Operations Board tickets (max 100, breached first)",
+        description: "Scope dashboard:read.",
+        parameters: [
+          { name: "date", in: "query", schema: { type: "string", enum: ["today", "week", "all"], default: "today" } },
+          { name: "status", in: "query", schema: { type: "string" }, description: "Comma list; default all except Closed" },
+          { name: "category", in: "query", schema: { type: "string" } },
+          { name: "departmentId", in: "query", schema: { type: "integer" } },
+          { name: "assigneeId", in: "query", schema: { type: "integer" } },
+        ],
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/dashboard/sla-alerts": {
+      get: {
+        summary: "Open SLA tickets due within N minutes (or overdue)",
+        description: "Scope dashboard:read.",
+        parameters: [
+          { name: "withinMins", in: "query", schema: { type: "integer", default: 2, maximum: 1440 } },
+        ],
+        responses: { "200": { description: "OK" } },
+      },
+    },
     "/api/v1/meta/departments": {
       get: {
         summary: "List departments (id, name, code)",
         responses: { "200": { description: "OK" } },
       },
+    },
+    "/api/v1/meta/users": {
+      get: {
+        summary: "List users (id, name, email, role, department, location)",
+        parameters: [{ name: "departmentId", in: "query", schema: { type: "integer" } }],
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/meta/job-categories": {
+      get: {
+        summary: "List job categories (id, name, score)",
+        parameters: [{ name: "includeInactive", in: "query", schema: { type: "boolean" } }],
+        responses: { "200": { description: "OK" } },
+      },
+    },
+    "/api/v1/meta/queues": {
+      get: { summary: "List ticket queues", responses: { "200": { description: "OK" } } },
+    },
+    "/api/v1/meta/custom-fields": {
+      get: { summary: "List active ticket custom fields", responses: { "200": { description: "OK" } } },
     },
     "/api/external/tickets": {
       post: {

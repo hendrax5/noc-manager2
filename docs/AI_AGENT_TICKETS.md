@@ -1,170 +1,289 @@
 # Panduan: Agent AI + Integration API
 
-Cara membuat API key dan mem-poll **tiket**, **shift**, **meeting**, **daily report**, dan **ops report**.
+Cara membuat API key lalu membaca data **tiket (lengkap)**, **dashboard**, **poin / performance**, **SLA & analytics**, **daily report / leaderboard**, **shift**, **meeting**, dan **ops report**.
 
 Referensi teknis: [API_V1.md](./API_V1.md) · OpenAPI: `GET /api/v1/openapi`
 
+Semua endpoint baru di panduan ini **read-only** (`GET`). Yang bisa menulis hanya create ticket, PATCH ticket, dan comment (lihat API_V1.md).
+
 ## 1. Buat API key
 
-1. Buka **Settings → Integrations**
-2. Buat Integration App (mis. `ai-agent`) **atau** pada app yang sudah ada klik **Edit scopes**
-3. Centang scope yang dibutuhkan:
+1. Buka **Settings → Integrations** (butuh Admin / `manage_settings`)
+2. Buat Integration App (mis. `ai-agent`) **atau** klik **Edit scopes** pada app yang sudah ada
+3. Centang scope sesuai kebutuhan agent:
 
-| Scope | Fungsi |
-|-------|--------|
-| `tickets:read` | List + detail tiket |
-| `tickets:comment` | Opsional — balas komentar |
-| `schedules:read` | Roster shift + tipe shift |
-| `meetings:read` | List + detail meeting |
-| `reports:daily:read` | Daily report |
-| `reports:ops:read` | Ops report (downtime / new / upgrade / terminate) |
+| Scope | Fungsi | Menu di aplikasi |
+|-------|--------|------------------|
+| `tickets:read` | List + detail tiket (komentar **publik** saja) | Tickets |
+| `tickets:read:full` | Tiket lengkap: komentar internal, notes, history, attachment, watcher, services, CSAT, `customData` | Tickets (detail) |
+| `tickets:comment` | Opsional — balas komentar | Tickets |
+| `dashboard:read` | KPI, category monitor, sky view, live-ops board, SLA alert | Dashboard |
+| `reports:performance:read` | Poin per user, leaderboard, work-hours tim | Poin saya, Daily Reports (leaderboard), Performance |
+| `reports:sla:read` | SLA & Analytics, service-desk metrics | SLA & Analytics, Daily Reports (metrics) |
+| `reports:daily:read` | Isi laporan harian (tulisan user) | Reports → New |
+| `reports:ops:read` | Ops report (downtime / new / upgrade / terminate) | Ops Report |
+| `schedules:read` | Roster shift + tipe shift | Shifts |
+| `meetings:read` | List + detail meeting | Meetings |
 
-4. Simpan key (`noc_...`) — hanya ditampilkan sekali
+4. Simpan key (`noc_...`) — **hanya ditampilkan sekali**
 5. (Opsional) isi **Webhook URL** untuk event tiket realtime
 
-## 2. Auth
+> `tickets:read:full`, `dashboard:read`, `reports:performance:read`, dan `reports:sla:read` membuka data setara Admin/Manager (catatan internal, poin semua staff, email staff). Berikan hanya ke agent tepercaya.
+
+## 2. Auth & format umum
 
 ```http
 X-API-Key: noc_xxxxxxxx...
 ```
 
-Base URL: host production (ewo2 / URL publik).
+- Base URL: host production (URL publik aplikasi)
+- Semua respons JSON. Error: `{ "error": "..." }`, 403 scope kurang: `{ "error": "Forbidden", "missingScopes": [...] }`
+- Tanggal `YYYY-MM-DD` = tanggal kalender; `date-time` = ISO-8601 (`2026-09-25T00:00:00Z`)
+- Rate limit per app (default 60 req/menit) → `429 Too Many Requests`
+- Setiap request tercatat di audit log integrasi
+
+Contoh di bawah memakai:
+
+```bash
+export HOST="https://noc.example.com"
+export KEY="noc_xxxxxxxx"
+```
 
 ## 3. Tiket
 
-### Tiket baru
+### 3.1 List / poll
 
 ```bash
+# Tiket baru sejak poll terakhir
 curl -s -H "X-API-Key: $KEY" \
   "$HOST/api/v1/tickets?status=New&createdSince=2026-09-25T00:00:00Z&limit=50"
+
+# Sudah direspons staff
+curl -s -H "X-API-Key: $KEY" \
+  "$HOST/api/v1/tickets?hasHumanResponse=true&updatedSince=2026-09-25T00:00:00Z"
+
+# Critical/High yang belum di-assign
+curl -s -H "X-API-Key: $KEY" \
+  "$HOST/api/v1/tickets?priority=Critical,High&assigneeId=none&status=New,Open"
+
+# Cari berdasarkan teks
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/tickets?q=core-sw-01"
+
+# Mode full (butuh tickets:read:full) — tambah customData, jobCategory, queue, services, csat, counts
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/tickets?view=full&slaBreached=true"
 ```
 
-### Sudah direspons manusia
+| Param | Keterangan |
+|-------|------------|
+| `status` | Satu status atau comma list (`New`, `Open`, `Pending`, `In Progress`, `On Hold`, `Resolved`, `Closed`, …) |
+| `priority` | Comma list: `Low`, `Medium`, `High`, `Critical` |
+| `ticketType` | Comma list: `Incident`, `Problem`, `Change`, `Request` |
+| `assigneeId` | ID user, atau `none` untuk yang belum di-assign |
+| `departmentId` / `departmentCode` | Filter dept (`GET /api/v1/meta/departments`) |
+| `jobCategoryId`, `queueId` | Filter kategori / queue (`/meta/job-categories`, `/meta/queues`) |
+| `slaBreached` | `true` = pernah breach SLA, `false` = belum |
+| `q` | Cari di title, trackingId, externalRef, description |
+| `hasHumanResponse` | `true` / `false` berdasarkan `firstRespondedAt` |
+| `createdSince`, `updatedSince`, `respondedSince` | ISO-8601 |
+| `includeComments` | `true` = sertakan komentar publik (maks 50) |
+| `view` | `full` (butuh `tickets:read:full`) |
+| `limit` / `offset` | 1–100 (default 50) / pagination |
 
-```bash
-curl -s -H "X-API-Key: $KEY" \
-  "$HOST/api/v1/tickets?hasHumanResponse=true&updatedSince=2026-09-25T00:00:00Z&limit=50"
+Respons: `{ tickets: [...], pagination: { total, limit, offset, hasMore } }`.
 
-# atau
-curl -s -H "X-API-Key: $KEY" \
-  "$HOST/api/v1/tickets?status=Pending&updatedSince=2026-09-25T00:00:00Z&limit=50"
-```
-
-### Thread lengkap
+### 3.2 Detail publik (thread yang dilihat pelanggan)
 
 ```bash
 curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/tickets/HSK-XXXX-XXXX"
 ```
 
-Query list: `status`, `hasHumanResponse`, `createdSince`, `updatedSince`, `respondedSince`, `departmentId`/`departmentCode`, `includeComments`, `limit`, `offset`.
+Hanya komentar publik. Cocok untuk agent yang membalas pelanggan.
 
-Field penting: `trackingId`, `status`, `createdBy` (pembuat tiket: user atau Integration App), `firstRespondedAt`, `hasHumanResponse`, `publicCommentCount`, `assignee`, `updatedAt`, `trackUrl`.
-
-`createdBy` contoh:
-- User UI: `{ "id": 12, "name": "Budi", "email": "...", "source": "user" }`
-- Via Integration API: `{ "id": null, "name": "AI Agent Bot", "email": null, "source": "integration", "integrationAppId": 2 }`
-- Tidak diketahui: `null`
-
-## 4. Shift (schedules)
+### 3.3 Detail lengkap (read-only, `tickets:read:full`)
 
 ```bash
-# Roster bulan
-curl -s -H "X-API-Key: $KEY" \
-  "$HOST/api/v1/schedules?start=2026-10-01&end=2026-10-31&departmentId=1"
-
-# Katalog tipe shift
-curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/schedules/types"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/tickets/HSK-XXXX-XXXX/full"
 ```
 
-| Param | Wajib | Keterangan |
-|-------|-------|------------|
-| `start`, `end` | ya | `YYYY-MM-DD` |
-| `departmentId` | tidak | Filter dept |
-| `locationId` | tidak | Filter lokasi |
-| `userId` | tidak | Satu orang |
+Berisi semua yang ada di halaman detail tiket:
 
-Respons: `{ start, end, count, schedules: [{ date, shift, isLembur, user }] }`
+| Field | Isi |
+|-------|-----|
+| field dasar | `trackingId`, `title`, `description`, `status`, `priority`, `ticketType`, `department`, `assignee`, `createdBy`, SLA (`enableSla`, `nextSlaDeadline`, `responseDueAt`, `resolutionDueAt`, `slaBreaches`, `slaTimerMins`), `escalationLevel`, `approvalStatus` |
+| `customData` | Field custom (downtime, customer, dll.) |
+| `jobCategory`, `queue`, `awardedScore` | Kategori, queue, poin tiket |
+| `csat` | `{ score, comment, at }` atau `null` |
+| `services` | Layanan terdampak + customer + template + `customData` |
+| `comments` | **Semua** komentar (`isPublic` true/false) + attachment |
+| `notes` | Internal notes (`noteType`: internal, follow_up, escalation, customer_update) |
+| `history` | Audit trail lengkap (`action`, `actor`, `awardedScore`) |
+| `attachments` | File tiket; `url` relatif (`/api/uploads/...`) → gabungkan dengan `$HOST` |
+| `watchers`, `meetings`, `actionItem` | Watcher, meeting yang membahas tiket, action item terkait |
 
-## 5. Meeting
+> Jangan mengirim isi `notes` / komentar `isPublic: false` ke pelanggan.
+
+### 3.4 Data referensi (meta)
 
 ```bash
-curl -s -H "X-API-Key: $KEY" \
-  "$HOST/api/v1/meetings?from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z&limit=50"
-
-curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/meetings/123"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/meta/departments"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/meta/users?departmentId=1"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/meta/job-categories"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/meta/queues"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/meta/custom-fields"
 ```
 
-List query: `from`, `to`, `status`, `limit`, `offset`.  
-Detail: organizer, attendees, sessions, action items.
+Pakai untuk mengubah ID (assignee, kategori, queue) menjadi nama.
 
-## 6. Daily report
+## 4. Dashboard (`dashboard:read`)
 
 ```bash
-curl -s -H "X-API-Key: $KEY" \
-  "$HOST/api/v1/reports/daily?from=2026-09-01T00:00:00Z&limit=50"
+# KPI + category monitor + sky view (global)
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/dashboard"
 
-curl -s -H "X-API-Key: $KEY" \
-  "$HOST/api/v1/reports/daily?userId=10&from=2026-09-01T00:00:00Z"
+# Hanya satu dept / satu PIC
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/dashboard?departmentId=1&skyView=false"
 
+# Live Operations Board
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/dashboard/live-ops?date=today"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/dashboard/live-ops?date=week&status=Open,In%20Progress"
+
+# Tiket SLA yang jatuh tempo dalam 15 menit (atau sudah lewat)
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/dashboard/sla-alerts?withinMins=15"
+```
+
+`/dashboard` mengembalikan:
+- `totals` — `new`, `open`, `inProgress`, `pending`, `resolvedToday`
+- `ticketStats`, `avgTtrMins`, `todayResolved`, `categoryMetrics` (active / today / resolvedToday per kategori), `categoryStats`
+- Sky view (`skyView` default `true`): `picWorkloads` (tiket aktif per staff), `activeCustomerIncidents` (High/Critical terbuka), `criticalSlaTickets` (10 deadline SLA terdekat)
+
+Param `/dashboard`: `departmentId`, `assigneeId`, `categories` (comma list nama kategori), `skyView`.
+Param `/dashboard/live-ops`: `date` (`today` | `week` | `all`), `status`, `category`, `departmentId`, `assigneeId`. Maks 100 tiket, yang breach SLA di atas. Tiket kategori personal (Daily Report / Laporan Harian) tidak ikut, sama seperti di UI.
+
+## 5. Poin & performance (`reports:performance:read`)
+
+```bash
+# Poin satu user (sama seperti "Poin saya")
+curl -s -H "X-API-Key: $KEY" \
+  "$HOST/api/v1/reports/performance/12?start=2026-09-01&end=2026-09-30"
+
+# Leaderboard tech + CS (menu Daily Reports)
+curl -s -H "X-API-Key: $KEY" \
+  "$HOST/api/v1/reports/leaderboard?start=2026-09-01&end=2026-09-30"
+
+# Timeline jam kerja tim satu hari
+curl -s -H "X-API-Key: $KEY" \
+  "$HOST/api/v1/reports/work-hours?date=2026-09-29&departmentId=1"
+```
+
+- **performance**: `user`, `metrics` (`finalScore`, `taskPoints`, `replyPoints`, `resolvedCount`, `totalInvolvedCount`, `meetingsAttended`, `isCS`, …), `tickets` (dengan `ttrMins`), `categoryTtr`, `activities` (15 terakhir). `start`/`end` opsional.
+- **leaderboard**: `techLeaderboard` (urut `taskPoints`), `csLeaderboard` (urut `csEngagementScore`), `globalCategoryTtr`, `skyViewStats` (`resolvedCount`, `avgTtrMins`, `activeOperators`, `leadingDept`). `start` dan `end` harus diisi berdua atau tidak sama sekali.
+- **work-hours**: per user → `shift`, `stats` (`activeHours`, `idleHours`, `overtimeHours`, `efficiencyRate`), `segments`, `activities`, `diligence`. `date` default hari ini.
+
+Daftar `userId`: `GET /api/v1/meta/users`.
+
+## 6. SLA & Analytics (`reports:sla:read`)
+
+```bash
+# Default 30 hari terakhir (tanggal WIB)
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/reports/sla"
+
+# Periode + filter customer
+curl -s -H "X-API-Key: $KEY" \
+  "$HOST/api/v1/reports/sla?startDate=2026-09-01&endDate=2026-09-30&customer=PT%20ABC"
+
+# Service-desk metrics (panel di atas leaderboard)
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/reports/service-desk?days=30"
+```
+
+- **sla**: `summary` (`totalTickets`, `slaBreaches`, `slaComplianceRate`, `uptimePercentage`, `totalDowntimeHours`, `outageCount`), `monthSections` (availability per bulan + daftar outage), `dailyTrend`, `departmentStats`, `incidents`, `letter` (data surat SLA).
+- **service-desk**: `volume` (created / resolved / openNow), `sla` (`breachRate`, `resolutionMetPct`, `responseMetPct`), `ttr`, `csat`, `byPriority`, `byType`, `byStatus`. `days` 1–365.
+
+## 7. Daily report (isi laporan harian, `reports:daily:read`)
+
+```bash
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/reports/daily?from=2026-09-01T00:00:00Z&limit=50"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/reports/daily?userId=10&from=2026-09-01T00:00:00Z"
 curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/reports/daily/42"
 ```
 
-List query: `userId`, `from`, `to`, `limit`, `offset`.
+Query: `userId`, `from`, `to`, `limit`, `offset`. Untuk angka poin/leaderboard pakai bagian 5.
 
-## 7. Ops report
+## 8. Ops report (`reports:ops:read`)
 
 ```bash
-curl -s -H "X-API-Key: $KEY" \
-  "$HOST/api/v1/reports/ops?period=week&anchor=2026-09-25"
-
-curl -s -H "X-API-Key: $KEY" \
-  "$HOST/api/v1/reports/ops?period=month&anchor=2026-09-01"
-
-curl -s -H "X-API-Key: $KEY" \
-  "$HOST/api/v1/reports/ops?period=custom&start=2026-09-01&end=2026-09-30"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/reports/ops?period=week&anchor=2026-09-25"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/reports/ops?period=month&anchor=2026-09-01"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/reports/ops?period=custom&start=2026-09-01&end=2026-09-30"
 ```
 
-Respons: `period`, `startDate`, `endDate`, `counts`, `downtime`, `terminate`, `new`, `upgrade` (sama seperti UI Ops Report).
+Respons: `period`, `startDate`, `endDate`, `counts`, `downtime`, `terminate`, `new`, `upgrade`.
 
-## 8. Pola agent yang disarankan
+## 9. Shift & meeting
 
-```
-loop setiap N menit (atau webhook tiket):
-  1) GET /api/v1/tickets?status=New&createdSince=<last_poll>
-  2) GET /api/v1/tickets?hasHumanResponse=true&updatedSince=<last_poll>
-  3) GET /api/v1/tickets/{trackingId} untuk thread penuh
-  4) GET /api/v1/schedules?start=&end=&departmentId=  (roster hari/minggu)
-  5) GET /api/v1/meetings?from=&to=  (meeting terjadwal)
-  6) GET /api/v1/reports/daily?from=  (laporan harian)
-  7) GET /api/v1/reports/ops?period=week  (ringkas ops)
+```bash
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/schedules?start=2026-10-01&end=2026-10-31&departmentId=1"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/schedules/types"
+
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/meetings?from=2026-09-01T00:00:00Z&to=2026-10-01T00:00:00Z"
+curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/meetings/123"
 ```
 
-Simpan watermark `last_poll` agar tidak memproses ulang semua data.
+Schedules: `start` + `end` wajib, opsional `departmentId`, `locationId`, `userId`.
+Meetings: `from`, `to`, `status`, `limit`, `offset`.
 
-## 9. Webhook tiket (opsional)
+## 10. Pola agent yang disarankan
+
+```
+setiap 1–5 menit (atau saat webhook tiket masuk):
+  1) GET /api/v1/dashboard/sla-alerts?withinMins=15      → eskalasi yang mendesak
+  2) GET /api/v1/tickets?status=New&createdSince=<last_poll>
+  3) GET /api/v1/tickets?updatedSince=<last_poll>&view=full
+  4) GET /api/v1/tickets/{trackingId}/full               → konteks lengkap sebelum analisa
+
+setiap jam / shift:
+  5) GET /api/v1/dashboard                               → ringkasan beban & insiden
+  6) GET /api/v1/dashboard/live-ops?date=today
+  7) GET /api/v1/schedules?start=<hari ini>&end=<hari ini>  → siapa yang on-shift
+
+harian / mingguan:
+  8) GET /api/v1/reports/leaderboard?start=&end=
+  9) GET /api/v1/reports/sla?startDate=&endDate=
+ 10) GET /api/v1/reports/service-desk?days=7
+ 11) GET /api/v1/reports/ops?period=week
+ 12) GET /api/v1/reports/work-hours?date=<kemarin>
+```
+
+Simpan watermark `last_poll` (pakai `updatedAt` terbesar yang diterima) agar tidak memproses ulang. Untuk report besar (SLA, leaderboard, work-hours) cache hasilnya di sisi agent. Endpoint ini menghitung ulang setiap request.
+
+## 11. Webhook tiket (opsional)
 
 Event: `ticket.created`, `ticket.commented`, `ticket.status_changed`, `ticket.resolved`, `ticket.sla_breached`.
 
-Header: `X-NOC-Event`, `X-NOC-Signature` (HMAC-SHA256), `X-NOC-App`.  
-Setelah event → `GET /api/v1/tickets/{trackingId}`.
+Header: `X-NOC-Event`, `X-NOC-Signature` (HMAC-SHA256 body dengan webhook secret), `X-NOC-App`.
+Setelah event → `GET /api/v1/tickets/{trackingId}/full` (atau `/tickets/{trackingId}` bila hanya punya `tickets:read`).
 
-Shift / meeting / daily / ops **belum** punya webhook; gunakan poll berkala.
+Dashboard / report / shift / meeting **belum** punya webhook; gunakan poll berkala.
 
-## 10. Checklist keamanan
+## 12. Checklist keamanan
 
-- Key hanya di secret store agent
-- Scope minimal sesuai kebutuhan (read-only)
-- Tiket v1 hanya komentar **publik** (bukan internal notes)
-- `reports:ops:read` setara akses Manager/Admin di UI — berikan hanya ke agent tepercaya
-- Rate limit ~60 req/menit per app
+- Simpan key di secret store agent, jangan di prompt / log / repo
+- Satu Integration App per agent, scope seminimal mungkin
+- `tickets:read` = hanya komentar publik; `tickets:read:full` = termasuk catatan internal → jangan diteruskan ke pelanggan
+- Report & dashboard setara akses Admin/Manager di UI
+- Data pribadi (email, poin staff) jangan dikirim ke pihak luar / model publik tanpa izin
+- Rotasi key: buat key baru → update agent → nonaktifkan app lama
+- Legacy global key (`EXTERNAL_API_KEY` / Settings `externalApiKey`) otomatis punya **semua** scope; lebih aman pakai Integration App per agent
 
-## 11. Troubleshooting
+## 13. Troubleshooting
 
 | Gejala | Cek |
 |--------|-----|
-| `401` | Header `X-API-Key` hilang/salah |
-| `403` + missingScopes | Centang scope di Integrations, simpan ulang |
-| List tiket kosong | Filter `createdSince` / status terlalu ketat |
+| `401` | Header `X-API-Key` hilang/salah, atau app nonaktif |
+| `403` + `missingScopes` | Centang scope di Settings → Integrations → Edit scopes |
+| `429` | Rate limit; kurangi frekuensi poll atau naikkan limit app |
+| `400 Invalid ...` | Format param (`YYYY-MM-DD`, angka, enum) |
+| List tiket kosong | Filter `createdSince` / `status` terlalu ketat |
+| `view=full` 403 | Butuh scope `tickets:read:full` |
+| Leaderboard 400 | `start` dan `end` harus diisi keduanya |
 | Schedules 400 | `start` dan `end` wajib |
 | Ops kosong | Periode / job category tidak cocok data |
-| Dept list | `GET /api/v1/meta/departments` (butuh scope tiket create atau read) |

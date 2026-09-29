@@ -1,8 +1,9 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { hashPassword, verifyPassword } from "@/lib/auth/password";
 
+/** @type {import("next-auth").AuthOptions} */
 export const authOptions = {
   trustHost: true,
   providers: [
@@ -18,28 +19,23 @@ export const authOptions = {
         const emailToFind = credentials.email.toLowerCase().trim();
         const user = await prisma.user.findFirst({ 
           where: { email: { equals: emailToFind, mode: 'insensitive' } },
-          include: { role: true, department: true }
+          include: { role: true, department: true },
+          omit: { password: false },
         });
 
         if (!user) return null;
         
-        const passwordInput = credentials.password.trim();
-        const dbPassword = user.password;
-        
-        let isValid = false;
-        
-        // 1. Try bcrypt comparison (if dbPassword looks like a bcrypt hash)
-        if (dbPassword.startsWith('$2a$') || dbPassword.startsWith('$2b$') || dbPassword.startsWith('$2y$') || dbPassword.startsWith('$2x$')) {
+        const { valid: isValid, needsRehash } = await verifyPassword(credentials.password, user.password);
+
+        if (isValid && needsRehash) {
           try {
-            isValid = await bcrypt.compare(passwordInput, dbPassword);
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { password: await hashPassword(credentials.password) },
+            });
           } catch (e) {
-            isValid = false;
+            console.warn("[auth] password rehash failed:", e.message);
           }
-        }
-        
-        // 2. Fallback to plain text comparison
-        if (!isValid && dbPassword === passwordInput) {
-          isValid = true;
         }
 
         if (isValid) {

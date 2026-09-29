@@ -18,7 +18,22 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const query = Object.fromEntries(searchParams.entries());
-    const result = await listTicketsForIntegration(query);
+    const full = query.view === "full";
+    if (full && !auth.app.scopes.includes("tickets:read:full")) {
+      await writeIntegrationAudit({
+        integrationAppId: auth.app.id,
+        method: auth.method,
+        path: auth.path,
+        statusCode: 403,
+        ip: auth.ip,
+        message: "missing scopes: tickets:read:full",
+      });
+      return NextResponse.json(
+        { error: "Forbidden", missingScopes: ["tickets:read:full"] },
+        { status: 403 }
+      );
+    }
+    const result = await listTicketsForIntegration(query, { full });
 
     await writeIntegrationAudit({
       integrationAppId: auth.app.id,

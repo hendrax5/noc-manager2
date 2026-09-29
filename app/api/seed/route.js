@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { hashPassword } from "@/lib/auth/password";
 
 const ALL_PERMISSIONS = [
   "view_all_tickets",
@@ -30,6 +32,14 @@ const ALL_PERMISSIONS = [
 
 export async function GET() {
   try {
+    const userCount = await prisma.user.count();
+    if (userCount > 0) {
+      const session = await getServerSession(authOptions);
+      if (session?.user?.role !== "Admin") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
+
     const adminRole = await prisma.role.upsert({
       where: { name: "Admin" },
       update: { permissions: ALL_PERMISSIONS },
@@ -50,30 +60,31 @@ export async function GET() {
     });
     await prisma.department.upsert({ where: { name: "CS" }, update: {}, create: { name: "CS" } });
 
-    const password = await bcrypt.hash("admin", 10);
-    const adminUser = await prisma.user.upsert({
+    const existingAdmin = await prisma.user.findUnique({
       where: { email: "admin@noc.com" },
-      update: {
-        name: "Super Admin",
-        password,
-        roleId: adminRole.id,
-        departmentId: deptNocCore.id,
-      },
-      create: {
+      select: { id: true },
+    });
+    if (existingAdmin) {
+      return NextResponse.json({ message: "Roles/departments synced; default admin already exists" });
+    }
+
+    const adminUser = await prisma.user.create({
+      data: {
         email: "admin@noc.com",
         name: "Super Admin",
-        password,
+        password: await hashPassword("admin"),
         roleId: adminRole.id,
         departmentId: deptNocCore.id,
       },
     });
 
     return NextResponse.json({
-      message: "Default admin ready",
+      message: "Default admin created — change this password immediately",
       user: adminUser.email,
       login: { email: "admin@noc.com", password: "admin" },
     });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[seed]", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

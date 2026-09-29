@@ -20,7 +20,7 @@ export async function GET() {
         JobCategory: await prisma.jobCategory.findMany(),
         CustomField: await prisma.customField.findMany(),
         Location: await prisma.location.findMany(),
-        User: await prisma.user.findMany(),
+        User: await prisma.user.findMany({ omit: { password: false } }),
         Customer: await prisma.customer.findMany(),
         ServiceTemplate: await prisma.serviceTemplate.findMany(),
         Service: await prisma.service.findMany(),

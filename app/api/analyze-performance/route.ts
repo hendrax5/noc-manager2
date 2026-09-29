@@ -1,6 +1,9 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getAppConfig } from "@/lib/config";
+import { canViewAllPerformance } from "@/lib/reports/performanceAccess";
 
 interface MetricParams {
   finalScore: number;
@@ -17,12 +20,20 @@ interface UserDataPayload {
   metrics: MetricParams;
 }
 
+const MAX_USERS = 20;
+
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!canViewAllPerformance(session.user)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await req.json();
     const usersData = body.usersData as UserDataPayload[];
     
-    if (!usersData || !Array.isArray(usersData) || usersData.length === 0) {
+    if (!usersData || !Array.isArray(usersData) || usersData.length === 0 || usersData.length > MAX_USERS) {
       return NextResponse.json({ error: "Data pengguna tidak valid" }, { status: 400 });
     }
 
@@ -65,6 +76,6 @@ Gunakan nada profesional namun santai (menggunakan bahasa Indonesia). Jangan tam
     return NextResponse.json({ analysis: text });
   } catch (error: any) {
     console.error("Gemini Error:", error);
-    return NextResponse.json({ error: `AI Error: ${error.message || "Terjadi kesalahan internal"}` }, { status: 500 });
+    return NextResponse.json({ error: "AI Error: Terjadi kesalahan internal" }, { status: 500 });
   }
 }

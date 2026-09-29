@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-09-29
+
+### Added
+- **Integration API v1 (read-only) for all main menus**: New `X-API-Key` endpoints for Dashboard (`/api/v1/dashboard`, `/dashboard/live-ops`, `/dashboard/sla-alerts`), Points & Performance (`/api/v1/reports/performance/{userId}`, `/reports/leaderboard`, `/reports/work-hours`), SLA & Analytics (`/api/v1/reports/sla`, `/reports/service-desk`), full ticket detail (`/api/v1/tickets/{trackingId}/full`, `GET /api/v1/tickets?view=full`) and reference data (`/api/v1/meta/users`, `/meta/job-categories`, `/meta/queues`, `/meta/custom-fields`).
+- **New integration scopes**: `tickets:read:full`, `dashboard:read`, `reports:performance:read`, `reports:sla:read`. Ticket list gains filters `priority`, `ticketType`, `assigneeId`, `jobCategoryId`, `queueId`, `slaBreached`, `q`.
+- **Docs**: `docs/AI_AGENT_TICKETS.md` rewritten as an AI-agent guide covering every menu; `docs/API_V1.md` and OpenAPI (1.1.0) updated.
+
+### Changed
+- Report logic (performance, leaderboard, SLA, service desk, work hours, dashboard, live ops, SLA alerts) moved into `lib/reports/*` and shared by the UI and the Integration API.
+
+### Security
+- Passwords are now bcrypt-hashed on create/update; legacy plain-text passwords are re-hashed on next login. The `password` field is omitted from every Prisma user query by default.
+- Removed the unauthenticated `/api/debug` endpoint.
+- `/api/seed` is Admin-only (except on an empty database) and never resets existing passwords.
+- `/api/analyze-performance` requires a session with performance view permission.
+- `GET /api/settings/branding` is Admin-only (it exposed API keys).
+- Public CSAT and ticket tracking accept only the tracking ID (no numeric-ID enumeration).
+- `/api/uploads` hardened against path traversal and serves unknown file types as attachments with `nosniff` + CSP sandbox.
+
+### Fixed
+- Branding settings update now awaits the config write.
+
 ## [2.4.1] - 2026-06-13
 
 ### Added

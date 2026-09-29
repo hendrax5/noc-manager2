@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { prisma } from '@/lib/prisma';
+import { listSlaAlerts } from '@/lib/reports/dashboard';
 
-export async function GET(req) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
@@ -19,31 +19,7 @@ export async function GET(req) {
       return NextResponse.json({ triggerAlarm: false, count: 0 });
     }
 
-    // Look for SLA tickets where nextSlaDeadline is <= NOW + 2 minutes
-    const twoMinutesFromNow = new Date(Date.now() + 2 * 60000);
-
-    const expiringTickets = await prisma.ticket.findMany({
-      where: {
-        enableSla: true,
-        status: { notIn: ['Resolved', 'Closed'] },
-        nextSlaDeadline: {
-          lte: twoMinutesFromNow
-        }
-      },
-      select: {
-        id: true,
-        trackingId: true,
-        title: true,
-        nextSlaDeadline: true
-      }
-    });
-
-    return NextResponse.json({
-      triggerAlarm: expiringTickets.length > 0,
-      count: expiringTickets.length,
-      tickets: expiringTickets
-    });
-
+    return NextResponse.json(await listSlaAlerts({ withinMins: 2 }));
   } catch (error) {
     console.error('SLA Alert Poller Error:', error);
     return NextResponse.json({ error: 'Failed to verify SLA alerts' }, { status: 500 });

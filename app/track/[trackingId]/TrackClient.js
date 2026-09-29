@@ -13,7 +13,7 @@ export default function TrackClient({ ticket }) {
     setSaving(true);
     setError("");
     try {
-      const res = await fetch(`/api/tickets/${ticket.id}/csat`, {
+      const res = await fetch(`/api/tickets/${encodeURIComponent(ticket.trackingId)}/csat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ score, comment }),
