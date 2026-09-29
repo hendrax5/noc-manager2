@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-09-29
+
+### Added
+- **Work hours: on-call and WFH**: `S1+OC` now counts the S1 hours (08:00–17:00) as the shift and the `S1+OC` window (22:00–08:00) as a separate on-call window. Activity there is an `oncall` segment with `stats.onCallHours`, not overtime or idle. Core (POLA_2) weekend working days are flagged `shift.workMode = "wfh"`; on-call is always WFH. The timeline now positions segments by clock time.
+- **Schedule generate warnings**: when the weekly OFF quota cannot be met in a month-boundary week, generate still succeeds and the toast lists the person and week to fix manually.
+
+### Changed
+- **Weekly OFF quota per Monday–Sunday cycle is hard, including month-boundary weeks**: Core 1 weekday + 1 Saturday/Sunday OFF; POLA_4/5/6 exactly 3 OFF. OFF days already in the previous month (history) and the next month (if generated, sent as `future`) are counted. POLA_6 full weeks moved from soft 2–4 to hard 3. If the hard version is infeasible, the solver retries with the boundary quota as a heavy penalty and returns `warnings`.
+- Shift solver CPU is capped by `SOLVER_WORKERS` (default 4 threads).
+- 12-hour polas (POLA_4/5/6) use 08:00–20:00 / 20:00–08:00 shift windows in work hours; overnight shifts are counted until the next morning.
+- CS engagement score = 1 per ticket created + 1 per reply + 1 per other status action (the ×5 on created tickets is removed).
+
+### Fixed
+- Bug report EWO2-API-20260929: `resolvedCount` counts resolved tickets assigned to the user in the period; TTR is measured per resolve cycle (from `reopenedAt` when reopened); SLA `uptimePercentage` is averaged per affected customer with overlapping outages merged (new `affectedCustomers`); open outages on resolved tickets end at `resolvedAt`; service-desk `byStatus` respects the `days` window and `breachRate` has 2 decimals.
+- Shift solver temp department data is cleaned up even when a solve fails.
+
 ## [2.5.0] - 2026-09-29
 
 ### Added

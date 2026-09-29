@@ -177,7 +177,17 @@ curl -s -H "X-API-Key: $KEY" \
 
 - **performance**: `user`, `metrics` (`finalScore`, `taskPoints`, `replyPoints`, `resolvedCount`, `totalInvolvedCount`, `meetingsAttended`, `isCS`, …), `tickets` (dengan `ttrMins`), `categoryTtr`, `activities` (15 terakhir). `start`/`end` opsional.
 - **leaderboard**: `techLeaderboard` (urut `taskPoints`), `csLeaderboard` (urut `csEngagementScore`), `globalCategoryTtr`, `skyViewStats` (`resolvedCount`, `avgTtrMins`, `activeOperators`, `leadingDept`). `start` dan `end` harus diisi berdua atau tidak sama sekali.
-- **work-hours**: per user → `shift`, `stats` (`activeHours`, `idleHours`, `overtimeHours`, `efficiencyRate`), `segments`, `activities`, `diligence`. `date` default hari ini.
+- **work-hours**: per user → `shift` (`name`, `startTime`, `endTime`, `workMode`, `onCall`), `stats` (`activeHours`, `idleHours`, `overtimeHours`, `onCallHours`, `efficiencyRate`), `segments` (`type`: `active` / `idle` / `overtime` / `oncall`), `activities`, `diligence`. `date` default hari ini (WIB).
+
+Definisi angka (sama di UI dan API):
+
+- `resolvedCount` (performance & leaderboard) = tiket yang di-assign ke user, status `Resolved`, dibuat **atau** terakhir diupdate dalam periode. Poin job-category diberikan ke penulis reply terakhir, jadi user bisa punya `taskPoints` > 0 dengan `resolvedCount` = 0.
+- `createdCount` = jumlah tiket yang dibuat user (history `Ticket created…`).
+- TTR (`avgMins`, `ttrMins`, `avgTtrMins`) dalam **menit**, dihitung per siklus resolve: dari `reopenedAt` (jika tiket pernah dibuka ulang) atau `createdAt`, sampai `resolvedAt`.
+- Skor CS (`csEngagementScore`) = 1 per tiket dibuat + 1 per reply + 1 per aksi status lain.
+- Work-hours: shift diambil dari jadwal tanggal `date`. Jam shift mengikuti pola departemen: pola 12 jam (POLA_4/5/6) → S1 08:00–20:00, S2 20:00–08:00; pola lain → jam di master Shift Type. Shift malam dihitung sampai jam selesai esok pagi, dan aktivitas dini hari milik shift malam kemarin tidak dihitung lagi. User tanpa jadwal (OFF / belum di-roster) → `shift.name = "No Shift Scheduled"`, `hasScheduledShift = false`, dan jam S1 pola departemen dipakai untuk menghitung idle.
+- On-call (Core `S1+OC`): jam kerja = jam S1 (08:00–17:00), lalu jendela on-call terpisah = jam Shift Type `S1+OC` (22:00–08:00 esok) di `shift.onCall`. Aktivitas di jendela on-call → segmen `oncall` dan `stats.onCallHours` (bukan lembur, bukan idle); aktivitas antara akhir S1 dan mulai on-call tetap `overtime`. Aktivitas pagi hari setelah on-call kemarin masuk ke laporan kemarin. `totalEffectiveHours` = active + overtime + on-call.
+- `shift.workMode`: `"wfh"` untuk hari kerja Sabtu/Minggu tim POLA_2 (Core; OFF weekend-nya 1 hari, hari lainnya WFH), selain itu `"office"`. On-call selalu WFH (`shift.onCall.workMode = "wfh"`).
 
 Daftar `userId`: `GET /api/v1/meta/users`.
 
@@ -197,6 +207,15 @@ curl -s -H "X-API-Key: $KEY" "$HOST/api/v1/reports/service-desk?days=30"
 
 - **sla**: `summary` (`totalTickets`, `slaBreaches`, `slaComplianceRate`, `uptimePercentage`, `totalDowntimeHours`, `outageCount`), `monthSections` (availability per bulan + daftar outage), `dailyTrend`, `departmentStats`, `incidents`, `letter` (data surat SLA).
 - **service-desk**: `volume` (created / resolved / openNow), `sla` (`breachRate`, `resolutionMetPct`, `responseMetPct`), `ttr`, `csat`, `byPriority`, `byType`, `byStatus`. `days` 1–365.
+
+Definisi angka SLA:
+
+- `uptimePercentage` / `monthSections[].availPercent` = rata-rata availability **per pelanggan terdampak** (outage yang tumpang-tindih pada satu pelanggan digabung). `affectedCustomers` = jumlah pelanggan tersebut. Isi `customer` untuk angka satu pelanggan.
+- `totalDowntimeHours` = total jam downtime **kumulatif semua pelanggan** (bisa melebihi panjang periode).
+- `outageCount` = jumlah tiket dengan downtime di periode. `slaComplianceRate` = tiket tanpa SLA breach (respon/resolusi), berbeda dengan uptime.
+- `/reports/sla` memakai tiket yang dibuat, di-resolve, atau diupdate dalam periode; `/reports/service-desk` memakai tiket yang dibuat dalam `days` hari terakhir. Jumlah breach keduanya bisa berbeda.
+- `breachRate`, `resolutionMetPct`, `responseMetPct` dalam persen; `breachRate` 2 desimal (mis. `0.04`).
+- `byStatus`, `byPriority`, `byType` = tiket yang dibuat dalam jendela `days` (totalnya = `volume.created`). `openNow` = semua tiket open saat ini.
 
 ## 7. Daily report (isi laporan harian, `reports:daily:read`)
 

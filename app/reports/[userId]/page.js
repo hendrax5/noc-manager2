@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
 import { canViewAllPerformance, canViewUserPerformance } from "@/lib/reports/performanceAccess";
-import { sumReplyAwardedScore } from "@/lib/tickets/points";
+import { isTicketCreatedAction, sumReplyAwardedScore } from "@/lib/tickets/points";
 
 import ReportFilter from "./ReportFilter";
 
@@ -129,10 +129,10 @@ export default async function UserReportDetail({ params, searchParams }) {
   let createdCount = 0;
   let statusActionsCount = 0;
   allActivities.forEach((h) => {
-    if (h.action?.includes("instantiated")) createdCount++;
+    if (isTicketCreatedAction(h.action)) createdCount++;
     else statusActionsCount++;
   });
-  const adminActionPoints = isCSTarget ? (createdCount * 5) + statusActionsCount : 0;
+  const adminActionPoints = isCSTarget ? createdCount + statusActionsCount : 0;
   const headlineScore = isCSTarget ? jobPoints + replyPoints + adminActionPoints : jobPoints;
 
   const personalCategoryTTRRaw = {};

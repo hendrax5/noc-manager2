@@ -4,7 +4,7 @@ const SPEC = {
   openapi: "3.0.3",
   info: {
     title: "NOC Manager Integration API",
-    version: "1.1.0",
+    version: "1.1.1",
     description:
       "Server-to-server API for tickets, dashboard, schedules, meetings, and reports (daily, ops, performance, SLA). Authenticate with header X-API-Key.",
   },
@@ -336,7 +336,7 @@ const SPEC = {
     },
     "/api/v1/reports/work-hours": {
       get: {
-        summary: "Team work-hours timeline for one day (active / idle / overtime, diligence)",
+        summary: "Team work-hours timeline for one day (active / idle / overtime / on-call, WFH flag, diligence)",
         description: "Scope reports:performance:read.",
         parameters: [
           { name: "date", in: "query", schema: { type: "string", format: "date" } },

@@ -8,10 +8,73 @@ from database import engine, get_db
 from ortools.sat.python import cp_model
 from datetime import date, timedelta
 import math
+import os
 import random
 import calendar
 
+# CP-SAT uses every core by default; cap it so a generate run doesn't starve the host.
+SOLVER_WORKERS = max(1, int(os.environ.get("SOLVER_WORKERS", "4")))
+
 models.Base.metadata.create_all(bind=engine)
+
+# Kuota OFF per minggu kalender Senin–Minggu (absen & lembur perusahaan dihitung per siklus ini).
+# Nilai: {kategori: (weekday() yang termasuk, jumlah OFF wajib)}
+WEEKLY_OFF_QUOTA = {
+    "POLA_2": {"weekday": (range(0, 5), 1), "weekend": (range(5, 7), 1)},
+    "POLA_4": {"week": (range(0, 7), 3)},
+    "POLA_5": {"week": (range(0, 7), 3)},
+    "POLA_6": {"week": (range(0, 7), 3)},
+}
+
+
+BOUNDARY_SLACK_PENALTY = 1_000_000
+
+
+def add_boundary_week_off_quota(model, x, e, pola, start_date, num_days, history_days, future_days, slack_terms=None):
+    """
+    Minggu yang terpotong pergantian bulan: OFF di bulan ini + OFF yang sudah ada di bulan
+    sebelah (history / jadwal bulan depan) harus pas dengan kuota minggu itu. Hari bulan sebelah
+    yang belum ada jadwalnya dianggap bebas, jadi batasnya jadi rentang agar tetap bisa dipenuhi.
+
+    slack_terms=None → hard. Kalau berupa list, kuota jadi soft: (variabel kelebihan/kekurangan,
+    e, tanggal Senin minggu itu) ditambahkan ke list itu dan dipenalti BOUNDARY_SLACK_PENALTY per
+    hari (dipakai saat versi hard tidak solvable, mis. bulan sebelah sudah melanggar kuota).
+    """
+    quotas = WEEKLY_OFF_QUOTA.get(pola)
+    if not quotas:
+        return
+
+    def dow(d):
+        return (start_date + timedelta(days=d)).weekday()
+
+    def constrain(cur_days, other_days, known):
+        week_start = (start_date + timedelta(days=min(min(cur_days), min(other_days)))).isoformat()
+        for dows, quota in quotas.values():
+            cur = [d for d in cur_days if dow(d) in dows]
+            other = [d for d in other_days if dow(d) in dows]
+            known_off = sum(1 for d in other if known.get((e, d)) == 0)
+            unknown = sum(1 for d in other if (e, d) not in known)
+            hi = min(len(cur), max(0, quota - known_off))
+            lo = min(hi, max(0, quota - known_off - unknown))
+            total = sum(x[e, d, 0] for d in cur)
+            if slack_terms is None:
+                model.Add(total >= lo)
+                model.Add(total <= hi)
+            else:
+                under = model.NewIntVar(0, lo, f"bnd_under_e{e}_d{cur[0] if cur else 0}_{quota}_{len(slack_terms)}")
+                over = model.NewIntVar(0, len(cur), f"bnd_over_e{e}_d{cur[0] if cur else 0}_{quota}_{len(slack_terms)}")
+                model.Add(total + under >= lo)
+                model.Add(total - over <= hi)
+                slack_terms.extend([(under, e, week_start), (over, e, week_start)])
+
+    lead = start_date.weekday()
+    if lead > 0:
+        constrain(range(0, min(7 - lead, num_days)), range(-lead, 0), history_days)
+
+    last_dow = dow(num_days - 1)
+    trail = 6 - last_dow
+    if trail > 0:
+        constrain(range(num_days - 1 - last_dow, num_days), range(num_days, num_days + trail), future_days)
 
 app = FastAPI()
 
@@ -135,7 +198,7 @@ def delete_employee(emp_id: int, db: Session = Depends(get_db)):
     return {"detail": "Employee deleted"}
 
 @app.get("/generate")
-def generate(year: int, month: int, department_id: int, pola: Optional[str] = None, full_shift: Optional[str] = None, prev_standby_ids: Optional[str] = None, db: Session = Depends(get_db)):
+def generate(year: int, month: int, department_id: int, pola: Optional[str] = None, full_shift: Optional[str] = None, prev_standby_ids: Optional[str] = None, soft_boundary: bool = False, db: Session = Depends(get_db)):
     dept = db.query(models.Department).filter(models.Department.id == department_id).first()
     if not dept:
         raise HTTPException(status_code=404, detail="Department not found")
@@ -181,6 +244,19 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
             if -6 <= delta_days < 0:
                 history_days[(e_idx, delta_days)] = s_id
 
+    # Jadwal bulan depan yang sudah ada (6 hari pertama) — agar minggu akhir bulan pas kuota
+    next_start = date(year + (month // 12), month % 12 + 1, 1)
+    future_days = {}  # (e_idx, d_offset >= num_days) -> shift_id
+    next_schedules = db.query(models.Schedule).filter(
+        models.Schedule.department_id == department_id,
+        models.Schedule.date.like(f"{next_start.year}-{next_start.month:02d}-%")
+    ).all()
+    for sch in next_schedules:
+        if sch.employee_id in emp_id_to_idx:
+            delta_days = (date.fromisoformat(sch.date) - start_date).days
+            if num_days <= delta_days < num_days + 6:
+                future_days[(emp_id_to_idx[sch.employee_id], delta_days)] = shift_str_to_id.get(sch.shift, 0)
+
     # Hari cadangan weekend bulan lalu (employee id, dipisah koma, boleh berulang) — rotasi POLA_2
     prev_weekend_standby = {e: 0 for e in range(num_employees)}
     for raw in (prev_standby_ids or "").split(","):
@@ -189,6 +265,7 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
             prev_weekend_standby[emp_id_to_idx[int(raw)]] += 1
                 
     model = cp_model.CpModel()
+    boundary_slack = [] if soft_boundary else None
     
     selected_pola = pola if pola else dept.model_type
     
@@ -421,18 +498,6 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                     first_monday_idx = i
                     break
 
-            if first_monday_idx > 0:
-                partial_len = first_monday_idx
-                target_partial = int(round(partial_len * 2 / 7))
-                model.Add(
-                    sum(x[e, i, 0] for i in range(partial_len))
-                    >= max(0, target_partial - 1)
-                )
-                model.Add(
-                    sum(x[e, i, 0] for i in range(partial_len))
-                    <= min(partial_len, target_partial + 1)
-                )
-
             if first_monday_idx != -1:
                 curr_monday = first_monday_idx
                 while curr_monday + 6 < num_days:
@@ -440,53 +505,10 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                     model.Add(x[e, curr_monday + 5, 0] + x[e, curr_monday + 6, 0] == 1)
                     curr_monday += 7
 
-                if curr_monday < num_days:
-                    partial_len = num_days - curr_monday
-                    target_partial = int(round(partial_len * 2 / 7))
-                    model.Add(
-                        sum(x[e, i, 0] for i in range(curr_monday, num_days))
-                        >= max(0, target_partial - 1)
-                    )
-                    model.Add(
-                        sum(x[e, i, 0] for i in range(curr_monday, num_days))
-                        <= min(partial_len, target_partial + 1)
-                    )
-
-            # Minggu parsial dalam bulan (soft — hard bentrok dengan fairness S1 vs S2 ±1):
-            # usahakan maks 1 OFF weekday dan maks 1 OFF weekend
-            partial_ranges = []
-            if first_monday_idx > 0:
-                partial_ranges.append(range(0, first_monday_idx))
-            if first_monday_idx != -1:
-                tail_start = first_monday_idx + ((num_days - first_monday_idx) // 7) * 7
-                if tail_start < num_days:
-                    partial_ranges.append(range(tail_start, num_days))
-            for p_idx, days in enumerate(partial_ranges):
-                wd_days = [d for d in days if (start_date + timedelta(days=d)).weekday() < 5]
-                we_days = [d for d in days if (start_date + timedelta(days=d)).weekday() >= 5]
-                for label, group in (("wd", wd_days), ("we", we_days)):
-                    if len(group) < 2:
-                        continue
-                    over = model.NewBoolVar(f'core_partial_{label}_over_e{e}_p{p_idx}')
-                    model.Add(sum(x[e, d, 0] for d in group) <= 1 + over)
-                    bonus_vars.append(over * -6000)
-
-            # Minggu lintas bulan (pakai history): soft 1 OFF weekday + 1 OFF weekend
-            lead = start_date.weekday()
-            if lead > 0 and all((e, -i) in history_days for i in range(1, lead + 1)):
-                week = range(-lead, -lead + 7)
-                wd_off = sum(
-                    x[e, d, 0] for d in week
-                    if (start_date + timedelta(days=d)).weekday() < 5
-                )
-                we_off = sum(
-                    x[e, d, 0] for d in week
-                    if (start_date + timedelta(days=d)).weekday() >= 5
-                )
-                cross_ok = model.NewBoolVar(f'core_cross_week_ok_e{e}')
-                model.Add(wd_off == 1).OnlyEnforceIf(cross_ok)
-                model.Add(we_off == 1).OnlyEnforceIf(cross_ok)
-                bonus_vars.append(cross_ok * 3000)
+            # Minggu lintas bulan: 1 OFF weekday + 1 OFF Sabtu/Minggu termasuk hari bulan sebelah
+            add_boundary_week_off_quota(
+                model, x, e, "POLA_2", start_date, num_days, history_days, future_days, boundary_slack
+            )
 
         # Aturan Transisi: Setelah S1+S3 (On-Call), keesokan harinya WAJIB masuk S2 (atau Libur).
         # S2 tidak boleh langsung ke S1/OC tanpa libur — kecuali lintas batas bulan (d=-1→0),
@@ -928,28 +950,18 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                     first_monday_idx = i
                     break
                     
-            if first_monday_idx > 0: # Partial week at the start
-                partial_len = first_monday_idx
-                target_partial = int(round(partial_len * 3 / 7))
-                model.Add(sum(x[e, i, 0] for i in range(partial_len)) >= max(0, target_partial - 1))
-                model.Add(sum(x[e, i, 0] for i in range(partial_len)) <= min(partial_len, target_partial + 1))
-                
-            last_monday_idx = -1
             if first_monday_idx != -1:
                 # Iterate through all full weeks
                 curr_monday = first_monday_idx
                 while curr_monday + 6 < num_days:
                     # HARD CONSTRAINT: Exactly 3 off days per Monday-Sunday block
                     model.Add(sum(x[e, curr_monday+i, 0] for i in range(7)) == 3)
-                    last_monday_idx = curr_monday
                     curr_monday += 7
-                
-                # Partial week at the end
-                if curr_monday < num_days:
-                    partial_len = num_days - curr_monday
-                    target_partial = int(round(partial_len * 3 / 7))
-                    model.Add(sum(x[e, i, 0] for i in range(curr_monday, num_days)) >= max(0, target_partial - 1))
-                    model.Add(sum(x[e, i, 0] for i in range(curr_monday, num_days)) <= min(partial_len, target_partial + 1))
+
+            # Minggu lintas bulan: total 3 OFF termasuk hari bulan sebelah
+            add_boundary_week_off_quota(
+                model, x, e, "POLA_4", start_date, num_days, history_days, future_days, boundary_slack
+            )
 
             # SANGAT KUAT: Maksimal 3 kerja beruntun (Mencegah W-W-W-W)
             for d in range(-3, num_days - 3):
@@ -1107,6 +1119,8 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
             for d in range(-6, num_days):
                 for s in range(3): # 0: OFF, 1: S1, 2: S2
                     x[e, d, s] = model.NewBoolVar(f'x_{e}_{d}_{s}')
+                    if d < 0 and history_days.get((e, d), 9) < 3:
+                        model.Add(x[e, d, s] == (1 if history_days[(e, d)] == s else 0))
 
         # Tiap orang 1 status per hari
         for e in range(num_employees):
@@ -1138,35 +1152,16 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                     first_monday_idx = i
                     break
 
-            if first_monday_idx > 0:
-                partial_len = first_monday_idx
-                target_partial = int(round(partial_len * 3 / 7))
-                model.Add(
-                    sum(x[e, i, 0] for i in range(partial_len))
-                    >= max(0, target_partial - 1)
-                )
-                model.Add(
-                    sum(x[e, i, 0] for i in range(partial_len))
-                    <= min(partial_len, target_partial + 1)
-                )
-
             if first_monday_idx != -1:
                 curr_monday = first_monday_idx
                 while curr_monday + 6 < num_days:
                     model.Add(sum(x[e, curr_monday + i, 0] for i in range(7)) == 3)
                     curr_monday += 7
 
-                if curr_monday < num_days:
-                    partial_len = num_days - curr_monday
-                    target_partial = int(round(partial_len * 3 / 7))
-                    model.Add(
-                        sum(x[e, i, 0] for i in range(curr_monday, num_days))
-                        >= max(0, target_partial - 1)
-                    )
-                    model.Add(
-                        sum(x[e, i, 0] for i in range(curr_monday, num_days))
-                        <= min(partial_len, target_partial + 1)
-                    )
+            # Minggu lintas bulan: total 3 OFF termasuk hari bulan sebelah
+            add_boundary_week_off_quota(
+                model, x, e, "POLA_5", start_date, num_days, history_days, future_days, boundary_slack
+            )
 
         for d in range(num_days):
             s1_count = sum(x[e, d, 1] for e in range(num_employees))
@@ -1267,7 +1262,9 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
             for d in range(-6, num_days):
                 for s in range(3): # 0: OFF, 1: S1, 2: S2
                     x[e, d, s] = model.NewBoolVar(f'x_{e}_{d}_{s}')
-                    
+                    if d < 0 and history_days.get((e, d), 9) < 3:
+                        model.Add(x[e, d, s] == (1 if history_days[(e, d)] == s else 0))
+
         for e in range(num_employees):
             for d in range(-6, num_days):
                 model.AddExactlyOne(x[e, d, s] for s in range(3))
@@ -1312,32 +1309,17 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                     first_monday_idx = i
                     break
                     
-            if first_monday_idx > 0:
-                partial_len = first_monday_idx
-                target_partial = int(round(partial_len * 3 / 7))
-                model.Add(sum(x[e, i, 0] for i in range(partial_len)) >= max(0, target_partial - 1))
-                model.Add(sum(x[e, i, 0] for i in range(partial_len)) <= min(partial_len, target_partial + 1))
-                
+            # Minggu lintas bulan: total 3 OFF termasuk hari bulan sebelah
+            add_boundary_week_off_quota(
+                model, x, e, "POLA_6", start_date, num_days, history_days, future_days, boundary_slack
+            )
+
             if first_monday_idx != -1:
                 curr_monday = first_monday_idx
                 while curr_monday + 6 < num_days:
-                    # SOFT CONSTRAINT: Bonus sangat besar jika tepat 3 libur
-                    is_3_off = model.NewBoolVar(f'p6_is_3_off_e{e}_w{curr_monday}')
-                    model.Add(sum(x[e, curr_monday+i, 0] for i in range(7)) == 3).OnlyEnforceIf(is_3_off)
-                    model.Add(sum(x[e, curr_monday+i, 0] for i in range(7)) != 3).OnlyEnforceIf(is_3_off.Not())
-                    bonus_vars.append(is_3_off * 30000)
-                    
-                    # Tetap berikan boundary yang masuk akal walau soft constraint gagal (minimal 2, maks 4 libur)
-                    model.Add(sum(x[e, curr_monday+i, 0] for i in range(7)) >= 2)
-                    model.Add(sum(x[e, curr_monday+i, 0] for i in range(7)) <= 4)
-                    
+                    # HARD: tepat 3 libur per Senin–Minggu
+                    model.Add(sum(x[e, curr_monday+i, 0] for i in range(7)) == 3)
                     curr_monday += 7
-                
-                if curr_monday < num_days:
-                    partial_len = num_days - curr_monday
-                    target_partial = int(round(partial_len * 3 / 7))
-                    model.Add(sum(x[e, i, 0] for i in range(curr_monday, num_days)) >= max(0, target_partial - 1))
-                    model.Add(sum(x[e, i, 0] for i in range(curr_monday, num_days)) <= min(partial_len, target_partial + 1))
             
             # Max 4 Work
             for d in range(-4, num_days - 4):
@@ -1382,8 +1364,12 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
     else:
         raise HTTPException(status_code=400, detail="Unknown model_type")
 
+    if boundary_slack:
+        model.Maximize(sum(bonus_vars) - BOUNDARY_SLACK_PENALTY * sum(v for v, _, _ in boundary_slack))
+
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 30.0
+    solver.parameters.num_workers = SOLVER_WORKERS
     status = solver.Solve(model)
     
     if status in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
@@ -1417,7 +1403,17 @@ def generate(year: int, month: int, department_id: int, pola: Optional[str] = No
                         "employee_id": employees[e].id,
                         "date": (start_date + timedelta(days=d)).isoformat(),
                     })
-        return {"msg": f"Jadwal {dept.name} berhasil digenerate!", "standby": standby_out}
+        boundary_violations = []
+        for v, e, week_start in boundary_slack or []:
+            if solver.Value(v):
+                boundary_violations.append(
+                    {"employee_id": employees[e].id, "week_start": week_start, "days": solver.Value(v)}
+                )
+        return {
+            "msg": f"Jadwal {dept.name} berhasil digenerate!",
+            "standby": standby_out,
+            "boundary_violations": boundary_violations,
+        }
     else:
         if selected_pola == "POLA_2":
             raise HTTPException(
@@ -1537,6 +1533,8 @@ class SolveRequest(BaseModel):
     pola: str = Field(..., description="POLA_1 … POLA_6")
     employees: List[SolveEmployee]
     history: List[SolveHistory] = []
+    # Jadwal awal bulan depan yang sudah ada (opsional) — dipakai untuk kuota minggu akhir bulan
+    future: List[SolveHistory] = []
 
 
 @app.get("/health")
@@ -1576,7 +1574,7 @@ def solve(payload: SolveRequest, db: Session = Depends(get_db)):
         id_map[int(e.id)] = emp.id
     db.commit()
 
-    for h in payload.history:
+    for h in [*payload.history, *payload.future]:
         emp_id = id_map.get(int(h.employee_id))
         if not emp_id:
             continue
@@ -1596,55 +1594,78 @@ def solve(payload: SolveRequest, db: Session = Depends(get_db)):
         if h.standby and int(h.employee_id) in id_map
     )
 
-    # Run existing generator (mutates schedules for this dept/month)
-    gen_result = generate(
-        year=payload.year,
-        month=payload.month,
-        department_id=dept.id,
-        pola=pola,
-        full_shift=None,
-        prev_standby_ids=prev_standby_ids or None,
-        db=db,
-    )
-
-    prefix = f"{payload.year}-{payload.month:02d}-"
-    rows = (
-        db.query(models.Schedule)
-        .filter(
-            models.Schedule.department_id == dept.id,
-            models.Schedule.date.like(f"{prefix}%"),
-        )
-        .all()
-    )
-    reverse = {v: k for k, v in id_map.items()}
-    standby_keys = {
-        (s["employee_id"], s["date"]) for s in (gen_result or {}).get("standby", [])
-    }
-    schedules = [
-        {
-            "userId": reverse[r.employee_id],
-            "date": r.date,
-            "shift": r.shift,
-            "standby": (r.employee_id, r.date) in standby_keys,
-        }
-        for r in rows
-        if r.employee_id in reverse
-    ]
-
-    # Cleanup temp dept data (best-effort)
     try:
-        db.query(models.Schedule).filter(models.Schedule.department_id == dept.id).delete(
-            synchronize_session=False
+        # Kuota OFF minggu lintas bulan hard dulu; kalau bulan sebelah sudah melanggar kuota
+        # sehingga tidak solvable, ulangi dengan kuota itu soft dan kembalikan warning.
+        gen_kwargs = dict(
+            year=payload.year,
+            month=payload.month,
+            department_id=dept.id,
+            pola=pola,
+            full_shift=None,
+            prev_standby_ids=prev_standby_ids or None,
+            db=db,
         )
-        db.query(models.Employee).filter(models.Employee.department_id == dept.id).delete(
-            synchronize_session=False
-        )
-        db.query(models.Department).filter(models.Department.id == dept.id).delete(
-            synchronize_session=False
-        )
-        db.commit()
-    except Exception:
-        db.rollback()
+        warnings = []
+        try:
+            gen_result = generate(**gen_kwargs)
+        except HTTPException as hard_err:
+            if hard_err.status_code != 400 or pola not in WEEKLY_OFF_QUOTA:
+                raise
+            gen_result = generate(**gen_kwargs, soft_boundary=True)
+            names = {id_map[int(e.id)]: e.name for e in payload.employees}
+            per_week = {}
+            for v in (gen_result or {}).get("boundary_violations", []):
+                key = (v["week_start"], names.get(v["employee_id"], str(v["employee_id"])))
+                per_week[key] = per_week.get(key, 0) + v["days"]
+            if per_week:
+                detail = "; ".join(
+                    f"{name} minggu {week} ({days} hari)" for (week, name), days in sorted(per_week.items())
+                )
+                warnings.append(
+                    "Kuota OFF Senin–Minggu di minggu pergantian bulan tidak bisa dipenuhi penuh "
+                    "(jadwal bulan sebelah sudah melenceng atau bentrok aturan coverage/fairness): "
+                    f"{detail}. Edit manual bila perlu."
+                )
 
-    return {"pola": pola, "count": len(schedules), "schedules": schedules}
+        prefix = f"{payload.year}-{payload.month:02d}-"
+        rows = (
+            db.query(models.Schedule)
+            .filter(
+                models.Schedule.department_id == dept.id,
+                models.Schedule.date.like(f"{prefix}%"),
+            )
+            .all()
+        )
+        reverse = {v: k for k, v in id_map.items()}
+        standby_keys = {
+            (s["employee_id"], s["date"]) for s in (gen_result or {}).get("standby", [])
+        }
+        schedules = [
+            {
+                "userId": reverse[r.employee_id],
+                "date": r.date,
+                "shift": r.shift,
+                "standby": (r.employee_id, r.date) in standby_keys,
+            }
+            for r in rows
+            if r.employee_id in reverse
+        ]
+    finally:
+        # Cleanup temp dept data (best-effort)
+        try:
+            db.query(models.Schedule).filter(models.Schedule.department_id == dept.id).delete(
+                synchronize_session=False
+            )
+            db.query(models.Employee).filter(models.Employee.department_id == dept.id).delete(
+                synchronize_session=False
+            )
+            db.query(models.Department).filter(models.Department.id == dept.id).delete(
+                synchronize_session=False
+            )
+            db.commit()
+        except Exception:
+            db.rollback()
+
+    return {"pola": pola, "count": len(schedules), "schedules": schedules, "warnings": warnings}
 

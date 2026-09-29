@@ -309,10 +309,21 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                             
                             {/* Shift window limits labels */}
                             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: "#94a3b8" }}>
-                              <span>Shift: {u.shift.name} ({u.shift.startTime} - {u.shift.endTime})</span>
-                              {u.stats.overtimeHours > 0 && (
-                                <span style={{ color: "#f97316", fontWeight: "bold" }}>⚡ Lembur: {formatDuration(u.stats.overtimeHours)}</span>
-                              )}
+                              <span>
+                                Shift: {u.shift.name} ({u.shift.startTime} - {u.shift.endTime})
+                                {u.shift.onCall && ` • On-call ${u.shift.onCall.startTime} - ${u.shift.onCall.endTime}`}
+                                {u.shift.workMode === "wfh" && (
+                                  <span style={{ marginLeft: "0.4rem", padding: "0 0.35rem", borderRadius: "4px", background: "rgba(139, 92, 246, 0.15)", color: "#8b5cf6", fontWeight: "bold" }}>WFH</span>
+                                )}
+                              </span>
+                              <span style={{ display: "flex", gap: "0.6rem" }}>
+                                {u.stats.onCallHours > 0 && (
+                                  <span style={{ color: "#8b5cf6", fontWeight: "bold" }}>📞 On-call: {formatDuration(u.stats.onCallHours)}</span>
+                                )}
+                                {u.stats.overtimeHours > 0 && (
+                                  <span style={{ color: "#f97316", fontWeight: "bold" }}>⚡ Lembur: {formatDuration(u.stats.overtimeHours)}</span>
+                                )}
+                              </span>
                             </div>
 
                             {/* Timeline Bar */}
@@ -331,6 +342,7 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                                 const segEndMs = new Date(seg.end).getTime();
                                 const segDurationMs = segEndMs - segStartMs;
                                 const widthPct = (segDurationMs / globalDurationMs) * 100;
+                                const leftPct = ((segStartMs - startMs) / globalDurationMs) * 100;
 
                                 // Resolve styling based on type
                                 let bg = "transparent";
@@ -341,6 +353,9 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                                 } else if (seg.type === "overtime") {
                                   bg = "linear-gradient(135deg, #f97316, #ea580c)";
                                   title = `Lembur/Ekstra: ${new Date(seg.start).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} - ${new Date(seg.end).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} (${formatDuration(seg.durationMins / 60)}), Aktivitas: ${seg.activityCount}`;
+                                } else if (seg.type === "oncall") {
+                                  bg = "linear-gradient(135deg, #8b5cf6, #6d28d9)";
+                                  title = `On-call (WFH): ${new Date(seg.start).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} - ${new Date(seg.end).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} (${formatDuration(seg.durationMins / 60)}), Aktivitas: ${seg.activityCount}`;
                                 } else if (seg.type === "idle") {
                                   bg = "rgba(148, 163, 184, 0.15)";
                                   title = `Waktu Kosong: ${new Date(seg.start).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} - ${new Date(seg.end).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} (${formatDuration(seg.durationMins / 60)})`;
@@ -351,6 +366,9 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                                     key={idx} 
                                     title={title}
                                     style={{
+                                      position: "absolute",
+                                      top: 0,
+                                      left: `${leftPct}%`,
                                       width: `${widthPct}%`,
                                       background: bg,
                                       height: "100%",
@@ -367,7 +385,7 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                                     onMouseEnter={(e) => e.currentTarget.style.filter = "brightness(1.1)"}
                                     onMouseLeave={(e) => e.currentTarget.style.filter = "none"}
                                   >
-                                    {(seg.type === "active" || seg.type === "overtime") && seg.durationMins >= 30 && (
+                                    {(seg.type === "active" || seg.type === "overtime" || seg.type === "oncall") && seg.durationMins >= 30 && (
                                       <span>{seg.activityCount}a</span>
                                     )}
                                   </div>
@@ -402,6 +420,12 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                                     <span style={{ color: "#f97316", fontWeight: "500" }}>Kerja Lembur:</span>
                                     <span style={{ fontWeight: "600", color: "var(--heading-color)" }}>{formatDuration(u.stats.overtimeHours)}</span>
                                   </div>
+                                  {u.shift.onCall && (
+                                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                      <span style={{ color: "#8b5cf6", fontWeight: "500" }}>Kerja On-call (WFH):</span>
+                                      <span style={{ fontWeight: "600", color: "var(--heading-color)" }}>{formatDuration(u.stats.onCallHours || 0)}</span>
+                                    </div>
+                                  )}
                                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                                     <span style={{ color: "#64748b" }}>Waktu Kosong (Shift):</span>
                                     <span style={{ fontWeight: "600", color: "var(--heading-color)" }}>{formatDuration(u.stats.idleHours)}</span>

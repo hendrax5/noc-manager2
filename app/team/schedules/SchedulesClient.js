@@ -109,6 +109,10 @@ export default function SchedulesClient({
         )
         .join("\n");
       toast.success(lines || "Generate selesai", { duration: 6000 });
+      const warnLines = (data.results || []).flatMap((r) =>
+        (r.warnings || []).map((w) => `⚠ ${r.department || r.departmentId}: ${w}`)
+      );
+      if (warnLines.length) toast(warnLines.join("\n"), { duration: 15000, icon: "⚠️" });
       fetchSchedules();
     } finally {
       setGenerating(false);

@@ -39,10 +39,24 @@ Ringkasan per orang (S1/S2/OC/OFF, lembur, total jam) di **Shifts** dan **Report
 Lembur = masuk pada hari yang baseline Generate-nya OFF (`generatedShiftTypeId` null), atau dicentang manual.
 Setelah deploy, regenerate bulan berjalan agar baseline terisi.
 
+## Kuota OFF per minggu Senin–Minggu (semua pola 12 jam + POLA_2)
+
+Absen & lembur perusahaan dihitung per siklus **Senin–Minggu**, jadi jumlah OFF tiap minggu harus pas — tidak boleh menumpuk atau kurang, termasuk minggu yang terpotong pergantian bulan:
+
+| Pola | Kuota per minggu |
+|---|---|
+| POLA_2 (Core) | 1 OFF weekday + 1 OFF Sabtu/Minggu |
+| POLA_4 / POLA_5 / POLA_6 | 3 OFF |
+
+- Minggu penuh di dalam bulan: hard.
+- Minggu lintas bulan: OFF yang sudah ada di bulan sebelah dihitung. Awal bulan memakai jadwal bulan lalu (history); akhir bulan memakai jadwal bulan depan kalau sudah ada (app mengirim `future` ke `/solve`). Hari bulan sebelah yang belum dijadwal dianggap bebas.
+- Solver mencoba versi hard dulu. Kalau tidak solvable (biasanya karena bulan sebelah sudah melenceng, mis. 4 OFF di sisa minggu), solve diulang dengan kuota lintas bulan soft (penalti sangat besar per hari selisih) dan hasil generate membawa **warning** berisi nama + minggu yang tidak pas. Warning tampil di toast halaman Shift Schedules; perbaiki manual bila perlu.
+- CPU solver dibatasi env `SOLVER_WORKERS` (default 4 thread) agar generate tidak menghabiskan CPU server.
+
 ## POLA_2 fairness (solver)
 
 Generate POLA_2 menyeimbangkan per orang dalam bulan:
-- **Hard:** tepat **2 OFF** per siklus Senin–Minggu penuh (= 5 kerja); minggu potong awal/akhir bulan proporsional
+- **Hard:** tepat **1 OFF weekday + 1 OFF Sabtu/Minggu** per siklus Senin–Minggu (lihat kuota di atas)
 - Weekend: minimal 2 orang kerja (1 OC + ≥1 S2); boleh >2 via extra S2 (soft prefer classic =2)
 - Transisi S2→S1/OC dilonggarkan di **batas bulan** (supaya awal bulan feasible); prefer akhir bulan di OFF/S1
 - Kerja / OFF: selisih max 1 hari (jam POLA_2: selisih max 8 jam bila total slot tidak habis dibagi)
@@ -55,7 +69,7 @@ Regenerate bulan target setelah deploy `shift-solver` agar roster lama (mis. 22 
 ## POLA_5 fairness (solver)
 
 Generate POLA_5 menyeimbangkan per orang dalam bulan:
-- **Hard:** tepat **3 OFF** per siklus Senin–Minggu penuh (= 4 kerja); minggu potong awal/akhir bulan proporsional
+- **Hard:** tepat **3 OFF** per siklus Senin–Minggu (= 4 kerja), termasuk minggu lintas bulan (lihat kuota di atas)
 - Soft: surplus staff ke S1 (prefer S1>S2), bobot tertinggi Selasa–Kamis; larangan S2→S1; max 2 OFF beruntun
 - Kerja / OFF: selisih max 1 hari (jam POLA_5: selisih max 12 jam bila total slot tidak habis dibagi)
 - S1 vs S2: selisih max 1
