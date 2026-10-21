@@ -1,0 +1,4 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getMasterUser, canManage, validate, errorResponse } from '../shared';
+export async function PATCH(req,context) { try { const user=await getMasterUser(); if(!user) return NextResponse.json({error:'Unauthorized'},{status:401}); if(!canManage(user)) return NextResponse.json({error:'Forbidden'},{status:403}); const id=Number((await context.params).id); if(!Number.isSafeInteger(id)||id<1) return NextResponse.json({error:'ID tidak valid.'},{status:400}); const existing=await prisma.serviceWorkType.findUnique({where:{id}}); if(!existing) return NextResponse.json({error:'Master tidak ditemukan.'},{status:404}); return NextResponse.json(await prisma.serviceWorkType.update({where:{id},data:await validate(await req.json(),existing)})); } catch(e) { const r=errorResponse(e); return NextResponse.json({error:r.error},{status:r.status}); } }

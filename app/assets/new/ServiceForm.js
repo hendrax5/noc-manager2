@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function ServiceForm({ session, customers, templates }) {
+export default function ServiceForm({ session, customers, templates, ticketSetup = false }) {
   const router = useRouter();
   
   const [formData, setFormData] = useState({
@@ -12,7 +12,7 @@ export default function ServiceForm({ session, customers, templates }) {
     templateId: '',
     name: '',
     cid: '',
-    status: 'Active',
+    status: ticketSetup ? 'Pending' : 'Active',
     monthlyCost: '',
     currency: 'IDR',
     contractEnd: ''
@@ -67,11 +67,13 @@ export default function ServiceForm({ session, customers, templates }) {
       return;
     }
     if (!formData.customerId || !formData.templateId || !formData.name) return alert('Please fill core fields');
+    if (ticketSetup && !formData.cid.trim()) return alert('Isi CID circuit sebelum melanjutkan ke tiket instalasi.');
     
     setIsSubmitting(true);
     try {
       const payload = {
         ...formData,
+        ...(ticketSetup ? { status: 'Pending' } : {}),
         customData,
         hops: hops.filter(h => h.location || h.deviceName) // filters empty hops out
       };
@@ -83,7 +85,8 @@ export default function ServiceForm({ session, customers, templates }) {
       });
       
       if (res.ok) {
-        router.push('/assets');
+        const created = await res.json();
+        router.push(ticketSetup ? `/tickets/new?workType=ServiceWork&serviceId=${created.id}&operation=Installation` : '/assets');
         router.refresh();
       } else {
         const err = await res.json();
@@ -102,6 +105,7 @@ export default function ServiceForm({ session, customers, templates }) {
       <header className="page-header" style={{ marginBottom: '2rem' }}>
         <Link href="/assets" style={{ color: 'var(--text-color)', textDecoration: 'none', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'inline-block' }}>← Back to Inventory</Link>
         <h1 style={{ marginTop: '0.5rem' }}>Provision New Service Asset</h1>
+        {ticketSetup && <p>Daftarkan customer dan CID untuk instalasi baru. Circuit disimpan sebagai Pending; setelah ini lanjut membuat tiket instalasi. Layanan diaktifkan saat tiket Resolve.</p>}
       </header>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2.5rem', position: 'relative', padding: '0 2rem' }}>
@@ -153,8 +157,13 @@ export default function ServiceForm({ session, customers, templates }) {
                 </div>
                 <div>
                   <label htmlFor="service-cid" style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>CID layanan / link</label>
-                  <input id="service-cid" type="text" className="input-field" maxLength={100} value={formData.cid} onChange={e => setFormData({ ...formData, cid: e.target.value })} placeholder="CID unik untuk layanan ini" />
+                  <input id="service-cid" type="text" className="input-field" required={ticketSetup} maxLength={100} value={formData.cid} onChange={e => setFormData({ ...formData, cid: e.target.value })} placeholder="CID unik untuk layanan ini" />
                   <small>Digunakan untuk menautkan trouble dan laporan SLA per layanan.</small>
+                </div>
+                <div>
+                  <label htmlFor="service-capacity" style={{display:'block',fontWeight:'bold',marginBottom:'0.5rem'}}>Kapasitas layanan (Mbps)</label>
+                  <input id="service-capacity" type="number" min="0.001" step="any" className="input-field" value={customData.bandwidthMbps ?? ''} onChange={e => setCustomData({...customData,bandwidthMbps:e.target.value === '' ? null : Number(e.target.value)})} />
+                  <small>Kapasitas awal untuk Inventory. Kapasitas tujuan dapat dilengkapi pada tiket instalasi.</small>
                 </div>
               </div>
             </div>

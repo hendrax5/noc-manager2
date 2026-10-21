@@ -56,6 +56,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
     if (e) e.preventDefault();
     const params = new URLSearchParams();
     if (workType) params.set('workType', workType);
+    if (searchParams.get('serviceWorkTypeId')) params.set('serviceWorkTypeId', searchParams.get('serviceWorkTypeId'));
     if (searchParams.get('date')) params.set('date', searchParams.get('date'));
     if (q) params.set('q', q);
     if (statuses.length > 0) params.set('statuses', statuses.join(','));

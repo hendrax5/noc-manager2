@@ -46,6 +46,9 @@ export default async function TicketsPage({ searchParams }) {
   const workFilter = workTypeWhere(resolvedParams?.workType);
   const workType = workFilter.workType || "";
   const filters = [workFilter];
+  const serviceWorkTypeId = /^\d+$/.test(String(resolvedParams?.serviceWorkTypeId || '')) ? Number(resolvedParams.serviceWorkTypeId) : null;
+  if (serviceWorkTypeId) filters.push({ workType: 'ServiceWork', serviceWorkTypeId });
+  const serviceWorkTypes = workType === 'ServiceWork' ? await prisma.serviceWorkType.findMany({ orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] }) : [];
   
   if (companyParam && !allDeptsParam && !q) {
     filters.push({
@@ -225,6 +228,11 @@ export default async function TicketsPage({ searchParams }) {
         <TicketAdvancedFilter companies={companies} initialCompanyParam={companyParam} />
       </Suspense>
 
+      {workType === 'ServiceWork' && <nav aria-label="Filter jenis pekerjaan" style={{display:'flex',flexWrap:'wrap',gap:'0.5rem',margin:'1rem 0'}}>
+        <Link href="/tickets?workType=ServiceWork" aria-current={!serviceWorkTypeId ? 'page' : undefined}>Semua pekerjaan</Link>
+        <Link href="/tickets?workType=Installation">Instalasi (format lama)</Link>
+        {serviceWorkTypes.map(type => <Link key={type.id} href={`/tickets?workType=ServiceWork&serviceWorkTypeId=${type.id}`} aria-current={serviceWorkTypeId === type.id ? 'page' : undefined} style={{padding:'0.3rem 0.6rem',border:'1px solid var(--border-color)',borderRadius:'var(--radius-sm)'}}>{type.name}{type.active ? '' : ' (nonaktif)'}</Link>)}
+      </nav>}
       <table className="data-table">
         <thead>
           <tr>
@@ -292,7 +300,7 @@ export default async function TicketsPage({ searchParams }) {
                     {t.title}
                   </Link>
                   <div style={{ fontSize: '0.75rem', marginTop: '0.35rem' }}>
-                    <span className="badge">{WORK_TYPE_LABELS[t.workType] || WORK_TYPE_LABELS.Unclassified}</span>
+                    <span className="badge">{t.serviceWorkTypeLabel || WORK_TYPE_LABELS[t.workType] || WORK_TYPE_LABELS.Unclassified}</span>
                     {t.sapReference && <span> SAP: {t.sapReference}</span>}
                     {t.services?.some(service => getServiceCid(service)) && <span> CID: {t.services.map(service => getServiceCid(service)).filter(Boolean).join(', ')}</span>}
                   </div>

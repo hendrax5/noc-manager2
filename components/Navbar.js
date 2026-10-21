@@ -45,7 +45,9 @@ function NavbarContent({ appName = "NOC Management", appVersion = "1.0.0" }) {
     session?.user?.permissions?.includes("manage_settings") ||
     session?.user?.role === "Admin";
   const canManageTrouble = session?.user?.role === "Admin" || session?.user?.permissions?.includes("manage_trouble_master");
+  const canManageServiceWork = session?.user?.role === "Admin" || session?.user?.permissions?.includes("manage_service_work");
   const showAdmin =
+    canManageServiceWork ||
     canManageTrouble ||
     canViewReports ||
     canViewOpsReport ||
@@ -73,9 +75,9 @@ function NavbarContent({ appName = "NOC Management", appVersion = "1.0.0" }) {
       {session && (
         <div className={`nav-links ${isMobileMenuOpen ? "open" : ""}`} style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
           <Link href="/dashboard" className={pathname === "/dashboard" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
-          <Link href="/tickets" className={pathname.startsWith("/tickets") && !["Trouble", "Installation"].includes(ticketWorkType) ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Semua Tiket</Link>
+          <Link href="/tickets" className={pathname.startsWith("/tickets") && !["Trouble", "Installation", "ServiceWork"].includes(ticketWorkType) ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Semua Tiket</Link>
           <Link href="/tickets?workType=Trouble" className={ticketWorkType === "Trouble" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Trouble Ticket</Link>
-          <Link href="/tickets?workType=Installation" className={ticketWorkType === "Installation" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Instalasi</Link>
+          <Link href="/tickets?workType=ServiceWork" className={ticketWorkType === "ServiceWork" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Pekerjaan Layanan</Link>
           <Link href="/team/schedules" className={pathname.startsWith("/team/schedules") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Shifts</Link>
           <Link href="/meetings" className={pathname.startsWith("/meetings") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Meetings</Link>
 
@@ -125,6 +127,7 @@ function NavbarContent({ appName = "NOC Management", appVersion = "1.0.0" }) {
                 {canManageTrouble && (
                   <Link href="/settings/trouble-masters" className={pathname.startsWith("/settings/trouble-masters") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Master Data Trouble</Link>
                 )}
+                {canManageServiceWork && <Link href="/settings/service-work-types" className={pathname.startsWith('/settings/service-work-types') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Jenis Pekerjaan Layanan</Link>}
                 {canManageSettings && (
                   <Link href="/settings" className={pathname === "/settings" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>System Settings</Link>
                 )}

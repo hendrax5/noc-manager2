@@ -10,6 +10,7 @@ const ALL_PERMISSIONS = [
   "manage_users",
   "manage_roles",
   "manage_settings",
+  "manage_service_work",
   "manage_trouble_master",
   "view_reports",
   "manage_schedules",

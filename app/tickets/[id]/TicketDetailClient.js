@@ -5,6 +5,9 @@ import toast from "react-hot-toast";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
 import TicketWorkClassification, { TicketServicePicker } from "@/components/TicketWorkClassification";
 import { getServiceCid } from "@/lib/services/cid";
+import { WORK_TYPE_LABELS } from "@/lib/tickets/workClassification";
+import ServiceWorkSummary from "@/components/ServiceWorkSummary";
+import { serviceWorkInput, serviceWorkResolveMessage } from "@/lib/tickets/serviceWorkView";
 import SearchableSelect from "@/components/SearchableSelect";
 import {
   getDowntimeDuration as calcDowntimeDuration,
@@ -95,6 +98,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
   const [formData, setFormData] = useState({
     workType: ticket.workType || "Unclassified",
+      serviceWorkTypeId: ticket.serviceWorkTypeId || null,
+      serviceChange: serviceWorkInput(ticket.serviceChange),
       sapReference: ticket.sapReference || "",
       symptomId: ticket.symptomId || null,
       causeId: ticket.causeId || null,
@@ -186,6 +191,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     setEditDesc(htmlToPlainText(ticket.description));
     setFormData({
       workType: ticket.workType || "Unclassified",
+      serviceWorkTypeId: ticket.serviceWorkTypeId || null,
+      serviceChange: serviceWorkInput(ticket.serviceChange),
       sapReference: ticket.sapReference || "",
       symptomId: ticket.symptomId || null,
       causeId: ticket.causeId || null,
@@ -250,16 +257,15 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
         toast.error("Pilih Job Phase Category dulu sebelum resolve, supaya poin teknisi (orang last reply) ikut masuk.");
         return;
       }
+      const summary = serviceWorkResolveMessage(ticket);
+      if (summary && !window.confirm(summary)) return;
     }
+    const previousValue = formData[key];
     setFormData(prev => ({ ...prev, [key]: newValue }));
-    
-    const updatedPayload = {
-      ...formData,
-      [key]: newValue,
-      departmentId: key === 'departmentId' ? parseInt(newValue) : parseInt(formData.departmentId),
-      assigneeId: key === 'assigneeId' ? (newValue ? parseInt(newValue) : null) : (formData.assigneeId ? parseInt(formData.assigneeId) : null),
-      jobCategoryId: key === 'jobCategoryId' ? (newValue ? parseInt(newValue) : null) : (formData.jobCategoryId ? parseInt(formData.jobCategoryId) : ticket.jobCategoryId),
-    };
+    const numericKeys = ['departmentId', 'assigneeId', 'jobCategoryId'];
+    const updatedPayload = { [key]: numericKeys.includes(key) ? (newValue ? Number(newValue) : null) : newValue };
+    // Status updates must not resubmit stale edit fields or server-owned snapshots.
+    if (key === 'status' && newValue === 'Resolved' && !ticket.jobCategoryId && formData.jobCategoryId) updatedPayload.jobCategoryId = Number(formData.jobCategoryId);
 
     const res = await fetch(`/api/tickets/${ticket.id}`, {
       method: "PATCH",
@@ -270,6 +276,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     if (res.ok) {
       router.refresh(); 
     } else {
+      setFormData(prev => ({ ...prev, [key]: previousValue }));
       const data = await res.json().catch(() => ({}));
       toast.error(data.error || "Failed to auto-update ticket property.");
     }
@@ -282,10 +289,21 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       return;
     }
     setLoading(true);
+    const editableData = { ...formData };
+    const unchangedServiceWork = Number(formData.serviceWorkTypeId) === Number(ticket.serviceWorkTypeId) &&
+      JSON.stringify(formData.serviceChange) === JSON.stringify(serviceWorkInput(ticket.serviceChange));
+    if (ticket.serviceChange?.appliedAt || unchangedServiceWork) {
+      delete editableData.serviceChange;
+      delete editableData.serviceWorkTypeId;
+    }
+    if (ticket.serviceChange?.appliedAt) {
+      delete editableData.workType;
+      delete editableData.serviceIds;
+    }
     const res = await fetch(`/api/tickets/${ticket.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        ...formData, 
+        ...editableData,
         title: editTitle, 
         description: editDesc, 
         customData: formData.customData,
@@ -456,11 +474,14 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           
           <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.7', color: 'var(--text-color)', fontSize: '0.95rem' }}>
             <p style={{ margin: '0 0 1rem 0' }}>Dear NOC,</p>
-            {!editingTicket && <p>Jenis pekerjaan: <strong>{ticket.workType || "Unclassified"}</strong>{ticket.workType === "Installation" && ticket.sapReference ? ` / SAP: ${ticket.sapReference}` : ""}{ticket.workType === "Trouble" ? ` / Gejala: ${ticket.symptomLabel || "—"} / Penyebab: ${ticket.causeLabel || "—"}` : ""}</p>}
+            {!editingTicket && <p>Jenis pekerjaan: <strong>{ticket.serviceWorkTypeLabel || WORK_TYPE_LABELS[ticket.workType] || "Belum diklasifikasikan"}</strong>{["Installation", "ServiceWork"].includes(ticket.workType) && ticket.sapReference ? ` / SAP: ${ticket.sapReference}` : ""}{ticket.workType === "Trouble" ? ` / Gejala: ${ticket.symptomLabel || "—"} / Penyebab: ${ticket.causeLabel || "—"}` : ""}</p>}
+            <ServiceWorkSummary ticket={ticket} />
             {editingTicket ? (
               <div>
-                <TicketWorkClassification value={formData} onChange={patch => setFormData(previous => ({ ...previous, ...patch }))} />
-                <TicketServicePicker services={services} selectedIds={formData.serviceIds || []} onChange={serviceIds => setFormData(previous => ({ ...previous, serviceIds }))} />
+                {!ticket.serviceChange?.appliedAt ? <>
+                  <TicketWorkClassification value={formData} services={services} serviceTemplates={serviceTemplates || []} onChange={patch => setFormData(previous => ({ ...previous, ...patch }))} />
+                  <TicketServicePicker services={services} selectedIds={formData.serviceIds || []} onChange={serviceIds => setFormData(previous => ({ ...previous, serviceIds }))} />
+                </> : <p>Perubahan layanan sudah diterapkan. Buat tiket baru dari halaman CID untuk pekerjaan berikutnya.</p>}
                 {/* Edit Customer / Reporter Name */}
                 <div style={{ marginBottom: '1rem', position: 'relative' }} ref={customerWrapperRef}>
                   <label style={{ display: 'block', color: '#64748b', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Customer / Reporter Name:</label>

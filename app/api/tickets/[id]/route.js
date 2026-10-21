@@ -1,3 +1,4 @@
+import { prepareServiceWork, applyServiceWork, serviceWorkInputChanged, ServiceWorkError } from '@/lib/tickets/serviceWork';
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -41,7 +42,9 @@ export async function PATCH(req, { params }) {
       );
     }
 
-    const oldTicket = await prisma.ticket.findUnique({
+    const result = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${id} FOR UPDATE`;
+    const oldTicket = await tx.ticket.findUnique({
       where: { id },
       include: { jobCategory: { select: { name: true } }, services: { select: { id: true, cid: true, customData: true } } },
     });
@@ -112,9 +115,9 @@ export async function PATCH(req, { params }) {
     if (
       (body.title !== undefined && oldTicket.title !== body.title) ||
       (body.description !== undefined && oldTicket.description !== body.description) ||
-      classificationFieldsChanged(body, oldTicket) || affectedServicesChanged(body, oldTicket)
+      classificationFieldsChanged(body, oldTicket) || affectedServicesChanged(body, oldTicket) || serviceWorkInputChanged(body)
     ) {
-      const firstLog = await prisma.ticketHistory.findFirst({
+      const firstLog = await tx.ticketHistory.findFirst({
         where: { ticketId: id },
         orderBy: { createdAt: "asc" },
       });
@@ -323,8 +326,16 @@ export async function PATCH(req, { params }) {
       ...(body.slaTimerMins !== undefined && { slaTimerMins: parseInt(body.slaTimerMins) }),
     };
 
-    const classification = await prepareTicketClassification(prisma, body, oldTicket);
+    const classification = await prepareTicketClassification(tx, body, oldTicket);
     Object.assign(ticketData, classification.data);
+    Object.assign(ticketData, (await prepareServiceWork(tx, body, oldTicket)).data);
+    const effectiveTicket = { ...oldTicket, ...ticketData, services: classification.serviceIds === null ? oldTicket.services : classification.serviceIds.map(id => ({id})) };
+    if (effectiveTicket.workType === "ServiceWork" && nextStatus === "Closed" && !effectiveTicket.serviceChange?.appliedAt) throw new ServiceWorkError("Resolve pekerjaan layanan sebelum menutup tiket.");
+    if (effectiveTicket.workType === "ServiceWork" && nextStatus === "Resolved") {
+      const application = await applyServiceWork(tx, effectiveTicket, userId);
+      ticketData.serviceChange = application.serviceChange;
+      if (application.applied) logs.push({ action: "Service Inventory applied from ticket", actorId: userId });
+    }
     if (classification.serviceIds !== null) ticketData.services = { set: classification.serviceIds.map((id) => ({ id })) };
     const changedClassification = Object.entries(classification.data).some(([key, value]) => oldTicket[key] !== value);
     if (changedClassification) logs.push({
@@ -363,24 +374,24 @@ export async function PATCH(req, { params }) {
         oldTicket.jobCategoryId !== explicitCategoryId;
       if (explicitCategoryId && (newlyResolved || categoryAppliedWhileResolved)) {
         ticketData.jobCategoryId = explicitCategoryId;
-        const cat = await prisma.jobCategory.findUnique({
+        const cat = await tx.jobCategory.findUnique({
           where: { id: ticketData.jobCategoryId },
         });
         if (cat) {
           const fallbackAssigneeId = ticketData.assigneeId || oldTicket.assigneeId;
-          const recipientId = await resolveJobRecipientId(prisma, id, fallbackAssigneeId);
-          if (recipientId && (await canAwardResolveJobPoints(prisma, id))) {
+          const recipientId = await resolveJobRecipientId(tx, id, fallbackAssigneeId);
+          if (recipientId && (effectiveTicket.workType === "ServiceWork" ? !(await tx.ticketHistory.findFirst({where:{ticketId:id,jobCategoryId:{not:null},awardedScore:{gt:0}}})) : (await canAwardResolveJobPoints(tx, id)))) {
             logs.push(resolveJobPointsLog({ recipientId, cat }));
           }
         }
       }
 
       if (oldTicket.status !== "Resolved") {
-        const actionItem = await prisma.actionItem.findUnique({
+        const actionItem = await tx.actionItem.findUnique({
           where: { linkedTicketId: id },
         });
         if (actionItem && actionItem.status !== "Completed") {
-          await prisma.actionItem.update({
+          await tx.actionItem.update({
             where: { id: actionItem.id },
             data: { status: "Completed" },
           });
@@ -401,13 +412,18 @@ export async function PATCH(req, { params }) {
       ticketData.resolvedAt = null;
     }
 
-    const ticket = await prisma.ticket.update({
+    const ticket = await tx.ticket.update({
       where: { id },
       data: {
         ...ticketData,
         ...(logs.length > 0 ? { historyLogs: { create: logs } } : {}),
       },
     });
+
+    return { ticket, oldTicket, nextStatus };
+    }, { timeout: 20000 });
+    if (result instanceof Response) return result;
+    const { ticket, oldTicket, nextStatus } = result;
 
     if (body.status != null && oldTicket.status !== nextStatus) {
       const { emails } = await collectTicketNotifyEmails(prisma, id);
@@ -429,6 +445,7 @@ export async function PATCH(req, { params }) {
 
     return NextResponse.json(ticket);
   } catch (error) {
+    if (error instanceof ServiceWorkError) return NextResponse.json({ error: error.message }, { status: error.status });
     if (error instanceof TicketClassificationError) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

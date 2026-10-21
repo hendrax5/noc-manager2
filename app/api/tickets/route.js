@@ -1,3 +1,4 @@
+import { prepareServiceWork, ServiceWorkError } from '@/lib/tickets/serviceWork';
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -62,6 +63,7 @@ export async function POST(req) {
     } = body;
 
     const classification = await prepareTicketClassification(prisma, body);
+    Object.assign(classification.data, (await prepareServiceWork(prisma, body)).data);
 
     if (priority !== undefined && !TICKET_PRIORITIES.includes(priority)) {
       return NextResponse.json(
@@ -170,6 +172,7 @@ export async function POST(req) {
 
     return NextResponse.json(ticket, { status: 201 });
   } catch (error) {
+    if (error instanceof ServiceWorkError) return NextResponse.json({ error: error.message }, { status: error.status });
     if (error instanceof TicketClassificationError) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -75,6 +75,9 @@ model Ticket {
   status       String     @default("New")
   ticketType   String     @default("Incident") // Incident | Problem | Change | Request
   workType     String     @default("Unclassified") // Independent operational classification
+  serviceWorkTypeId Int?
+  serviceWorkTypeLabel String?
+  serviceChange Json?
   sapReference String?
   symptomId    Int?
   causeId      Int?
@@ -493,4 +496,16 @@ model IntegrationAuditLog {
   createdAt        DateTime        @default(now())
 
   @@index([integrationAppId, createdAt])
+}
+
+model ServiceWorkType {
+  id Int @id @default(autoincrement())
+  name String
+  normalizedName String @unique
+  operation String
+  defaultJobCategoryId Int?
+  active Boolean @default(true)
+  sortOrder Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

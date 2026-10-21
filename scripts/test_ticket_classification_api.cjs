@@ -15,6 +15,8 @@ async function main() {
     ticketHistory:{findFirst:async()=>({actorId:1})},
     ticket:{findUnique:async()=>({...existing}),create:async({data})=>{writes.push(data);return {...data,id:12,watchers:[],assignee:null}},update:async({data})=>{writes.push(data);return {...existing,...data}}},
   }};
+  state.db.$transaction = async callback => callback(state.db);
+  state.db.$queryRaw = async () => [];
   globalThis.__ticketClassificationApiTest=state;
   const mocks={
     'next/server':'export const NextResponse={json:(body,init)=>new Response(JSON.stringify(body),init)};',

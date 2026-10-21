@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { downtimeMinutesInRange, parseDowntimeDate } from '@/lib/tickets/downtime';
+import { WORK_TYPES, WORK_TYPE_LABELS } from '@/lib/tickets/workClassification';
 import { getServiceCid } from '@/lib/services/cid';
+import { readServiceBandwidthMbps } from '@/lib/services/capacity';
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -126,6 +128,11 @@ const SLA_TARGET_PCT = 99.9;
 export default function ServiceDetailClient({ service, session }) {
   const router = useRouter();
   const isAdmin = session?.user?.role === 'Admin' || session?.user?.permissions?.includes('manage_assets');
+  const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
+  const canCreateTicket = session?.user?.role === 'Admin' || isCS || session?.user?.permissions?.includes('create_tickets') || session?.user?.permissions?.includes('manage_tickets');
+  const [historyWorkType, setHistoryWorkType] = useState('');
+  const [historyStatus, setHistoryStatus] = useState('');
+  const historyTickets = [...(service.tickets || [])].filter(ticket => (!historyWorkType || (ticket.workType || 'Unclassified') === historyWorkType) && (!historyStatus || ticket.status === historyStatus)).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const [activeTab, setActiveTab] = useState('parameters');
   const [isEditingHops, setIsEditingHops] = useState(false);
   const [editableHops, setEditableHops] = useState(service.hops || []);
@@ -337,7 +344,7 @@ export default function ServiceDetailClient({ service, session }) {
     <main className="container" style={{ maxWidth: '1100px' }}>
       <header className="page-header" style={{ marginBottom: '2rem' }}>
         <Link href="/assets" style={{ color: 'var(--text-color)', textDecoration: 'none', fontSize: '0.9rem', marginBottom: '1rem', display: 'inline-block' }}>← Back to Inventory</Link>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'flex-start', overflowWrap: 'anywhere' }}>
           <div>
              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.5rem' }}>
                <h1 style={{ margin: 0 }}>{service.name}</h1>
@@ -353,8 +360,9 @@ export default function ServiceDetailClient({ service, session }) {
              </div>
           </div>
           
+          {canCreateTicket && <Link href={`/tickets/new?serviceId=${service.id}&workType=ServiceWork`} className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>Buat Tiket</Link>}
           {isAdmin && (
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
               <button onClick={() => setShowEditModal(true)} className="secondary-btn">✏️ Edit Details</button>
               <button onClick={handleDelete} className="secondary-btn" style={{ color: '#ef4444', borderColor: '#fca5a5' }}>Delete Service</button>
             </div>
@@ -362,7 +370,7 @@ export default function ServiceDetailClient({ service, session }) {
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))', gap: '2rem' }}>
         
         {/* Left Col: Params & SLA Tabs */}
         <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -560,14 +568,19 @@ export default function ServiceDetailClient({ service, session }) {
 
           {activeTab === 'tickets' && (
             <div className="bg-white-card scale-in" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-              {service.tickets && service.tickets.length > 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+                <label>Jenis pekerjaan <select aria-label="Filter riwayat jenis pekerjaan" value={historyWorkType} onChange={event => setHistoryWorkType(event.target.value)}><option value="">Semua jenis</option>{WORK_TYPES.map(type => <option key={type} value={type}>{WORK_TYPE_LABELS[type]}</option>)}</select></label>
+                <label>Status <select aria-label="Filter riwayat status" value={historyStatus} onChange={event => setHistoryStatus(event.target.value)}><option value="">Semua status</option>{[...new Set((service.tickets || []).map(ticket => ticket.status))].map(status => <option key={status} value={status}>{status}</option>)}</select></label>
+              </div>
+              {historyTickets.length > 0 ? (
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-                   {service.tickets.map(t => (
+                   {historyTickets.map(t => (
                       <li key={t.id} style={{ padding: '1rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                          <Link href={`/tickets/${t.id}`} style={{ textDecoration: 'none', color: 'var(--heading-color)', fontWeight: 'bold', display: 'block', marginBottom: '0.3rem' }}>
-                           {t.trackingId ? `#${t.trackingId.split('-')[0]}` : `Ticket #${t.id}`} - {t.title}
+                           {t.trackingId ? `#${t.trackingId}` : `Ticket #${t.id}`} - {t.title}
                          </Link>
                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-color)' }}>
+                           <span>{t.serviceWorkTypeLabel || WORK_TYPE_LABELS[t.workType] || WORK_TYPE_LABELS.Unclassified}</span>
                            <span style={{ color: t.status === 'Resolved' ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>{t.status}</span>
                            <span>{new Date(t.createdAt).toLocaleDateString()}</span>
                          </div>
@@ -575,7 +588,7 @@ export default function ServiceDetailClient({ service, session }) {
                    ))}
                 </ul>
               ) : (
-                <p style={{ color: 'var(--text-color)', fontSize: '0.9rem' }}>Clean record. No networking incidents found.</p>
+                <p style={{ color: 'var(--text-color)', fontSize: '0.9rem' }}>Tidak ada tiket yang cocok dengan filter riwayat.</p>
               )}
             </div>
           )}
@@ -698,11 +711,18 @@ export default function ServiceDetailClient({ service, session }) {
                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(-- heading-color)', fontSize: '0.9rem' }}>Operational Status</label>
                  <select className="input-field" value={editData.status} onChange={e => setEditData({...editData, status: e.target.value})} style={{ width: '100%', padding: '0.8rem' }}>
                     <option value="Active">Active</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Terminated">Terminated</option>
                     <option value="Suspended">Suspended</option>
                     <option value="Archived">Archived</option>
                  </select>
                </div>
 
+               <div style={{marginBottom:'1rem'}}>
+                 <label htmlFor="edit-service-capacity">Kapasitas layanan (Mbps)</label>
+                 <input id="edit-service-capacity" type="number" min="0.001" step="any" className="input-field" value={Object.hasOwn(editData.customData,'bandwidthMbps') ? editData.customData.bandwidthMbps ?? '' : readServiceBandwidthMbps(service) ?? ''} onChange={e => setEditData({ ...editData, customData: { ...editData.customData, bandwidthMbps: e.target.value === '' ? null : Number(e.target.value) } })} style={{width:'100%',padding:'0.8rem'}} />
+                 <small>Isi kapasitas saat ini sebelum membuat tiket Upgrade/Downgrade jika data lama belum memiliki satuan yang jelas.</small>
+               </div>
                {templateFields.length > 0 && (
                  <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
                    <h4 style={{ margin: '0 0 1rem 0', color: 'var(--heading-color)' }}>Technical Parameters</h4>

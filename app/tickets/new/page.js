@@ -8,7 +8,7 @@ import { getAppConfig } from "@/lib/config";
 
 export default async function NewTicketPage({ searchParams }) {
   const query = await searchParams;
-  const defaultWorkType = ["Trouble", "Installation"].includes(query?.workType) ? query.workType : "Unclassified";
+  const defaultWorkType = ["Trouble", "Installation", "ServiceWork"].includes(query?.workType) ? query.workType : "Unclassified";
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
 
@@ -31,6 +31,9 @@ export default async function NewTicketPage({ searchParams }) {
   const creatorDeptId = session.user.departmentId;
   const targetRouteDeptId = creatorDeptId && deptAutoRouteMap[creatorDeptId] ? parseInt(deptAutoRouteMap[creatorDeptId]) : null;
   const defaultTargetDeptId = targetRouteDeptId || departments[0]?.id;
+  const initialService = services.find(service => String(service.id) === query?.serviceId);
+  const initialServiceWorkType = defaultWorkType === 'ServiceWork' && initialService && query?.operation === 'Installation'
+    ? await prisma.serviceWorkType.findFirst({ where: { active: true, operation: 'Installation' }, orderBy: { sortOrder: 'asc' } }) : null;
 
   return (
     <main className="container">
@@ -39,7 +42,7 @@ export default async function NewTicketPage({ searchParams }) {
         <p>Create a trackable operational ticket for your related sub-department.</p>
       </header>
       
-      <TicketForm defaultWorkType={defaultWorkType} departments={departments} categories={categories} users={users} customFields={customFields} services={services} serviceTemplates={serviceTemplates} companies={companies} defaultTargetDeptId={defaultTargetDeptId} />
+      <TicketForm defaultWorkType={defaultWorkType} initialServiceId={initialService?.id || null} initialServiceWorkType={initialServiceWorkType} departments={departments} categories={categories} users={users} customFields={customFields} services={services} serviceTemplates={serviceTemplates} companies={companies} defaultTargetDeptId={defaultTargetDeptId} />
     </main>
   );
 }

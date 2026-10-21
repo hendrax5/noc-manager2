@@ -11,22 +11,28 @@ import {
   nowDatetimeLocal,
 } from "@/lib/tickets/downtime";
 
-export default function TicketForm({ departments, categories, users = [], customFields, services, serviceTemplates, companies = ["ION", "SDC", "Sistercompany"], defaultTargetDeptId, defaultWorkType = "Unclassified" }) {
+export default function TicketForm({ departments, categories, users = [], customFields, services, serviceTemplates, companies = ["ION", "SDC", "Sistercompany"], defaultTargetDeptId, defaultWorkType = "Unclassified", initialServiceId = null, initialServiceWorkType = null }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [customDataState, setCustomDataState] = useState({});
+  const initialService = (services || []).find(service => service.id === initialServiceId);
+  const categoryManuallySelected = useRef(false);
+  const subjectManuallyEdited = useRef(false);
+  const suggestedWorkName = useRef(initialServiceWorkType?.name || '');
+  const [customDataState, setCustomDataState] = useState(initialService ? { "Customer Name": initialService.customer?.name || "" } : {});
   const [formData, setFormData] = useState({
     workType: defaultWorkType,
     sapReference: '',
+    serviceWorkTypeId: initialServiceWorkType?.id || '',
+    serviceChange: {},
     symptomId: null,
     causeId: null,
-    title: '',
+    title: initialServiceWorkType && initialService ? `${initialServiceWorkType.name} - ${getServiceCid(initialService)}` : '',
     description: '',
     priority: 'Medium',
     ticketType: 'Incident',
     departmentId: defaultTargetDeptId || departments[0]?.id || '',
     assigneeId: '',
-    jobCategoryId: '',
+    jobCategoryId: categories?.some(category => category.id === initialServiceWorkType?.defaultJobCategoryId) ? initialServiceWorkType.defaultJobCategoryId : '',
     queueId: '',
     enableSla: false,
     slaTimerMins: 15
@@ -47,7 +53,7 @@ export default function TicketForm({ departments, categories, users = [], custom
 
   const [customerSearchTerm, setCustomerSearchTerm] = useState(customDataState["Customer Name"] || '');
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
-  const [selectedServices, setSelectedServices] = useState([]);
+  const [selectedServices, setSelectedServices] = useState(initialService ? [initialService] : []);
   const customerWrapperRef = useRef(null);
   const [queues, setQueues] = useState([]);
 
@@ -62,7 +68,7 @@ export default function TicketForm({ departments, categories, users = [], custom
 
   const handleSelectCustomerService = (s) => {
     if (!selectedServices.find(srv => srv.id === s.id)) {
-      const newSelected = [...selectedServices, s];
+      const newSelected = formData.workType === "ServiceWork" ? [s] : [...selectedServices, s];
       setSelectedServices(newSelected);
       
       // Auto-enable SLA
@@ -107,10 +113,37 @@ export default function TicketForm({ departments, categories, users = [], custom
       .catch(() => {});
   }, []);
 
+  const updateClassification = (patch) => {
+    if (patch.workType === "ServiceWork" && selectedServices.length > 1) {
+      setSelectedServices([]);
+      setCustomDataState(previous => ({ ...previous, "Customer Name": "" }));
+    }
+    if (patch.serviceIds) {
+      const next = (services || []).filter(service => patch.serviceIds.includes(service.id));
+      setSelectedServices(next);
+      setCustomDataState(previous => ({ ...previous, "Customer Name": [...new Set(next.map(service => service.customer?.name).filter(Boolean))].join(', ') }));
+    }
+    setFormData(previous => ({ ...previous, ...patch,
+      ...(patch.serviceIds && !subjectManuallyEdited.current && suggestedWorkName.current ? {title:`${suggestedWorkName.current}${patch.serviceIds[0] ? ` - ${getServiceCid((services || []).find(service => service.id === patch.serviceIds[0])) || ''}` : ''}`} : {}),
+    }));
+  };
+
+  const suggestServiceWork = (type) => {
+    suggestedWorkName.current = type.name;
+    setFormData(previous => ({ ...previous,
+      ...(!categoryManuallySelected.current ? { jobCategoryId: categories?.some(category => category.id === type.defaultJobCategoryId) ? type.defaultJobCategoryId : '' } : {}),
+      ...(!subjectManuallyEdited.current ? { title: `${type.name}${selectedServices[0] ? ` - ${getServiceCid(selectedServices[0]) || selectedServices[0].name}` : ''}` } : {})
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.workType === "Trouble" && ((!selectedServices.length || selectedServices.some(service => !getServiceCid(service))) || !formData.symptomId || !formData.causeId)) {
       toast.error("Trouble memerlukan gejala, penyebab, dan minimal satu layanan. Semua layanan terpilih wajib memiliki CID.");
+      return;
+    }
+    if (formData.workType === "ServiceWork" && (selectedServices.length !== 1 || !getServiceCid(selectedServices[0]) || !formData.serviceWorkTypeId || !formData.serviceChange?.effectiveDate)) {
+      toast.error("Pekerjaan layanan memerlukan tepat satu CID, jenis pekerjaan, dan tanggal efektif.");
       return;
     }
     setIsSubmitting(true);
@@ -146,16 +179,21 @@ export default function TicketForm({ departments, categories, users = [], custom
     }
     const finalCustomData = {
       ...customDataState,
-      hasDowntime: hasDowntime,
+      hasDowntime: formData.workType !== "ServiceWork" && hasDowntime,
       startDowntime: hasDowntime ? downtimeStart : null,
       endDowntime: hasDowntime && downtimeEnd ? downtimeEnd : null,
       downtimeMinutes: (hasDowntime && duration && !duration.error && !duration.ongoing) ? duration.minutes : 0
     };
 
+    const payload = { ...formData, customData: finalCustomData, attachmentUrl, attachmentName, serviceIds: selectedServices.map(s => s.id) };
+    if (formData.workType !== 'ServiceWork') {
+      delete payload.serviceWorkTypeId;
+      delete payload.serviceChange;
+    }
     const res = await fetch("/api/tickets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...formData, customData: finalCustomData, attachmentUrl, attachmentName, serviceIds: selectedServices.map(s => s.id) })
+      body: JSON.stringify(payload)
     });
 
     if (res.ok) {
@@ -221,7 +259,7 @@ export default function TicketForm({ departments, categories, users = [], custom
       <div className="form-group" style={{ gridColumn: '1 / -1', borderTop: position === 'bottom' ? '1px solid #e2e8f0' : 'none', paddingTop: position === 'bottom' ? '1.5rem' : '0', marginBottom: position !== 'bottom' ? '0.5rem' : '0', background: position !== 'bottom' ? '#f8fafc' : 'transparent', padding: position !== 'bottom' ? '1.5rem' : '0', borderRadius: position !== 'bottom' ? '8px' : '0' }}>
         {position === 'bottom' && <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#1e293b' }}>Additional Information</h3>}
         {position !== 'bottom' && <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Required Parameters</h4>}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.5rem' }}>
           {fields.map(renderCustomFieldWithChildren)}
         </div>
       </div>
@@ -231,9 +269,9 @@ export default function TicketForm({ departments, categories, users = [], custom
   const optionalFields = customFields?.filter(f => !f.required && !visibleCustomFieldIds.includes(f.id)) || [];
 
   return (
-    <form className="card" onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 1fr)', gap: '2rem', padding: '2.5rem', position: 'relative' }}>
+    <form className="card" onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: '1.5rem', padding: 'clamp(0.75rem, 4vw, 2.5rem)', minWidth: 0, position: 'relative' }}>
       
-      <TicketWorkClassification value={formData} onChange={patch => setFormData(previous => ({ ...previous, ...patch }))} />
+      <TicketWorkClassification value={{ ...formData, serviceIds: selectedServices.map(service => service.id) }} onChange={updateClassification} services={services} serviceTemplates={serviceTemplates} onServiceWorkTypeChange={suggestServiceWork} />
       {optionalFields.length > 0 && (
         <div className="form-group" style={{ gridColumn: '1 / -1', marginTop: '-0.5rem', marginBottom: '-0.5rem', display: 'flex', justifyContent: 'flex-end', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e0f2fe', padding: '0.4rem 1.25rem', borderRadius: '6px', border: '1px solid #bae6fd' }}>
@@ -253,7 +291,7 @@ export default function TicketForm({ departments, categories, users = [], custom
         </div>
       )}
 
-      <div className="form-group" style={{ gridColumn: '1 / -1', position: 'relative' }} ref={customerWrapperRef}>
+      {formData.workType !== "ServiceWork" && <div className="form-group" style={{ gridColumn: '1 / -1', position: 'relative' }} ref={customerWrapperRef}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Customer / Reporter Name</label>
         <input 
           type="text" 
@@ -324,9 +362,9 @@ export default function TicketForm({ departments, categories, users = [], custom
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
-      <div className="form-group" style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', background: '#f1f5f9', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+      <div className="form-group" style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '1.5rem', background: '#f1f5f9', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
         <div>
           <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             🏢 Order Origin (Company)
@@ -363,7 +401,7 @@ export default function TicketForm({ departments, categories, users = [], custom
           type="text" 
           placeholder="Enter a concise summary of the issue..."
           value={formData.title} 
-          onChange={e => setFormData({...formData, title: e.target.value})} 
+          onChange={e => { subjectManuallyEdited.current = true; setFormData({...formData, title: e.target.value}); }}
           required 
         />
       </div>
@@ -446,7 +484,7 @@ export default function TicketForm({ departments, categories, users = [], custom
 
 
       {/* Downtime Tracking Block */}
-      <div className="form-group" style={{ gridColumn: '1 / -1', background: 'var(--hover-bg, #f8fafc)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color, #e2e8f0)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {formData.workType !== 'ServiceWork' && <div className="form-group" style={{ gridColumn: '1 / -1', background: 'var(--hover-bg, #f8fafc)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color, #e2e8f0)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b' }}>
           <input 
             type="checkbox" 
@@ -458,7 +496,7 @@ export default function TicketForm({ departments, categories, users = [], custom
         </label>
         
         {hasDowntime && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginTop: '0.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1.5rem', marginTop: '0.5rem' }}>
             <div>
               <label style={{ display: 'block', color: '#475569', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Mulai Downtime</label>
               <input 
@@ -505,14 +543,14 @@ export default function TicketForm({ departments, categories, users = [], custom
             )}
           </div>
         )}
-      </div>
+      </div>}
 
       <div className="form-group" style={{ gridColumn: '1 / -1' }}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Job Category (Optional)</label>
         <SearchableSelect 
           options={categories?.map(c => ({ value: c.id, label: `${c.name} (+${c.score} pts)` })) || []}
           value={formData.jobCategoryId}
-          onChange={val => setFormData({ ...formData, jobCategoryId: val ? parseInt(val) : '' })}
+          onChange={val => { categoryManuallySelected.current = true; setFormData({ ...formData, jobCategoryId: val ? parseInt(val) : '' }); }}
           placeholder="-- Select Category --"
         />
       </div>
