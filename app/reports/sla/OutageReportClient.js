@@ -9,19 +9,19 @@ const operators = [['all', 'Semua durasi'], ['gt', 'Lebih dari (>)'], ['gte', 'M
 const statuses = [['all', 'Semua'], ['ongoing', 'Berjalan'], ['finished', 'Selesai']];
 
 function Criteria({ filters }) {
-  return <>{filters.startDate} s/d {filters.endDate} · {filters.customer || 'Semua customer'} · Penyebab: {filters.cause || 'Semua'} · {filters.durationOperator === 'all' ? 'Semua durasi' : `${operators.find(([value]) => value === filters.durationOperator)?.[1]} ${filters.durationHours} jam per tiket`} · Status gangguan: {statuses.find(([value]) => value === filters.outageStatus)?.[1]}{filters.search && ` · Cari: ${filters.search}`}</>;
+  return <>{filters.startDate} s/d {filters.endDate} · {filters.customer || 'Semua customer'} · Penyebab: {filters.cause || 'Semua'} · Gejala: {filters.symptom || 'Semua'} · {filters.durationOperator === 'all' ? 'Semua durasi' : `${operators.find(([value]) => value === filters.durationOperator)?.[1]} ${filters.durationHours} jam per tiket`} · Status gangguan: {statuses.find(([value]) => value === filters.outageStatus)?.[1]}{filters.search && ` · Cari: ${filters.search}`}</>;
 }
 
 function OutageTable({ rows, print = false }) {
   return <div className={styles.tableWrap}><table className={styles.table}>
     <caption className={styles.srOnly}>Daftar gangguan, satu baris untuk setiap tiket. Semua waktu dalam WIB.</caption>
-    <thead><tr><th scope="col">Tiket / Customer</th><th scope="col">Layanan / Link</th><th scope="col">Mulai / Selesai (WIB)</th><th scope="col">Durasi per tiket</th><th scope="col">Penyebab</th><th scope="col">Tindakan / Status</th></tr></thead>
+    <thead><tr><th scope="col">Tiket / Customer</th><th scope="col">Layanan / CID</th><th scope="col">Mulai / Selesai (WIB)</th><th scope="col">Durasi per tiket</th><th scope="col">Gejala / Penyebab</th><th scope="col">Tindakan / Status</th></tr></thead>
     <tbody>{rows.map((row) => <tr key={row.dbId}>
       <td>{print ? <strong>{row.trackingId}</strong> : <Link href={`/tickets/${row.dbId}`}>{row.trackingId}</Link>}<strong>{row.customer}</strong><span className={styles.secondary}>{row.title}</span></td>
       <td>{row.services}</td>
       <td className={styles.dates}>{outageDate(row.startAt)}<span className={styles.secondary}>{row.endAt ? outageDate(row.endAt) : 'Masih berjalan *'}</span></td>
       <td className={styles.duration}>{outageDuration(row.downtimeMinutes)}{row.ongoing && ' *'}</td>
-      <td><div className={print ? undefined : styles.longText}>{row.cause}</div><small className={styles.secondary}>{row.causeSource}</small></td>
+      <td><div className={print ? undefined : styles.longText}>{row.cause}</div><small className={styles.secondary}>{row.symptom}</small><small className={styles.secondary}>{row.causeSource}</small></td>
       <td><div className={print ? undefined : styles.longText}>{row.action}</div><span className={styles.badge}>{row.ongoing ? 'Gangguan berjalan' : 'Gangguan selesai'}</span><small className={styles.secondary}>Status tiket: {row.status}</small></td>
     </tr>)}</tbody>
   </table></div>;
@@ -98,7 +98,8 @@ export default function OutageReportClient() {
           <label>Sampai tanggal<input required type="date" min={draft.startDate} value={draft.endDate} onChange={(e) => update('endDate', e.target.value)} /></label>
           <label>Customer<input type="search" maxLength={200} value={draft.customer} placeholder="Semua customer / ketik nama" onChange={(e) => update('customer', e.target.value)} /><small>Dicocokkan dengan customer layanan atau field customer tiket lama.</small></label>
           <label>Penyebab / jenis masalah<input type="search" maxLength={200} value={draft.cause} placeholder="Semua / FO CUT / listrik" onChange={(e) => update('cause', e.target.value)} /><small>Tiket lama: pencarian juga memakai judul/deskripsi.</small></label>
-          <label>Cari tiket / layanan / link<input type="search" maxLength={200} value={draft.search} placeholder="Nomor tiket atau nama link" onChange={(e) => update('search', e.target.value)} /></label>
+          <label>Gejala<input type="search" maxLength={200} value={draft.symptom || ''} placeholder="Semua / Down / Packet Loss" onChange={(e) => update('symptom', e.target.value)} /></label>
+          <label>Cari tiket / CID / link<input type="search" maxLength={200} value={draft.search} placeholder="Nomor tiket, CID, atau nama link" onChange={(e) => update('search', e.target.value)} /></label>
         </div>
         <div className={styles.ruleGrid}>
           <fieldset><legend>Durasi downtime per tiket</legend><div className={styles.choices}>{operators.map(([value, label]) => <label key={value}><input type="radio" name="outage-duration" value={value} checked={draft.durationOperator === value} onChange={() => update('durationOperator', value)} />{label}</label>)}</div><label className={styles.hours}>Durasi <input type="number" min="0" step="any" required={draft.durationOperator !== 'all'} disabled={draft.durationOperator === 'all'} value={draft.durationHours} onChange={(e) => update('durationHours', e.target.value)} /> jam</label></fieldset>
@@ -124,7 +125,7 @@ export default function OutageReportClient() {
       {preview && <section className={styles.preview} aria-labelledby="outage-preview-title">
         <div className={`no-print ${styles.sectionHeading}`}><h2 id="outage-preview-title">Pratinjau laporan cetak</h2><button type="button" className="primary-btn" onClick={() => window.print()}>Cetak / Simpan PDF</button></div>
         <article className={`sla-letter ${styles.letter}`}>
-          <header><p className="sla-letter-kicker">ION Network</p><h2>Laporan penanganan gangguan</h2><p><Criteria filters={report.filters} /></p><p className={styles.footnote}>Dibuat {outageDate(report.generatedAt)} WIB</p></header>
+          <header><div className={styles.ionHeader}><img src="/ion-logo.png" alt="Logo ION Network" width="110" height="54" /><div><strong>ION NETWORK</strong><p>PT PARSAORAN GLOBAL DATATRANS</p></div></div><h2>Laporan penanganan gangguan</h2><p><Criteria filters={report.filters} /></p><p className={styles.footnote}>Dibuat {outageDate(report.generatedAt)} WIB</p></header>
           <h3>1. Ringkasan</h3><p>Terdapat {report.summary.tickets} tiket sesuai kriteria, dengan {report.summary.customers} customer tercatat terdampak dan {report.summary.ongoing} gangguan masih berjalan. Gangguan terlama per tiket: {outageDuration(report.summary.longestMinutes)}.</p><p>Durasi dihitung terpisah pada setiap tiket berdasarkan waktu mulai dan selesai downtime, tanpa akumulasi beberapa kejadian.</p>
           <h3>2. Daftar gangguan</h3>{report.rows.length ? <OutageTable rows={report.rows} print /> : <p>Tidak ada tiket sesuai kriteria.</p>}
           <p className={styles.footnote}>Seluruh waktu dalam WIB. * Gangguan berjalan dihitung sampai waktu pembuatan laporan. Periode memilih waktu mulai gangguan; durasi yang ditampilkan adalah durasi penuh tiket. Penyebab dari judul/deskripsi tiket lama perlu dikonfirmasi pada tiket sumber.</p>

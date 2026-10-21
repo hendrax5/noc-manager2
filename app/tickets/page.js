@@ -1,7 +1,10 @@
+import { WORK_TYPE_LABELS, workTypeWhere } from "@/lib/tickets/workClassification";
+import { getServiceCid } from "@/lib/services/cid";
 import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { findServiceIdsByCid } from "@/lib/services/cidLookup";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import TicketQuickActions from "./TicketQuickActions";
@@ -40,7 +43,9 @@ export default async function TicketsPage({ searchParams }) {
   const tab = resolvedParams?.tab || "";
   const jobCategoryParam = resolvedParams?.jobCategory || "";
 
-  const filters = [];
+  const workFilter = workTypeWhere(resolvedParams?.workType);
+  const workType = workFilter.workType || "";
+  const filters = [workFilter];
   
   if (companyParam && !allDeptsParam && !q) {
     filters.push({
@@ -83,9 +88,16 @@ export default async function TicketsPage({ searchParams }) {
   }
 
   if (q) {
+    const cidServiceIds = await findServiceIdsByCid(prisma, q);
     filters.push({
       OR: [
         { trackingId: { contains: q, mode: 'insensitive' } },
+        { sapReference: { contains: q, mode: 'insensitive' } },
+        { services: { some: { OR: [
+          { cid: { contains: q, mode: 'insensitive' } },
+          { customer: { name: { contains: q, mode: 'insensitive' } } },
+          { id: { in: cidServiceIds } },
+        ] } } },
         { title: { contains: q, mode: 'insensitive' } },
         { assignee: { name: { contains: q, mode: 'insensitive' } } },
         { assignee: { email: { contains: q, mode: 'insensitive' } } },
@@ -182,7 +194,7 @@ export default async function TicketsPage({ searchParams }) {
     <main className="container">
       <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1>Tickets Dashboard</h1>
+          <h1>{workType ? WORK_TYPE_LABELS[workType] : "Semua Tiket"}</h1>
           <p>Triage, assign, and resolve NOC technical operations.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -192,18 +204,18 @@ export default async function TicketsPage({ searchParams }) {
             </span>
           )}
           {canCreate && (
-            <Link href="/tickets/new" className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>+ New Ticket</Link>
+            <Link href={workType ? `/tickets/new?workType=${workType}` : "/tickets/new"} className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>+ New Ticket</Link>
           )}
         </div>
       </header>
 
       {/* Dynamic Views / Status Tabs */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', overflowX: 'auto' }}>
-         <Link href="/tickets" style={{ padding: '0.5rem 1rem', textDecoration: 'none', color: !tab ? 'var(--primary-color)' : '#64748b', fontWeight: !tab ? 'bold' : '500', borderBottom: !tab ? '3px solid var(--primary-color)' : 'none', marginBottom: '-9px' }}>
+         <Link href={workType ? `/tickets?workType=${workType}` : "/tickets"} style={{ padding: '0.5rem 1rem', textDecoration: 'none', color: !tab ? 'var(--primary-color)' : '#64748b', fontWeight: !tab ? 'bold' : '500', borderBottom: !tab ? '3px solid var(--primary-color)' : 'none', marginBottom: '-9px' }}>
             All Active View
          </Link>
          {(isCS || user.role === 'Admin' || user.permissions?.includes('manage_sla') || user.permissions?.includes('view_all_tickets')) && (
-           <Link href="/tickets?tab=cs_radar" style={{ padding: '0.5rem 1rem', textDecoration: 'none', color: tab === 'cs_radar' ? '#ef4444' : '#64748b', fontWeight: tab === 'cs_radar' ? 'bold' : '500', borderBottom: tab === 'cs_radar' ? '3px solid #ef4444' : 'none', marginBottom: '-9px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+           <Link href={`/tickets?tab=cs_radar${workType ? `&workType=${workType}` : ""}`} style={{ padding: '0.5rem 1rem', textDecoration: 'none', color: tab === 'cs_radar' ? '#ef4444' : '#64748b', fontWeight: tab === 'cs_radar' ? 'bold' : '500', borderBottom: tab === 'cs_radar' ? '3px solid #ef4444' : 'none', marginBottom: '-9px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               📡 CS SLA Radar
            </Link>
          )}
@@ -279,6 +291,11 @@ export default async function TicketsPage({ searchParams }) {
                   <Link href={`/tickets/${t.id}`} style={{color: 'var(--primary-color)'}}>
                     {t.title}
                   </Link>
+                  <div style={{ fontSize: '0.75rem', marginTop: '0.35rem' }}>
+                    <span className="badge">{WORK_TYPE_LABELS[t.workType] || WORK_TYPE_LABELS.Unclassified}</span>
+                    {t.sapReference && <span> SAP: {t.sapReference}</span>}
+                    {t.services?.some(service => getServiceCid(service)) && <span> CID: {t.services.map(service => getServiceCid(service)).filter(Boolean).join(', ')}</span>}
+                  </div>
                   {t.slaBreaches > 0 && t.status !== 'Resolved' && (
                     <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem', color: 'var(--danger-text, #b91c1c)', fontWeight: 'bold', background: 'var(--danger-bg, #fee2e2)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
                       🔥 x{t.slaBreaches} CS Pings!

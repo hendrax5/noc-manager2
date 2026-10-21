@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
+import TicketWorkClassification, { TicketServicePicker } from "@/components/TicketWorkClassification";
+import { getServiceCid } from "@/lib/services/cid";
 import SearchableSelect from "@/components/SearchableSelect";
 import {
   getDowntimeDuration as calcDowntimeDuration,
@@ -92,7 +94,14 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const [replySlaMins, setReplySlaMins] = useState(ticket?.slaTimerMins || 15);
 
   const [formData, setFormData] = useState({
-    title: ticket.title,
+    workType: ticket.workType || "Unclassified",
+      sapReference: ticket.sapReference || "",
+      symptomId: ticket.symptomId || null,
+      causeId: ticket.causeId || null,
+      symptomLabel: ticket.symptomLabel || null,
+      causeLabel: ticket.causeLabel || null,
+      serviceIds: (ticket.services || []).map(service => service.id),
+      title: ticket.title,
     description: ticket.description,
     status: ticket.status,
     priority: ticket.priority,
@@ -129,7 +138,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     if (!term) return false;
     const custName = s.customer?.name?.toLowerCase() || "";
     const srvName = s.name?.toLowerCase() || "";
-    const srvId = String(s.id);
+    const srvId = String(getServiceCid(s) || "").toLowerCase();
     return custName.includes(term) || srvName.includes(term) || srvId.includes(term);
   });
 
@@ -176,6 +185,13 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     setEditTitle(ticket.title);
     setEditDesc(htmlToPlainText(ticket.description));
     setFormData({
+      workType: ticket.workType || "Unclassified",
+      sapReference: ticket.sapReference || "",
+      symptomId: ticket.symptomId || null,
+      causeId: ticket.causeId || null,
+      symptomLabel: ticket.symptomLabel || null,
+      causeLabel: ticket.causeLabel || null,
+      serviceIds: (ticket.services || []).map(service => service.id),
       title: ticket.title,
       description: ticket.description,
       status: ticket.status,
@@ -260,6 +276,11 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   };
 
   const saveTicketEdit = async () => {
+    const classificationChanged = formData.workType !== (ticket.workType || "Unclassified") || formData.symptomId !== (ticket.symptomId || null) || formData.causeId !== (ticket.causeId || null) || JSON.stringify(formData.serviceIds) !== JSON.stringify((ticket.services || []).map(service => service.id));
+    if (formData.workType === "Trouble" && classificationChanged && (!formData.symptomId || !formData.causeId || !formData.serviceIds.length || formData.serviceIds.some(id => !getServiceCid(services.find(service => service.id === id))))) {
+      toast.error("Trouble memerlukan gejala, penyebab, dan minimal satu layanan. Semua layanan terpilih wajib memiliki CID.");
+      return;
+    }
     setLoading(true);
     const res = await fetch(`/api/tickets/${ticket.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -435,8 +456,11 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           
           <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.7', color: 'var(--text-color)', fontSize: '0.95rem' }}>
             <p style={{ margin: '0 0 1rem 0' }}>Dear NOC,</p>
+            {!editingTicket && <p>Jenis pekerjaan: <strong>{ticket.workType || "Unclassified"}</strong>{ticket.workType === "Installation" && ticket.sapReference ? ` / SAP: ${ticket.sapReference}` : ""}{ticket.workType === "Trouble" ? ` / Gejala: ${ticket.symptomLabel || "—"} / Penyebab: ${ticket.causeLabel || "—"}` : ""}</p>}
             {editingTicket ? (
               <div>
+                <TicketWorkClassification value={formData} onChange={patch => setFormData(previous => ({ ...previous, ...patch }))} />
+                <TicketServicePicker services={services} selectedIds={formData.serviceIds || []} onChange={serviceIds => setFormData(previous => ({ ...previous, serviceIds }))} />
                 {/* Edit Customer / Reporter Name */}
                 <div style={{ marginBottom: '1rem', position: 'relative' }} ref={customerWrapperRef}>
                   <label style={{ display: 'block', color: '#64748b', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Customer / Reporter Name:</label>
@@ -495,7 +519,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                                   onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)'}
                                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                 >
-                                  <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>(ID: {s.id})</span>
+                                  <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>({getServiceCid(s) || "CID belum tersedia"})</span>
                                 </li>
                               ))}
                             </ul>

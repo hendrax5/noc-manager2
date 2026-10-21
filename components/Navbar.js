@@ -1,13 +1,15 @@
 "use client";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { useTheme } from "./ThemeProvider";
 
-export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0" }) {
+function NavbarContent({ appName = "NOC Management", appVersion = "1.0.0" }) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const ticketWorkType = pathname === "/tickets" ? searchParams.get("workType") : "";
 
   const { theme, toggleTheme } = useTheme();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -42,7 +44,9 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
   const canManageSettings =
     session?.user?.permissions?.includes("manage_settings") ||
     session?.user?.role === "Admin";
+  const canManageTrouble = session?.user?.role === "Admin" || session?.user?.permissions?.includes("manage_trouble_master");
   const showAdmin =
+    canManageTrouble ||
     canViewReports ||
     canViewOpsReport ||
     canViewShiftFairness ||
@@ -69,7 +73,9 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
       {session && (
         <div className={`nav-links ${isMobileMenuOpen ? "open" : ""}`} style={{ display: "flex", alignItems: "center", flexWrap: "wrap" }}>
           <Link href="/dashboard" className={pathname === "/dashboard" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Dashboard</Link>
-          <Link href="/tickets" className={pathname.startsWith("/tickets") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Tickets</Link>
+          <Link href="/tickets" className={pathname.startsWith("/tickets") && !["Trouble", "Installation"].includes(ticketWorkType) ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Semua Tiket</Link>
+          <Link href="/tickets?workType=Trouble" className={ticketWorkType === "Trouble" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Trouble Ticket</Link>
+          <Link href="/tickets?workType=Installation" className={ticketWorkType === "Installation" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Instalasi</Link>
           <Link href="/team/schedules" className={pathname.startsWith("/team/schedules") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Shifts</Link>
           <Link href="/meetings" className={pathname.startsWith("/meetings") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Meetings</Link>
 
@@ -116,8 +122,11 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
                 {canManageTeam && (
                   <Link href="/team" className={pathname === "/team" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Team Management</Link>
                 )}
+                {canManageTrouble && (
+                  <Link href="/settings/trouble-masters" className={pathname.startsWith("/settings/trouble-masters") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Master Data Trouble</Link>
+                )}
                 {canManageSettings && (
-                  <Link href="/settings" className={pathname.startsWith("/settings") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>System Settings</Link>
+                  <Link href="/settings" className={pathname === "/settings" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>System Settings</Link>
                 )}
               </div>
             </div>
@@ -182,4 +191,8 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
       )}
     </nav>
   );
+}
+
+export default function Navbar(props) {
+  return <Suspense fallback={<nav className="navbar">{props.appName || "NOC Management"}</nav>}><NavbarContent {...props} /></Suspense>;
 }

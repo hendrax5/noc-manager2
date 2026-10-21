@@ -1,3 +1,4 @@
+import { workTypeWhere } from "@/lib/tickets/workClassification";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
@@ -64,6 +65,10 @@ export default async function DashboardPage({ searchParams }) {
     scope = { assigneeId: parseInt(session?.user?.id) };
   }
 
+  const workFilter = workTypeWhere(resolvedParams?.workType);
+  const workType = workFilter.workType || "";
+  scope = andWhere(scope, workFilter);
+
   const personalCategoryIds = await getPersonalCategoryIds(prisma);
   scope = andWhere(
     scope,
@@ -93,10 +98,10 @@ export default async function DashboardPage({ searchParams }) {
 
   // Fetch pending Open Tickets specifically allocated to them
   const myOpenTickets = await prisma.ticket.findMany({
-    where: {
+    where: andWhere(scope, deptConfig.categories?.length ? { jobCategory: { name: { in: deptConfig.categories } } } : {}, {
       assigneeId: parseInt(session?.user?.id),
       status: { notIn: ['Resolved', 'Closed'] }
-    },
+    }),
     orderBy: { updatedAt: 'desc' },
     take: 5
   });
@@ -124,6 +129,7 @@ export default async function DashboardPage({ searchParams }) {
         hasGlobalAccess={hasGlobalAccess}
         hasSkyViewAccess={hasSkyViewAccess}
         finalScope={finalScope}
+        workType={workType}
         allowedScopes={allowedScopes}
         
         // Workspace metrics

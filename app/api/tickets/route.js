@@ -7,6 +7,7 @@ import { pickLeastBusyAssignee } from "@/lib/tickets/routing";
 import { notifyTicketEvent } from "@/lib/notify";
 import { TICKET_TYPES, TICKET_PRIORITIES, assertValidStatus } from "@/lib/tickets/status";
 import { normalizeDowntimeCustomData } from "@/lib/tickets/downtime";
+import { prepareTicketClassification, TicketClassificationError } from "@/lib/tickets/workClassification";
 import { createTicketPointsLog } from "@/lib/tickets/points";
 
 function generateTrackingId() {
@@ -60,6 +61,8 @@ export async function POST(req) {
       approvalRequired,
     } = body;
 
+    const classification = await prepareTicketClassification(prisma, body);
+
     if (priority !== undefined && !TICKET_PRIORITIES.includes(priority)) {
       return NextResponse.json(
         {
@@ -93,6 +96,7 @@ export async function POST(req) {
     }
 
     let ticketData = {
+      ...classification.data,
       trackingId: generateTrackingId(),
       title,
       description,
@@ -120,9 +124,9 @@ export async function POST(req) {
       },
     };
 
-    if (serviceIds && serviceIds.length > 0) {
+    if (classification.serviceIds?.length > 0) {
       ticketData.services = {
-        connect: serviceIds.map((id) => ({ id: parseInt(id) })),
+        connect: classification.serviceIds.map((id) => ({ id })),
       };
     }
 
@@ -166,6 +170,7 @@ export async function POST(req) {
 
     return NextResponse.json(ticket, { status: 201 });
   } catch (error) {
+    if (error instanceof TicketClassificationError) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

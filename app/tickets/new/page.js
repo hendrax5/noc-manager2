@@ -6,7 +6,9 @@ import { redirect } from "next/navigation";
 
 import { getAppConfig } from "@/lib/config";
 
-export default async function NewTicketPage() {
+export default async function NewTicketPage({ searchParams }) {
+  const query = await searchParams;
+  const defaultWorkType = ["Trouble", "Installation"].includes(query?.workType) ? query.workType : "Unclassified";
   const session = await getServerSession(authOptions);
   if (!session) redirect('/login');
 
@@ -37,7 +39,7 @@ export default async function NewTicketPage() {
         <p>Create a trackable operational ticket for your related sub-department.</p>
       </header>
       
-      <TicketForm departments={departments} categories={categories} users={users} customFields={customFields} services={services} serviceTemplates={serviceTemplates} companies={companies} defaultTargetDeptId={defaultTargetDeptId} />
+      <TicketForm defaultWorkType={defaultWorkType} departments={departments} categories={categories} users={users} customFields={customFields} services={services} serviceTemplates={serviceTemplates} companies={companies} defaultTargetDeptId={defaultTargetDeptId} />
     </main>
   );
 }

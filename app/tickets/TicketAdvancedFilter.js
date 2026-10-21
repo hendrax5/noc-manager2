@@ -1,4 +1,5 @@
 "use client";
+import { WORK_TYPES, WORK_TYPE_LABELS } from "@/lib/tickets/workClassification";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { TICKET_STATUSES, DEFAULT_FILTER_STATUSES } from "@/lib/tickets/status";
@@ -13,6 +14,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
   const [allDepts, setAllDepts] = useState(searchParams.get('all_depts') === 'true');
   const [companyParam, setCompanyParam] = useState(searchParams.get('company') !== null ? searchParams.get('company') : initialCompanyParam);
   const [jobCategoryParam, setJobCategoryParam] = useState(searchParams.get('jobCategory') || "");
+  const [workType, setWorkType] = useState(searchParams.get("workType") || "");
   const [jobCategories, setJobCategories] = useState([]);
 
   const ALL_STATUSES = [...TICKET_STATUSES];
@@ -27,6 +29,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
 
   // Sync state with URL search params when they change client-side
   useEffect(() => {
+    setWorkType(searchParams.get("workType") || "");
     setQ(searchParams.get('q') || "");
     setStatuses(searchParams.get('statuses') ? searchParams.get('statuses').split(',') : [...DEFAULT_FILTER_STATUSES]);
     setAssignments(searchParams.get('assignments') ? searchParams.get('assignments').split(',') : ['me', 'unassigned', 'others']);
@@ -52,6 +55,8 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
   const handleSearch = (e) => {
     if (e) e.preventDefault();
     const params = new URLSearchParams();
+    if (workType) params.set('workType', workType);
+    if (searchParams.get('date')) params.set('date', searchParams.get('date'));
     if (q) params.set('q', q);
     if (statuses.length > 0) params.set('statuses', statuses.join(','));
     if (assignments.length > 0 && assignments.length < 3) params.set('assignments', assignments.join(','));
@@ -68,6 +73,8 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
   const handleCompanyChange = (val) => {
     setCompanyParam(val);
     const params = new URLSearchParams();
+    if (workType) params.set('workType', workType);
+    if (searchParams.get('date')) params.set('date', searchParams.get('date'));
     if (q) params.set('q', q);
     if (statuses.length > 0) params.set('statuses', statuses.join(','));
     if (assignments.length > 0 && assignments.length < 3) params.set('assignments', assignments.join(','));
@@ -83,6 +90,8 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
   const handleJobCategoryChange = (val) => {
     setJobCategoryParam(val);
     const params = new URLSearchParams();
+    if (workType) params.set('workType', workType);
+    if (searchParams.get('date')) params.set('date', searchParams.get('date'));
     if (q) params.set('q', q);
     if (statuses.length > 0) params.set('statuses', statuses.join(','));
     if (assignments.length > 0 && assignments.length < 3) params.set('assignments', assignments.join(','));
@@ -96,6 +105,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
   };
 
   const clearAll = () => {
+    setWorkType("");
     setQ("");
     setStatuses([...DEFAULT_FILTER_STATUSES]);
     setAssignments(['me', 'unassigned']);
@@ -116,6 +126,13 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '1.5rem' }}>
         
+        <div>
+          <label htmlFor="ticket-work-type">Klasifikasi pekerjaan</label>
+          <select id="ticket-work-type" value={workType} onChange={e => setWorkType(e.target.value)} style={{ width: '100%', padding: '0.5rem' }}>
+            <option value="">Semua</option>
+            {WORK_TYPES.map(value => <option key={value} value={value}>{WORK_TYPE_LABELS[value]}</option>)}
+          </select>
+        </div>
         {/* Status Filter */}
         <div>
           <h4 style={{ margin: '0 0 0.75rem 0', color: '#1e293b', fontSize: '0.95rem' }}>Show tickets with status:</h4>
@@ -211,7 +228,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
         <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
           <input 
             type="text" 
-            placeholder="Search by Tracking ID (e.g., HSK-...), Subject, or Name..." 
+            placeholder="Search by Tracking ID, Subject, Name, SAP, or CID..."
             value={q} 
             onChange={e => setQ(e.target.value)}
             style={{ padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', maxWidth: '500px', fontSize: '0.95rem' }}

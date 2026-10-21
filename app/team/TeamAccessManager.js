@@ -281,6 +281,7 @@ export default function TeamAccessManager({ users, roles, departments, companies
                               { key: "manage_roles", label: "🔐 Manage Security Roles & Permissions" },
                               { key: "manage_departments", label: "🏢 Manage Sub-Departments & Routing" },
                               { key: "manage_settings", label: "⚙️ Manage Settings, Fields & Routing" },
+                              { key: "manage_trouble_master", label: "Manage Master Data Trouble" },
                               { key: "view_reports", label: "📊 View Performance Analytics" },
                               { key: "manage_schedules", label: "🗓️ Manage Shift Schedules & Types" },
                               { key: "manage_knowledge", label: "📚 Manage Knowledge Base Articles" },

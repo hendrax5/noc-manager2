@@ -39,7 +39,7 @@ async function main() {
   for(const query of ['startDate=2026-02-30','durationOperator=bad','durationHours=-1','startDate=2026-12-01&endDate=2026-01-01'])assert.equal((await GET(request(query))).status,400);
   assert.equal(state.calls.length,count);
   const options=state.calls[0];
-  assert.deepEqual(options.where,{customData:{path:['hasDowntime'],equals:true}});
+  assert.deepEqual(options.where,{workType:{not:'Installation'},customData:{path:['hasDowntime'],equals:true}});
   assert.deepEqual(options.select.comments.where,{isPublic:true});
   assert.equal(options.select.notes,undefined);
   delete globalThis.__outageApiTest;

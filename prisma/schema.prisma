@@ -74,6 +74,14 @@ model Ticket {
   description  String
   status       String     @default("New")
   ticketType   String     @default("Incident") // Incident | Problem | Change | Request
+  workType     String     @default("Unclassified") // Independent operational classification
+  sapReference String?
+  symptomId    Int?
+  causeId      Int?
+  symptomLabel String? // Historical snapshot; never rewritten by master renames
+  causeLabel   String?
+  symptom      TroubleMasterEntry? @relation("TicketSymptom", fields: [symptomId], references: [id], onDelete: Restrict)
+  cause        TroubleMasterEntry? @relation("TicketCause", fields: [causeId], references: [id], onDelete: Restrict)
   customData   Json?
   priority     String     @default("Medium")
   
@@ -121,6 +129,24 @@ model Ticket {
 
   @@unique([integrationAppId, idempotencyKey])
   @@index([externalRef])
+  @@index([workType, createdAt])
+}
+
+model TroubleMasterEntry {
+  id             Int      @id @default(autoincrement())
+  kind           String   // symptom | cause
+  name           String
+  normalizedName String
+  description    String?
+  active         Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  symptomTickets Ticket[] @relation("TicketSymptom")
+  causeTickets   Ticket[] @relation("TicketCause")
+
+  @@unique([kind, normalizedName])
+  @@index([kind, active, sortOrder])
 }
 
 model Comment {
@@ -327,6 +353,7 @@ model ServiceTemplate {
 
 model Service {
   id           Int        @id @default(autoincrement())
+  cid          String?    @unique
   customerId   Int
   customer     Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
   templateId   Int

@@ -11,6 +11,7 @@ export default function ServiceForm({ session, customers, templates }) {
     customerId: '',
     templateId: '',
     name: '',
+    cid: '',
     status: 'Active',
     monthlyCost: '',
     currency: 'IDR',
@@ -149,6 +150,11 @@ export default function ServiceForm({ session, customers, templates }) {
                 <div>
                   <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.95rem', color: 'var(--heading-color)' }}>Service Alias / Reference Name</label>
                   <input type="text" className="input-field" required placeholder="e.g. IPLC Jakarta-Singapore 10G" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ padding: '0.8rem', fontSize: '1.05rem' }} />
+                </div>
+                <div>
+                  <label htmlFor="service-cid" style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>CID layanan / link</label>
+                  <input id="service-cid" type="text" className="input-field" maxLength={100} value={formData.cid} onChange={e => setFormData({ ...formData, cid: e.target.value })} placeholder="CID unik untuk layanan ini" />
+                  <small>Digunakan untuk menautkan trouble dan laporan SLA per layanan.</small>
                 </div>
               </div>
             </div>

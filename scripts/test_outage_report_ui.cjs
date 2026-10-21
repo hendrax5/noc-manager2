@@ -24,6 +24,7 @@ async function main() {
       try { const filters=parseOutageFilters(Object.fromEntries(new URL(req.url,'http://localhost').searchParams),now);res.setHeader('Content-Type','application/json');res.end(JSON.stringify(buildOutageReport(tickets,filters,now))); }
       catch(error){res.statusCode=400;res.end(JSON.stringify({error:error.message}));}
     } else if(req.url==='/app.js'){res.setHeader('Content-Type','text/javascript');res.end(js);}
+    else if(req.url==='/ion-logo.png'){res.setHeader('Content-Type','image/png');fs.readFile(path.join(root,'public/ion-logo.png')).then(bytes=>res.end(bytes)).catch(()=>{res.statusCode=404;res.end();});}
     else {res.setHeader('Content-Type','text/html');res.end(`<!doctype html><html lang="id"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style><body><main class="container"><h1>Gangguan &amp; SLA</h1><div id="app"></div></main><script src="/app.js"></script></body></html>`);}
   });
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -49,6 +50,7 @@ async function main() {
     assert.equal(await page.locator('tbody tr').count(),2);
     await page.getByRole('button',{name:'Pratinjau laporan',exact:true}).click();
     await page.getByRole('heading',{name:'Laporan penanganan gangguan'}).waitFor();
+    await page.waitForFunction(()=>{const img=document.querySelector('article img');return img?.complete&&img.naturalWidth>0;});
     const download=page.waitForEvent('download');await page.getByRole('button',{name:'Ekspor CSV'}).click();
     const csv=await fs.readFile(await (await download).path(),'utf8');
     assert.ok(csv.includes('TT-3'));assert.ok(!csv.includes('TT-1'));

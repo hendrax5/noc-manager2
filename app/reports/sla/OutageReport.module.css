@@ -50,6 +50,10 @@
 .letter { padding: 2rem; }
 .letter h2 { font-size: 1.65rem; margin: .5rem 0 1rem; }
 .letter h3 { margin: 2rem 0 .7rem; font-size: 1rem; }
+.ionHeader { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: 2px solid #ff9b00; padding-bottom: .7rem; margin-bottom: 1rem; }
+.ionHeader img { object-fit: contain; background: white; }
+.ionHeader strong { color: #030f49; }
+.ionHeader p { font-size: .7rem; margin: .2rem 0; }
 .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; text-align: center; margin: 2rem 0; }
 .signatures span { display: block; margin-top: 4rem; }
 .srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }

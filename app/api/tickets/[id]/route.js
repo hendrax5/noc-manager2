@@ -21,6 +21,7 @@ import {
   canAwardResolveJobPoints,
 } from "@/lib/tickets/points";
 import { canAccessPersonalTicket } from "@/lib/tickets/personalCategories";
+import { classificationFieldsChanged, affectedServicesChanged, prepareTicketClassification, TicketClassificationError } from "@/lib/tickets/workClassification";
 
 export async function PATCH(req, { params }) {
   try {
@@ -42,7 +43,7 @@ export async function PATCH(req, { params }) {
 
     const oldTicket = await prisma.ticket.findUnique({
       where: { id },
-      include: { jobCategory: { select: { name: true } } },
+      include: { jobCategory: { select: { name: true } }, services: { select: { id: true, cid: true, customData: true } } },
     });
     if (!oldTicket) return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     if (!canAccessPersonalTicket(session.user, oldTicket)) {
@@ -110,7 +111,8 @@ export async function PATCH(req, { params }) {
 
     if (
       (body.title !== undefined && oldTicket.title !== body.title) ||
-      (body.description !== undefined && oldTicket.description !== body.description)
+      (body.description !== undefined && oldTicket.description !== body.description) ||
+      classificationFieldsChanged(body, oldTicket) || affectedServicesChanged(body, oldTicket)
     ) {
       const firstLog = await prisma.ticketHistory.findFirst({
         where: { ticketId: id },
@@ -321,6 +323,18 @@ export async function PATCH(req, { params }) {
       ...(body.slaTimerMins !== undefined && { slaTimerMins: parseInt(body.slaTimerMins) }),
     };
 
+    const classification = await prepareTicketClassification(prisma, body, oldTicket);
+    Object.assign(ticketData, classification.data);
+    if (classification.serviceIds !== null) ticketData.services = { set: classification.serviceIds.map((id) => ({ id })) };
+    const changedClassification = Object.entries(classification.data).some(([key, value]) => oldTicket[key] !== value);
+    if (changedClassification) logs.push({
+      action: `Work classification updated: ${classification.data.workType}; symptom: ${classification.data.symptomLabel || '-'}; cause: ${classification.data.causeLabel || '-'}; SAP: ${classification.data.sapReference || '-'}`,
+      actorId: userId,
+    });
+    if (classification.serviceIds !== null && JSON.stringify([...classification.serviceIds].sort((a,b)=>a-b)) !== JSON.stringify(oldTicket.services.map((s)=>s.id).sort((a,b)=>a-b))) {
+      logs.push({ action: `Affected service links updated (${classification.serviceIds.length} services)`, actorId: userId });
+    }
+
     if (body.enableSla !== undefined) {
       if (body.enableSla) {
         const mins = body.slaTimerMins
@@ -415,6 +429,7 @@ export async function PATCH(req, { params }) {
 
     return NextResponse.json(ticket);
   } catch (error) {
+    if (error instanceof TicketClassificationError) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

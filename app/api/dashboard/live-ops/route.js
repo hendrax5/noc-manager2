@@ -43,6 +43,7 @@ export async function GET(request) {
   }
 
   const tickets = await listLiveOpsTickets({
+    workType: searchParams.get('workType') || '',
     date: searchParams.get('date') || 'today',
     category: searchParams.get('category') || '',
     status: searchParams.get('status') || '',

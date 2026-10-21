@@ -1,0 +1,16 @@
+.layout { display: grid; gap: 1rem; }
+.panel { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; }
+.tabs, .actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.tabs button, .actions button, .panel td button, .panel > button { padding: .6rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--card-bg); color: var(--text-color); cursor: pointer; }
+.tabs button[aria-pressed="true"] { background: var(--secondary-color); color: var(--card-bg); }
+.fields { border: 0; padding: 0; margin: 1rem 0 0; display: grid; gap: 1rem; }
+.fields label, .search { display: grid; gap: .4rem; }
+.fields input:not([type="checkbox"]), .fields textarea, .search input { width: 100%; padding: .65rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--input-bg); color: var(--input-text); font: inherit; }
+.fields .checkbox { display: flex; align-items: center; gap: .5rem; }
+.error { color: var(--danger-text); }
+.scroll { overflow-x: auto; }
+.scroll table { width: 100%; border-collapse: collapse; text-align: left; }
+.scroll td, .scroll th { padding: .8rem; border-bottom: 1px solid var(--border-color); overflow-wrap: anywhere; }
+.scroll thead { background: var(--table-header-bg); }
+.layout button:focus-visible, .layout input:focus-visible, .layout textarea:focus-visible { outline: 2px solid var(--secondary-color); outline-offset: 3px; }
+.layout button:disabled { opacity: .6; cursor: wait; }

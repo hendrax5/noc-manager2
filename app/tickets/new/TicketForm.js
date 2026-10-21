@@ -3,17 +3,23 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import AsyncSearchSelect from "@/components/AsyncSearchSelect";
+import TicketWorkClassification from "@/components/TicketWorkClassification";
+import { getServiceCid } from "@/lib/services/cid";
 import SearchableSelect from "@/components/SearchableSelect";
 import {
   getDowntimeDuration as calcDowntimeDuration,
   nowDatetimeLocal,
 } from "@/lib/tickets/downtime";
 
-export default function TicketForm({ departments, categories, users = [], customFields, services, serviceTemplates, companies = ["ION", "SDC", "Sistercompany"], defaultTargetDeptId }) {
+export default function TicketForm({ departments, categories, users = [], customFields, services, serviceTemplates, companies = ["ION", "SDC", "Sistercompany"], defaultTargetDeptId, defaultWorkType = "Unclassified" }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [customDataState, setCustomDataState] = useState({});
   const [formData, setFormData] = useState({
+    workType: defaultWorkType,
+    sapReference: '',
+    symptomId: null,
+    causeId: null,
     title: '',
     description: '',
     priority: 'Medium',
@@ -50,7 +56,7 @@ export default function TicketForm({ departments, categories, users = [], custom
     if (!term) return false;
     const custName = s.customer?.name?.toLowerCase() || "";
     const srvName = s.name?.toLowerCase() || "";
-    const srvId = String(s.id);
+    const srvId = String(getServiceCid(s) || "").toLowerCase();
     return custName.includes(term) || srvName.includes(term) || srvId.includes(term);
   });
 
@@ -103,6 +109,10 @@ export default function TicketForm({ departments, categories, users = [], custom
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (formData.workType === "Trouble" && ((!selectedServices.length || selectedServices.some(service => !getServiceCid(service))) || !formData.symptomId || !formData.causeId)) {
+      toast.error("Trouble memerlukan gejala, penyebab, dan minimal satu layanan. Semua layanan terpilih wajib memiliki CID.");
+      return;
+    }
     setIsSubmitting(true);
 
     let attachmentUrl = null;
@@ -153,7 +163,8 @@ export default function TicketForm({ departments, categories, users = [], custom
       router.push("/tickets");
       router.refresh();
     } else {
-      toast.error("Failed to create ticket.");
+      const data = await res.json().catch(() => ({}));
+      toast.error(data.error || "Failed to create ticket.");
     }
     setIsSubmitting(false);
   };
@@ -222,6 +233,7 @@ export default function TicketForm({ departments, categories, users = [], custom
   return (
     <form className="card" onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 1fr)', gap: '2rem', padding: '2.5rem', position: 'relative' }}>
       
+      <TicketWorkClassification value={formData} onChange={patch => setFormData(previous => ({ ...previous, ...patch }))} />
       {optionalFields.length > 0 && (
         <div className="form-group" style={{ gridColumn: '1 / -1', marginTop: '-0.5rem', marginBottom: '-0.5rem', display: 'flex', justifyContent: 'flex-end', zIndex: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e0f2fe', padding: '0.4rem 1.25rem', borderRadius: '6px', border: '1px solid #bae6fd' }}>
@@ -290,7 +302,7 @@ export default function TicketForm({ departments, categories, users = [], custom
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>(ID: {s.id})</span>
+                    <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>({getServiceCid(s) || "CID belum tersedia"})</span>
                   </li>
                 ))}
               </ul>
@@ -306,7 +318,7 @@ export default function TicketForm({ departments, categories, users = [], custom
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem' }}>
             {selectedServices.map(s => (
               <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e0f2fe', padding: '0.4rem 0.8rem', borderRadius: '99px', border: '1px solid #bae6fd' }}>
-                <span style={{ fontSize: '0.85rem', color: '#0369a1', fontWeight: 'bold' }}>{s.customer?.name}: {s.name}</span>
+                <span style={{ fontSize: '0.85rem', color: '#0369a1', fontWeight: 'bold' }}>{getServiceCid(s) || "CID belum tersedia"} / {s.customer?.name}: {s.name}</span>
                 <button type="button" onClick={() => removeService(s.id)} style={{ background: 'transparent', border: 'none', color: '#0284c7', cursor: 'pointer', fontSize: '1rem', lineHeight: '1' }}>&times;</button>
               </div>
             ))}

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
+import { checkServiceCid } from '@/lib/services/cidLookup';
+import { CidValidationError } from '@/lib/services/cid';
 
 export async function GET(request) {
   try {
@@ -38,13 +40,17 @@ export async function POST(request) {
        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { customerId, templateId, name, status, customData, monthlyCost, currency, contractEnd, hops } = await request.json();
+    const { customerId, templateId, name, cid, status, customData, monthlyCost, currency, contractEnd, hops } = await request.json();
+    let serviceCid;
+    try { serviceCid = await checkServiceCid(prisma, { cid, customData }); }
+    catch (error) { if (error instanceof CidValidationError) return NextResponse.json({ error: error.message }, { status: error.status }); throw error; }
     
     const service = await prisma.service.create({
       data: {
         customerId: parseInt(customerId),
         templateId: parseInt(templateId),
         name,
+        cid: serviceCid,
         status: status || 'Active',
         customData: customData || {},
         monthlyCost: monthlyCost ? parseFloat(monthlyCost) : null,
@@ -66,6 +72,7 @@ export async function POST(request) {
     return NextResponse.json(service);
   } catch (error) {
     console.error(error);
+    if (error.code === 'P2002') return NextResponse.json({ error: 'CID sudah digunakan oleh layanan lain.' }, { status: 409 });
     return NextResponse.json({ error: 'Failed to create service' }, { status: 500 });
   }
 }

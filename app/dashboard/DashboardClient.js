@@ -1,4 +1,6 @@
 "use client";
+import { useRouter, useSearchParams } from "next/navigation";
+import { WORK_TYPES, WORK_TYPE_LABELS } from "@/lib/tickets/workClassification";
 import { useState } from "react";
 import Link from "next/link";
 import LiveOpsBoard from "./LiveOpsBoard";
@@ -11,6 +13,7 @@ export default function DashboardClient({
   hasGlobalAccess,
   hasSkyViewAccess,
   finalScope,
+  workType = "",
   allowedScopes,
   
   // Workspace / KPI metrics
@@ -45,6 +48,14 @@ export default function DashboardClient({
   criticalSlaTickets = [],
   activeCustomerIncidents = []
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const dashboardHref = (scope) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('scope', scope);
+    return `/dashboard?${params.toString()}`;
+  };
+  const classificationQuery = workType ? `&workType=${encodeURIComponent(workType)}` : '';
   const [activeTab, setActiveTab] = useState(hasSkyViewAccess ? "skyview" : "workspace");
   const [expandedPics, setExpandedPics] = useState({});
   const [expandedSlas, setExpandedSlas] = useState({});
@@ -170,10 +181,22 @@ export default function DashboardClient({
 
         {/* Global / Dept / Me Scope Selector (Only for workspace tab or non-admin users) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem' }}>
+            Klasifikasi pekerjaan
+            <select value={workType} onChange={e => {
+              const params = new URLSearchParams(searchParams.toString());
+              if (e.target.value) params.set('workType', e.target.value);
+              else params.delete('workType');
+              router.push(`/dashboard?${params.toString()}`);
+            }} style={{ padding: '0.5rem', color: 'var(--text-color)', background: 'var(--card-bg)' }}>
+              <option value="">Semua</option>
+              {WORK_TYPES.map(value => <option key={value} value={value}>{WORK_TYPE_LABELS[value]}</option>)}
+            </select>
+          </label>
           {activeTab === "workspace" && allowedScopes.length > 1 && (
             <div style={{ display: 'flex', background: 'rgba(255,255,255,0.08)', padding: '0.25rem', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.1)' }}>
               {allowedScopes.includes('all') && (
-                <Link href={`/dashboard?scope=all`} style={{ 
+                <Link href={dashboardHref("all")} style={{
                   padding: '0.4rem 1.2rem', borderRadius: '20px', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 'bold', 
                   background: finalScope === 'all' ? 'var(--card-bg)' : 'transparent', 
                   color: finalScope === 'all' ? 'var(--heading-color)' : 'rgba(255,255,255,0.7)',
@@ -183,7 +206,7 @@ export default function DashboardClient({
                 </Link>
               )}
               {allowedScopes.includes('dept') && (
-                <Link href={`/dashboard?scope=dept`} style={{ 
+                <Link href={dashboardHref("dept")} style={{
                   padding: '0.4rem 1.2rem', borderRadius: '20px', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 'bold', 
                   background: finalScope === 'dept' ? 'var(--card-bg)' : 'transparent', 
                   color: finalScope === 'dept' ? 'var(--heading-color)' : 'rgba(255,255,255,0.7)',
@@ -193,7 +216,7 @@ export default function DashboardClient({
                 </Link>
               )}
               {allowedScopes.includes('me') && (
-                <Link href={`/dashboard?scope=me`} style={{ 
+                <Link href={dashboardHref("me")} style={{
                   padding: '0.4rem 1.2rem', borderRadius: '20px', textDecoration: 'none', fontSize: '0.8rem', fontWeight: 'bold', 
                   background: finalScope === 'me' ? 'var(--card-bg)' : 'transparent', 
                   color: finalScope === 'me' ? 'var(--heading-color)' : 'rgba(255,255,255,0.7)',
@@ -208,7 +231,7 @@ export default function DashboardClient({
             const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
             const canCreate = session?.user?.role === 'Admin' || isCS || session?.user?.permissions?.includes('create_tickets') || session?.user?.permissions?.includes('manage_tickets');
             return canCreate && (
-              <Link href="/tickets/new" className="primary-btn" style={{ 
+              <Link href={workType ? `/tickets/new?workType=${workType}` : "/tickets/new"} className="primary-btn" style={{
                 background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', padding: '0.8rem 1.5rem', 
                 borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem',
                 boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: 'none'
@@ -231,7 +254,7 @@ export default function DashboardClient({
           {/* KPI Cards Widget */}
           {showKPIs && (
             <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem' }}>
-              <Link href={`/tickets?statuses=New${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
+              <Link href={`/tickets?statuses=New${classificationQuery}${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
                 <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(225, 29, 72, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer' }} className="hover-lift kpi-new">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
                     <h2 style={{ fontSize: '0.8rem', color: '#be123c', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>New</h2>
@@ -242,7 +265,7 @@ export default function DashboardClient({
                 </div>
               </Link>
 
-              <Link href={`/tickets?statuses=In+Progress${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
+              <Link href={`/tickets?statuses=In+Progress${classificationQuery}${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
                 <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer' }} className="hover-lift kpi-progress">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
                     <h2 style={{ fontSize: '0.8rem', color: '#1d4ed8', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>In Progress</h2>
@@ -253,7 +276,7 @@ export default function DashboardClient({
                 </div>
               </Link>
 
-              <Link href={`/tickets?statuses=Waiting+Reply,Replied${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
+              <Link href={`/tickets?statuses=Waiting+Reply,Replied${classificationQuery}${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
                 <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(217, 119, 6, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer' }} className="hover-lift kpi-pending">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
                     <h2 style={{ fontSize: '0.8rem', color: '#b45309', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Pending</h2>
@@ -264,7 +287,7 @@ export default function DashboardClient({
                 </div>
               </Link>
 
-              <Link href={`/tickets?statuses=Resolved&date=today${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
+              <Link href={`/tickets?statuses=Resolved&date=today${classificationQuery}${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
                 <div style={{ padding: '1.25rem', borderRadius: '16px', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.05)', position: 'relative', overflow: 'hidden', cursor: 'pointer' }} className="hover-lift kpi-resolved">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 2 }}>
                     <h2 style={{ fontSize: '0.8rem', color: '#15803d', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Resolved Today</h2>
@@ -300,7 +323,7 @@ export default function DashboardClient({
                 <h2 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span>🏷️</span> Job Category Monitor
                 </h2>
-                <Link href={`/tickets?statuses=New,Open,In+Progress,Waiting+Reply,Replied,On+Hold,Finish${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ fontSize: '0.8rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 'bold' }}>
+                <Link href={`/tickets?statuses=New,Open,In+Progress,Waiting+Reply,Replied,On+Hold,Finish${classificationQuery}${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ fontSize: '0.8rem', color: '#3b82f6', textDecoration: 'none', fontWeight: 'bold' }}>
                   View All Tickets →
                 </Link>
               </div>
@@ -312,7 +335,7 @@ export default function DashboardClient({
                   const progress = total > 0 ? Math.round((cat.resolvedToday / total) * 100) : 0;
                   const hasOverdue = cat.active > 5;
                   return (
-                    <Link key={cat.id} href={`/tickets?statuses=New,Open,In+Progress,Waiting+Reply,Replied,On+Hold,Finish&jobCategory=${encodeURIComponent(cat.name)}${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
+                    <Link key={cat.id} href={`/tickets?statuses=New,Open,In+Progress,Waiting+Reply,Replied,On+Hold,Finish&jobCategory=${encodeURIComponent(cat.name)}${classificationQuery}${finalScope === 'all' ? '&all_depts=true&assignments=me,unassigned,others' : ''}${finalScope === 'dept' ? '&assignments=me,unassigned,others' : ''}${finalScope === 'me' ? '&assignments=me' : ''}`} style={{ textDecoration: 'none' }}>
                       <div className="hover-lift" style={{
                         padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)',
                         background: 'var(--card-bg)', cursor: 'pointer', position: 'relative', overflow: 'hidden',
@@ -348,6 +371,7 @@ export default function DashboardClient({
               <LiveOpsBoard
                 jobCategories={categoryMetrics.filter((c) => !isPersonalCategoryName(c.name))}
                 defaultScope={finalScope}
+                workType={workType}
               />
             </section>
           )}
@@ -438,7 +462,7 @@ export default function DashboardClient({
                         Real-time status updates of active operations in this shift.
                       </p>
                     </div>
-                    <Link href="/tickets?tab=all&date=today" className="primary-btn" style={{ background: 'var(--secondary-color)', color: 'white', fontWeight: 'bold', padding: '0.8rem 1.5rem', borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Link href={`/tickets?tab=all&date=today${classificationQuery}`} className="primary-btn" style={{ background: 'var(--secondary-color)', color: 'white', fontWeight: 'bold', padding: '0.8rem 1.5rem', borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       Inspect Log Matrix →
                     </Link>
                   </div>

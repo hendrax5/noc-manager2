@@ -21,10 +21,11 @@ export async function GET(req) {
     // Selection is based on the outage's start, not ticket creation/update timestamps.
     // Legacy JSON stores both WIB-local and ISO timestamps: filter dates using the shared parser.
     const tickets = await prisma.ticket.findMany({
-      where: { customData: { path: ['hasDowntime'], equals: true } },
+      where: { workType: { not: 'Installation' }, customData: { path: ['hasDowntime'], equals: true } },
       select: {
         id: true, trackingId: true, title: true, description: true, status: true, customData: true,
-        services: { select: { name: true, customer: { select: { id: true, name: true } } } },
+        workType: true, symptomLabel: true, causeLabel: true,
+        services: { select: { name: true, cid: true, customData: true, customer: { select: { id: true, name: true } } } },
         comments: { where: { isPublic: true }, orderBy: { createdAt: 'desc' }, take: 1, select: { text: true, isPublic: true } },
       },
     });

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { downtimeMinutesInRange, parseDowntimeDate } from '@/lib/tickets/downtime';
+import { getServiceCid } from '@/lib/services/cid';
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -78,11 +79,7 @@ function formatDurationMins(mins) {
 }
 
 function serviceSid(service) {
-  const cd = service.customData && typeof service.customData === 'object' ? service.customData : {};
-  const hit = Object.keys(cd).find((k) =>
-    /^(sid|cid|id layanan|service id|circuit(\s*id)?)$/i.test(k.trim())
-  );
-  return hit && cd[hit] ? String(cd[hit]) : '';
+  return getServiceCid(service);
 }
 
 function serviceReportLogoUrl(service) {
@@ -137,6 +134,7 @@ export default function ServiceDetailClient({ service, session }) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState({
     name: service.name,
+    cid: getServiceCid(service),
     status: service.status,
     customData: service.customData || {}
   });
@@ -329,7 +327,8 @@ export default function ServiceDetailClient({ service, session }) {
         setShowEditModal(false);
         router.refresh();
       } else {
-        alert('Failed to update service details');
+        const body = await res.json().catch(() => ({}));
+        alert(body.error || 'Failed to update service details');
       }
     } catch (err) { console.error(err); } finally { setIsSaving(false); }
   };
@@ -686,6 +685,10 @@ export default function ServiceDetailClient({ service, session }) {
           <div className="bg-white-card scale-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--heading-color)' }}>Edit Asset Details</h2>
             <form onSubmit={handleSaveCore}>
+               <div style={{ marginBottom: '1rem' }}>
+                 <label htmlFor="edit-service-cid" style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem' }}>CID layanan / link</label>
+                 <input id="edit-service-cid" type="text" maxLength={100} className="input-field" value={editData.cid} onChange={e => setEditData({ ...editData, cid: e.target.value })} style={{ width: '100%', padding: '0.8rem' }} />
+               </div>
                <div style={{ marginBottom: '1rem' }}>
                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(--heading-color)', fontSize: '0.9rem' }}>Service Name / Alias</label>
                  <input type="text" required className="input-field" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} style={{ width: '100%', padding: '0.8rem' }} />
