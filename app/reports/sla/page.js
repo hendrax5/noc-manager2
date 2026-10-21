@@ -1,11 +1,11 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
-import SLAAnalyticsClient from "./SLAAnalyticsClient";
+import ReportTabs from "./ReportTabs";
 
 export const metadata = {
-  title: 'SLA & Downtime Analytics - NOC Manager',
-  description: 'Analyze Service Level Agreements, uptimes, and incidents.',
+  title: 'Gangguan & SLA - NOC Manager',
+  description: 'Laporan gangguan per tiket dan SLA periodik pelanggan.',
 };
 
 export default async function SLAPage() {
@@ -28,11 +28,11 @@ export default async function SLAPage() {
   return (
     <main className="container">
       <header className="page-header no-print">
-        <h1>SLA &amp; laporan pelanggan</h1>
-        <p>Surat ketersediaan jaringan per periode — pilih bulan atau rentang tanggal custom, lalu cetak PDF.</p>
+        <h1>Gangguan &amp; SLA</h1>
+        <p>Filter gangguan berdasarkan customer, penyebab, dan durasi per tiket, lalu susun laporan cetak.</p>
       </header>
 
-      <SLAAnalyticsClient />
+      <ReportTabs />
     </main>
   );
 }

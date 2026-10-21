@@ -92,7 +92,7 @@ export default function Navbar({ appName = "NOC Management", appVersion = "1.0.0
                 {canViewReports && (
                   <>
                     <Link href="/reports" className={pathname === "/reports" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Daily Reports</Link>
-                    <Link href="/reports/sla" className={pathname.startsWith("/reports/sla") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>SLA & Analytics</Link>
+                    <Link href="/reports/sla" className={pathname.startsWith("/reports/sla") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Gangguan &amp; SLA</Link>
                   </>
                 )}
                 {canViewOpsReport && (
