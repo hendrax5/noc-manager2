@@ -33,7 +33,8 @@ export default function ServiceWorkFields({ value, onChange, services = [], serv
   const request = value.serviceChange || {};
   const operation = type?.operation;
   const terminating = operation === "Terminate";
-  const target = serviceTemplates.find(item => Number(item.id) === Number(request.targetTemplateId || service?.templateId));
+  const capacityOnly = ["Upgrade", "Downgrade"].includes(operation);
+  const target = serviceTemplates.find(item => Number(item.id) === Number((capacityOnly ? service?.templateId : request.targetTemplateId || service?.templateId)));
   const current = serviceTemplates.find(item => Number(item.id) === Number(service?.templateId));
   const bandwidth = service ? readServiceBandwidthMbps(service) : null;
   const updateRequest = patch => onChange({ serviceChange: { ...request, ...patch } });
@@ -61,11 +62,18 @@ export default function ServiceWorkFields({ value, onChange, services = [], serv
     </div>}
     {type && <>
       {!terminating && <>
+        {capacityOnly ? <div>
+          <label htmlFor={`${id}-product`}>Produk/Layanan (tetap)</label>
+          <input id={`${id}-product`} style={inputStyle} readOnly value={current?.name || service?.template?.name || "Pilih CID terlebih dahulu"} />
+          <small>Upgrade/Downgrade hanya mengubah kapasitas. Untuk mengganti produk, pilih Perubahan Layanan.</small>
+          {request.targetTemplateId && Number(request.targetTemplateId)!==Number(service?.templateId) && <p role="alert">Permintaan tersimpan mengganti produk. Pilih Perubahan Layanan atau pilih ulang jenis pekerjaan sebelum menyimpan.</p>}
+        </div> : <>
         <label htmlFor={`${id}-product`}>Produk/Layanan tujuan *</label>
         <select id={`${id}-product`} style={inputStyle} required value={request.targetTemplateId || service?.templateId || ""} onChange={event => updateRequest({ targetTemplateId: Number(event.target.value), targetCustomData: {} })}>
           <option value="">Pilih produk/layanan</option>
           {serviceTemplates.filter(template => template.active !== false).map(template => <option key={template.id} value={template.id}>{template.name}</option>)}
         </select>
+        </>}
         <label htmlFor={`${id}-capacity`}>Kapasitas tujuan (Mbps){["Upgrade", "Downgrade", "Installation"].includes(operation) ? " *" : " (opsional)"}</label>
         <input id={`${id}-capacity`} style={inputStyle} type="number" min="0.001" step="any" required={["Upgrade", "Downgrade", "Installation"].includes(operation)} value={request.bandwidthMbps ?? ""} onChange={event => updateRequest({ bandwidthMbps: event.target.value === "" ? undefined : Number(event.target.value) })} />
         {["Upgrade", "Downgrade"].includes(operation) && <small>{operation === "Upgrade" ? "Kapasitas tujuan harus lebih besar dari kondisi saat ini." : "Kapasitas tujuan harus lebih kecil dari kondisi saat ini."}</small>}

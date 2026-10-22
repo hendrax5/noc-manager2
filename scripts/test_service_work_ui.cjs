@@ -28,6 +28,7 @@ async function main(){
   const base=`http://127.0.0.1:${server.address().port}`;await page.goto(base);
   assert.equal(await page.getByRole('radio',{name:/ABC-001/}).isChecked(),true,'CID prefilled');
   await page.getByLabel('Jenis pekerjaan layanan *',{exact:true}).selectOption('1');
+  assert.equal(await page.getByLabel('Produk/Layanan (tetap)',{exact:true}).inputValue(),'IPT');assert.equal(await page.getByLabel('Produk/Layanan (tetap)',{exact:true}).getAttribute('readonly'),'');assert.equal(await page.getByLabel('Produk/Layanan tujuan *',{exact:true}).count(),0);
   await page.getByLabel('Kapasitas tujuan (Mbps)',{exact:false}).fill('200');await page.getByLabel('Tanggal efektif *',{exact:true}).fill('2026-10-22');
   await page.getByPlaceholder('Describe the issue in detail. Please include any relevant steps to reproduce, server names, or error logs...').fill('Upgrade request');
   assert.equal(await page.getByPlaceholder('Enter a concise summary of the issue...').inputValue(),'Upgrade - ABC-001');
@@ -35,6 +36,7 @@ async function main(){
   let payload=await submit();assert.equal(payload.jobCategoryId,4);assert.deepEqual(payload.serviceIds,[7]);assert.equal(payload.serviceChange.bandwidthMbps,200);assert.equal(payload.serviceChange.before,undefined);assert.equal(payload.customData.hasDowntime,false);
   await page.getByPlaceholder('-- Select Category --').click();await page.getByText('Change category (+6 pts)',{exact:true}).click();
   await page.getByLabel('Jenis pekerjaan layanan *',{exact:true}).selectOption('2');await page.getByLabel('Kapasitas tujuan (Mbps)',{exact:false}).fill('50');await page.getByLabel('Tanggal efektif *',{exact:true}).fill('2026-10-22');
+  assert.equal(await page.getByLabel('Produk/Layanan (tetap)',{exact:true}).inputValue(),'IPT');
   payload=await submit();assert.equal(payload.jobCategoryId,5,'Manual category retained');
   await page.getByRole('radio',{name:/ABC-002/}).check();assert.equal(await page.getByRole('radio',{name:/ABC-001/}).isChecked(),false,'One CID only');
   await page.getByLabel('Jenis pekerjaan layanan *',{exact:true}).selectOption('3');await page.getByLabel('Produk/Layanan tujuan *',{exact:true}).selectOption('2');
