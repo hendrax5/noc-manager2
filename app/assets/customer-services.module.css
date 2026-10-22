@@ -1,0 +1,14 @@
+.inventory{min-width:0;color:var(--text-color)}
+.inventory>label{display:block;margin-bottom:.5rem}
+.inventory>input{width:100%;box-sizing:border-box;padding:.75rem;border:1px solid var(--border-color);border-radius:4px;background:var(--input-bg);color:var(--input-text)}
+.group{border:1px solid var(--border-color);border-radius:6px;margin:.75rem 0;overflow:hidden;min-width:0}
+.customer{display:flex;justify-content:space-between;align-items:center;gap:1rem;width:100%;padding:1rem;text-align:left;border:0;background:var(--card-bg);color:var(--heading-color);cursor:pointer;font:inherit;font-weight:600;overflow-wrap:anywhere}
+.customer span:last-child{font-size:.85rem;font-weight:400;white-space:nowrap}
+.scroll{max-width:100%;overflow-x:auto}
+.scroll table{border-collapse:collapse;width:100%;text-align:left;font-size:.9rem}
+.scroll th,.scroll td{padding:.8rem;border-top:1px solid var(--border-color);vertical-align:top}
+.scroll thead{background:var(--hover-bg)}
+.scroll td:first-child{min-width:11rem;white-space:nowrap}
+.scroll a{color:var(--primary-color)}
+.missing{font-size:.85rem;color:var(--text-color)}
+.empty{padding:1rem}

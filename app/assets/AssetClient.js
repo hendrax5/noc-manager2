@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import SapCircuitsClient from './SapCircuitsClient';
-import { getServiceCid } from '@/lib/services/cid';
+import CustomerServiceInventory from './CustomerServiceInventory';
 
 export default function AssetClient({ session, initialCustomers, initialTemplates, initialServices }) {
   const [activeTab, setActiveTab] = useState('inventory');
@@ -13,8 +13,11 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
   const [services, setServices] = useState(initialServices || []);
   
   const [blastQuery, setBlastQuery] = useState('');
-  const [inventoryQuery,setInventoryQuery]=useState('');
-  const inventoryMatches=services.filter(service=>`${getServiceCid(service)} ${service.name} ${service.customer?.name || ''}`.toLowerCase().includes(inventoryQuery.toLowerCase()));
+  useEffect(() => {
+    const syncHash = () => setActiveTab(window.location.hash === '#sap-circuits' ? 'sap' : 'inventory');
+    syncHash(); window.addEventListener('hashchange', syncHash);
+    return () => window.removeEventListener('hashchange', syncHash);
+  }, []);
   
   // Modals Data
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -44,14 +47,14 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
         </div>
       </header>
 
-      {activeTab === 'inventory' && isAdmin && <SapCircuitsClient customers={customers} templates={templates} onMapped={async()=>{const response=await fetch('/api/assets/services',{cache:'no-store'});if(response.ok)setServices(await response.json());}} onCreateCustomer={()=>{setActiveTab('customers');setEditCustomerId(null);setCustomerData({name:'',contactEmail:'',contactPhone:''});setShowCustomerModal(true);}} onManageProducts={()=>setActiveTab('templates')} />}
 
-      <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem' }}>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem' }}>
         <button 
-           onClick={() => setActiveTab('inventory')}
+           onClick={() => {setActiveTab('inventory');window.history.replaceState(null,'',window.location.pathname);}}
            style={{ background: 'transparent', border: 'none', padding: '1rem 0', fontWeight: 'bold', fontSize: '1.05rem', color: activeTab === 'inventory' ? 'var(--primary-color)' : 'var(--text-color)', borderBottom: activeTab === 'inventory' ? '3px solid var(--primary-color)' : '3px solid transparent', cursor: 'pointer' }}
         >
-          Active Subscriptions ({services.length})
+          Customer & Layanan ({services.length})
         </button>
         <button 
            onClick={() => setActiveTab('customers')}
@@ -59,6 +62,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
         >
           Customers Registry ({customers.length})
         </button>
+        {isAdmin && <button onClick={() => {setActiveTab('sap');window.history.replaceState(null,'','#sap-circuits');}} style={{background:'transparent',border:0,padding:'1rem 0',color:'var(--text-color)',fontWeight:'bold',cursor:'pointer',borderBottom:activeTab==='sap'?'3px solid var(--primary-color)':'3px solid transparent'}}>Penautan CID SAP</button>}
         <button 
            onClick={() => setActiveTab('templates')}
            style={{ background: 'transparent', border: 'none', padding: '1rem 0', fontWeight: 'bold', fontSize: '1.05rem', color: activeTab === 'templates' ? 'var(--primary-color)' : 'var(--text-color)', borderBottom: activeTab === 'templates' ? '3px solid var(--primary-color)' : '3px solid transparent', cursor: 'pointer' }}
@@ -73,52 +77,9 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
         </button>
       </div>
 
-      {activeTab === 'inventory' && (
-        <div className="bg-white-card" style={{ borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-          <div style={{padding:'1rem'}}><label htmlFor="inventory-cid-search">Cari layanan yang sudah terdaftar (CID / customer / layanan)</label><input id="inventory-cid-search" type="search" value={inventoryQuery} onChange={event=>setInventoryQuery(event.target.value)} placeholder="Cari CID pada Assets" style={{width:'100%',boxSizing:'border-box',padding:'.65rem',marginTop:'.4rem'}} /></div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ background: 'var(--hover-bg)' }}>
-                <th style={{ padding: '1rem', color: 'var(--heading-color)', borderBottom: '2px solid var(--border-color)' }}>CID / ID</th>
-                <th style={{ padding: '1rem', color: 'var(--heading-color)', borderBottom: '2px solid var(--border-color)' }}>Customer</th>
-                <th style={{ padding: '1rem', color: 'var(--heading-color)', borderBottom: '2px solid var(--border-color)' }}>Service Component</th>
-                <th style={{ padding: '1rem', color: 'var(--heading-color)', borderBottom: '2px solid var(--border-color)' }}>Type</th>
-                <th style={{ padding: '1rem', color: 'var(--heading-color)', borderBottom: '2px solid var(--border-color)' }}>Status</th>
-                <th style={{ padding: '1rem', color: 'var(--heading-color)', borderBottom: '2px solid var(--border-color)' }}>Tickets</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inventoryMatches.map(srv => (
-                <tr key={srv.id} className="hover-bg" style={{ borderBottom: '1px solid var(--border-color)' }}>
-                  <td style={{ padding: '1rem', color: 'var(--text-color)', fontWeight: 'bold' }}>{getServiceCid(srv) || `#${srv.id}`}</td>
-                  <td style={{ padding: '1rem', color: 'var(--heading-color)', fontWeight: 'bold' }}>{srv.customer?.name}</td>
-                  <td style={{ padding: '1rem' }}>
-                    <Link href={`/assets/${srv.id}`} style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}>
-                      {srv.name}
-                    </Link>
-                  </td>
-                  <td style={{ padding: '1rem', color: 'var(--text-color)' }}>
-                    <span style={{ background: 'rgba(59,130,246,0.1)', color: '#3b82f6', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                      {srv.template?.name}
-                    </span>
-                  </td>
-                  <td style={{ padding: '1rem' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: srv.status === 'Active' ? '#10b981' : '#ef4444', background: srv.status === 'Active' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
-                      {srv.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '1rem', color: '#f59e0b', fontWeight: 'bold' }}>{srv._count?.tickets || 0}</td>
-                </tr>
-              ))}
-              {services.length === 0 && (
-                <tr>
-                   <td colSpan="6" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-color)' }}>No service assets recorded yet.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {activeTab === 'sap' && isAdmin && <SapCircuitsClient customers={customers} templates={templates} services={services} onMapped={async()=>{const response=await fetch('/api/assets/services',{cache:'no-store'});if(response.ok)setServices(await response.json());}} onCreateCustomer={()=>{setActiveTab('customers');setEditCustomerId(null);setCustomerData({name:'',contactEmail:'',contactPhone:''});setShowCustomerModal(true);}} onManageProducts={()=>setActiveTab('templates')} />}
+
+      {activeTab === 'inventory' && <CustomerServiceInventory customers={customers} services={services} canManage={isAdmin} />}
 
       {activeTab === 'customers' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
