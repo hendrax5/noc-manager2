@@ -26,6 +26,31 @@
   --radius-md: 0.75rem;
   --transition-fast: 200ms cubic-bezier(0.16, 1, 0.3, 1);
   --asset-on-primary: #ffffff;
+  --asset-muted: #53636b;
+  --asset-heading-mobile: 1.75rem;
+  --asset-heading-desktop: 2rem;
+  --asset-body-size: .875rem;
+  --asset-meta-size: .75rem;
+  --asset-control-min: 2.75rem;
+  --asset-customer-row-min: 3.25rem;
+  --asset-radius: .375rem;
+  --asset-divider-width: 1px;
+  --asset-space-1: .25rem;
+  --asset-space-2: .5rem;
+  --asset-space-3: .75rem;
+  --asset-space-4: 1rem;
+  --asset-space-6: 1.5rem;
+  --asset-space-8: 2rem;
+  --asset-focus-width: 3px;
+  --asset-focus-inset: -3px;
+  --asset-dialog-width: 46rem;
+  --asset-options-height: 13rem;
+  --asset-disabled-opacity: .65;
+  --asset-hover-brightness: .96;
+  --asset-filter-width: 12rem;
+  --asset-search-width: 20rem;
+  --asset-name-column: 2fr;
+  --asset-count-column: 1fr;
   --asset-focus: #087f8c;
   --asset-backdrop: rgba(13,32,43,.7);
   --asset-pending-text: #775100;
@@ -39,6 +64,7 @@
 }
 
 [data-theme="dark"] {
+  --asset-muted: #b4c4cb;
   --asset-on-primary: #102c2a;
   --asset-focus: #8be7ef;
   --asset-pending-text: #f7d686;

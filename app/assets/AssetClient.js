@@ -38,7 +38,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
   return (
     <main className={`container ${ui.page}`}>
       <header className={ui.header}>
-        <div><h1>Customer & layanan</h1><p>Temukan customer, lihat seluruh circuit, dan lanjutkan pekerjaan dari CID yang tepat.</p></div>
+        <h1>Customer & layanan</h1>
         {isAdmin && <Link href="/assets/new" className="primary-btn">Tambah layanan</Link>}
       </header>
       <nav className={ui.tabs} aria-label="Pengelolaan Assets">
