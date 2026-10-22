@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
+import { withCustomerCode } from '@/lib/customers/identity';
 
 export async function GET(request) {
   try {
@@ -15,7 +16,7 @@ export async function GET(request) {
       }
     });
 
-    return NextResponse.json(customers);
+    return NextResponse.json(customers.map(withCustomerCode));
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
   }
@@ -33,7 +34,7 @@ export async function POST(request) {
       data: { name, contactEmail, contactPhone }
     });
 
-    return NextResponse.json(customer);
+    return NextResponse.json(withCustomerCode(customer));
   } catch (error) {
     if (error.code === 'P2002') return NextResponse.json({ error: 'Customer already exists' }, { status: 400 });
     return NextResponse.json({ error: 'Failed' }, { status: 500 });

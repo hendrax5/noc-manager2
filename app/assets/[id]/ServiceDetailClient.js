@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { formatCustomerId } from '@/lib/customers/identity';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { downtimeMinutesInRange, parseDowntimeDate } from '@/lib/tickets/downtime';
 import { WORK_TYPES, WORK_TYPE_LABELS } from '@/lib/tickets/workClassification';
@@ -360,6 +361,8 @@ export default function ServiceDetailClient({ service, session }) {
              </div>
           </div>
           
+          <span>Customer ID: {formatCustomerId({id:service.customerId??service.customer?.id})}</span>
+          {(service.identifiers||[]).filter(item=>item.code!==getServiceCid(service)).map(item=><span key={item.code}>Kode lama: {item.code}</span>)}
           {canCreateTicket && <Link href={`/tickets/new?serviceId=${service.id}&workType=ServiceWork`} className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>Buat Tiket</Link>}
           {canCreateTicket && <Link href={`/tickets/new?serviceId=${service.id}&workType=Trouble`} className="secondary-btn" style={{ width: 'auto', textDecoration: 'none' }}>Buat Trouble</Link>}
           {isAdmin && (

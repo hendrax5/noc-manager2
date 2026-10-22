@@ -9,7 +9,7 @@ async function main() {
   const root = path.resolve(__dirname, '..');
   const services = [
     {id: 41, cid: 'CID-ALPHA', name: 'Metro Alpha', customer: {name: 'Customer Alpha'}},
-    {id: 42, name: 'Legacy Link', customData: {CID: 'CID-LEGACY'}, customer: {name: 'Customer Legacy'}},
+    {id: 42, identifiers:[{code:'I-0275-021-01'}], name: 'Legacy Link', customData: {CID: 'CID-LEGACY'}, customer: {name: 'Customer Legacy'}},
     {id: 43, name: 'Missing Circuit', customer: {name: 'Customer Missing'}},
   ];
   const fixture = {departments:[{id:1,name:'NOC'}],categories:[{id:7,name:'Legacy category',score:5}],users:[{id:3,name:'Operator'}],customFields:[{id:1,name:'Legacy custom note',type:'text',required:true,position:'bottom'},{id:2,name:'Optional legacy field',type:'text',required:false,position:'below_subject'}],services,serviceTemplates:[]};
@@ -87,7 +87,7 @@ async function main() {
     await page.waitForFunction(()=>window.fixtureToasts?.some(text=>text.includes('Semua layanan terpilih wajib memiliki CID')));
     assert.equal(posts.length,before,'Missing CID must prevent a create request');
     await page.getByRole('checkbox',{name:/CID belum tersedia/}).uncheck();
-    await page.getByLabel('Cari & pilih CID layanan',{exact:true}).fill('CID-LEGACY');await page.getByRole('checkbox',{name:/CID-LEGACY/}).check();
+    await page.getByLabel('Cari & pilih CID layanan',{exact:true}).fill('I-0275-021-01');await page.getByRole('checkbox',{name:/CID-LEGACY/}).check();
     assert.ok(await page.getByRole('checkbox',{name:/CID-LEGACY/}).isChecked());
     payload=await submit();assert.deepEqual(payload.serviceIds,[42]);assert.equal(payload.symptomId,11);assert.equal(payload.causeId,22);assert.equal(payload.workType,'Trouble');
     await page.goto(base+'?snapshot=1');

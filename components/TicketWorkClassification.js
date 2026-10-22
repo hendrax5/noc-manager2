@@ -1,8 +1,9 @@
 "use client";
+import { formatCustomerId } from '@/lib/customers/identity';
 import { useEffect, useId, useRef, useState } from "react";
 import { WORK_TYPES, WORK_TYPE_LABELS } from "@/lib/tickets/workClassification";
 import ServiceWorkFields from "./ServiceWorkFields";
-import { getServiceCid } from "@/lib/services/cid";
+import { getServiceCid, getServiceSearchText } from "@/lib/services/cid";
 
 const inputStyle = { width: "100%", padding: "0.65rem", border: "1px solid var(--border-color)", borderRadius: "4px", background: "var(--input-bg)", color: "var(--input-text)" };
 
@@ -77,7 +78,7 @@ function MasterSelect({ kind, value, snapshot, onChange }) {
 export function TicketServicePicker({ services, selectedIds, onChange, single = false }) {
   const id = useId();
   const [search, setSearch] = useState("");
-  const matches = services.filter(service => `${getServiceCid(service) || ""} ${service.name || ""} ${service.customer?.name || ""}`.toLowerCase().includes(search.toLowerCase()));
+  const matches = services.filter(service => getServiceSearchText(service).toLowerCase().includes(search.toLowerCase()));
   return <fieldset style={{ border: "1px solid var(--border-color)", margin: "1rem 0", minWidth: 0, overflowWrap: "anywhere" }}>
     <legend>Layanan / CID terkait</legend>
     <label htmlFor={id}>Cari &amp; pilih CID layanan</label>
@@ -86,9 +87,9 @@ export function TicketServicePicker({ services, selectedIds, onChange, single = 
     <div style={{ maxHeight: "200px", overflow: "auto" }}>
       {matches.map(service => <label key={service.id} style={{ display: "block", padding: "0.4rem" }}>
         <input type={single ? "radio" : "checkbox"} name={`${id}-service`} checked={selectedIds.includes(service.id)} onChange={event => onChange(single ? [service.id] : event.target.checked ? [...selectedIds, service.id] : selectedIds.filter(value => value !== service.id))} />{" "}
-        {getServiceCid(service) || "CID belum tersedia"} — {service.customer?.name || "Tanpa pelanggan"} / {service.name}
+        {getServiceCid(service) || "CID belum tersedia"} — {formatCustomerId({id:service.customerId??service.customer?.id})} — {service.customer?.name || "Tanpa pelanggan"} / {service.name}
       </label>)}
-      {!matches.length && <p>Tidak ada layanan yang cocok. CID SAP dari tiket lama dapat dilengkapi oleh pengelola melalui <a href="/assets">Assets &amp; Services → CID SAP dari tiket</a>.</p>}
+      {!matches.length && <p>Tidak ada layanan yang cocok. Kode circuit dari tiket lama dapat dilengkapi oleh pengelola melalui <a href="/assets">Assets &amp; Services → Penautan CID</a>.</p>}
     </div>
   </fieldset>;
 }

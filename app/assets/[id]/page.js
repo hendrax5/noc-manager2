@@ -13,6 +13,7 @@ export default async function ServiceDetailPage({ params }) {
   const service = await prisma.service.findUnique({
     where: { id: parseInt(resolveParams.id) },
     include: {
+      identifiers: {select:{code:true,family:true}},
       customer: true,
       template: true,
       hops: { orderBy: { orderIndex: 'asc' } },

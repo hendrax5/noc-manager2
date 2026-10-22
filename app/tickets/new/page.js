@@ -21,7 +21,7 @@ export default async function NewTicketPage({ searchParams }) {
   const users = await prisma.user.findMany({ select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } });
   // Evaluate the dynamic components globally set by operations logic
   const customFields = await prisma.customField.findMany({ where: { active: true }, orderBy: { id: 'asc' } });
-  const services = await prisma.service.findMany({ include: { customer: true }, orderBy: { name: 'asc' } });
+  const services = await prisma.service.findMany({ include: { identifiers: {select:{code:true,family:true}}, customer: true }, orderBy: { name: 'asc' } });
   const serviceTemplates = await prisma.serviceTemplate.findMany({ orderBy: { name: 'asc' } });
   
   const config = await getAppConfig();

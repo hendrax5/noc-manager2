@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
+import { withCustomerCode } from '@/lib/customers/identity';
 
 export async function PATCH(request, { params }) {
   try {
@@ -23,7 +24,7 @@ export async function PATCH(request, { params }) {
       include: { _count: { select: { services: true } } }
     });
 
-    return NextResponse.json(customer);
+    return NextResponse.json(withCustomerCode(customer));
   } catch (error) {
     if (error.code === 'P2002') return NextResponse.json({ error: 'Customer name already exists' }, { status: 400 });
     return NextResponse.json({ error: 'Failed' }, { status: 500 });

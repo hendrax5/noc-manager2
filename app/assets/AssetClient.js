@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { formatCustomerId } from '@/lib/customers/identity';
 import SapCircuitsClient from './SapCircuitsClient';
 import CustomerServiceInventory from './CustomerServiceInventory';
 
@@ -14,7 +15,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
   
   const [blastQuery, setBlastQuery] = useState('');
   useEffect(() => {
-    const syncHash = () => setActiveTab(window.location.hash === '#sap-circuits' ? 'sap' : 'inventory');
+    const syncHash = () => setActiveTab(['#sap-circuits','#circuit-candidates'].includes(window.location.hash) ? 'sap' : 'inventory');
     syncHash(); window.addEventListener('hashchange', syncHash);
     return () => window.removeEventListener('hashchange', syncHash);
   }, []);
@@ -62,7 +63,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
         >
           Customers Registry ({customers.length})
         </button>
-        {isAdmin && <button onClick={() => {setActiveTab('sap');window.history.replaceState(null,'','#sap-circuits');}} style={{background:'transparent',border:0,padding:'1rem 0',color:'var(--text-color)',fontWeight:'bold',cursor:'pointer',borderBottom:activeTab==='sap'?'3px solid var(--primary-color)':'3px solid transparent'}}>Penautan CID SAP</button>}
+        {isAdmin && <button onClick={() => {setActiveTab('sap');window.history.replaceState(null,'','#sap-circuits');}} style={{background:'transparent',border:0,padding:'1rem 0',color:'var(--text-color)',fontWeight:'bold',cursor:'pointer',borderBottom:activeTab==='sap'?'3px solid var(--primary-color)':'3px solid transparent'}}>Penautan CID</button>}
         <button 
            onClick={() => setActiveTab('templates')}
            style={{ background: 'transparent', border: 'none', padding: '1rem 0', fontWeight: 'bold', fontSize: '1.05rem', color: activeTab === 'templates' ? 'var(--primary-color)' : 'var(--text-color)', borderBottom: activeTab === 'templates' ? '3px solid var(--primary-color)' : '3px solid transparent', cursor: 'pointer' }}
@@ -85,7 +86,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
            {customers.map(c => (
               <div key={c.id} className="bg-white-card hover-lift" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--heading-color)' }}>🏢 {c.name}</h3>
+                <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--heading-color)' }}>🏢 {c.name}</h3><p>Customer ID: {formatCustomerId(c)}</p>
                 <div style={{ fontSize: '0.9rem', color: 'var(--text-color)', marginBottom: '1rem' }}>
                    <div>📧 {c.contactEmail || 'No email provided'}</div>
                    <div>📞 {c.contactPhone || 'No phone provided'}</div>
