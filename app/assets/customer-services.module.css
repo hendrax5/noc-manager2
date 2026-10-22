@@ -78,6 +78,7 @@
 .ticketActions { min-width: 0; max-width: 100%; }
 .ticketActions summary { cursor: pointer; min-height: var(--asset-control-min); overflow-wrap: anywhere; }
 .ticketActions > div { display: grid; gap: var(--asset-space-3); padding-bottom: var(--asset-space-3); }
+.actions > a, .ticketActions > div > a { display: inline-flex; min-height: var(--asset-control-min); align-items: center; }
 .empty { padding: var(--asset-space-4); }
 .pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--asset-space-3); margin-top: var(--asset-space-4); }
 .pagination > div { display: flex; gap: var(--asset-space-2); align-items: center; }
