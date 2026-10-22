@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { formatCustomerId } from '@/lib/customers/identity';
 import styles from './sap-circuits.module.css';
@@ -12,6 +12,12 @@ export default function SapCircuitsClient({customers=[],templates=[],services=[]
   const [selected,setSelected]=useState(null),[draft,setDraft]=useState({}),[pending,setPending]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
   const [mapped,setMapped]=useState(null);
   const [family,setFamily]=useState('all');
+  const mappingRef=useRef(null);
+  useEffect(()=>{
+    if(!selected||!mappingRef.current)return;
+    mappingRef.current.focus({preventScroll:true});
+    mappingRef.current.scrollIntoView({block:'start',behavior:'instant'});
+  },[selected]);
   const target=services.find(service=>String(service.id)===String(draft.existingServiceId));
   const differentCid=!!(target&&getServiceCid(target)&&getServiceCid(target).toUpperCase()!==selected?.cid);
   useEffect(()=>{
@@ -51,7 +57,7 @@ export default function SapCircuitsClient({customers=[],templates=[],services=[]
       {data&&!data.items.length&&<p>Tidak ada kode layanan yang cocok. Subject Trouble dan teks bebas tidak menjadi sumber CID baru.</p>}
       {data&&<div className={styles.pagination}><button type="button" disabled={page<=1||pending} onClick={()=>setPage(value=>value-1)}>Sebelumnya</button><span>Halaman {page} · {data.total} hasil</span><button type="button" disabled={page*data.pageSize>=data.total||pending} onClick={()=>setPage(value=>value+1)}>Berikutnya</button></div>}
     </>}
-    {selected&&<form className={styles.mapping} onSubmit={save} aria-label={`Tautkan ${selected.cid}`}>
+    {selected&&<form ref={mappingRef} tabIndex={-1} className={styles.mapping} onSubmit={save} aria-label={`Tautkan ${selected.cid}`}>
       <h3>{selected.cid}</h3><p>CID sudah terisi dari Subject tiket. Yang dipilih di bawah adalah customer pemilik dan layanan circuit ini.</p>
       <p>{selected.ticketCount} tiket sumber akan ditautkan tanpa mengubah status atau poin tiket.</p>
       <fieldset disabled={pending}>
