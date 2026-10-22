@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 import { checkServiceCid } from '@/lib/services/cidLookup';
-import { CidValidationError } from '@/lib/services/cid';
+import { CidValidationError, getServiceCid } from '@/lib/services/cid';
 import { lockCircuitCodes, registerCircuitIdentifier } from '@/lib/services/circuitRegistry';
 
 export async function GET(request) {
@@ -44,7 +44,7 @@ export async function POST(request) {
 
     const { customerId, templateId, name, cid, status, customData, monthlyCost, currency, contractEnd, hops } = await request.json();
     const service = await prisma.$transaction(async tx=>{
-    await lockCircuitCodes(tx,[cid || customData?.CID || '']);
+    await lockCircuitCodes(tx,[getServiceCid({cid,customData})]);
     const serviceCid=await checkServiceCid(tx,{cid,customData});
     const created=await tx.service.create({
       data: {

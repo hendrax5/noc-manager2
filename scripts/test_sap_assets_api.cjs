@@ -44,6 +44,13 @@ async function main(){
  state.tickets.push({...structuredClone(original),id:51,title:'SAP-C-1000-0002'});
  assert.equal((await api.POST(req({cid:'SAP-C-1000-0002',existingServiceId:77,customerId:9}))).status,409,'Different existing CID cannot be overwritten');
  Object.assign(state,baseline);
+ const assetsApi=await load('app/api/assets/services/route.js');
+ const query=db.$queryRaw,create=db.service.create;const events=[];
+ db.$queryRaw=async(strings,...values)=>{events.push({kind:'lock',text:strings.join(''),values});return[];};db.service.create=async args=>{events.push({kind:'create'});return create(args);};
+ const legacyResponse=await assetsApi.POST(req({customerId:9,templateId:8,name:'Legacy field locking QA',customData:{'Circuit ID':'I-7777-001-01'}}));assert.equal(legacyResponse.status,200);
+ assert.equal(events[0].kind,'lock');assert.ok(events[0].values.includes('circuit-code:I-7777-001-01'),'Actual normalized legacy CID must be locked before create');assert.ok(events.findIndex(e=>e.kind==='create')>0);
+ assert.equal((await assetsApi.POST(req({customerId:9,templateId:8,name:'Bad alias QA',cid:'I-8888-001-01',customData:{SID:original.title}}))).status,409,'Direct Asset API rejects contradictory legacy alias');
+ db.$queryRaw=query;db.service.create=create;
  delete globalThis.__sapApi;console.log('PASS: actual SAP API fresh ACL, read-only preview, explicit customer/product mapping, non-SAP exclusion, atomic rollback, concurrent idempotency, history/timestamp/score preservation, future auto-link and conflicts. Transactional fixtures only.');
 }
 main().catch(e=>{console.error(e);process.exitCode=1});
