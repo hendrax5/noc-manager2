@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatCustomerId } from '@/lib/customers/identity';
 import SapCircuitsClient from './SapCircuitsClient';
 import CustomerServiceInventory from './CustomerServiceInventory';
+import ui from './assets-ui.module.css';
 
 export default function AssetClient({ session, initialCustomers, initialTemplates, initialServices }) {
   const [activeTab, setActiveTab] = useState('inventory');
@@ -35,49 +36,17 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
   const isAdmin = session?.user?.role === 'Admin' || session?.user?.permissions?.includes('manage_assets');
 
   return (
-    <main className="container">
-      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-           <h1>🏢 Telecom Asset Inventory</h1>
-           <p>Manage Customers, Service Subscriptions, and Topology Hops.</p>
-        </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-           {isAdmin && (
-              <Link href="/assets/new" className="primary-btn" style={{ textDecoration: 'none' }}>+ New Asset/Service</Link>
-           )}
-        </div>
+    <main className={`container ${ui.page}`}>
+      <header className={ui.header}>
+        <div><h1>Customer & layanan</h1><p>Temukan customer, lihat seluruh circuit, dan lanjutkan pekerjaan dari CID yang tepat.</p></div>
+        {isAdmin && <Link href="/assets/new" className="primary-btn">Tambah layanan</Link>}
       </header>
-
-
-
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem' }}>
-        <button 
-           onClick={() => {setActiveTab('inventory');window.history.replaceState(null,'',window.location.pathname);}}
-           style={{ background: 'transparent', border: 'none', padding: '1rem 0', fontWeight: 'bold', fontSize: '1.05rem', color: activeTab === 'inventory' ? 'var(--primary-color)' : 'var(--text-color)', borderBottom: activeTab === 'inventory' ? '3px solid var(--primary-color)' : '3px solid transparent', cursor: 'pointer' }}
-        >
-          Customer & Layanan ({services.length})
-        </button>
-        <button 
-           onClick={() => setActiveTab('customers')}
-           style={{ background: 'transparent', border: 'none', padding: '1rem 0', fontWeight: 'bold', fontSize: '1.05rem', color: activeTab === 'customers' ? 'var(--primary-color)' : 'var(--text-color)', borderBottom: activeTab === 'customers' ? '3px solid var(--primary-color)' : '3px solid transparent', cursor: 'pointer' }}
-        >
-          Customers Registry ({customers.length})
-        </button>
-        {isAdmin && <button onClick={() => {setActiveTab('sap');window.history.replaceState(null,'','#sap-circuits');}} style={{background:'transparent',border:0,padding:'1rem 0',color:'var(--text-color)',fontWeight:'bold',cursor:'pointer',borderBottom:activeTab==='sap'?'3px solid var(--primary-color)':'3px solid transparent'}}>Penautan CID</button>}
-        <button 
-           onClick={() => setActiveTab('templates')}
-           style={{ background: 'transparent', border: 'none', padding: '1rem 0', fontWeight: 'bold', fontSize: '1.05rem', color: activeTab === 'templates' ? 'var(--primary-color)' : 'var(--text-color)', borderBottom: activeTab === 'templates' ? '3px solid var(--primary-color)' : '3px solid transparent', cursor: 'pointer' }}
-        >
-          Service Templates ({templates.length})
-        </button>
-        <button 
-           onClick={() => setActiveTab('blast')}
-           style={{ background: 'transparent', border: 'none', padding: '1rem 0', fontWeight: 'bold', fontSize: '1.05rem', color: activeTab === 'blast' ? '#ef4444' : 'var(--text-color)', borderBottom: activeTab === 'blast' ? '3px solid #ef4444' : '3px solid transparent', cursor: 'pointer' }}
-        >
-          💣 Blast Radius Analysis
-        </button>
-      </div>
-
+      <nav className={ui.tabs} aria-label="Pengelolaan Assets">
+        {[
+          ['inventory','Customer & layanan'],['customers',`Customers Registry (${customers.length})`],
+          ...(isAdmin ? [['sap','Penautan CID']] : []),['templates',`Produk layanan (${templates.length})`],['blast','Analisis dampak']
+        ].map(([key,label])=><button key={key} type="button" aria-pressed={activeTab===key} onClick={()=>{setActiveTab(key);window.history.replaceState(null,'',key==='sap'?'#sap-circuits':window.location.pathname);}}>{label}</button>)}
+      </nav>
       {activeTab === 'sap' && isAdmin && <SapCircuitsClient customers={customers} templates={templates} services={services} onMapped={async()=>{const response=await fetch('/api/assets/services',{cache:'no-store'});if(response.ok)setServices(await response.json());}} onCreateCustomer={()=>{setActiveTab('customers');setEditCustomerId(null);setCustomerData({name:'',contactEmail:'',contactPhone:''});setShowCustomerModal(true);}} onManageProducts={()=>setActiveTab('templates')} />}
 
       {activeTab === 'inventory' && <CustomerServiceInventory customers={customers} services={services} canManage={isAdmin} />}

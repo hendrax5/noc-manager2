@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { formatCustomerId } from '@/lib/customers/identity';
 import styles from './sap-circuits.module.css';
 import { getServiceCid } from '@/lib/services/cid';
+import AssetCombobox from './AssetCombobox';
+import ui from './assets-ui.module.css';
 
 const labels={needs_mapping:'Belum tertaut ke layanan',ready_to_link:'Asset tersedia — tautkan tiket',linked:'Sudah tertaut',conflict:'Perlu diperiksa'};
 export default function SapCircuitsClient({customers=[],templates=[],services=[],onMapped,onCreateCustomer,onManageProducts}) {
@@ -12,12 +14,21 @@ export default function SapCircuitsClient({customers=[],templates=[],services=[]
   const [selected,setSelected]=useState(null),[draft,setDraft]=useState({}),[pending,setPending]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
   const [mapped,setMapped]=useState(null);
   const [family,setFamily]=useState('all');
-  const mappingRef=useRef(null);
+  const mappingRef=useRef(null),dialogRef=useRef(null);
   useEffect(()=>{
-    if(!selected||!mappingRef.current)return;
-    mappingRef.current.focus({preventScroll:true});
-    mappingRef.current.scrollIntoView({block:'start',behavior:'instant'});
+    if(!selected||!dialogRef.current)return;
+    const previous=document.activeElement,dialog=dialogRef.current;
+    dialog.showModal();
+    (dialog.querySelector('[role="combobox"]')||mappingRef.current)?.focus();
+    return ()=>{dialog.close();if(previous?.isConnected)previous.focus();};
   },[selected]);
+  function trapFocus(event){
+    if(event.key!=='Tab')return;
+    const controls=[...event.currentTarget.querySelectorAll('button:not(:disabled),input:not(:disabled),a[href],[tabindex="0"]')].filter(e=>e.getClientRects().length);
+    const first=controls[0],last=controls.at(-1);
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+  }
   const target=services.find(service=>String(service.id)===String(draft.existingServiceId));
   const differentCid=!!(target&&getServiceCid(target)&&getServiceCid(target).toUpperCase()!==selected?.cid);
   useEffect(()=>{
@@ -30,7 +41,7 @@ export default function SapCircuitsClient({customers=[],templates=[],services=[]
     return ()=>controller.abort();
   },[q,page,status,family,reload]);
   async function save(event) {
-    event.preventDefault();setPending(true);setError('');setNotice('');
+    event.preventDefault();if(!selected.serviceId&&(!draft.customerId||!draft.existingServiceId||(draft.existingServiceId==='new'&&!draft.templateId))){setError('Pilih customer dan layanan dari daftar terlebih dahulu.');return;}setPending(true);setError('');setNotice('');
     try {
       const response=await fetch('/api/assets/circuit-candidates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cid:selected.cid,confirmReview:draft.confirmReview,...(selected.serviceId?{}:draft.existingServiceId==='new'?{...draft,existingServiceId:undefined}:{customerId:draft.customerId,existingServiceId:draft.existingServiceId,confirmAlias:draft.confirmAlias})})});
       const result=await response.json();if(!response.ok)throw new Error(result.error||'CID gagal disimpan.');
@@ -45,11 +56,11 @@ export default function SapCircuitsClient({customers=[],templates=[],services=[]
     {data&&<p>{data.summary.circuits} circuit · {data.summary.needsMapping} belum tertaut ke layanan · {data.summary.linked} sudah tertaut · {data.summary.conflicts} perlu diperiksa</p>}
     <form className={styles.filters} onSubmit={event=>{event.preventDefault();setQ(query);setPage(1);setReload(value=>value+1);}}>
       <label>Cari CID atau nama pada tiket<input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Contoh: SAP-C-1243-0003" /></label>
-      <label>Format kode<select aria-label="Format kode" value={family} onChange={e=>{setFamily(e.target.value);setPage(1);}}>{['all','SAP','I','C','I2','C2','C4','BH','R','P','L','DCLAND-C','DCLAND-I'].map(code=><option key={code} value={code}>{code==='all'?'Semua format':code}</option>)}</select></label>
-      <label>Tampilkan<select aria-label="Tampilkan" value={status} onChange={e=>{setStatus(e.target.value);setPage(1);}}><option value="pending">Belum selesai ditautkan</option><option value="needs_mapping">Belum tertaut ke layanan</option><option value="ready_to_link">Asset tersedia</option><option value="linked">Sudah tertaut</option><option value="conflict">Perlu diperiksa</option><option value="all">Semua kode layanan</option></select></label>
+      <AssetCombobox label="Format kode" value={family} options={['all','SAP','I','C','I2','C2','C4','BH','R','P','L','DCLAND-C','DCLAND-I'].map(code=>({value:code,label:code==='all'?'Semua format':code}))} onChange={value=>{setFamily(value||'all');setPage(1);}}/>
+      <AssetCombobox label="Tampilkan" value={status} options={[{value:'pending',label:'Belum selesai ditautkan'},{value:'needs_mapping',label:'Belum tertaut ke layanan'},{value:'ready_to_link',label:'Asset tersedia'},{value:'linked',label:'Sudah tertaut'},{value:'conflict',label:'Perlu diperiksa'},{value:'all',label:'Semua kode layanan'}]} onChange={value=>{setStatus(value||'pending');setPage(1);}}/>
       <button type="submit" disabled={loading}>Cari</button>
     </form>
-    {error&&<p role="alert">{error} <button type="button" onClick={()=>setReload(value=>value+1)}>Muat ulang</button></p>}
+    {error&&!selected&&<p role="alert">{error} <button type="button" onClick={()=>setReload(value=>value+1)}>Muat ulang</button></p>}
     {notice&&<p role="status">{notice}</p>}
     {mapped&&<p><Link href={`/assets/${mapped.serviceId}`}>Buka Asset {mapped.cid}</Link> · <Link href={`/tickets/new?workType=Trouble&serviceId=${mapped.serviceId}`}>Buat Trouble untuk CID ini</Link></p>}
     {loading?<p role="status">Memuat CID…</p>:<>
@@ -57,25 +68,25 @@ export default function SapCircuitsClient({customers=[],templates=[],services=[]
       {data&&!data.items.length&&<p>Tidak ada kode layanan yang cocok. Subject Trouble dan teks bebas tidak menjadi sumber CID baru.</p>}
       {data&&<div className={styles.pagination}><button type="button" disabled={page<=1||pending} onClick={()=>setPage(value=>value-1)}>Sebelumnya</button><span>Halaman {page} · {data.total} hasil</span><button type="button" disabled={page*data.pageSize>=data.total||pending} onClick={()=>setPage(value=>value+1)}>Berikutnya</button></div>}
     </>}
-    {selected&&<form ref={mappingRef} tabIndex={-1} className={styles.mapping} onSubmit={save} aria-label={`Tautkan ${selected.cid}`}>
-      <h3>{selected.cid}</h3><p>CID sudah terisi dari Subject tiket. Yang dipilih di bawah adalah customer pemilik dan layanan circuit ini.</p>
+    {selected&&<dialog ref={dialogRef} className={ui.dialog} aria-label={`Tautkan ${selected.cid}`} onKeyDown={trapFocus} onCancel={event=>{event.preventDefault();if(!pending)setSelected(null);}}><div className={ui.dialogHead}><h2>Tautkan customer & layanan</h2><button type="button" disabled={pending} onClick={()=>setSelected(null)}>Tutup</button></div><form ref={mappingRef} tabIndex={-1} className={styles.mapping} onSubmit={save} aria-label={`Tautkan ${selected.cid}`}>
+      <div className={ui.source}><h3>{selected.cid}</h3><p>{selected.sourceName}</p>{selected.tickets.map(ticket=><p key={ticket.id}><Link href={`/tickets/${ticket.id}`}>Tiket sumber {ticket.trackingId}</Link></p>)}<small>Order Origin dan Executing Vendor pada tiket sumber tetap dipertahankan.</small></div>{error&&<p role="alert" className={ui.message}>{error}</p>}<p>CID sudah terisi dari Subject tiket. Yang dipilih di bawah adalah customer pemilik dan layanan circuit ini.</p>
       <p>{selected.ticketCount} tiket sumber akan ditautkan tanpa mengubah status atau poin tiket.</p>
       <fieldset disabled={pending}>
-        {!selected.serviceId&&<div className={styles.fields}>
-          <label>Customer *<select aria-label="Customer *" required value={draft.customerId} onChange={e=>setDraft({...draft,customerId:e.target.value ? Number(e.target.value) : '',existingServiceId:'',confirmAlias:false})}><option value="">Pilih customer yang memiliki circuit ini</option>{customers.map(customer=><option key={customer.id} value={customer.id}>{formatCustomerId(customer)} — {customer.name}</option>)}</select></label>
-          <label>Layanan milik customer *<select aria-label="Layanan milik customer *" required disabled={!draft.customerId} value={draft.existingServiceId} onChange={e=>setDraft({...draft,existingServiceId:e.target.value,confirmAlias:false})}><option value="">Pilih layanan</option>{services.filter(service=>(service.customerId??service.customer?.id)===Number(draft.customerId)).map(service=><option key={service.id} value={service.id}>{service.name} — {service.template?.name || 'Tanpa tipe'}{getServiceCid(service)?` (${getServiceCid(service)})`:''}</option>)}<option value="new">Buat layanan baru untuk CID ini</option></select></label>
+        {!selected.serviceId&&<div className={ui.fields}>
+          <AssetCombobox label="Customer *" required value={draft.customerId} options={customers.map(c=>({value:c.id,label:`${formatCustomerId(c)} — ${c.name}`}))} placeholder="Cari nama atau Customer ID" onChange={value=>setDraft({...draft,customerId:value?Number(value):'',existingServiceId:'',confirmAlias:false})}/>
+          <AssetCombobox label="Layanan milik customer *" required disabled={!draft.customerId} value={draft.existingServiceId} options={[...services.filter(s=>(s.customerId??s.customer?.id)===Number(draft.customerId)).map(s=>({value:String(s.id),label:`${s.name} — ${s.template?.name||'Tanpa tipe'}${getServiceCid(s)?` (${getServiceCid(s)})`:''}`})),{value:'new',label:'Buat layanan baru untuk CID ini'}]} onChange={value=>setDraft({...draft,existingServiceId:value,confirmAlias:false})}/>
           {draft.existingServiceId==='new'&&<>
-          <label>Produk/Layanan *<select aria-label="Produk/Layanan *" required value={draft.templateId} onChange={e=>setDraft({...draft,templateId:Number(e.target.value)})}><option value="">Pilih produk</option>{templates.filter(template=>template.active!==false).map(template=><option key={template.id} value={template.id}>{template.name}</option>)}</select></label>
+          <AssetCombobox label="Produk/Layanan *" required value={draft.templateId} options={templates.filter(t=>t.active!==false).map(t=>({value:t.id,label:t.name}))} onChange={value=>setDraft({...draft,templateId:value?Number(value):''})}/>
           <label>Nama layanan *<input required maxLength={500} value={draft.name} onChange={e=>setDraft({...draft,name:e.target.value})} /></label>
-          <label>Status layanan<select aria-label="Status layanan" value={draft.status} onChange={e=>setDraft({...draft,status:e.target.value})}><option value="Pending">Perlu diperiksa (Pending)</option><option value="Active">Active</option><option value="Suspended">Suspended</option><option value="Terminated">Terminated</option></select></label>
+          <AssetCombobox label="Status layanan" value={draft.status} options={[{value:'Pending',label:'Perlu diperiksa (Pending)'},{value:'Active',label:'Active'},{value:'Suspended',label:'Suspended'},{value:'Terminated',label:'Terminated'}]} onChange={value=>setDraft({...draft,status:value})}/>
           </>}
           {draft.existingServiceId&&draft.existingServiceId!=='new'&&<p>Nama, tipe, kapasitas dan status layanan yang dipilih tetap digunakan. CID akan ditautkan ke layanan ini.</p>}
         </div>}
-        {!selected.serviceId&&<p>Customer tidak disimpulkan dari angka CID atau nama tiket. Pilih layanan yang sudah ada; buat baru hanya jika belum terdaftar. <button type="button" onClick={onCreateCustomer}>Daftarkan customer</button> <button type="button" onClick={onManageProducts}>Kelola produk</button></p>}
+        {!selected.serviceId&&<p>Customer tidak disimpulkan dari angka CID atau nama tiket. Pilih layanan yang sudah ada; buat baru hanya jika belum terdaftar. <button type="button" onClick={()=>{setSelected(null);onCreateCustomer?.();}}>Daftarkan customer</button> <button type="button" onClick={()=>{setSelected(null);onManageProducts?.();}}>Kelola produk</button></p>}
         {selected.needsConfirmation&&<label><span><input style={{width:'auto'}} type="checkbox" required checked={!!draft.confirmReview} onChange={e=>setDraft({...draft,confirmReview:e.target.checked})}/> Saya sudah memeriksa sumber dan mengonfirmasi tiket ini adalah pekerjaan layanan.</span></label>}
         {differentCid&&<label><span><input style={{width:'auto'}} type="checkbox" required checked={!!draft.confirmAlias} onChange={e=>setDraft({...draft,confirmAlias:e.target.checked})}/> Saya mengonfirmasi {selected.cid} dan CID utama {getServiceCid(target)} adalah circuit yang sama. Simpan sebagai kode lama/alias.</span></label>}
-        <div className={styles.pagination}><button type="submit">{pending?'Menyimpan…':selected.serviceId?'Tautkan tiket ke Asset':'Simpan CID & tautkan tiket'}</button><button type="button" onClick={()=>setSelected(null)}>Batal</button></div>
+        <div className={ui.footer}><button type="submit">{pending?'Menyimpan…':selected.serviceId?'Tautkan tiket ke Asset':'Simpan CID & tautkan tiket'}</button><button type="button" onClick={()=>setSelected(null)}>Batal</button></div>
       </fieldset>
-    </form>}
+    </form></dialog>}
   </section>;
 }

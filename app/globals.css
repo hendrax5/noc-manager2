@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --font-sans: "Outfit", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
@@ -25,6 +25,13 @@
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --transition-fast: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --asset-on-primary: #ffffff;
+  --asset-focus: #087f8c;
+  --asset-backdrop: rgba(13,32,43,.7);
+  --asset-pending-text: #775100;
+  --asset-pending-bg: #fff4db;
+  --asset-active-text: #176043;
+  --asset-active-bg: #e2f3eb;
   --motion-duration-fast: 150ms;
   --motion-duration: 200ms;
   --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -32,6 +39,12 @@
 }
 
 [data-theme="dark"] {
+  --asset-on-primary: #102c2a;
+  --asset-focus: #8be7ef;
+  --asset-pending-text: #f7d686;
+  --asset-pending-bg: #403519;
+  --asset-active-text: #94e4b9;
+  --asset-active-bg: #183d30;
   --primary-color: #14b8a6;
   --secondary-color: #14b8a6;
   --accent-hover: #2dd4bf;

@@ -12,3 +12,4 @@
 .scroll a{color:var(--primary-color)}
 .missing{font-size:.85rem;color:var(--text-color)}
 .empty{padding:1rem}
+.inventory{background:var(--card-bg);border-radius:.6rem;padding:1rem}.inventory>p{color:var(--muted-text);font-size:.9rem}.customer:hover{background:var(--hover-bg)}.customer small{color:var(--muted-text);font-family:var(--font-mono)}.customer:focus-visible{outline:3px solid var(--asset-focus);outline-offset:-3px}.pagination{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-top:1rem}.pagination button{min-height:2.75rem;border:1px solid var(--border-color);background:var(--card-bg);color:var(--text-color);padding:.6rem .85rem;border-radius:.5rem;cursor:pointer}.pagination button:disabled{opacity:.6;cursor:not-allowed}.scroll a{color:var(--secondary-color)}
