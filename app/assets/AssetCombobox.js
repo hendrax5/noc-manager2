@@ -5,10 +5,15 @@ import styles from './assets-ui.module.css';
 /** Controlled value is always an option ID; typed text is never submitted as an ID. */
 export default function AssetCombobox({label,options=[],value,onChange,placeholder='Cari atau pilih',disabled=false,required=false}) {
   const id=useId(),input=useRef(null);
-  const [open,setOpen]=useState(false),[query,setQuery]=useState(''),[active,setActive]=useState(0);
+  const [open,setOpen]=useState(false),[query,setQuery]=useState(''),[active,setActive]=useState(0),[above,setAbove]=useState(false);
   const selected=options.find(option=>String(option.value)===String(value));
   const matches=options.filter(option=>option.label.toLowerCase().includes(query.toLowerCase()));
   const visible=matches.slice(0,80),index=Math.min(active,visible.length-1);
+  useEffect(()=>{
+    if(!open)return;
+    function position(){const field=input.current;if(!field)return;const rect=field.getBoundingClientRect(),bounds=field.closest('dialog')?.getBoundingClientRect()||{top:0,bottom:window.innerHeight};const below=bounds.bottom-rect.bottom,list=document.getElementById(`${id}-options`),height=list?parseFloat(window.getComputedStyle(list).maxHeight):0;setAbove(below<height&&rect.top-bounds.top>below);}
+    position();window.addEventListener('resize',position);return ()=>window.removeEventListener('resize',position);
+  },[open,id]);
   useEffect(()=>{if(open)document.getElementById(`${id}-option-${index}`)?.scrollIntoView({block:'nearest'});},[open,index,id]);
   function choose(option){onChange(option.value);setOpen(false);input.current?.focus();}
   function keyDown(event){
@@ -22,9 +27,10 @@ export default function AssetCombobox({label,options=[],value,onChange,placehold
   return <div className={styles.combo} onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget))setOpen(false);}}>
     <label htmlFor={id}>{label}</label>
     <input ref={input} id={id} role="combobox" aria-expanded={open&&!disabled} aria-controls={`${id}-options`} aria-autocomplete="list" aria-activedescendant={open&&visible[index]?`${id}-option-${index}`:undefined} autoComplete="off" required={required} disabled={disabled} placeholder={placeholder} value={open?query:selected?.label||''} onFocus={()=>{setQuery('');setOpen(true);setActive(0);}} onChange={event=>{setQuery(event.target.value);setOpen(true);setActive(0);if(value!==''&&value!=null)onChange('');}} onKeyDown={keyDown}/>
-    {open&&!disabled&&<><ul id={`${id}-options`} role="listbox" aria-label={`${label} pilihan`} className={styles.options}>
+    {open&&!disabled&&<div className={`${styles.popup} ${above?styles.popupAbove:''}`}><ul id={`${id}-options`} role="listbox" aria-label={`${label} pilihan`} className={styles.options}>
       {visible.map((option,i)=><li id={`${id}-option-${i}`} key={option.value} role="option" aria-selected={i===index} onMouseDown={event=>event.preventDefault()} onClick={()=>choose(option)}>{option.label}</li>)}
       {!visible.length&&<li role="option" aria-disabled="true">Tidak ada pilihan yang cocok.</li>}
-    </ul>{matches.length>80&&<small>Menampilkan 80 hasil. Ketik untuk mempersempit pencarian.</small>}</>}
+    </ul>{matches.length>80&&<small>Menampilkan 80 hasil. Ketik untuk mempersempit pencarian.</small>}</div>}
   </div>;
 }
+

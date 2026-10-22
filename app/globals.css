@@ -45,6 +45,7 @@
   --asset-focus-inset: -3px;
   --asset-dialog-width: 46rem;
   --asset-options-height: 13rem;
+  --asset-popover-layer: 20;
   --asset-disabled-opacity: .65;
   --asset-hover-brightness: .96;
   --asset-filter-width: 12rem;

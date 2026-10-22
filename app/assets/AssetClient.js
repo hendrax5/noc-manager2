@@ -6,7 +6,11 @@ import { formatCustomerId } from '@/lib/customers/identity';
 import SapCircuitsClient from './SapCircuitsClient';
 import CustomerServiceInventory from './CustomerServiceInventory';
 import ui from './assets-ui.module.css';
+import AssetMasterList from './AssetMasterList';
 
+function readTemplateFields(value) {
+  try { const parsed=typeof value==='string'?JSON.parse(value):value;return Array.isArray(parsed)?parsed.filter(f=>f&&typeof f.name==='string'):[]; } catch { return []; }
+}
 export default function AssetClient({ session, initialCustomers, initialTemplates, initialServices }) {
   const [activeTab, setActiveTab] = useState('inventory');
   
@@ -51,96 +55,9 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
 
       {activeTab === 'inventory' && <CustomerServiceInventory customers={customers} services={services} canManage={isAdmin} />}
 
-      {activeTab === 'customers' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-           {customers.map(c => (
-              <div key={c.id} className="bg-white-card hover-lift" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--heading-color)' }}>🏢 {c.name}</h3><p>Customer ID: {formatCustomerId(c)}</p>
-                <div style={{ fontSize: '0.9rem', color: 'var(--text-color)', marginBottom: '1rem' }}>
-                   <div>📧 {c.contactEmail || 'No email provided'}</div>
-                   <div>📞 {c.contactPhone || 'No phone provided'}</div>
-                </div>
-                 <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                    <span style={{ color: 'var(--text-color)' }}>Active Services: <strong style={{ color: 'var(--heading-color)' }}>{c._count?.services}</strong></span>
-                 </div>
-                 {isAdmin && (
-                    <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
-                       <button onClick={() => {
-                          setEditCustomerId(c.id);
-                          setCustomerData({ name: c.name, contactEmail: c.contactEmail || '', contactPhone: c.contactPhone || '' });
-                          setShowCustomerModal(true);
-                       }} style={{ background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--text-color)' }}>Edit</button>
-                       <button onClick={async () => {
-                          try {
-                             const res = await fetch(`/api/assets/customers/${c.id}`, { method: 'DELETE' });
-                             if (res.ok) {
-                                setCustomers(prev => prev.filter(x => x.id !== c.id));
-                             } else {
-                                const d = await res.json();
-                                alert(d.error);
-                             }
-                          } catch (e) {}
-                       }} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#ef4444' }}>Delete</button>
-                    </div>
-                 )}
-              </div>
-           ))}
-           {isAdmin && (
-              <div onClick={() => { setEditCustomerId(null); setCustomerData({ name: '', contactEmail: '', contactPhone: '' }); setShowCustomerModal(true); }} className="bg-white-card hover-lift" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px dashed var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', minHeight: '150px' }}>
-                <span style={{ color: 'var(--primary-color)', fontWeight: 'bold', fontSize: '1.1rem' }}>+ Add New Customer</span>
-              </div>
-           )}
-        </div>
-      )}
+      {activeTab === 'customers' && <AssetMasterList title="Customers Registry" columns={['Customer','Customer ID','Kontak','Layanan',...(isAdmin?['Aksi']:[])]} addLabel="Tambah customer" onAdd={isAdmin?()=>{setEditCustomerId(null);setCustomerData({name:'',contactEmail:'',contactPhone:''});setShowCustomerModal(true);}:undefined} rows={customers.map(c=>({id:c.id,search:[c.name,formatCustomerId(c),c.contactEmail,c.contactPhone].filter(Boolean).join(' '),cells:[<strong key="name">{c.name}</strong>,<span key="id" className="font-mono">{formatCustomerId(c)}</span>,<span key="contact">{c.contactEmail||'Belum diisi'}{c.contactPhone&&<small>{c.contactPhone}</small>}</span>,services.filter(service=>(service.customerId??service.customer?.id)===c.id).length,...(isAdmin?[<div key="actions"><button type="button" onClick={()=>{setEditCustomerId(c.id);setCustomerData({name:c.name,contactEmail:c.contactEmail||'',contactPhone:c.contactPhone||''});setShowCustomerModal(true);}}>Edit</button><button type="button" data-danger="true" onClick={async()=>{if(!confirm(`Hapus customer ${c.name}?`))return;try{const res=await fetch(`/api/assets/customers/${c.id}`,{method:'DELETE'});if(res.ok)setCustomers(prev=>prev.filter(x=>x.id!==c.id));else alert((await res.json()).error);}catch{alert('Customer gagal dihapus. Coba lagi.');}}}>Hapus</button></div>]:[])]}))}/>}
 
-      {activeTab === 'templates' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
-           {templates.map(t => {
-              const fieldsObj = typeof t.fields === 'string' ? JSON.parse(t.fields) : t.fields;
-              const fieldItems = Array.isArray(fieldsObj) ? fieldsObj : [];
-              return (
-                <div key={t.id} className="bg-white-card" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ margin: 0, color: 'var(--heading-color)' }}>{t.name} (Template)</h3>
-                    <span style={{ fontSize: '0.75rem', background: t.active ? '#dcfce7' : '#fee2e2', color: t.active ? '#166534' : '#991b1b', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
-                      {t.active ? 'Active' : 'Archived'}
-                    </span>
-                  </div>
-                  <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '8px' }}>
-                    <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--heading-color)', marginBottom: '0.5rem' }}>Dynamic Fields ({fieldItems.length}):</strong>
-                    <ul style={{ margin: 0, paddingLeft: '1.2rem', color: 'var(--text-color)', fontSize: '0.85rem' }}>
-                       {fieldItems.map((f, i) => <li key={i}>{f.name} <span style={{ opacity: 0.6 }}>[{f.type}]</span></li>)}
-                    </ul>
-                  </div>
-                  {isAdmin && (
-                    <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
-                       <button onClick={() => {
-                          setEditTemplateId(t.id);
-                          setTemplateData({ name: t.name });
-                          setTemplateFields(fieldItems.length > 0 ? fieldItems : [{ name: '', type: 'text', required: true }]);
-                          setShowTemplateModal(true);
-                       }} style={{ background: 'transparent', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: 'var(--text-color)' }}>Edit</button>
-                       <button onClick={async () => {
-                          if (!confirm(`Delete template ${t.name}?`)) return;
-                          try {
-                             const res = await fetch(`/api/assets/templates/${t.id}`, { method: 'DELETE' });
-                             if (res.ok) setTemplates(templates.filter(x => x.id !== t.id));
-                             else alert(await res.json().then(d => d.error));
-                          } catch (e) {}
-                       }} style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.3rem 0.6rem', fontSize: '0.8rem', color: '#ef4444' }}>Delete</button>
-                    </div>
-                 )}
-                </div>
-              );
-           })}
-           {isAdmin && (
-              <div onClick={() => { setEditTemplateId(null); setTemplateData({ name: '' }); setTemplateFields([{ name: '', type: 'text', required: true }]); setShowTemplateModal(true); }} className="bg-white-card hover-lift" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px dashed var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', minHeight: '150px' }}>
-                <span style={{ color: 'var(--primary-color)', fontWeight: 'bold', fontSize: '1.1rem' }}>+ Define New Service Template</span>
-              </div>
-           )}
-        </div>
-      )}
-
+      {activeTab === 'templates' && <AssetMasterList title="Produk layanan" columns={['Produk','Status','Layanan','Field tambahan',...(isAdmin?['Aksi']:[])]} addLabel="Tambah produk" onAdd={isAdmin?()=>{setEditTemplateId(null);setTemplateData({name:''});setTemplateFields([{name:'',type:'text',required:true}]);setShowTemplateModal(true);}:undefined} rows={templates.map(t=>{const fields=readTemplateFields(t.fields);return {id:t.id,search:`${t.name} ${t.active?'Aktif':'Arsip'}`,cells:[<strong key="name">{t.name}</strong>,t.active?'Aktif':'Arsip',services.filter(service=>(service.templateId??service.template?.id)===t.id).length,<details key="fields"><summary>{fields.length} field</summary>{fields.length>0?<ul>{fields.map((field,i)=><li key={i}>{field.name} <small>{String(field.type||'text')}</small></li>)}</ul>:<small>Tidak ada field tambahan.</small>}</details>,...(isAdmin?[<div key="actions"><button type="button" onClick={()=>{setEditTemplateId(t.id);setTemplateData({name:t.name});setTemplateFields(fields.length?fields:[{name:'',type:'text',required:true}]);setShowTemplateModal(true);}}>Edit</button><button type="button" data-danger="true" onClick={async()=>{if(!confirm(`Hapus produk ${t.name}?`))return;try{const res=await fetch(`/api/assets/templates/${t.id}`,{method:'DELETE'});if(res.ok)setTemplates(prev=>prev.filter(x=>x.id!==t.id));else alert((await res.json()).error);}catch{alert('Produk gagal dihapus. Coba lagi.');}}}>Hapus</button></div>]:[])]};})}/>}
       {activeTab === 'blast' && (
         <div>
           <div className="bg-white-card" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '2rem' }}>

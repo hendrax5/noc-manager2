@@ -78,6 +78,10 @@ overflow-wrap:anywhere}
 .source p{margin:var(--asset-space-1) 0}
 .combo{position:relative;
 min-width:0}
+.popup{position:absolute;top:100%;inset-inline:0;z-index:var(--asset-popover-layer);background:var(--card-bg);border:var(--asset-divider-width) solid var(--border-color);border-radius:var(--asset-radius);margin-top:var(--asset-space-1)}
+.popup small{display:block;padding:var(--asset-space-2);color:var(--asset-muted)}
+.popupAbove{top:auto;bottom:100%;margin-top:0;margin-bottom:var(--asset-space-1)}
+.popup .options{margin:0;border:0}
 .options{list-style:none;
 margin:var(--asset-space-1) 0 0;
 padding:var(--asset-space-1);
@@ -130,3 +134,5 @@ transform:none!important}
 @media(min-width:48rem){.header h1{font-size:var(--asset-heading-desktop)}
 }
 
+
+.header > a{width:auto;flex:0 0 auto;text-decoration:none}
