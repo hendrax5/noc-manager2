@@ -361,6 +361,7 @@ export default function ServiceDetailClient({ service, session }) {
           </div>
           
           {canCreateTicket && <Link href={`/tickets/new?serviceId=${service.id}&workType=ServiceWork`} className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>Buat Tiket</Link>}
+          {canCreateTicket && <Link href={`/tickets/new?serviceId=${service.id}&workType=Trouble`} className="secondary-btn" style={{ width: 'auto', textDecoration: 'none' }}>Buat Trouble</Link>}
           {isAdmin && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
               <button onClick={() => setShowEditModal(true)} className="secondary-btn">✏️ Edit Details</button>

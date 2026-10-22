@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import SapCircuitsClient from './SapCircuitsClient';
+import { getServiceCid } from '@/lib/services/cid';
 
 export default function AssetClient({ session, initialCustomers, initialTemplates, initialServices }) {
   const [activeTab, setActiveTab] = useState('inventory');
@@ -11,6 +13,8 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
   const [services, setServices] = useState(initialServices || []);
   
   const [blastQuery, setBlastQuery] = useState('');
+  const [inventoryQuery,setInventoryQuery]=useState('');
+  const inventoryMatches=services.filter(service=>`${getServiceCid(service)} ${service.name} ${service.customer?.name || ''}`.toLowerCase().includes(inventoryQuery.toLowerCase()));
   
   // Modals Data
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -39,6 +43,8 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
            )}
         </div>
       </header>
+
+      {activeTab === 'inventory' && isAdmin && <SapCircuitsClient customers={customers} templates={templates} onMapped={async()=>{const response=await fetch('/api/assets/services',{cache:'no-store'});if(response.ok)setServices(await response.json());}} onCreateCustomer={()=>{setActiveTab('customers');setEditCustomerId(null);setCustomerData({name:'',contactEmail:'',contactPhone:''});setShowCustomerModal(true);}} onManageProducts={()=>setActiveTab('templates')} />}
 
       <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid var(--border-color)', marginBottom: '2rem' }}>
         <button 
@@ -69,10 +75,11 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
 
       {activeTab === 'inventory' && (
         <div className="bg-white-card" style={{ borderRadius: '12px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+          <div style={{padding:'1rem'}}><label htmlFor="inventory-cid-search">Cari layanan yang sudah terdaftar (CID / customer / layanan)</label><input id="inventory-cid-search" type="search" value={inventoryQuery} onChange={event=>setInventoryQuery(event.target.value)} placeholder="Cari CID pada Assets" style={{width:'100%',boxSizing:'border-box',padding:'.65rem',marginTop:'.4rem'}} /></div>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ background: 'var(--hover-bg)' }}>
-                <th style={{ padding: '1rem', color: 'var(--heading-color)', borderBottom: '2px solid var(--border-color)' }}>ID</th>
+                <th style={{ padding: '1rem', color: 'var(--heading-color)', borderBottom: '2px solid var(--border-color)' }}>CID / ID</th>
                 <th style={{ padding: '1rem', color: 'var(--heading-color)', borderBottom: '2px solid var(--border-color)' }}>Customer</th>
                 <th style={{ padding: '1rem', color: 'var(--heading-color)', borderBottom: '2px solid var(--border-color)' }}>Service Component</th>
                 <th style={{ padding: '1rem', color: 'var(--heading-color)', borderBottom: '2px solid var(--border-color)' }}>Type</th>
@@ -81,9 +88,9 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
               </tr>
             </thead>
             <tbody>
-              {services.map(srv => (
+              {inventoryMatches.map(srv => (
                 <tr key={srv.id} className="hover-bg" style={{ borderBottom: '1px solid var(--border-color)' }}>
-                  <td style={{ padding: '1rem', color: 'var(--text-color)', fontWeight: 'bold' }}>#{srv.id}</td>
+                  <td style={{ padding: '1rem', color: 'var(--text-color)', fontWeight: 'bold' }}>{getServiceCid(srv) || `#${srv.id}`}</td>
                   <td style={{ padding: '1rem', color: 'var(--heading-color)', fontWeight: 'bold' }}>{srv.customer?.name}</td>
                   <td style={{ padding: '1rem' }}>
                     <Link href={`/assets/${srv.id}`} style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: 'bold' }}>

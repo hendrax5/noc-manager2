@@ -1,0 +1,38 @@
+const assert=require('node:assert/strict');
+const path=require('node:path');
+const Module=require('node:module');
+const esbuild=require('esbuild');
+async function main(){
+ const root=path.resolve(__dirname,'..');
+ const original={id:1,title:'SAP-C-1243-0003',trackingId:'HSK-A',description:'',customData:{'Customer Name':'PT ABC - Site A'},services:[],updatedAt:'2020-01-01T00:00:00Z',status:'Resolved'};
+ const state={session:{user:{id:1}},user:{id:1,role:{name:'Admin',permissions:[]}},tickets:[structuredClone(original),{...structuredClone(original),id:2,title:' sap-c-1243-0003 ',trackingId:'HSK-B'}],services:[],logs:[],failAudit:false};
+ let queue=Promise.resolve();
+ const db={user:{findUnique:async()=>state.user},ticket:{findMany:async({where})=>structuredClone(state.tickets.filter(ticket=>!where?.id?.in||where.id.in.includes(ticket.id))),findUnique:async({where})=>structuredClone(state.tickets.find(ticket=>ticket.id===where.id))},service:{findMany:async()=>structuredClone(state.services),create:async({data})=>{const row={...data,id:10+state.services.length,updatedAt:'2026-01-01T00:00:00Z'};state.services.push(row);return row;}},customer:{findUnique:async({where})=>where.id===9?{id:9,name:'Explicit owner'}:null},serviceTemplate:{findUnique:async({where})=>where.id===8?{id:8,name:'IPT',active:true}:null},ticketHistory:{createMany:async({data})=>{if(state.failAudit)throw new Error('Audit failed');state.logs.push(...data);}},$queryRaw:async()=>[],
+  $executeRaw:async(strings,serviceId,ids)=>{for(const id of ids){const ticket=state.tickets.find(row=>row.id===id);if(!ticket.services.some(s=>s.id===serviceId))ticket.services.push({id:serviceId});}return ids.length;},
+  $transaction:async callback=>{const previous=queue;let release;queue=new Promise(resolve=>release=resolve);await previous;const before=structuredClone({tickets:state.tickets,services:state.services,logs:state.logs});try{return await callback(db);}catch(e){Object.assign(state,before);throw e;}finally{release();}},
+ };
+ globalThis.__sapApi={state,db};
+ async function load(file){const built=await esbuild.build({entryPoints:[path.join(root,file)],bundle:true,write:false,format:'cjs',platform:'node',alias:{'@':root},plugins:[{name:'fixture',setup(build){const mocks={'next/server':'export const NextResponse={json:(body,init)=>new Response(JSON.stringify(body),init)};','next-auth':'export const getServerSession=async()=>globalThis.__sapApi.state.session;','@/lib/prisma':'export const prisma=globalThis.__sapApi.db;','@/lib/notify':'export async function notifyTicketEvent(){};','@/lib/integration/webhooks':'export async function dispatchIntegrationWebhook(){};','@/lib/tickets/routing':'export async function pickLeastBusyAssignee(){return null;}','@/lib/integration/auth':'export async function resolveDepartment(){return {id:1}};'};build.onResolve({filter:/.*/},args=>/auth\/\[\.\.\.nextauth\]\/route$/.test(args.path)?{path:'auth',namespace:'mock'}:mocks[args.path]?{path:args.path,namespace:'mock'}:undefined);build.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:args.path==='auth'?'export const authOptions={};':mocks[args.path],loader:'js'}));}}]});const name=path.join(root,'sap-fixture.cjs'),mod=new Module(name,module);mod.filename=name;mod.paths=module.paths;mod._compile(built.outputFiles[0].text,name);return mod.exports;}
+ const api=await load('app/api/assets/sap-circuits/route.js'),helpers=await load('lib/services/sapAssets.js');
+ const req=body=>new Request('http://localhost/api/assets/sap-circuits',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ state.session=null;assert.equal((await api.GET(new Request('http://localhost/api/assets/sap-circuits'))).status,401);
+ state.session={user:{id:1,role:'Admin'}};state.user={id:1,role:{name:'Staff',permissions:[]}};assert.equal((await api.POST(req({cid:original.title}))).status,403,'Fresh role overrides stale session');
+ state.user={id:1,role:{name:'Staff',permissions:['manage_assets']}};
+ let response=await api.GET(new Request('http://localhost/api/assets/sap-circuits'));assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');let body=await response.json();assert.equal(body.total,1);assert.equal(body.items[0].ticketCount,2);assert.equal(body.items[0].ticketIds,undefined);assert.equal(body.items[0].customerId,undefined);assert.equal(state.services.length,0,'GET never fabricates Assets');
+ assert.equal((await api.POST(req({cid:original.title}))).status,400,'Mapping must explicitly select owner/product');assert.equal(state.services.length,0);
+ assert.equal((await api.POST(req({cid:'I-0666-004-01',customerId:9,templateId:8}))).status,400);
+ state.failAudit=true;assert.equal((await api.POST(req({cid:original.title,customerId:9,templateId:8}))).status,500);assert.equal(state.services.length,0);assert.equal(state.tickets[0].services.length,0,'Failed audit rolls back creation and joins');state.failAudit=false;
+ const requests=await Promise.all([api.POST(req({cid:original.title,customerId:9,templateId:8})),api.POST(req({cid:original.title,customerId:9,templateId:8}))]);assert.deepEqual(requests.map(r=>r.status).sort(),[200,201]);
+ assert.equal(state.services.length,1);assert.equal(state.services[0].customerId,9);assert.equal(state.services[0].status,'Pending');assert.equal(state.logs.length,2);assert.ok(state.logs.every(log=>log.awardedScore===undefined));
+ for(const ticket of state.tickets){assert.equal(ticket.updatedAt,original.updatedAt);assert.equal(ticket.status,'Resolved');assert.deepEqual(ticket.services,[{id:10}]);}
+ const version=state.services[0].updatedAt;
+ state.tickets.push({...structuredClone(original),id:3,services:[]});assert.equal((await helpers.linkExistingSapCircuit(db,3)).linked,true);assert.equal(state.services[0].updatedAt,version,'Link does not invalidate pending ServiceWork Inventory snapshot');
+ state.tickets.push({...structuredClone(original),id:4,title:'SAP-C-9999-0001',services:[]});assert.equal((await helpers.linkExistingSapCircuit(db,4)).linked,false);assert.equal(state.services.length,1,'Unmapped new tickets remain review candidates');
+ state.tickets.push({...structuredClone(original),id:5,services:[{id:999}]});assert.equal((await api.POST(req({cid:original.title}))).status,409,'Manual links are never overwritten');
+ db.ticket.create=async({data})=>{const id=state.tickets.length+1;const row={id,title:data.title,description:data.description,customData:data.customData||{},services:[],updatedAt:original.updatedAt,status:data.status,trackingId:data.trackingId};state.tickets.push(row);return {...row,watchers:[],assignee:null};};
+ state.session={user:{id:1,role:'Admin',permissions:[]}};
+ const web=await load('app/api/tickets/route.js');assert.equal((await web.POST(req({title:original.title,description:'New SAP source',departmentId:1}))).status,201);assert.deepEqual(state.tickets.at(-1).services,[{id:10}],'Actual web ticket create auto-links existing SAP circuit');
+ const integration=await load('lib/integration/tickets.js');const imported=await integration.createTicketFromIntegration({body:{title:original.title,description:'New EWO SAP source',departmentId:1},app:null});assert.equal(imported.replayed,false);assert.deepEqual(state.tickets.at(-1).services,[{id:10}],'Actual integration create auto-links existing SAP circuit');
+ delete globalThis.__sapApi;console.log('PASS: actual SAP API fresh ACL, read-only preview, explicit customer/product mapping, non-SAP exclusion, atomic rollback, concurrent idempotency, history/timestamp/score preservation, future auto-link and conflicts. Transactional fixtures only.');
+}
+main().catch(e=>{console.error(e);process.exitCode=1});

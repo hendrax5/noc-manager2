@@ -291,7 +291,7 @@ export default function TicketForm({ departments, categories, users = [], custom
         </div>
       )}
 
-      {formData.workType !== "ServiceWork" && <div className="form-group" style={{ gridColumn: '1 / -1', position: 'relative' }} ref={customerWrapperRef}>
+      {!["ServiceWork","Trouble"].includes(formData.workType) && <div className="form-group" style={{ gridColumn: '1 / -1', position: 'relative' }} ref={customerWrapperRef}>
         <label style={{ color: '#1e293b', fontWeight: 'bold', marginBottom: '0.75rem' }}>Customer / Reporter Name</label>
         <input 
           type="text" 

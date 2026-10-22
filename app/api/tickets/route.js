@@ -10,6 +10,7 @@ import { TICKET_TYPES, TICKET_PRIORITIES, assertValidStatus } from "@/lib/ticket
 import { normalizeDowntimeCustomData } from "@/lib/tickets/downtime";
 import { prepareTicketClassification, TicketClassificationError } from "@/lib/tickets/workClassification";
 import { createTicketPointsLog } from "@/lib/tickets/points";
+import { linkExistingSapCircuit } from '@/lib/services/sapAssets';
 
 function generateTrackingId() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -156,6 +157,7 @@ export async function POST(req) {
       },
     });
 
+    try { await linkExistingSapCircuit(prisma,ticket.id); } catch { console.warn('SAP CID link deferred; ticket retained for Inventory review.'); }
     const emails = [];
     if (ticket.assignee?.email) emails.push(ticket.assignee.email);
     for (const w of ticket.watchers || []) {
