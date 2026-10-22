@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 import { checkServiceCid } from '@/lib/services/cidLookup';
-import { CidValidationError } from '@/lib/services/cid';
+import { CidValidationError, getServiceCid } from '@/lib/services/cid';
+import { lockCircuitCodes, registerCircuitIdentifier } from '@/lib/services/circuitRegistry';
 
 export async function GET(request, { params }) {
   try {
@@ -15,6 +16,7 @@ export async function GET(request, { params }) {
     const service = await prisma.service.findUnique({
       where: { id: parseInt(resolveParams.id) },
       include: {
+        identifiers: {select:{code:true,family:true}},
         customer: true,
         template: true,
         hops: { orderBy: { orderIndex: 'asc' } },
@@ -54,48 +56,33 @@ export async function PATCH(request, { params }) {
     const body = await request.json();
 
     const serviceId = parseInt(resolveParams.id);
-    let serviceCid;
-    if (body.cid !== undefined || body.customData !== undefined) {
-      const existing = await prisma.service.findUnique({ where: { id: serviceId }, select: { id: true, cid: true, customData: true } });
-      if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-      try { serviceCid = await checkServiceCid(prisma, { cid: body.cid === undefined ? existing.cid : body.cid, customData: body.customData === undefined ? existing.customData : body.customData }, serviceId); }
-      catch (error) { if (error instanceof CidValidationError) return NextResponse.json({ error: error.message }, { status: error.status }); throw error; }
-    }
-    
-    // Update core fields if provided
-    if (body.name || body.status || body.customData || body.cid !== undefined) {
-      const updateData = {};
-      if (serviceCid !== undefined) updateData.cid = serviceCid;
-      if (body.name) updateData.name = body.name;
-      if (body.status) updateData.status = body.status;
-      if (body.customData) updateData.customData = body.customData;
-      
-      await prisma.service.update({
-        where: { id: serviceId },
-        data: updateData
-      });
-    }
-
-    // Update hops if explicitly provided in body
-    if (body.hops) {
-      // Wipe existing hops & replace cleanly
-      await prisma.circuitHop.deleteMany({ where: { serviceId } });
-
-      if (body.hops.length > 0) {
-        const hopData = body.hops.map((h, index) => ({
-          serviceId,
-          orderIndex: index,
-          location: h.location,
-          deviceName: h.deviceName,
-          portName: h.portName,
-          description: h.description
-        }));
-        await prisma.circuitHop.createMany({ data: hopData });
+    await prisma.$transaction(async tx=>{
+      const existing=await tx.service.findUnique({where:{id:serviceId}});
+      if(!existing)throw new CidValidationError('Layanan tidak ditemukan.',404);
+      const candidate={cid:body.cid===undefined?existing.cid:body.cid,customData:body.customData===undefined?existing.customData:body.customData};
+      const code=getServiceCid(candidate);
+      await lockCircuitCodes(tx,[code,getServiceCid(existing)]);
+      await tx.$queryRaw`SELECT id FROM "Service" WHERE id = ${serviceId} FOR UPDATE`;
+      const fresh=await tx.service.findUnique({where:{id:serviceId}});
+      if(+new Date(fresh.updatedAt)!==+new Date(existing.updatedAt))throw new CidValidationError('Layanan berubah; muat ulang.',409);
+      const serviceCid=await checkServiceCid(tx,candidate,serviceId);
+      if(getServiceCid(existing))await registerCircuitIdentifier(tx,{serviceId,code:getServiceCid(existing),actorId:Number(session.user.id)});
+      const updateData={};
+      if(body.cid!==undefined||body.customData!==undefined)updateData.cid=serviceCid;
+      if(body.name)updateData.name=body.name;
+      if(body.status)updateData.status=body.status;
+      if(body.customData)updateData.customData=body.customData;
+      if(Object.keys(updateData).length)await tx.service.update({where:{id:serviceId},data:updateData});
+      if(serviceCid)await registerCircuitIdentifier(tx,{serviceId,code:serviceCid,actorId:Number(session.user.id)});
+      if(body.hops){
+        await tx.circuitHop.deleteMany({where:{serviceId}});
+        if(body.hops.length)await tx.circuitHop.createMany({data:body.hops.map((h,index)=>({serviceId,orderIndex:index,location:h.location,deviceName:h.deviceName,portName:h.portName,description:h.description}))});
       }
-    }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof CidValidationError) return NextResponse.json({error:error.message},{status:error.status});
     if (error.code === 'P2002') return NextResponse.json({ error: 'CID sudah digunakan oleh layanan lain.' }, { status: 409 });
     console.error('PATCH Hop Error:', error);
     return NextResponse.json({ error: 'Failed to update topology' }, { status: 500 });

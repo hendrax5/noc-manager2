@@ -4,6 +4,7 @@ import { authOptions } from '../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 import { checkServiceCid } from '@/lib/services/cidLookup';
 import { CidValidationError } from '@/lib/services/cid';
+import { lockCircuitCodes, registerCircuitIdentifier } from '@/lib/services/circuitRegistry';
 
 export async function GET(request) {
   try {
@@ -19,6 +20,7 @@ export async function GET(request) {
     const services = await prisma.service.findMany({
       where,
       include: {
+        identifiers: {select:{code:true,family:true}},
         customer: true,
         template: true,
         hops: { orderBy: { orderIndex: 'asc' } },
@@ -41,11 +43,10 @@ export async function POST(request) {
     }
 
     const { customerId, templateId, name, cid, status, customData, monthlyCost, currency, contractEnd, hops } = await request.json();
-    let serviceCid;
-    try { serviceCid = await checkServiceCid(prisma, { cid, customData }); }
-    catch (error) { if (error instanceof CidValidationError) return NextResponse.json({ error: error.message }, { status: error.status }); throw error; }
-    
-    const service = await prisma.service.create({
+    const service = await prisma.$transaction(async tx=>{
+    await lockCircuitCodes(tx,[cid || customData?.CID || '']);
+    const serviceCid=await checkServiceCid(tx,{cid,customData});
+    const created=await tx.service.create({
       data: {
         customerId: parseInt(customerId),
         templateId: parseInt(templateId),
@@ -68,10 +69,14 @@ export async function POST(request) {
       },
       include: { hops: true }
     });
+    if(serviceCid)await registerCircuitIdentifier(tx,{serviceId:created.id,code:serviceCid,actorId:Number(session.user.id)});
+    return created;
+    });
 
     return NextResponse.json(service);
   } catch (error) {
     console.error(error);
+    if (error instanceof CidValidationError) return NextResponse.json({error:error.message},{status:error.status});
     if (error.code === 'P2002') return NextResponse.json({ error: 'CID sudah digunakan oleh layanan lain.' }, { status: 409 });
     return NextResponse.json({ error: 'Failed to create service' }, { status: 500 });
   }
