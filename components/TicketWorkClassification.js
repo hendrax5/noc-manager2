@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { WORK_TYPES, WORK_TYPE_LABELS } from "@/lib/tickets/workClassification";
 import ServiceWorkFields from "./ServiceWorkFields";
 import { getServiceCid } from "@/lib/services/cid";
@@ -9,7 +9,10 @@ const inputStyle = { width: "100%", padding: "0.65rem", border: "1px solid var(-
 function MasterSelect({ kind, value, snapshot, onChange }) {
   const id = useId();
   const [items, setItems] = useState([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(-1);
+  const inputRef = useRef(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -22,25 +25,51 @@ function MasterSelect({ kind, value, snapshot, onChange }) {
     return () => { active = false; };
   }, [kind]);
   const current = items.find(item => String(item.id) === String(value));
-  const options = items.filter(item => item.active !== false && (String(item.id) === String(value) || `${item.name} ${item.description || ""}`.toLowerCase().includes(search.toLowerCase())));
+  const selectedLabel = current?.name || (value ? snapshot || "Pilihan tersimpan" : "");
+  const options = items.filter(item => item.active !== false && `${item.name} ${item.description || ""}`.toLowerCase().includes((search || "").toLowerCase()));
   const label = kind === "symptom" ? "Gejala" : "Penyebab";
-  return <div>
-    <label htmlFor={`${id}-search`}>Cari {label.toLowerCase()}</label>
-    <input id={`${id}-search`} style={inputStyle} value={search} onChange={event => setSearch(event.target.value)} placeholder={`Cari ${label.toLowerCase()}…`} />
-    <small>Opsional: saring nama {label.toLowerCase()}. {kind === 'symptom' ? 'Contoh: Down, putus-nyambung, High Latency, Packet Loss.' : 'Contoh: FO CUT atau gangguan listrik.'} Nomor CID dipilih pada bagian layanan di atas.</small>
-    {/^\s*SAP-/i.test(search) && <p role="alert">Teks ini terlihat seperti CID. Gunakan kolom Cari & pilih CID layanan di atas, bukan Cari {label.toLowerCase()}.</p>}
+  useEffect(() => {
+    inputRef.current?.setCustomValidity(value ? "" : `Pilih ${label.toLowerCase()} dari daftar.`);
+  }, [value, search, label]);
+  const choose = item => {
+    onChange(item.id, item.name);
+    setSearch(null);
+    setOpen(false);
+    setHighlight(-1);
+  };
+  return <div style={{ position: "relative" }}>
     <label htmlFor={id}>{label} *</label>
-    <select id={id} style={inputStyle} value={value || ""} required onChange={event => {
-      const item = items.find(entry => String(entry.id) === event.target.value);
-      onChange(item?.id || null, item?.name || null);
-    }}>
-      <option value="">Pilih {label.toLowerCase()}</option>
-      {value && !current && <option value={value}>{snapshot || "Pilihan tersimpan"} (tersimpan)</option>}
-      {options.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-    </select>
-    {!error && search && !options.length && <p role="status">Tidak ada {label.toLowerCase()} yang cocok. <button type="button" onClick={()=>setSearch('')}>Hapus pencarian {label.toLowerCase()}</button></p>}
+    <input ref={inputRef} id={id} role="combobox" aria-autocomplete="list" aria-expanded={open}
+      aria-controls={`${id}-options`} aria-activedescendant={open && highlight >= 0 && options[highlight] ? `${id}-option-${options[highlight].id}` : undefined}
+      aria-describedby={`${id}-help`} autoComplete="off" style={inputStyle} required
+      value={search === null ? selectedLabel : search} placeholder={`Ketik atau pilih ${label.toLowerCase()}…`}
+      onFocus={() => { setOpen(true); setHighlight(-1); }}
+      onClick={() => setOpen(true)}
+      onBlur={() => { setOpen(false); setSearch(null); setHighlight(-1); }}
+      onChange={event => { setSearch(event.target.value); setOpen(true); setHighlight(-1); onChange(null, null); }}
+      onKeyDown={event => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault(); setOpen(true);
+          setHighlight(previous => options.length ? (event.key === "ArrowDown" ? Math.min(previous + 1, options.length - 1) : previous <= 0 ? options.length - 1 : previous - 1) : -1);
+        } else if (event.key === "Enter" && open) {
+          event.preventDefault();
+          if (options[highlight]) choose(options[highlight]);
+        } else if (event.key === "Escape") {
+          event.preventDefault(); setOpen(false); setSearch(null); setHighlight(-1);
+        }
+      }} />
+    {open && <div id={`${id}-options`} role="listbox" aria-label={`Pilihan ${label.toLowerCase()}`}
+      style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, maxHeight: "240px", overflowY: "auto", background: "var(--input-bg)", border: "1px solid var(--border-color)", borderRadius: "4px" }}>
+      {options.map((item, index) => <div key={item.id} id={`${id}-option-${item.id}`} role="option" aria-selected={String(item.id) === String(value)}
+        style={{ padding: "0.65rem", cursor: "pointer", background: highlight === index ? "var(--border-color)" : undefined }}
+        ref={element => { if (element && highlight === index) element.scrollIntoView({ block: "nearest" }); }}
+        onMouseDown={event => event.preventDefault()} onClick={() => choose(item)}>{item.name}</div>)}
+      {!options.length && <p role="status" style={{ padding: "0.65rem" }}>{loading ? "Memuat pilihan…" : error ? "Pilihan gagal dimuat." : "Tidak ada pilihan yang cocok."}</p>}
+    </div>}
+    <small id={`${id}-help`}>{kind === 'symptom' ? 'Pilih gejala yang terlihat, misalnya Down atau Packet Loss.' : 'Pilih penyebab gangguan; gunakan “Belum diketahui” jika masih investigasi.'}</small>
+    {/^\s*SAP-/i.test(search || "") && <p role="alert">Teks ini terlihat seperti CID. Gunakan kolom Cari &amp; pilih CID layanan di atas.</p>}
     {loading && <p role="status">Memuat pilihan {label.toLowerCase()}…</p>}
-    {!loading && !error && !search && !items.length && <p>Hubungi Admin untuk mengisi Master Data Trouble.</p>}
+    {!loading && !error && !items.length && <p>Hubungi Admin untuk mengisi Master Data Trouble.</p>}
     {error && <p role="alert">Master {label.toLowerCase()} gagal dimuat. Muat ulang halaman untuk mencoba lagi.</p>}
   </div>;
 }
