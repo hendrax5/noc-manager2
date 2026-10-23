@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),path=require('node:path'),http=require('node:http'),esbuild=require('esbuild'),{chromium}=require('playwright');
 (async()=>{
  const root=path.resolve(__dirname,'..'),posts=[];
- const result=await esbuild.build({stdin:{contents:"import React from 'react';import{createRoot}from'react-dom/client';import Settings from './app/settings/workflows/WorkflowPolicyClient';import Panel from './components/tickets/WorkPhasePanel';createRoot(document.getElementById('root')).render(<><Settings categories={[{id:7,name:'Investigasi',score:5}]} companies={['ION','SDC']}/><Panel ticketId={2}/></>);",resolveDir:root,loader:'jsx'},outdir:'out',bundle:true,write:false,loader:{'.js':'jsx'},jsx:'automatic',alias:{'@':root}});
+ const result=await esbuild.build({stdin:{contents:"import React from 'react';import{createRoot}from'react-dom/client';import Settings from './app/settings/workflows/WorkflowPolicyClient';import Panel from './components/tickets/WorkPhasePanel';createRoot(document.getElementById('root')).render(<><Settings categories={[{id:7,name:'Investigasi',score:5}]} companies={['ION','SDC']}/><Panel ticketId={2} canOverride categories={[{id:7,name:'Investigasi'},{id:8,name:'Penanganan'}]}/></>);",resolveDir:root,loader:'jsx'},outdir:'out',bundle:true,write:false,loader:{'.js':'jsx'},jsx:'automatic',alias:{'@':root}});
  const server=http.createServer((req,res)=>{
  if(req.url==='/app.js'){res.setHeader('Content-Type','text/javascript');return res.end(result.outputFiles.find(f=>f.path.endsWith('.js')).text);}
  if(req.url.startsWith('/api/')){res.setHeader('Content-Type','application/json');if(req.method==='POST'){let data='';req.on('data',x=>data+=x);req.on('end',()=>{posts.push(JSON.parse(data));res.end('{"id":1}');});return;}return res.end(req.url.includes('/workflow')&&!req.url.endsWith('workflows')?JSON.stringify([{id:1,state:'Active',definition:{label:'Investigasi'},categorySnapshot:{name:'Investigasi'}}]):'[]');}
@@ -13,9 +13,11 @@ const assert=require('node:assert/strict'),path=require('node:path'),http=requir
  await page.getByRole('button',{name:'Publikasikan aturan'}).click();await page.waitForFunction(()=>true);await page.waitForTimeout(100);
  assert.equal(posts[0].publish,true);assert.equal(posts[0].phases.length,2);assert.equal(posts[0].executorCompany,'SDC');
  assert.ok(await page.getByRole('region',{name:'Fase pekerjaan'}).isVisible());
+ await page.getByText('Koreksi kategori fase',{exact:true}).click();await page.getByLabel('Kategori pengganti',{exact:true}).selectOption('8');await page.getByLabel('Alasan koreksi',{exact:true}).fill('Penanganan aktual sesuai penugasan');await page.getByLabel('Hasil Investigasi',{exact:true}).fill('Sinyal sudah terverifikasi');const request=page.waitForRequest(r=>r.url().includes('/api/tickets/2/workflow')&&r.method()==='POST');const navigation=page.waitForEvent('load');await page.getByRole('button',{name:'Selesaikan fase',exact:true}).click();const sent=(await request).postDataJSON();assert.equal(sent.overrideCategoryId,8);assert.equal(sent.reason,'Penanganan aktual sesuai penugasan');await navigation;
  await page.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
  const axeResult=await page.evaluate(async()=>window.axe.run({runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}));assert.deepEqual(axeResult.violations.map(v=>v.id),[]);
  await page.setViewportSize({width:320,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  console.log('PASS workflow settings preview, routing tuple, phase categories/publish payload, phase panel and320px; synthetic API.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
