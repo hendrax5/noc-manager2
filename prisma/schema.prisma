@@ -74,6 +74,7 @@ model Ticket {
   description  String
   status       String     @default("New")
   ticketType   String     @default("Incident") // Incident | Problem | Change | Request
+  workflowPhases TicketPhaseExecution[]
   workType     String     @default("Unclassified") // Independent operational classification
   serviceWorkTypeId Int?
   serviceWorkTypeLabel String?
@@ -233,6 +234,7 @@ model JobCategory {
   score    Int      @default(0)
   active   Boolean  @default(true)
   tickets  Ticket[]
+  workflowPhases WorkflowPhaseDefinition[]
 }
 
 model ActionItem {
@@ -523,4 +525,61 @@ model ServiceIdentifier {
   createdAt      DateTime @default(now())
 
   @@index([serviceId])
+}
+
+
+// Published workflow definitions are immutable. Company names refer to configured routing identities.
+model WorkflowPolicyVersion {
+  id Int @id @default(autoincrement())
+  name String
+  workType String
+  operation String?
+  originCompany String?
+  executorCompany String?
+  departmentId Int?
+  roleId Int?
+  effectiveFrom DateTime
+  effectiveTo DateTime?
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  createdBy Int
+  phases WorkflowPhaseDefinition[]
+  executions TicketPhaseExecution[]
+  @@index([workType, operation, effectiveFrom])
+}
+
+model WorkflowPhaseDefinition {
+  id Int @id @default(autoincrement())
+  policyVersionId Int
+  policy WorkflowPolicyVersion @relation(fields: [policyVersionId], references: [id], onDelete: Restrict)
+  key String
+  label String
+  ordinal Int
+  jobCategoryId Int
+  category JobCategory @relation(fields: [jobCategoryId], references: [id], onDelete: Restrict)
+  executions TicketPhaseExecution[]
+  @@unique([policyVersionId, key])
+  @@unique([policyVersionId, ordinal])
+}
+
+model TicketPhaseExecution {
+  id Int @id @default(autoincrement())
+  ticketId Int
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  policyVersionId Int
+  policy WorkflowPolicyVersion @relation(fields: [policyVersionId], references: [id], onDelete: Restrict)
+  definitionId Int
+  definition WorkflowPhaseDefinition @relation(fields: [definitionId], references: [id], onDelete: Restrict)
+  ordinal Int
+  state String @default("Pending")
+  assigneeId Int?
+  completedBy Int?
+  startedAt DateTime?
+  completedAt DateTime?
+  completionKey String? @unique
+  evidence String?
+  categorySnapshot Json
+  routingSnapshot Json
+  @@unique([ticketId, ordinal])
+  @@index([completedBy, completedAt])
 }
