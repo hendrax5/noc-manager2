@@ -1,3 +1,6 @@
+import { workflowFlags } from '@/lib/workflows/flags';
+import { resolveWorkflow, workflowContext, WorkflowError } from '@/lib/workflows/policy';
+import { initializeTicketWorkflow, assertWorkflowResolved } from '@/lib/workflows/ticketWorkflow';
 import { prepareServiceWork, applyServiceWork, serviceWorkInputChanged, ServiceWorkError } from '@/lib/tickets/serviceWork';
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -42,6 +45,7 @@ export async function PATCH(req, { params }) {
       );
     }
 
+    const phasesEnabled = (await workflowFlags()).work_phase_enabled;
     const result = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${id} FOR UPDATE`;
     const oldTicket = await tx.ticket.findUnique({
@@ -330,6 +334,13 @@ export async function PATCH(req, { params }) {
     Object.assign(ticketData, classification.data);
     Object.assign(ticketData, (await prepareServiceWork(tx, body, oldTicket)).data);
     const effectiveTicket = { ...oldTicket, ...ticketData, services: classification.serviceIds === null ? oldTicket.services : classification.serviceIds.map(id => ({id})) };
+    const phaseCount = phasesEnabled ? await tx.ticketPhaseExecution.count({where:{ticketId:id}}) : 0;
+    if (phaseCount && (nextStatus === 'Resolved' || nextStatus === 'Closed')) await assertWorkflowResolved(tx,id);
+    if (phaseCount && body.jobCategoryId !== undefined && Number(body.jobCategoryId)!==oldTicket.jobCategoryId) {
+      throw new WorkflowError('Kategori mengikuti fase. Gunakan override pada penyelesaian fase.',409);
+    }
+    if (phaseCount && ['workType','serviceWorkTypeId','departmentId'].some(key => body[key]!==undefined && String(body[key])!==String(oldTicket[key]))) throw new WorkflowError('Workflow aktif tidak dapat diganti. Buat tiket baru untuk pekerjaan berbeda.',409);
+    if (phaseCount && body.customData && ['Order Origin','Executing Vendor'].some(key => (body.customData[key]||null)!==(oldTicket.customData?.[key]||null))) throw new WorkflowError('Routing workflow aktif tidak dapat diganti.',409);
     if (effectiveTicket.workType === "ServiceWork" && nextStatus === "Closed" && !effectiveTicket.serviceChange?.appliedAt) throw new ServiceWorkError("Resolve pekerjaan layanan sebelum menutup tiket.");
     if (effectiveTicket.workType === "ServiceWork" && nextStatus === "Resolved") {
       const application = await applyServiceWork(tx, effectiveTicket, userId);
@@ -372,7 +383,7 @@ export async function PATCH(req, { params }) {
         !newlyResolved &&
         Boolean(explicitCategoryId) &&
         oldTicket.jobCategoryId !== explicitCategoryId;
-      if (explicitCategoryId && (newlyResolved || categoryAppliedWhileResolved)) {
+      if (!phaseCount && explicitCategoryId && (newlyResolved || categoryAppliedWhileResolved)) {
         ticketData.jobCategoryId = explicitCategoryId;
         const cat = await tx.jobCategory.findUnique({
           where: { id: ticketData.jobCategoryId },
@@ -420,6 +431,15 @@ export async function PATCH(req, { params }) {
       },
     });
 
+    if (phasesEnabled && ticket.assigneeId && !['Resolved','Closed'].includes(nextStatus)) {
+      if (phaseCount) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:ticket.assigneeId}});
+      else if (body.assigneeId !== undefined) {
+        const assigned=await tx.user.findUnique({where:{id:ticket.assigneeId},select:{roleId:true}});
+        const policies=await tx.workflowPolicyVersion.findMany({where:{publishedAt:{not:null}},include:{phases:{include:{category:true},orderBy:{ordinal:'asc'}}}});
+        const workflow=resolveWorkflow({...workflowContext(ticket),roleId:assigned?.roleId,policies});
+        if(workflow) await initializeTicketWorkflow(tx,{ticketId:id,policyVersionId:workflow.policyVersionId,actorId:userId});
+      }
+    }
     return { ticket, oldTicket, nextStatus };
     }, { timeout: 20000 });
     if (result instanceof Response) return result;
@@ -445,6 +465,7 @@ export async function PATCH(req, { params }) {
 
     return NextResponse.json(ticket);
   } catch (error) {
+    if (error instanceof WorkflowError) return NextResponse.json({error:error.message},{status:error.status});
     if (error instanceof ServiceWorkError) return NextResponse.json({ error: error.message }, { status: error.status });
     if (error instanceof TicketClassificationError) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ error: error.message }, { status: 500 });

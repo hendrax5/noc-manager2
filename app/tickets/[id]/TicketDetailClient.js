@@ -1,4 +1,5 @@
 "use client";
+import WorkPhasePanel from "@/components/tickets/WorkPhasePanel";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -476,6 +477,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             <p style={{ margin: '0 0 1rem 0' }}>Dear NOC,</p>
             {!editingTicket && <p>Jenis pekerjaan: <strong>{ticket.serviceWorkTypeLabel || WORK_TYPE_LABELS[ticket.workType] || "Belum diklasifikasikan"}</strong>{["Installation", "ServiceWork"].includes(ticket.workType) && ticket.sapReference ? ` / SAP: ${ticket.sapReference}` : ""}{ticket.workType === "Trouble" ? ` / Gejala: ${ticket.symptomLabel || "—"} / Penyebab: ${ticket.causeLabel || "—"}` : ""}</p>}
             <ServiceWorkSummary ticket={ticket} />
+            <WorkPhasePanel ticketId={ticket.id} />
             {editingTicket ? (
               <div>
                 {!ticket.serviceChange?.appliedAt ? <>

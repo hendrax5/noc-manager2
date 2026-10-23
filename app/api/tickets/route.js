@@ -1,3 +1,6 @@
+import { workflowFlags } from '@/lib/workflows/flags';
+import { resolveWorkflow, workflowContext, WorkflowError } from '@/lib/workflows/policy';
+import { initializeTicketWorkflow } from '@/lib/workflows/ticketWorkflow';
 import { prepareServiceWork, ServiceWorkError } from '@/lib/tickets/serviceWork';
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -149,7 +152,9 @@ export async function POST(req) {
       };
     }
 
-    const ticket = await prisma.ticket.create({
+    const phasesEnabled = (await workflowFlags()).work_phase_enabled;
+    const ticket = await prisma.$transaction(async tx => {
+      const created = await tx.ticket.create({
       data: ticketData,
       include: {
         assignee: { select: { email: true, name: true } },
@@ -157,6 +162,14 @@ export async function POST(req) {
       },
     });
 
+      if (phasesEnabled && created.assigneeId) {
+        const assigned = await tx.user.findUnique({where:{id:created.assigneeId},select:{roleId:true}});
+        const policies = await tx.workflowPolicyVersion.findMany({where:{publishedAt:{not:null}},include:{phases:{include:{category:true},orderBy:{ordinal:'asc'}}}});
+        const workflow = resolveWorkflow({...workflowContext(created),roleId:assigned?.roleId,policies});
+        if (workflow) await initializeTicketWorkflow(tx,{ticketId:created.id,policyVersionId:workflow.policyVersionId,actorId:userId});
+      }
+      return created;
+    });
     try { await linkKnownCircuit(prisma,ticket.id); } catch { console.warn('Circuit CID link deferred; ticket retained for Inventory review.'); }
     const emails = [];
     if (ticket.assignee?.email) emails.push(ticket.assignee.email);
@@ -174,6 +187,7 @@ export async function POST(req) {
 
     return NextResponse.json(ticket, { status: 201 });
   } catch (error) {
+    if (error instanceof WorkflowError) return NextResponse.json({error:error.message},{status:error.status});
     if (error instanceof ServiceWorkError) return NextResponse.json({ error: error.message }, { status: error.status });
     if (error instanceof TicketClassificationError) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ error: error.message }, { status: 500 });

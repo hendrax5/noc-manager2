@@ -128,6 +128,7 @@ function NavbarContent({ appName = "NOC Management", appVersion = "1.0.0" }) {
                   <Link href="/settings/trouble-masters" className={pathname.startsWith("/settings/trouble-masters") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Master Data Trouble</Link>
                 )}
                 {canManageServiceWork && <Link href="/settings/service-work-types" className={pathname.startsWith('/settings/service-work-types') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Jenis Pekerjaan Layanan</Link>}
+                {(session?.user?.role === 'Admin' || session?.user?.permissions?.includes('manage_workflows')) && <Link href="/settings/workflows" onClick={() => setIsMobileMenuOpen(false)}>Workflow pekerjaan</Link>}
                 {canManageSettings && (
                   <Link href="/settings" className={pathname === "/settings" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>System Settings</Link>
                 )}

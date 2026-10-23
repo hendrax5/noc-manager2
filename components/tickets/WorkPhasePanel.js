@@ -1,0 +1,10 @@
+'use client';
+import { useEffect, useState } from 'react';
+export default function WorkPhasePanel({ticketId}){
+ const [rows,setRows]=useState([]),[error,setError]=useState(''),[evidence,setEvidence]=useState(''),[busy,setBusy]=useState(false);
+ useEffect(()=>{let active=true;fetch('/api/tickets/'+ticketId+'/workflow').then(async r=>{if(r.status===404)return [];if(!r.ok)throw new Error('Fase gagal dimuat.');return r.json();}).then(r=>{if(active)setRows(r);}).catch(e=>{if(active)setError(e.message);});return()=>{active=false;};},[ticketId]);
+ if(!rows.length&&!error)return null;
+ const current=rows.find(r=>r.state==='Active');
+ async function complete(e){e.preventDefault();setBusy(true);setError('');try{const r=await fetch('/api/tickets/'+ticketId+'/workflow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({executionId:current.id,idempotencyKey:'phase-complete-'+current.id,evidence})});const b=await r.json();if(!r.ok)throw new Error(b.error);window.location.reload();}catch(e){setError(e.message);}finally{setBusy(false);}}
+ return <section className="card" aria-label="Fase pekerjaan"><h2>Fase pekerjaan</h2>{error&&<p role="alert">{error}</p>}<ol>{rows.map(r=><li key={r.id}>{r.definition.label} · {r.state} · {r.categorySnapshot.name}{r.evidence&&<p>{r.evidence}</p>}</li>)}</ol>{current&&<form onSubmit={complete}><label htmlFor={'phase-result-'+ticketId}>Hasil {current.definition.label}</label><textarea id={'phase-result-'+ticketId} required maxLength={4000} value={evidence} onChange={e=>setEvidence(e.target.value)}/><button disabled={busy} type="submit">{busy?'Menyimpan…':'Selesaikan fase'}</button></form>}</section>;
+}
