@@ -12,7 +12,7 @@ function templateFields(template) {
   } catch { return []; }
 }
 
-export default function ServiceWorkFields({ value, onChange, services = [], serviceTemplates = [], onTypeChange }) {
+export default function ServiceWorkFields({ value, onChange, services = [], serviceTemplates = [], onTypeChange, hideTypePicker = false }) {
   const id = useId();
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +44,7 @@ export default function ServiceWorkFields({ value, onChange, services = [], serv
     <TicketServicePicker services={services} selectedIds={selectedIds} single onChange={serviceIds => onChange({ serviceIds, serviceChange: {} })} />
     <p style={{ margin: 0 }}>Satu CID per pekerjaan. Untuk circuit baru, <a href="/assets/new?ticketSetup=1" target="_blank" rel="noopener noreferrer">daftarkan CID dan lanjutkan tiket instalasi di tab baru</a>.</p>
     {selectedIds.length > 1 && <p role="alert">Pilih tepat satu CID untuk pekerjaan layanan.</p>}
+    {!hideTypePicker && <>
     <label htmlFor={`${id}-type`}>Jenis pekerjaan layanan *</label>
     <select id={`${id}-type`} required style={inputStyle} value={value.serviceWorkTypeId || ""} onChange={event => {
       const next = types.find(item => String(item.id) === event.target.value);
@@ -54,6 +55,7 @@ export default function ServiceWorkFields({ value, onChange, services = [], serv
       {value.serviceWorkTypeId && !type && <option value={value.serviceWorkTypeId} disabled>{value.serviceWorkTypeLabel || "Jenis tersimpan"} (tidak tersedia)</option>}
       {types.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
     </select>
+    </>}
     {error && <p role="alert">{error}</p>}
     {!loading && !error && !types.length && <p role="alert">Belum ada jenis pekerjaan aktif. Hubungi Admin untuk mengatur master.</p>}
     {service && <div style={{ background: "var(--hover-bg)", padding: "0.75rem", borderRadius: "4px" }}>

@@ -31,7 +31,8 @@ async function main() {
     if(req.url.startsWith('/api/trouble-masters?')){
       const kind=new URL(req.url,'http://localhost').searchParams.get('kind');masterRequests.push(kind);
       res.end(JSON.stringify(kind==='symptom' ? [{id:11,name:'Link down',description:'No connectivity',active:true},{id:12,name:'Packet loss',active:true}] : [{id:21,name:'Belum diketahui',active:true},{id:22,name:'FO CUT',description:'Fiber cable cut',active:true}]));
-    } else if(req.url==='/api/queues')res.end('[]');
+    } else if(req.url==='/api/service-work-types')res.end('[]');
+    else if(req.url==='/api/queues')res.end('[]');
     else if(req.url==='/api/tickets' && req.method==='POST'){
       let body='';req.on('data',data=>body+=data);req.on('end',()=>{posts.push(JSON.parse(body));res.end('{"id":100}');});
     } else if(req.url==='/app.js'){res.setHeader('Content-Type','text/javascript');res.end(js);}
