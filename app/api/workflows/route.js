@@ -25,7 +25,7 @@ export async function POST(req){
  for(const [field,model] of [['departmentId','department'],['roleId','role']])if(data[field]&&(!Number.isSafeInteger(data[field])||!(await prisma[model].findUnique({where:{id:data[field]}}))))throw new WorkflowError('Departemen/peran tidak valid.');
  validateWorkflowPolicy({...data,phases},{companyNames:companies});
  const result=await prisma.$transaction(async tx=>{
- await tx.$queryRaw`SELECT pg_advisory_xact_lock(761234001)`;
+ await tx.$queryRaw`SELECT pg_advisory_xact_lock(761234001)::text`;
  if(b.publish){
  const overlap=await tx.workflowPolicyVersion.findFirst({where:{workType:data.workType,operation:data.operation,originCompany:data.originCompany,executorCompany:data.executorCompany,departmentId:data.departmentId,roleId:data.roleId,publishedAt:{not:null},OR:[{effectiveTo:null},{effectiveTo:{gt:data.effectiveFrom}}]}});
  if(overlap){

@@ -1,7 +1,7 @@
 const fs=require('node:fs'),path=require('node:path'),{Client}=require('pg');
 const KEY='workflow_reporting_schema_v1';
 function validateMigration(sql){
- if(/\b(DROP|TRUNCATE|DELETE|UPDATE)\b|ALTER\s+COLUMN|RENAME\s+/i.test(sql))throw new Error('Migrasi destruktif ditolak.');
+ if(/\b(DROP|TRUNCATE)\b|(?:^|;)\s*(DELETE|UPDATE)\b|ALTER\s+COLUMN|RENAME\s+/i.test(sql.replace(/--[^\n]*/g,'')))throw new Error('Migrasi destruktif ditolak.');
  if(!sql.includes('CREATE TABLE'))throw new Error('Migrasi kosong.');
  return true;
 }

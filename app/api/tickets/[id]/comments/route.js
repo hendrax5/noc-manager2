@@ -1,3 +1,6 @@
+import {workflowFlags} from '@/lib/workflows/flags';
+import {WorkflowError} from '@/lib/workflows/policy';
+import {syncWorkflowAssignee} from '@/lib/workflows/ticketOwnership';
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -37,11 +40,17 @@ export async function POST(req, { params }) {
       };
     }
 
-    const purposeTicket = await prisma.ticket.findUnique({where:{id:ticketId},select:{purpose:true}});
-    if (purposeTicket?.purpose === 'PersonalMonthlyReport') return NextResponse.json({error:'Gunakan form Laporan Saya untuk mengirim laporan terstruktur.'},{status:403});
-    const comment = await prisma.comment.create({ data: commentData });
+    const enabled=(await workflowFlags()).work_phase_enabled;
+    const {comment,ticket}=await prisma.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${ticketId} FOR UPDATE`;
+    const purposeTicket = await tx.ticket.findUnique({where:{id:ticketId}});
+    if(!purposeTicket)throw new WorkflowError('Tiket tidak ditemukan.',404);
+    const phaseCount=await tx.ticketPhaseExecution.count({where:{ticketId}});
+    if(phaseCount&&replyCustomData&&['Order Origin','Executing Vendor'].some(k=>Object.hasOwn(replyCustomData,k)&&(replyCustomData[k]||null)!==(purposeTicket.customData?.[k]||null)))throw new WorkflowError('Routing workflow tidak dapat diganti melalui reply.',409);
+    if (purposeTicket?.purpose === 'PersonalMonthlyReport') throw new WorkflowError('Gunakan form Laporan Saya.',403);
+    const comment = await tx.comment.create({ data: commentData });
 
-    const ticket = await prisma.ticket.findUnique({
+    const ticket = await tx.ticket.findUnique({
       where: { id: ticketId },
       select: {
         id: true,
@@ -89,7 +98,7 @@ export async function POST(req, { params }) {
 
           const prev = normalizeStatus(ticket.status);
           if (prev === "Pending" || prev === "Finish") {
-            const bestAssignee = await pickLeastBusyAssignee(prisma, {
+            const bestAssignee = await pickLeastBusyAssignee(tx, {
               departmentId: ticket.departmentId,
             });
             if (bestAssignee && bestAssignee !== ticket.assigneeId) {
@@ -144,7 +153,7 @@ export async function POST(req, { params }) {
       ticketUpdateData = {
         status: newStatus,
         assigneeId: newAssigneeId,
-        ...(resetJobCategory && { jobCategoryId: null }),
+        ...(resetJobCategory && !phaseCount && { jobCategoryId: null }),
         ...(nextSlaDeadlineUpdate !== undefined && { nextSlaDeadline: nextSlaDeadlineUpdate }),
         ...(enableSlaUpdate !== undefined && { enableSla: enableSlaUpdate }),
         ...(slaMinsUpdate !== undefined && { slaTimerMins: slaMinsUpdate }),
@@ -173,12 +182,13 @@ export async function POST(req, { params }) {
     }
 
     if (Object.keys(ticketUpdateData).length > 0) {
-      await prisma.ticket.update({
+      const changedTicket = await tx.ticket.update({
         where: { id: ticketId },
         data: ticketUpdateData,
       });
+      if((enabled || phaseCount) && newAssigneeId!==ticket.assigneeId)await syncWorkflowAssignee(tx,changedTicket,userId);
       if (replyCustomData && Object.keys(replyCustomData).length > 0) {
-        await prisma.ticketHistory.create({
+        await tx.ticketHistory.create({
           data: {
             ticketId,
             action: `Parameters updated via reply [${Object.keys(replyCustomData).join(", ")}]`,
@@ -188,13 +198,15 @@ export async function POST(req, { params }) {
       }
     }
 
-    await prisma.ticketHistory.createMany({
+    await tx.ticketHistory.createMany({
       data: [
         { ticketId, action: transitionReason, actorId: userId },
         { ticketId, ...replyPointsLog({ actorId: userId, isPublic: commentData.isPublic, commentId: comment.id }) },
       ],
     });
 
+    return {comment,ticket};
+    },{timeout:20000});
     if (commentData.isPublic) {
       const { emails, ticket: full } = await collectTicketNotifyEmails(prisma, ticketId);
       await notifyTicketEvent({
@@ -211,6 +223,7 @@ export async function POST(req, { params }) {
 
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {
+    if(error instanceof WorkflowError)return NextResponse.json({error:error.message},{status:error.status});
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

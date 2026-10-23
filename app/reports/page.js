@@ -14,7 +14,7 @@ export default async function ReportsPage({ searchParams }) {
   const params = await searchParams;
   if ((await workflowFlags()).monthly_evaluation_mode !== 'off' && params.legacy !== '1') redirect('/reports/evaluations');
   const { user } = session;
-  user.reportScopeEnforced = (await workflowFlags()).structured_daily_enabled;
+  user.reportScopeEnforced = (await workflowFlags()).privacy_enforced;
   if (user.reportScopeEnforced && user.role !== "Admin") redirect("/reports/evaluations");
   if (!canViewAllPerformance(user)) {
     redirect(`/reports/${user.id}`);

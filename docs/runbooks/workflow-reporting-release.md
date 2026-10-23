@@ -11,7 +11,7 @@
 9. Pilot satu periode berjalan berdampingan poin lama. Aktivasi official setelah review hasil dan persetujuan kebijakan.
 
 ## Restore / rollback
-Simpan image sebelumnya dan compose override/rollback.sh executable sebelum deploy. Jika smoke gagal, kembalikan flags sebelumnya dan image lama. Skema additive tetap. Backup restore hanya setelah korupsi terbukti dan approval karena transaksi baru dapat hilang.
+Simpan image sebelumnya dan compose override/rollback.sh executable sebelum deploy. Sebelum aktivasi dan sebelum ada data baru, smoke gagal boleh kembali ke image lama. Setelah ada arsip/fase baru, rollback wajib memakai image compatibility yang mempertahankan guard privacy/purpose dan client skema baru; matikan pembuatan fitur melalui flag, jangan memakai image436515c mentah. Privacy tetap enforced berdasarkan marker skema walaupun flag OFF. Skema additive tetap. Backup restore hanya setelah korupsi terbukti dan approval karena transaksi baru dapat hilang.
 Periksa protected counts customer/service/identifier/BFI/company sebelum-sesudah, container image/restart, local/domain HTTP. Tiket dapat bertambah karena aktivitas nyata; bukan alasan restore database.
 
 ## Konfigurasi

@@ -16,6 +16,7 @@ export async function POST(req, { params }) {
     const ticketId = parseInt(resolvedParams.id);
 
     const ticket = await prisma.ticket.findUnique({ where: { id: ticketId } });
+    if (ticket?.purpose === "PersonalMonthlyReport") return NextResponse.json({error:"Arsip personal tidak memakai SLA."},{status:403});
     if (!ticket) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     if (!ticket.enableSla) {

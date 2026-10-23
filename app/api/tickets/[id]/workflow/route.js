@@ -8,7 +8,7 @@ import { canAccessPersonalTicket } from '@/lib/tickets/personalCategories';
 async function access(params){
  const session=await getServerSession(authOptions);
  if(!session)return {error:NextResponse.json({error:'Unauthorized'},{status:401})};
- if(!(await workflowFlags()).work_phase_enabled)return {error:NextResponse.json({error:'Workflow belum aktif.'},{status:404})};
+
  const {id}=await params;const ticket=await prisma.ticket.findUnique({where:{id:Number(id)},include:{jobCategory:true}});
  if(!ticket||!canAccessPersonalTicket(session.user,ticket))return {error:NextResponse.json({error:'Not found'},{status:404})};
  return {session,ticket};

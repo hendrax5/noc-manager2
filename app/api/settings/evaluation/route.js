@@ -40,7 +40,7 @@ export async function POST(req){
  const p=validateEvaluationPolicy({weights:b.weights,targetUnits:Number(b.targetUnits),categoryWeights:b.categoryWeights});
  if(!b.rubric||['quality','timeliness'].some(k=>typeof b.rubric[k]!=='string'||!b.rubric[k].trim()||b.rubric[k].length>4000))throw new WorkflowError('Rubrik kualitas dan waktu wajib diisi.');
  for(const id of Object.keys(b.categoryWeights||{}))if(!await tx.jobCategory.findFirst({where:{id:positive(id),active:true}}))throw new WorkflowError('Kategori kompleksitas harus aktif.');
- await tx.$queryRaw`SELECT pg_advisory_xact_lock(761234003)`;
+ await tx.$queryRaw`SELECT pg_advisory_xact_lock(761234003)::text`;
  const existing=await tx.evaluationPolicyVersion.findUnique({where:{departmentId_roleId_company_effectiveMonth:{departmentId,roleId,company:b.company,effectiveMonth:b.effectiveMonth}}});
  const data={departmentId,roleId,company:b.company,effectiveMonth:b.effectiveMonth,weights:p.weights,targetUnits:p.targetUnits,categoryWeights:p.categoryWeights||{},rubric:b.rubric,publishedAt:b.publish?new Date():null,createdBy:actorId};
  if(existing?.publishedAt)throw new WorkflowError('Kebijakan published tidak dapat diubah. Buat versi bulan berikutnya.',409);

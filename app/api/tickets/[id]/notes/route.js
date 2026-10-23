@@ -1,3 +1,4 @@
+import {isMonthlyArchive} from '@/lib/reports/monthlyArchive';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
@@ -13,6 +14,7 @@ export async function GET(request, { params }) {
 
   const { id } = await params;
   const ticketId = parseInt(id);
+    if(await isMonthlyArchive(prisma,ticketId))return NextResponse.json({error:'Arsip personal dikelola melalui Laporan Saya.'},{status:403});
 
   const notes = await prisma.ticketNote.findMany({
     where: { ticketId },
@@ -35,6 +37,7 @@ export async function POST(request, { params }) {
 
   const { id } = await params;
   const ticketId = parseInt(id);
+    if(await isMonthlyArchive(prisma,ticketId))return NextResponse.json({error:'Arsip personal dikelola melalui Laporan Saya.'},{status:403});
   const body = await request.json();
 
   const { content, noteType } = body;

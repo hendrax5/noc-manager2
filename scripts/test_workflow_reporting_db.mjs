@@ -6,9 +6,11 @@ import {reviewEvaluation,lockPeriod} from '../lib/reports/evaluationReview.js';
 const p=new PrismaClient();
 async function main(){
  if(process.env.WORKFLOW_TEST_DATABASE!=='isolated')throw new Error('Dedicated isolated test database required.');
- const dept=await p.department.create({data:{name:'NOC test'}}),role=await p.role.create({data:{name:'Staff test'}});
+ const dept=await p.department.create({data:{name:'NOC test'}}),role=await p.role.create({data:{name:'Staff',permissions:['manage_tickets','view_internal_notes']}});
  const user=await p.user.create({data:{email:'worker@example.invalid',name:'Worker',departmentId:dept.id,roleId:role.id}});
- const other=await p.user.create({data:{email:'manager@example.invalid',name:'Manager',departmentId:dept.id,roleId:role.id}});
+ const adminRole=await p.role.create({data:{name:'Admin'}});
+ const other=await p.user.create({data:{email:'manager@example.invalid',name:'Manager',departmentId:dept.id,roleId:adminRole.id}});
+ const outsider=await p.user.create({data:{email:'outsider@example.invalid',name:'Outsider',departmentId:dept.id,roleId:role.id}});
  const cat=await p.jobCategory.create({data:{name:'Test phase',score:5}});
  const policy=await p.workflowPolicyVersion.create({data:{name:'Test workflow',workType:'Trouble',effectiveFrom:new Date('2026-01-01'),publishedAt:new Date(),createdBy:other.id,phases:{create:[{key:'investigate',label:'Investigasi',ordinal:0,jobCategoryId:cat.id},{key:'verify',label:'Verifikasi',ordinal:1,jobCategoryId:cat.id}]}}});
  const ticket=await p.ticket.create({data:{title:'Isolated test',description:'Test only',departmentId:dept.id,assigneeId:user.id,customData:{'Order Origin':'ION','Executing Vendor':'SDC'}}});
@@ -34,6 +36,12 @@ async function main(){
  await p.$transaction(tx=>reviewEvaluation(tx,{evaluationId:evaluation.id,actor:{id:other.id,role:'Manager'},scope:{userIds:[user.id]},expectedRevision:1,decision:'approve',reason:'Evidence verified'}));
  await p.$transaction(tx=>lockPeriod(tx,{monthKey:date.slice(0,7),actor:{id:other.id,role:'Admin'},scope:{userIds:[user.id]}}));
  assert.ok((await p.monthlyEvaluation.findUnique({where:{id:evaluation.id}})).lockedAt);
+ const unfinished=await p.ticket.create({data:{title:'Unfinished work',description:'Test only',departmentId:dept.id,assigneeId:user.id}});
+ await p.$transaction(tx=>initializeTicketWorkflow(tx,{ticketId:unfinished.id,policyVersionId:policy.id,actorId:user.id}));
+ await p.appSetting.create({data:{key:'workflow_reporting_schema_v1',value:'{"version":1}'}});
+ await p.appSetting.create({data:{key:'workflow_reporting_flags',value:JSON.stringify({work_phase_enabled:true,structured_daily_enabled:true,monthly_evaluation_mode:'simulation'})}});
+ const archive=await p.monthlyReportContainer.findFirst();
+ console.log(JSON.stringify({qaIds:{worker:user.id,admin:other.id,outsider:outsider.id,archive:archive.ticketId,unfinished:unfinished.id}}));
  console.log('PASS isolated PostgreSQL: concurrent phase initialize/complete, single point award, phase rollback, concurrent daily one container/reply, daily rollback, review/lock.');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>p.$disconnect());

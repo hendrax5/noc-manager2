@@ -22,6 +22,7 @@ export async function POST(req, { params }) {
       where = { trackingId: rawId };
     }
 
+    where = {...where,purpose:{not:"PersonalMonthlyReport"}};
     const body = await req.json();
     const score = parseInt(body.score, 10);
     const comment = body.comment ? String(body.comment).slice(0, 1000) : null;

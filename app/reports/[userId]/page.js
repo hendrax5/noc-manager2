@@ -32,7 +32,7 @@ export default async function UserReportDetail({ params, searchParams }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
-  session.user.reportScopeEnforced = (await workflowFlags()).structured_daily_enabled;
+  session.user.reportScopeEnforced = (await workflowFlags()).privacy_enforced;
   const resolvedParams = await params;
   const targetUserId = parseInt(resolvedParams.userId, 10);
   if (!Number.isInteger(targetUserId)) {

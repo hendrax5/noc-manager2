@@ -12,7 +12,7 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    session.user.reportScopeEnforced = (await workflowFlags()).structured_daily_enabled;
+    session.user.reportScopeEnforced = (await workflowFlags()).privacy_enforced;
     const resolvedParams = await params;
     const targetUserId = parseInt(resolvedParams.userId);
     if (isNaN(targetUserId)) {

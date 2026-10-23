@@ -13,7 +13,7 @@ export default function EvaluationTable({initialMonth}){
  {r.evidence?.activities?.map(a=><p key={a.source+a.sourceId}>{a.source} #{a.sourceId}: {a.result} · bobot {a.weight??'belum diatur'} · {a.review?.reason||'Belum direview'}</p>)}
  {data.canReview&&r.userId!==data.currentUserId&&<><button disabled={busy} onClick={()=>send('/api/reports/evaluations?month='+month,'POST',{userId:r.userId,expectedRevision:r.revision||0,...(r.lockedAt?{reason:window.prompt('Alasan membuat revisi baru:')||''}:{})})}>Hitung dan simpan revisi</button>
  {r.id&&!r.lockedAt&&r.reviewState!=='reviewed'&&<button disabled={busy||r.status!=='ready'} onClick={()=>{const reason=window.prompt('Alasan persetujuan setelah memeriksa bukti:');if(reason)send('/api/reports/evaluations/'+r.id+'?month='+month,'PATCH',{expectedRevision:r.revision,decision:'approve',reason});}}>Setujui evaluasi</button>}
- {r.id&&r.reviewState==='reviewed'&&!r.lockedAt&&<button disabled={busy} onClick={()=>send('/api/reports/evaluations/'+r.id+'?month='+month,'POST',{})}>Kunci evaluasi</button>}
+ {r.id&&r.reviewState==='reviewed'&&!r.lockedAt&&<button disabled={busy} onClick={()=>send('/api/reports/evaluations/'+r.id+'?month='+month,'POST',{expectedRevision:r.revision})}>Kunci evaluasi</button>}
  {r.candidates?.map(c=><EvidenceReview key={c.source+c.sourceId} candidate={c} row={r} month={month} categories={data.categories} busy={busy} send={send}/>)}
  <ContextForm row={r} month={month} busy={busy} send={send}/></>}
  </details></td></tr>)}</tbody></table></div>{!rows.length&&<p>Belum ada anggota dalam cakupan ini.</p>}</>}

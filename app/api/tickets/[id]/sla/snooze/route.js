@@ -1,3 +1,4 @@
+import {isMonthlyArchive} from '@/lib/reports/monthlyArchive';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
@@ -12,6 +13,7 @@ export async function POST(req, { params }) {
 
     const resolvedParams = await params;
     const ticketId = parseInt(resolvedParams.id);
+    if(await isMonthlyArchive(prisma,ticketId))return NextResponse.json({error:'Arsip personal dikelola melalui Laporan Saya.'},{status:403});
     
     if (isNaN(ticketId)) {
       return NextResponse.json({ error: 'Invalid Ticket ID' }, { status: 400 });

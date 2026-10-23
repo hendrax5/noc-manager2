@@ -1,3 +1,4 @@
+import {assertTicketDeletionAllowed} from '@/lib/workflows/ticketOwnership';
 import { workflowFlags } from '@/lib/workflows/flags';
 import { resolveWorkflow, workflowContext, WorkflowError } from '@/lib/workflows/policy';
 import { initializeTicketWorkflow, assertWorkflowResolved } from '@/lib/workflows/ticketWorkflow';
@@ -335,7 +336,7 @@ export async function PATCH(req, { params }) {
     Object.assign(ticketData, classification.data);
     Object.assign(ticketData, (await prepareServiceWork(tx, body, oldTicket)).data);
     const effectiveTicket = { ...oldTicket, ...ticketData, services: classification.serviceIds === null ? oldTicket.services : classification.serviceIds.map(id => ({id})) };
-    const phaseCount = phasesEnabled ? await tx.ticketPhaseExecution.count({where:{ticketId:id}}) : 0;
+    const phaseCount = await tx.ticketPhaseExecution.count({where:{ticketId:id}});
     if (phaseCount && (nextStatus === 'Resolved' || nextStatus === 'Closed')) await assertWorkflowResolved(tx,id);
     if (phaseCount && body.jobCategoryId !== undefined && Number(body.jobCategoryId)!==oldTicket.jobCategoryId) {
       throw new WorkflowError('Kategori mengikuti fase. Gunakan override pada penyelesaian fase.',409);
@@ -435,7 +436,7 @@ export async function PATCH(req, { params }) {
     if (phasesEnabled && phaseCount && body.assigneeId === null) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:null}});
     if (phasesEnabled && ticket.assigneeId && !['Resolved','Closed'].includes(nextStatus)) {
       if (phaseCount) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:ticket.assigneeId}});
-      else if (body.assigneeId !== undefined) {
+      else if (body.assigneeId !== undefined || body.workType !== undefined || body.serviceWorkTypeId !== undefined) {
         const assigned=await tx.user.findUnique({where:{id:ticket.assigneeId},select:{roleId:true}});
         const policies=await tx.workflowPolicyVersion.findMany({where:{publishedAt:{not:null}},include:{phases:{include:{category:true},orderBy:{ordinal:'asc'}}}});
         const workflow=resolveWorkflow({...workflowContext(ticket),roleId:assigned?.roleId,policies});
@@ -503,19 +504,24 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
-    await prisma.ticketWatcher.deleteMany({ where: { ticketId: id } });
-    await prisma.ticketNote.deleteMany({ where: { ticketId: id } });
-    await prisma.comment.deleteMany({ where: { ticketId: id } });
-    await prisma.attachment.deleteMany({ where: { ticketId: id } });
-    await prisma.ticketHistory.deleteMany({ where: { ticketId: id } });
-    await prisma.actionItem.updateMany({
+    await prisma.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${id} FOR UPDATE`;
+    await assertTicketDeletionAllowed(tx,existing);
+    await tx.ticketWatcher.deleteMany({ where: { ticketId: id } });
+    await tx.ticketNote.deleteMany({ where: { ticketId: id } });
+    await tx.comment.deleteMany({ where: { ticketId: id } });
+    await tx.attachment.deleteMany({ where: { ticketId: id } });
+    await tx.ticketHistory.deleteMany({ where: { ticketId: id } });
+    await tx.actionItem.updateMany({
       where: { linkedTicketId: id },
       data: { linkedTicketId: null },
     });
-    await prisma.ticket.delete({ where: { id } });
+    await tx.ticket.delete({ where: { id } });
 
+    });
     return NextResponse.json({ message: "Deleted" });
   } catch (error) {
+    if (error instanceof WorkflowError) return NextResponse.json({error:error.message},{status:error.status});
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
