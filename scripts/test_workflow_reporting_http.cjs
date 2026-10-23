@@ -2,6 +2,7 @@ const assert=require('node:assert/strict'),{PrismaClient}=require('@prisma/clien
 const p=new PrismaClient();
 (async()=>{
  if(process.env.WORKFLOW_TEST_DATABASE!=='isolated')throw new Error('Isolated database required.');
+ await p.appSetting.update({where:{key:'workflow_reporting_flags'},data:{value:JSON.stringify({work_phase_enabled:true,structured_daily_enabled:true,monthly_evaluation_mode:'simulation'})}});
  const base=process.env.WORKFLOW_QA_ORIGIN||'http://noc-workflow-appqa:3000';
  for(let i=0;i<40;i++){try{if((await fetch(base+'/login')).status===200)break;}catch{}await new Promise(r=>setTimeout(r,500));}
  const outsider=await p.user.findUnique({where:{email:'outsider@example.invalid'}});

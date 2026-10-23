@@ -4,3 +4,5 @@
 .page button{min-height:var(--asset-control-min)}.item{margin-bottom:var(--asset-space-4)}
 .page table{width:100%;border-collapse:collapse}.page th,.page td{text-align:left;vertical-align:top;padding:var(--asset-space-2);border-bottom:var(--asset-divider-width) solid var(--border-color)}
 .page pre{white-space:pre-wrap;overflow-wrap:anywhere}.page section{margin-block:var(--asset-space-6)}
+
+.tableWrap{overflow-x:auto;max-width:100%}
