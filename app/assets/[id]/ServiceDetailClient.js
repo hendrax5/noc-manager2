@@ -1,4 +1,7 @@
 'use client';
+import {isBandwidthField,isPlaceholderField} from '@/lib/services/fields';
+import {isDarkFiber,isPairField,readPairCount} from '@/lib/services/productUnits';
+
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -405,10 +408,10 @@ export default function ServiceDetailClient({ service, session }) {
             <div className="bg-white-card scale-in" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
               {service.customData && Object.keys(service.customData).length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                   {Object.entries(service.customData).map(([key, val]) => (
+                   {Object.entries(service.customData).filter(([key])=>!isDarkFiber(service.template)||!isBandwidthField(key)).map(([key, val]) => (
                       <div key={key}>
-                         <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>{key}</div>
-                         <div style={{ fontSize: '1.05rem', color: 'var(--heading-color)', background: 'var(--hover-bg)', padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'monospace' }}>{val || '-'}</div>
+                         <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>{isPairField(key)?'Jumlah pair':key}</div>
+                         <div style={{ fontSize: '1.05rem', color: 'var(--heading-color)', background: 'var(--hover-bg)', padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'monospace' }}>{isDarkFiber(service.template)&&isPairField(key)?val+' pair':val || '-'}</div>
                       </div>
                    ))}
                 </div>
@@ -723,15 +726,15 @@ export default function ServiceDetailClient({ service, session }) {
                </div>
 
                <div style={{marginBottom:'1rem'}}>
-                 <label htmlFor="edit-service-capacity">Kapasitas layanan (Mbps)</label>
-                 <input id="edit-service-capacity" type="number" min="0.001" step="any" className="input-field" value={Object.hasOwn(editData.customData,'bandwidthMbps') ? editData.customData.bandwidthMbps ?? '' : readServiceBandwidthMbps(service) ?? ''} onChange={e => setEditData({ ...editData, customData: { ...editData.customData, bandwidthMbps: e.target.value === '' ? null : Number(e.target.value) } })} style={{width:'100%',padding:'0.8rem'}} />
+                 <label htmlFor="edit-service-capacity">{isDarkFiber(service.template)?'Jumlah pair':'Kapasitas layanan (Mbps)'}</label>
+                 <input id="edit-service-capacity" type="number" min={isDarkFiber(service.template)?1:0.001} step={isDarkFiber(service.template)?1:"any"} className="input-field" value={isDarkFiber(service.template)?editData.customData.pairCount??readPairCount(service)??1:Object.hasOwn(editData.customData,'bandwidthMbps') ? editData.customData.bandwidthMbps ?? '' : readServiceBandwidthMbps(service) ?? ''} onChange={e => setEditData({ ...editData, customData: { ...editData.customData, ...(isDarkFiber(service.template)?{pairCount:e.target.value===''?'':Number(e.target.value)}:{bandwidthMbps: e.target.value === '' ? null : Number(e.target.value)}) } })} style={{width:'100%',padding:'0.8rem'}} />
                  <small>Isi kapasitas saat ini sebelum membuat tiket Upgrade/Downgrade jika data lama belum memiliki satuan yang jelas.</small>
                </div>
                {templateFields.length > 0 && (
                  <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
                    <h4 style={{ margin: '0 0 1rem 0', color: 'var(--heading-color)' }}>Technical Parameters</h4>
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                     {templateFields.map((f, i) => (
+                     {templateFields.filter(f=>!isPlaceholderField(f.name)&&!isPairField(f.name)&&(!isDarkFiber(service.template)||!isBandwidthField(f.name))).map((f, i) => (
                        <div key={i}>
                          <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(--text-color)', fontSize: '0.85rem' }}>{f.name}</label>
                          <input 

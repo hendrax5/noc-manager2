@@ -1,4 +1,6 @@
 'use client';
+import {isDarkFiber,isPairField,readPairCount} from '@/lib/services/productUnits';
+
 
 import {minimumBandwidthGbps} from '@/lib/services/productBandwidth';
 import {isBandwidthField,isPlaceholderField} from '@/lib/services/fields';
@@ -38,7 +40,7 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
   const selectedTemplate = templates.find(t => t.id === parseInt(formData.templateId));
   const dynamicFields = selectedTemplate && selectedTemplate.fields ? (typeof selectedTemplate.fields === 'string' ? JSON.parse(selectedTemplate.fields) : selectedTemplate.fields) : [];
 
-  useEffect(()=>{if(minimumBandwidthGbps(selectedTemplate)===10&&!(Number(customData.bandwidthMbps)>=10000))setCustomData(d=>({...d,bandwidthMbps:10000}));},[formData.templateId]);
+  useEffect(()=>{if(isDarkFiber(selectedTemplate))setCustomData(d=>({...d,pairCount:readPairCount({customData:d})??1}));if(minimumBandwidthGbps(selectedTemplate)===10&&!(Number(customData.bandwidthMbps)>=10000))setCustomData(d=>({...d,bandwidthMbps:10000}));},[formData.templateId]);
   const handleHopChange = (index, field, value) => {
     const newHops = [...hops];
     newHops[index][field] = value;
@@ -164,8 +166,8 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
                   <small>Digunakan untuk menautkan trouble dan laporan SLA per layanan.</small>
                 </div>
                 <div>
-                  <label htmlFor="service-capacity" style={{display:'block',fontWeight:'bold',marginBottom:'0.5rem'}}>Bandwidth (Gbps)</label>
-                  <input id="service-capacity" type="number" min={minimumBandwidthGbps(selectedTemplate)} step="any" className="input-field" value={customData.bandwidthMbps==null?'':customData.bandwidthMbps/1000} onChange={e => setCustomData({...customData,bandwidthMbps:e.target.value === '' ? null : Number(e.target.value)*1000})} />
+                  <label htmlFor="service-capacity" style={{display:'block',fontWeight:'bold',marginBottom:'0.5rem'}}>{isDarkFiber(selectedTemplate)?'Jumlah pair':'Bandwidth (Gbps)'}</label>
+                  <input id="service-capacity" type="number" min={isDarkFiber(selectedTemplate)?1:minimumBandwidthGbps(selectedTemplate)} step={isDarkFiber(selectedTemplate)?1:"any"} className="input-field" value={isDarkFiber(selectedTemplate)?customData.pairCount??1:customData.bandwidthMbps==null?'':customData.bandwidthMbps/1000} onChange={e => setCustomData({...customData,...(isDarkFiber(selectedTemplate)?{pairCount:e.target.value===''?'':Number(e.target.value)}:{bandwidthMbps:e.target.value === '' ? null : Number(e.target.value)*1000})})} />
                   <small>Kapasitas awal untuk Inventory. Kapasitas tujuan dapat dilengkapi pada tiket instalasi.</small>
                 </div>
               </div>
@@ -185,7 +187,7 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                  {dynamicFields.filter(f=>!isBandwidthField(f.name)&&!isPlaceholderField(f.name)).map((f, i) => (
+                  {dynamicFields.filter(f=>!isBandwidthField(f.name)&&!isPlaceholderField(f.name)&&!isPairField(f.name)).map((f, i) => (
                     <div key={i} className="bg-white-card" style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
                       <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-color)' }}>{f.name}</label>
                       <input 

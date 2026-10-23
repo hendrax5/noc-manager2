@@ -1,3 +1,4 @@
+import {darkFiberData} from '@/lib/services/productUnits';
 import {openPortDefaultData,validateOpenPortData} from '@/lib/services/productBandwidth';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
@@ -45,7 +46,7 @@ export async function POST(request) {
 
     const { customerId, templateId, name, cid, status, customData, monthlyCost, currency, contractEnd, hops } = await request.json();
     const template=await prisma.serviceTemplate.findUnique({where:{id:parseInt(templateId)}});
-    const bandwidthData=openPortDefaultData(template,customData||{});validateOpenPortData(template,bandwidthData);
+    const bandwidthData=darkFiberData(template,openPortDefaultData(template,customData||{}));validateOpenPortData(template,bandwidthData);
     const service = await prisma.$transaction(async tx=>{
     await lockCircuitCodes(tx,[getServiceCid({cid,customData})]);
     const serviceCid=await checkServiceCid(tx,{cid,customData});
