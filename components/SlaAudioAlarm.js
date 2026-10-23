@@ -132,22 +132,22 @@ export default function SlaAudioAlarm() {
     <div style={{ position: 'fixed', bottom: '1rem', right: '1rem', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
       
       {isOpen && (
-        <div style={{ marginBottom: '0.5rem', background: 'white', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', width: '320px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', color: '#1f2937' }}>
-          <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '0.5rem' }}>Breaching Tickets</h4>
+        <div className="ui-static-5426012ce6" style={{width: '320px'}}>
+          <h4 className="ui-static-8af5b76c4d" >Breaching Tickets</h4>
           <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
             {breachingTickets.map(ticket => (
-              <div key={ticket.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', fontSize: '0.8rem', padding: '0.4rem', background: '#f9fafb', borderRadius: '4px' }}>
-                <div style={{ flex: 1, marginRight: '0.5rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  <Link href={`/tickets/${ticket.id}`} style={{ color: '#2563eb', textDecoration: 'none', fontWeight: 'bold' }}>
+              <div key={ticket.id} className="ui-static-347752c5aa" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div className="ui-static-5ed417d1fb" style={{flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                  <Link href={`/tickets/${ticket.id}`} className="ui-static-b674ec9d7d" style={{textDecoration: 'none'}}>
                     {ticket.trackingId}
                   </Link>
-                  <div style={{ fontSize: '0.7rem', color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div className="ui-static-c43e2a331a" style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
                     {ticket.title}
                   </div>
                 </div>
                 <button 
                   onClick={() => handleSnooze(ticket.id)}
-                  style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.3rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}
+                  className="ui-static-b00e0dab7c" style={{cursor: 'pointer'}}
                 >
                   Snooze 15m
                 </button>
@@ -159,9 +159,9 @@ export default function SlaAudioAlarm() {
 
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        style={{ background: '#ef4444', color: 'white', padding: '0.5rem 1rem', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', animation: isOpen ? 'none' : 'pulse 2s infinite', display: 'flex', alignItems: 'center', gap: '8px' }}
+        className="ui-static-d0da835da9" style={{cursor: 'pointer', animation: isOpen ? 'none' : 'pulse 2s infinite', display: 'flex', alignItems: 'center'}}
       >
-        🚨 SLA Alarm Triggered ({breachingTickets.length})
+         SLA Alarm Triggered ({breachingTickets.length})
       </div>
 
     </div>

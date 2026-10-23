@@ -11,12 +11,12 @@ export default function DashboardCharts({ ticketStats, reportStats, categoryStat
   if (!mounted) return null;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem', width: '100%', padding: '0.5rem' }}>
+    <div className="ui-static-97a45b9326" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', width: '100%'}}>
       
       {/* Ticket Status Bar Chart */}
       <div>
-        <h3 style={{ margin: '0 0 1.5rem 0', color: 'var(--heading-color)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '1.2rem' }}>📊</span> Status Overview
+        <h3 className="ui-static-cfd48aaac5" style={{display: 'flex', alignItems: 'center'}}>
+          <span className="ui-static-7f8da12489" ></span> Status Overview
         </h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={ticketStats} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -41,8 +41,8 @@ export default function DashboardCharts({ ticketStats, reportStats, categoryStat
       {/* Job Category Donut Chart */}
       {categoryStats.length > 0 && (
         <div>
-          <h3 style={{ margin: '0 0 1.5rem 0', color: 'var(--heading-color)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>🏷️</span> Job Category Distribution
+          <h3 className="ui-static-cfd48aaac5" style={{display: 'flex', alignItems: 'center'}}>
+            <span className="ui-static-7f8da12489" ></span> Job Category Distribution
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>

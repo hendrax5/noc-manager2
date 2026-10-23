@@ -96,17 +96,11 @@ export default function ShiftFairnessClient({ departments = [] }) {
   return (
     <div>
       <div
-        className="card"
-        style={{
-          marginBottom: "1.5rem",
-          display: "flex",
-          gap: "1rem",
-          flexWrap: "wrap",
-          alignItems: "flex-end",
-        }}
+        className="card ui-static-4e7e8d73d6"
+        style={{display: "flex", flexWrap: "wrap", alignItems: "flex-end"}}
       >
         <div>
-          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>
+          <label className="ui-static-eec2ca914a" style={{display: "block"}}>
             Departemen
           </label>
           <select
@@ -124,7 +118,7 @@ export default function ShiftFairnessClient({ departments = [] }) {
           </select>
         </div>
         <div>
-          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>
+          <label className="ui-static-eec2ca914a" style={{display: "block"}}>
             Bulan
           </label>
           <select
@@ -140,7 +134,7 @@ export default function ShiftFairnessClient({ departments = [] }) {
           </select>
         </div>
         <div>
-          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>
+          <label className="ui-static-eec2ca914a" style={{display: "block"}}>
             Tahun
           </label>
           <select
@@ -171,7 +165,7 @@ export default function ShiftFairnessClient({ departments = [] }) {
 
       {loading && <p>Memuat Shift Fairness…</p>}
       {error && (
-        <p style={{ color: "#b91c1c", background: "#fef2f2", padding: "0.75rem 1rem", borderRadius: 6 }}>
+        <p className="ui-static-fda6668d59" >
           {error}
         </p>
       )}
@@ -179,27 +173,23 @@ export default function ShiftFairnessClient({ departments = [] }) {
       {data && !loading && (
         <>
           <div className="card" style={{ overflowX: "auto" }}>
-            <h2 style={{ marginTop: 0, fontSize: "1.1rem" }}>
+            <h2 className="ui-static-fd1312781a" >
               {deptName} — {MONTHS.find((m) => m.value === month)?.label} {year}
               {data.pola ? ` (${data.pola})` : ""}
             </h2>
             {rows.length === 0 ? (
-              <p style={{ color: "#94a3b8" }}>
+              <p className="ui-static-b9010af219" >
                 Belum ada data jadwal untuk departemen dan bulan ini.
               </p>
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+              <table className="ui-static-e81f1882ce" style={{width: "100%"}}>
                 <thead>
-                  <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
-                    <th style={{ padding: "0.6rem", borderBottom: "1px solid #e2e8f0" }}>Nama</th>
+                  <tr className="ui-static-6d7b6af7b6" style={{textAlign: "left"}}>
+                    <th className="ui-static-ee6b240f5a" >Nama</th>
                     {columns.map((col) => (
                       <th
                         key={col.key}
-                        style={{
-                          padding: "0.6rem",
-                          borderBottom: "1px solid #e2e8f0",
-                          textAlign: "center",
-                        }}
+                        className="ui-static-ee6b240f5a" style={{textAlign: "center"}}
                       >
                         {col.label}
                       </th>
@@ -210,22 +200,14 @@ export default function ShiftFairnessClient({ departments = [] }) {
                   {rows.map((r) => (
                     <tr key={r.userId}>
                       <td
-                        style={{
-                          padding: "0.6rem",
-                          borderBottom: "1px solid #f1f5f9",
-                          fontWeight: 600,
-                        }}
+                        className="ui-static-56697727d3"
                       >
                         {r.name}
                       </td>
                       {columns.map((col) => (
                         <td
                           key={col.key}
-                          style={{
-                            padding: "0.6rem",
-                            borderBottom: "1px solid #f1f5f9",
-                            textAlign: "center",
-                          }}
+                          className="ui-static-ee6b240f5a" style={{textAlign: "center"}}
                         >
                           {r[col.key]}
                         </td>
@@ -238,7 +220,7 @@ export default function ShiftFairnessClient({ departments = [] }) {
           </div>
 
           {data.hoursPerShift != null && (
-            <p style={{ marginTop: "1rem", fontSize: "0.8rem", color: "#94a3b8" }}>
+            <p className="ui-static-f72e2d38ed" >
               Total Jam = Kerja × {data.hoursPerShift} jam/shift ({data.pola || "POLA_1"}).
               Lembur = masuk pada hari baseline Generate OFF, atau dicentang manual.
             </p>

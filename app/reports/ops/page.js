@@ -15,7 +15,7 @@ export default async function OpsReportPage() {
 
   return (
     <main className="container">
-      <header className="page-header" style={{ marginBottom: "1.25rem" }}>
+      <header className="page-header ui-static-f23443a9ea" >
         <h1>Ops Report</h1>
         <p>
           Rekap mingguan / bulanan: downtime &gt;10 jam, terminate, customer baru, dan upgrade (per tiket).

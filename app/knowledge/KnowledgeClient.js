@@ -48,10 +48,10 @@ export default function KnowledgeClient({ session, initialCategories }) {
     <main className="container">
       <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-           <h1>🧠 Knowledge Base</h1>
+           <h1> Knowledge Base</h1>
            <p>SOPs, Guides, and Internal Documentation.</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div className="ui-static-af81cc4264" style={{display: 'flex'}}>
            <Link href="/knowledge/new" className="primary-btn" style={{ textDecoration: 'none' }}>+ Write Article</Link>
            {isAdmin && (
               <button className="secondary-btn" onClick={() => setShowCategoryModal(true)}>Manage Categories</button>
@@ -59,29 +59,29 @@ export default function KnowledgeClient({ session, initialCategories }) {
         </div>
       </header>
 
-      <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem' }}>
+      <div className="knowledge-layout ui-static-944ed8f778" style={{display: 'flex'}}>
         
         {/* Left Sidebar - Categories */}
-        <div style={{ width: '250px', flexShrink: 0 }}>
-          <div className="bg-white-card" style={{ padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem', color: 'var(--text-color)' }}>Categories</h3>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="knowledge-categories">
+          <div className="bg-white-card ui-static-0553cdb32c" >
+            <h3 className="ui-static-d79b9157e0" >Categories</h3>
+            <ul className="ui-static-fc23bed47e" style={{listStyle: 'none', display: 'flex', flexDirection: 'column'}}>
               <li 
                 onClick={() => { setSearchQuery(''); fetchArticles(); }}
-                className="hover-bg"
-                style={{ cursor: 'pointer', padding: '0.75rem 1rem', borderRadius: '8px', fontWeight: !selectedCategory && !searchQuery ? 'bold' : 'normal', color: !selectedCategory && !searchQuery ? 'var(--primary-color)' : 'var(--text-color)', background: !selectedCategory && !searchQuery ? 'var(--hover-bg)' : 'transparent' }}
+                className="hover-bg ui-static-f668e79162"
+                style={{cursor: 'pointer', fontWeight: !selectedCategory && !searchQuery ? 'bold' : 'normal', color: !selectedCategory && !searchQuery ? 'var(--primary-color)' : 'var(--text-color)', background: !selectedCategory && !searchQuery ? 'var(--hover-bg)' : 'transparent'}}
               >
-                🏠 All Articles
+                 All Articles
               </li>
               {categories.map(cat => (
                 <li 
                   key={cat.id}
                   onClick={() => { setSearchQuery(''); fetchArticles(cat.id); }}
-                  className="hover-bg"
-                  style={{ cursor: 'pointer', padding: '0.75rem 1rem', borderRadius: '8px', fontWeight: selectedCategory === cat.id ? 'bold' : 'normal', color: selectedCategory === cat.id ? 'var(--primary-color)' : 'var(--text-color)', background: selectedCategory === cat.id ? 'var(--hover-bg)' : 'transparent', display: 'flex', justifyContent: 'space-between' }}
+                  className="hover-bg ui-static-f668e79162"
+                  style={{cursor: 'pointer', fontWeight: selectedCategory === cat.id ? 'bold' : 'normal', color: selectedCategory === cat.id ? 'var(--primary-color)' : 'var(--text-color)', background: selectedCategory === cat.id ? 'var(--hover-bg)' : 'transparent', display: 'flex', justifyContent: 'space-between'}}
                 >
                   <span>{cat.icon} {cat.name}</span>
-                  <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>{cat._count?.articles}</span>
+                  <span className="ui-static-fc155e091a" style={{opacity: 0.6}}>{cat._count?.articles}</span>
                 </li>
               ))}
             </ul>
@@ -89,61 +89,61 @@ export default function KnowledgeClient({ session, initialCategories }) {
         </div>
 
         {/* Right Content - Search & Article List */}
-        <div style={{ flexGrow: 1 }}>
-          <form onSubmit={handleSearch} style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
+        <div className="knowledge-content">
+          <form onSubmit={handleSearch} className="ui-static-d02daea45f" style={{display: 'flex'}}>
             <input 
                type="text" 
                placeholder="Search knowledge base (e.g. BGP Reset, Metro-E)..." 
                value={searchQuery}
                onChange={e => setSearchQuery(e.target.value)}
-               className="input-field"
-               style={{ flexGrow: 1, padding: '1rem', fontSize: '1.1rem', borderRadius: '12px' }}
+               className="input-field ui-static-478acf0431"
+               style={{flexGrow: 1}}
             />
-            <button type="submit" className="primary-btn" style={{ padding: '0 2rem' }}>Search</button>
+            <button type="submit" className="primary-btn ui-static-2d6f137a15" >Search</button>
           </form>
 
           {isLoading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-color)' }}>Loading articles...</div>
+            <div className="ui-static-282e36a01f" style={{textAlign: 'center'}}>Loading articles...</div>
           ) : articles.length === 0 ? (
-            <div className="bg-light-stripe" style={{ padding: '4rem 2rem', textAlign: 'center', borderRadius: '12px', border: '1px dashed var(--border-color)' }}>
-               <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📄</div>
-               <h3 style={{ margin: 0, color: 'var(--heading-color)' }}>No articles found</h3>
-               <p style={{ color: 'var(--text-color)' }}>Try adjusting your search query or selecting a different category.</p>
+            <div className="bg-light-stripe ui-static-805c42d770" style={{textAlign: 'center'}}>
+               <div className="ui-static-917c0011b7" ></div>
+               <h3 className="ui-static-ee96dc83fb" >No articles found</h3>
+               <p className="ui-static-fade3489ef" >Try adjusting your search query or selecting a different category.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div className="ui-static-92254f43e7" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))'}}>
               {articles.map(article => (
                 <Link href={`/knowledge/${article.id}`} key={article.id} style={{ textDecoration: 'none' }}>
-                  <div className="bg-white-card hover-lift" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <div className="bg-white-card hover-lift ui-static-86832ef263" style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
                     
-                    <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: '0.8rem', background: 'var(--hover-bg)', padding: '0.2rem 0.6rem', borderRadius: '4px', color: 'var(--text-color)', fontWeight: 'bold' }}>
+                    <div className="ui-static-3e8220669e" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+                      <span className="ui-static-1e8ecc5dda" >
                         {article.category?.icon} {article.category?.name}
                       </span>
                       {!article.isPublished && (
-                        <span style={{ fontSize: '0.75rem', background: '#fef3c7', color: '#92400e', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                        <span className="ui-static-12b8a6c2bb" >
                           Draft
                         </span>
                       )}
                     </div>
 
-                    <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--heading-color)', fontSize: '1.2rem', lineHeight: 1.4 }}>{article.title}</h3>
-                    <p style={{ margin: 0, color: 'var(--text-color)', fontSize: '0.9rem', flexGrow: 1, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
+                    <h3 className="ui-static-64967a091c" >{article.title}</h3>
+                    <p className="ui-static-5f31f84f9a" style={{flexGrow: 1, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', wordBreak: 'break-word', whiteSpace: 'pre-wrap'}}>
                       {article.content.replace(/<[^>]*>?/gm, '').replace(/[#*`_]/g, '').trim() || '🖼️ Attached Document Details'}
                     </p>
 
-                    <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div className="ui-static-7a5abe318b" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                      <div className="ui-static-30f523173e" style={{display: 'flex', alignItems: 'center'}}>
                          {article.author?.avatarUrl ? (
-                            <img src={article.author.avatarUrl} alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} />
+                            <img src={article.author.avatarUrl} alt="avatar" className="ui-static-30e89704d0" style={{width: '24px', height: '24px', objectFit: 'cover'}} />
                          ) : (
-                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                            <div className="ui-static-835bb5c756" style={{width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
                               {article.author?.name?.charAt(0) || 'U'}
                             </div>
                          )}
-                         <span style={{ fontSize: '0.85rem', color: 'var(--text-color)' }}>{article.author?.name}</span>
+                         <span className="ui-static-1d95690500" >{article.author?.name}</span>
                       </div>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-color)' }}>
+                      <span className="ui-static-2748f1debd" >
                         {new Date(article.updatedAt).toLocaleDateString()}
                       </span>
                     </div>
@@ -157,9 +157,9 @@ export default function KnowledgeClient({ session, initialCategories }) {
       </div>
 
       {showCategoryModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <div className="bg-white-card scale-in" style={{ width: '100%', maxWidth: '400px', padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-            <h2 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--heading-color)' }}>Add New Category</h2>
+        <div className="ui-static-a809d66476" style={{position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)'}}>
+          <div className="bg-white-card scale-in ui-static-239a0228f6" style={{width: '100%', maxWidth: '400px'}}>
+            <h2 className="ui-static-1c88149a3f" >Add New Category</h2>
             <form onSubmit={async (e) => {
               e.preventDefault();
               setIsSubmittingCat(true);
@@ -185,15 +185,15 @@ export default function KnowledgeClient({ session, initialCategories }) {
                 setIsSubmittingCat(false);
               }
             }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(--heading-color)', fontSize: '0.9rem' }}>Emoji Icon (Max 2 chars)</label>
-                <input type="text" value={newCatIcon} onChange={e => setNewCatIcon(e.target.value)} required maxLength={2} className="input-field" style={{ width: '100%', padding: '0.8rem', fontSize: '1.2rem', textAlign: 'center' }} />
+              <div className="ui-static-3e8220669e" >
+                <label className="ui-static-abe0244be5" style={{display: 'block'}}>Emoji Icon (Max 2 chars)</label>
+                <input type="text" value={newCatIcon} onChange={e => setNewCatIcon(e.target.value)} required maxLength={2} className="input-field ui-static-5bf46d551d" style={{width: '100%', textAlign: 'center'}} />
               </div>
-              <div style={{ marginBottom: '2rem' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(--heading-color)', fontSize: '0.9rem' }}>Category Name</label>
-                <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} required placeholder="e.g. Server Maintenance" className="input-field" style={{ width: '100%', padding: '0.8rem' }} />
+              <div className="ui-static-a5e927dc66" >
+                <label className="ui-static-abe0244be5" style={{display: 'block'}}>Category Name</label>
+                <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} required placeholder="e.g. Server Maintenance" className="input-field ui-static-b52e2fe28a" style={{width: '100%'}} />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <div className="ui-static-af81cc4264" style={{display: 'flex', justifyContent: 'flex-end'}}>
                 <button type="button" onClick={() => setShowCategoryModal(false)} className="secondary-btn">Cancel</button>
                 <button type="submit" disabled={isSubmittingCat} className="primary-btn">{isSubmittingCat ? 'Saving...' : 'Create Category'}</button>
               </div>

@@ -28,58 +28,58 @@ export default function TrackClient({ ticket }) {
   };
 
   return (
-    <div className="container" style={{ maxWidth: 720, paddingTop: "2.5rem" }}>
-      <p style={{ color: "var(--muted-text)", fontSize: "0.8rem", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+    <div className="container ui-static-6a6452713b" style={{maxWidth: 720}}>
+      <p className="ui-static-0068c9ed2c" style={{textTransform: "uppercase"}}>
         Public ticket status
       </p>
-      <h1 style={{ marginTop: 0 }}>{ticket.title}</h1>
-      <p className="font-mono" style={{ color: "var(--muted-text)" }}>
+      <h1 className="ui-static-c312289912" >{ticket.title}</h1>
+      <p className="font-mono ui-static-a64efbfeda" >
         {ticket.trackingId}
       </p>
 
-      <div className="card" style={{ marginTop: "1.5rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+      <div className="card ui-static-9f4fe52257" >
+        <div className="ui-static-af81cc4264" style={{display: "grid", gridTemplateColumns: "1fr 1fr"}}>
           <div>
-            <div style={{ fontSize: "0.75rem", color: "var(--muted-text)", textTransform: "uppercase" }}>Status</div>
-            <div style={{ fontWeight: 700, color: "var(--heading-color)" }}>{ticket.status}</div>
+            <div className="ui-static-3df13491a1" style={{textTransform: "uppercase"}}>Status</div>
+            <div className="ui-static-b8f3c0ff5c" >{ticket.status}</div>
           </div>
           <div>
-            <div style={{ fontSize: "0.75rem", color: "var(--muted-text)", textTransform: "uppercase" }}>Priority</div>
-            <div style={{ fontWeight: 600 }}>{ticket.priority}</div>
+            <div className="ui-static-3df13491a1" style={{textTransform: "uppercase"}}>Priority</div>
+            <div className="ui-static-5c05f4afaf" >{ticket.priority}</div>
           </div>
           <div>
-            <div style={{ fontSize: "0.75rem", color: "var(--muted-text)", textTransform: "uppercase" }}>Type</div>
+            <div className="ui-static-3df13491a1" style={{textTransform: "uppercase"}}>Type</div>
             <div>{ticket.ticketType || "Incident"}</div>
           </div>
           <div>
-            <div style={{ fontSize: "0.75rem", color: "var(--muted-text)", textTransform: "uppercase" }}>Updated</div>
-            <div className="font-mono" style={{ fontSize: "0.9rem" }}>
+            <div className="ui-static-3df13491a1" style={{textTransform: "uppercase"}}>Updated</div>
+            <div className="font-mono ui-static-6393964ce2" >
               {new Date(ticket.updatedAt).toLocaleString()}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h2 style={{ marginTop: 0 }}>Public updates</h2>
+      <div className="card ui-static-14b98d08ef" >
+        <h2 className="ui-static-c312289912" >Public updates</h2>
         {ticket.comments.length === 0 && (
-          <p style={{ color: "var(--muted-text)", margin: 0 }}>No public updates yet.</p>
+          <p className="ui-static-054e197f0f" >No public updates yet.</p>
         )}
-        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+        <ul className="ui-static-d4913812e7" style={{listStyle: "none"}}>
           {ticket.comments.map((c) => (
-            <li key={c.id} style={{ padding: "0.75rem 0", borderTop: "1px solid var(--border-color)" }}>
-              <div style={{ fontSize: "0.8rem", color: "var(--muted-text)" }}>
+            <li key={c.id} className="ui-static-5658e5e449" >
+              <div className="ui-static-2188c20d97" >
                 {c.author?.name || "Staff"} · {new Date(c.createdAt).toLocaleString()}
               </div>
-              <p style={{ margin: "0.35rem 0 0", whiteSpace: "pre-wrap" }}>{c.text}</p>
+              <p className="ui-static-1eb05797c2" style={{whiteSpace: "pre-wrap"}}>{c.text}</p>
             </li>
           ))}
         </ul>
       </div>
 
       {ticket.canCsat && !done && (
-        <form className="card" style={{ marginTop: "1rem" }} onSubmit={submitCsat}>
-          <h2 style={{ marginTop: 0 }}>Rate this resolution</h2>
+        <form className="card ui-static-14b98d08ef"  onSubmit={submitCsat}>
+          <h2 className="ui-static-c312289912" >Rate this resolution</h2>
           <div className="form-group">
             <label>Score (1–5)</label>
             <select value={score} onChange={(e) => setScore(parseInt(e.target.value, 10))}>
@@ -100,8 +100,8 @@ export default function TrackClient({ ticket }) {
       )}
 
       {(done || ticket.csatScore) && (
-        <div className="card" style={{ marginTop: "1rem" }}>
-          <p style={{ margin: 0 }}>
+        <div className="card ui-static-14b98d08ef" >
+          <p className="ui-static-ff227d0632" >
             Thank you. Rating recorded{ticket.csatScore ? `: ${ticket.csatScore}/5` : ""}.
           </p>
         </div>

@@ -62,21 +62,21 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
       {activeTab === 'templates' && <AssetMasterList title="Produk layanan" columns={['Produk','Status','Layanan','Field tambahan',...(isAdmin?['Aksi']:[])]} addLabel="Tambah produk" onAdd={isAdmin?()=>{setEditTemplateId(null);setTemplateData({name:''});setTemplateFields([{name:'',type:'text',required:true}]);setShowTemplateModal(true);}:undefined} rows={templates.map(t=>{const fields=readTemplateFields(t.fields);return {id:t.id,search:`${t.name} ${t.active?'Aktif':'Arsip'}`,cells:[<strong key="name">{t.name}</strong>,t.active?'Aktif':'Arsip',services.filter(service=>(service.templateId??service.template?.id)===t.id).length,<details key="fields"><summary>{fields.length} field</summary>{fields.length>0?<ul>{fields.map((field,i)=><li key={i}>{field.name} <small>{String(field.type||'text')}</small></li>)}</ul>:<small>Tidak ada field tambahan.</small>}</details>,...(isAdmin?[<div key="actions"><button type="button" onClick={()=>{setEditTemplateId(t.id);setTemplateData({name:t.name});setTemplateFields(fields.length?fields:[{name:'',type:'text',required:true}]);setShowTemplateModal(true);}}>Edit</button><button type="button" data-danger="true" onClick={async()=>{if(!confirm(`Hapus produk ${t.name}?`))return;try{const res=await fetch(`/api/assets/templates/${t.id}`,{method:'DELETE'});if(res.ok)setTemplates(prev=>prev.filter(x=>x.id!==t.id));else alert((await res.json()).error);}catch{alert('Produk gagal dihapus. Coba lagi.');}}}>Hapus</button></div>]:[])]};})}/>}
       {activeTab === 'blast' && (
         <div>
-          <div className="bg-white-card" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '2rem' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: 'var(--heading-color)' }}>Trace Upstream Impact (Blast Radius)</h3>
-            <p style={{ color: 'var(--text-color)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>Search for a Datacenter, Router device, or port name to instantly discover which Customer Services pass through that node. Very useful for mass notification during unexpected outages.</p>
+          <div className="bg-white-card ui-static-34b900d735" >
+            <h3 className="ui-static-980d0fe234" >Trace Upstream Impact (Blast Radius)</h3>
+            <p className="ui-static-2cfd0f3695" >Search for a Datacenter, Router device, or port name to instantly discover which Customer Services pass through that node. Very useful for mass notification during unexpected outages.</p>
             <input 
               type="text" 
               placeholder="e.g. Cyber-1, xe-0/0/0, MKT-ROUTER..." 
               value={blastQuery}
               onChange={e => setBlastQuery(e.target.value)}
-              className="input-field" 
-              style={{ padding: '1rem', fontSize: '1.1rem', borderRadius: '8px', width: '100%', maxWidth: '600px' }}
+              className="input-field ui-static-478acf0431"
+              style={{width: '100%', maxWidth: '600px'}}
             />
           </div>
 
           {blastQuery.length > 1 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+            <div className="ui-static-92254f43e7" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))'}}>
               {services.filter(s => s.hops && s.hops.some(h => 
                   (h.location && h.location.toLowerCase().includes(blastQuery.toLowerCase())) ||
                   (h.deviceName && h.deviceName.toLowerCase().includes(blastQuery.toLowerCase())) ||
@@ -88,18 +88,18 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
                     (h.portName && h.portName.toLowerCase().includes(blastQuery.toLowerCase()))
                  );
                  return (
-                  <div key={srv.id} className="bg-white-card hover-lift" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid #fca5a5', background: 'rgba(239, 68, 68, 0.02)' }}>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)', padding: '0.2rem 0.6rem', borderRadius: '4px', textTransform: 'uppercase' }}>Affected Customer</span>
-                      <h3 style={{ margin: '0.5rem 0 0.2rem 0', color: 'var(--heading-color)' }}>{srv.customer?.name}</h3>
-                      <Link href={`/assets/${srv.id}`} style={{ color: 'var(--text-color)', fontSize: '0.9rem', fontWeight: 'bold', textDecoration: 'none' }}>{srv.name}</Link>
+                  <div key={srv.id} className="bg-white-card hover-lift ui-static-884e7dd4e5" >
+                    <div className="ui-static-3e8220669e" >
+                      <span className="ui-static-76da38e60c" style={{textTransform: 'uppercase'}}>Affected Customer</span>
+                      <h3 className="ui-static-61920713ff" >{srv.customer?.name}</h3>
+                      <Link href={`/assets/${srv.id}`} className="ui-static-9aa78c862d" style={{textDecoration: 'none'}}>{srv.name}</Link>
                     </div>
                     
-                    <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '6px', border: '1px dashed var(--border-color)' }}>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', fontWeight: 'bold', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Compromised Nodes:</div>
+                    <div className="ui-static-8acde194b0" >
+                      <div className="ui-static-8a898791c6" style={{textTransform: 'uppercase'}}>Compromised Nodes:</div>
                       {matchedHops.map((h, i) => (
-                        <div key={i} style={{ fontSize: '0.85rem', color: 'var(--heading-color)', marginBottom: '0.3rem', display: 'flex', gap: '0.5rem' }}>
-                          <span style={{ color: '#ef4444' }}>💥</span>
+                        <div key={i} className="ui-static-44e06c069f" style={{display: 'flex'}}>
+                          <span className="ui-static-d087b501d0" ></span>
                           <span><strong>{h.location}</strong> ({h.deviceName} • {h.portName})</span>
                         </div>
                       ))}
@@ -112,7 +112,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
                   (h.deviceName && h.deviceName.toLowerCase().includes(blastQuery.toLowerCase())) ||
                   (h.portName && h.portName.toLowerCase().includes(blastQuery.toLowerCase()))
               )).length === 0 && (
-                 <div style={{ gridColumn: '1 / -1', padding: '3rem', textAlign: 'center', color: 'var(--text-color)', background: 'var(--hover-bg)', borderRadius: '12px' }}>
+                 <div className="ui-static-a88f6005e3" style={{gridColumn: '1 / -1', textAlign: 'center'}}>
                    No customers are passing through this point of failure.
                  </div>
               )}
@@ -123,9 +123,9 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
 
       {/* CUSTOMER MODAL */}
       {showCustomerModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <div className="bg-white-card scale-in" style={{ width: '100%', maxWidth: '400px', padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-            <h2 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--heading-color)' }}>{editCustomerId ? 'Edit Customer' : 'Register Customer'}</h2>
+        <div className="ui-static-a809d66476" style={{position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)'}}>
+          <div className="bg-white-card scale-in ui-static-239a0228f6" style={{width: '100%', maxWidth: '400px'}}>
+            <h2 className="ui-static-1c88149a3f" >{editCustomerId ? 'Edit Customer' : 'Register Customer'}</h2>
             <form onSubmit={async (e) => {
               e.preventDefault();
               setIsSubmitting(true);
@@ -151,19 +151,19 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
                 }
               } catch (err) { console.error(err); } finally { setIsSubmitting(false); }
             }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(--heading-color)', fontSize: '0.9rem' }}>Company Name</label>
-                <input type="text" required className="input-field" value={customerData.name} onChange={e => setCustomerData(p => ({...p, name: e.target.value}))} style={{ width: '100%', padding: '0.8rem' }} />
+              <div className="ui-static-3e8220669e" >
+                <label className="ui-static-abe0244be5" style={{display: 'block'}}>Company Name</label>
+                <input type="text" required className="input-field ui-static-b52e2fe28a" value={customerData.name} onChange={e => setCustomerData(p => ({...p, name: e.target.value}))} style={{width: '100%'}} />
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(--heading-color)', fontSize: '0.9rem' }}>Email</label>
-                <input type="email" className="input-field" value={customerData.contactEmail} onChange={e => setCustomerData(p => ({...p, contactEmail: e.target.value}))} style={{ width: '100%', padding: '0.8rem' }} />
+              <div className="ui-static-3e8220669e" >
+                <label className="ui-static-abe0244be5" style={{display: 'block'}}>Email</label>
+                <input type="email" className="input-field ui-static-b52e2fe28a" value={customerData.contactEmail} onChange={e => setCustomerData(p => ({...p, contactEmail: e.target.value}))} style={{width: '100%'}} />
               </div>
-              <div style={{ marginBottom: '2rem' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(--heading-color)', fontSize: '0.9rem' }}>Phone/NOC String</label>
-                <input type="text" className="input-field" value={customerData.contactPhone} onChange={e => setCustomerData(p => ({...p, contactPhone: e.target.value}))} style={{ width: '100%', padding: '0.8rem' }} />
+              <div className="ui-static-a5e927dc66" >
+                <label className="ui-static-abe0244be5" style={{display: 'block'}}>Phone/NOC String</label>
+                <input type="text" className="input-field ui-static-b52e2fe28a" value={customerData.contactPhone} onChange={e => setCustomerData(p => ({...p, contactPhone: e.target.value}))} style={{width: '100%'}} />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <div className="ui-static-af81cc4264" style={{display: 'flex', justifyContent: 'flex-end'}}>
                 <button type="button" onClick={() => setShowCustomerModal(false)} className="secondary-btn">Cancel</button>
                 <button type="submit" disabled={isSubmitting} className="primary-btn">{isSubmitting ? 'Saving...' : 'Register'}</button>
               </div>
@@ -174,9 +174,9 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
 
       {/* TEMPLATE MODAL */}
       {showTemplateModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <div className="bg-white-card scale-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--heading-color)' }}>{editTemplateId ? 'Edit Template' : 'Define Service Template'}</h2>
+        <div className="ui-static-a809d66476" style={{position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)'}}>
+          <div className="bg-white-card scale-in ui-static-239a0228f6" style={{width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto'}}>
+            <h2 className="ui-static-1c88149a3f" >{editTemplateId ? 'Edit Template' : 'Define Service Template'}</h2>
             <form onSubmit={async (e) => {
               e.preventDefault();
               setIsSubmitting(true);
@@ -204,31 +204,31 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
                 }
               } catch (err) { console.error(err); } finally { setIsSubmitting(false); }
             }}>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(--heading-color)', fontSize: '0.9rem' }}>Template Name</label>
-                <input type="text" required placeholder="e.g. IPLC DWDM" className="input-field" value={templateData.name} onChange={e => setTemplateData(p => ({...p, name: e.target.value}))} style={{ width: '100%', padding: '0.8rem' }} />
+              <div className="ui-static-8bd9dc7312" >
+                <label className="ui-static-abe0244be5" style={{display: 'block'}}>Template Name</label>
+                <input type="text" required placeholder="e.g. IPLC DWDM" className="input-field ui-static-b52e2fe28a" value={templateData.name} onChange={e => setTemplateData(p => ({...p, name: e.target.value}))} style={{width: '100%'}} />
               </div>
               
-              <div style={{ marginBottom: '2rem', padding: '1rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                   <label style={{ fontWeight: 'bold', color: 'var(--heading-color)', fontSize: '0.9rem' }}>Extended Parameters</label>
-                   <button type="button" onClick={() => setTemplateFields([...templateFields, { name: '', type: 'text', required: false }])} style={{ background: 'transparent', border: 'none', color: 'var(--primary-color)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}>+ Add Field</button>
+              <div className="ui-static-3b9d1b7b96" >
+                <div className="ui-static-3e8220669e" style={{display: 'flex', justifyContent: 'space-between'}}>
+                   <label className="ui-static-f87c59a0c7" >Extended Parameters</label>
+                   <button type="button" onClick={() => setTemplateFields([...templateFields, { name: '', type: 'text', required: false }])} className="ui-static-285cdc9bf0" style={{cursor: 'pointer'}}>+ Add Field</button>
                 </div>
                 {templateFields.map((f, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <input type="text" placeholder="Field Name (e.g. Bandwidth)" required value={f.name} onChange={e => { const arr = [...templateFields]; arr[i].name = e.target.value; setTemplateFields(arr); }} className="input-field" style={{ flexGrow: 1, padding: '0.5rem' }} />
-                    <select value={f.type} onChange={e => { const arr = [...templateFields]; arr[i].type = e.target.value; setTemplateFields(arr); }} className="input-field" style={{ padding: '0.5rem' }}>
+                  <div key={i} className="ui-static-fd3a6e970b" style={{display: 'flex'}}>
+                    <input type="text" placeholder="Field Name (e.g. Bandwidth)" required value={f.name} onChange={e => { const arr = [...templateFields]; arr[i].name = e.target.value; setTemplateFields(arr); }} className="input-field ui-static-ce5f724e09" style={{flexGrow: 1}} />
+                    <select value={f.type} onChange={e => { const arr = [...templateFields]; arr[i].type = e.target.value; setTemplateFields(arr); }} className="input-field ui-static-ce5f724e09" >
                        <option value="text">Text / String</option>
                        <option value="number">Number</option>
                     </select>
                     {templateFields.length > 1 && (
-                      <button type="button" onClick={() => setTemplateFields(templateFields.filter((_, idx) => idx !== i))} style={{ background: '#fca5a5', color: '#991b1b', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', width: '30px' }}>×</button>
+                      <button type="button" onClick={() => setTemplateFields(templateFields.filter((_, idx) => idx !== i))} className="ui-static-2733aec263" style={{cursor: 'pointer', width: '30px'}}>×</button>
                     )}
                   </div>
                 ))}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <div className="ui-static-af81cc4264" style={{display: 'flex', justifyContent: 'flex-end'}}>
                 <button type="button" onClick={() => setShowTemplateModal(false)} className="secondary-btn">Cancel</button>
                 <button type="submit" disabled={isSubmitting} className="primary-btn">{isSubmitting ? 'Saving...' : 'Save Template'}</button>
               </div>

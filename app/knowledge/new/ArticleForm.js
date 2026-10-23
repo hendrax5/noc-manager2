@@ -47,18 +47,18 @@ export default function ArticleForm({ categories, session, existingArticle = nul
 
   return (
     <main className="container" style={{ maxWidth: '800px' }}>
-      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <header className="page-header ui-static-a5e927dc66" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
         <div>
-           <Link href="/knowledge" style={{ color: 'var(--text-color)', textDecoration: 'none', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'inline-block' }}>← Back to Knowledge Base</Link>
-           <h1 style={{ marginTop: '0.5rem' }}>{existingArticle ? 'Edit Article' : 'Draft New Article'}</h1>
+           <Link href="/knowledge" className="ui-static-0c7b8f63ec" style={{textDecoration: 'none', display: 'inline-block'}}>← Back to Knowledge Base</Link>
+           <h1 className="ui-static-084dc32886" >{existingArticle ? 'Edit Article' : 'Draft New Article'}</h1>
         </div>
       </header>
 
-      <div className="bg-white-card" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' }}>
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="bg-white-card ui-static-239a0228f6" >
+        <form onSubmit={handleSubmit} className="ui-static-92254f43e7" style={{display: 'flex', flexDirection: 'column'}}>
           
           <div>
-            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--heading-color)' }}>Title</label>
+            <label className="ui-static-1aec17b017" style={{display: 'block'}}>Title</label>
             <input 
               type="text" 
               required 
@@ -70,7 +70,7 @@ export default function ArticleForm({ categories, session, existingArticle = nul
           </div>
 
           <div>
-            <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--heading-color)' }}>Category</label>
+            <label className="ui-static-1aec17b017" style={{display: 'block'}}>Category</label>
             <select 
               required
               className="input-field" 
@@ -84,11 +84,11 @@ export default function ArticleForm({ categories, session, existingArticle = nul
           </div>
 
           <div data-color-mode="light">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <label style={{ display: 'block', fontWeight: 'bold', color: 'var(--heading-color)' }}>Content (Markdown Editor)</label>
+            <div className="ui-static-fc11fc4f62" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+              <label className="ui-static-8356576a3b" style={{display: 'block'}}>Content (Markdown Editor)</label>
               
-              <div style={{ display: 'flex', gap: '0.8rem' }}>
-                <label style={{ background: 'var(--hover-bg)', border: '1px dashed var(--border-color)', color: 'var(--primary-color)', padding: '0.4rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+              <div className="ui-static-e59a73fd03" style={{display: 'flex'}}>
+                <label className="ui-static-ce0a460a11" style={{cursor: 'pointer', transition: 'all 0.2s'}}>
                   {isSubmitting ? '...' : '✍️ Extract Plain Text'}
                   <input 
                     type="file" 
@@ -121,7 +121,7 @@ export default function ArticleForm({ categories, session, existingArticle = nul
                   />
                 </label>
 
-                <label style={{ background: 'var(--primary-color)', color: 'white', padding: '0.4rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
+                <label className="ui-static-a9060bf3ed" style={{cursor: 'pointer', transition: 'all 0.2s'}}>
                   {isSubmitting ? '...' : '🖼️ Attach Visual PDF'}
                   <input 
                     type="file" 
@@ -162,18 +162,18 @@ export default function ArticleForm({ categories, session, existingArticle = nul
             />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="ui-static-30f523173e" style={{display: 'flex', alignItems: 'center'}}>
             <input 
               type="checkbox" 
               id="isPublished"
               checked={formData.isPublished} 
               onChange={e => setFormData({...formData, isPublished: e.target.checked})} 
             />
-            <label htmlFor="isPublished" style={{ color: 'var(--heading-color)', fontWeight: 'bold' }}>Publish Immediately</label>
+            <label htmlFor="isPublished" className="ui-static-fd35693cf2" >Publish Immediately</label>
           </div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-color)', marginTop: '-1rem', marginLeft: '1.5rem' }}>If unchecked, this article will be saved as a Draft visible only to Admins/Managers and yourself.</p>
+          <p className="ui-static-ec436482f7" >If unchecked, this article will be saved as a Draft visible only to Admins/Managers and yourself.</p>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+          <div className="ui-static-4b2b7b9e13" style={{display: 'flex', justifyContent: 'flex-end'}}>
             <Link href={existingArticle ? `/knowledge/${existingArticle.id}` : "/knowledge"} className="secondary-btn" style={{ textDecoration: 'none' }}>Cancel</Link>
             <button type="submit" disabled={isSubmitting} className="primary-btn">
               {isSubmitting ? 'Saving...' : (existingArticle ? 'Update Article' : 'Publish Article')}

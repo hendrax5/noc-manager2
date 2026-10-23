@@ -99,10 +99,10 @@ export default function ReportFilter({ userId }) {
             onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
           />
         </label>
-        <button type="submit" className="primary-btn" style={{ width: "auto", padding: "0.5rem 1rem", minHeight: 40 }}>
+        <button type="submit" className="primary-btn ui-static-7f62800e8e" style={{width: "auto", minHeight: 40}}>
           Terapkan
         </button>
-        <button type="button" className="logout-btn" style={{ margin: 0, padding: "0.5rem 1rem", height: 40 }} onClick={() => window.print()}>
+        <button type="button" className="logout-btn ui-static-865e2ea2b1" style={{height: 40}} onClick={() => window.print()}>
           Cetak
         </button>
       </form>

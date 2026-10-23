@@ -37,7 +37,7 @@ export default async function SchedulesPage() {
 
   return (
     <main className="container">
-      <header className="page-header" style={{ marginBottom: "1rem" }}>
+      <header className="page-header ui-static-3e8220669e" >
         <h1>Roster & Shift</h1>
         <p>
           {canEdit
@@ -47,31 +47,19 @@ export default async function SchedulesPage() {
       </header>
 
       <div
-        style={{
-          display: "flex",
-          gap: "1rem",
-          marginBottom: "1.5rem",
-          borderBottom: "2px solid #e2e8f0",
-        }}
+        className="ui-static-4a8d184217" style={{display: "flex"}}
       >
         {canManageTeam && (
           <Link
             href="/team"
-            style={{ padding: "0.75rem 1.5rem", textDecoration: "none", color: "#64748b", fontWeight: 500 }}
+            className="ui-static-d465603229" style={{textDecoration: "none"}}
           >
             Members & Access
           </Link>
         )}
         <Link
           href="/team/schedules"
-          style={{
-            padding: "0.75rem 1.5rem",
-            textDecoration: "none",
-            borderBottom: "3px solid #3b82f6",
-            fontWeight: "bold",
-            color: "#1e293b",
-            marginBottom: "-2px",
-          }}
+          className="ui-static-f18cac270c" style={{textDecoration: "none"}}
         >
           Shift Schedules
         </Link>

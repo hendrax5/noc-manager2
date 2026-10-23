@@ -200,10 +200,10 @@ export default async function TicketsPage({ searchParams }) {
           <h1>{workType ? WORK_TYPE_LABELS[workType] : "Semua Tiket"}</h1>
           <p>Triage, assign, and resolve NOC technical operations.</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div className="ui-static-af81cc4264" style={{display: 'flex', alignItems: 'center'}}>
           {dateParam === 'today' && (
-            <span style={{ background: '#ecfdf5', color: '#059669', padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #a7f3d0', fontSize: '0.8rem', fontWeight: 'bold' }}>
-              🕒 Filter Active: Today's Shift Only
+            <span className="ui-static-ede1c204d7" >
+               Filter Active: Today's Shift Only
             </span>
           )}
           {canCreate && (
@@ -213,25 +213,25 @@ export default async function TicketsPage({ searchParams }) {
       </header>
 
       {/* Dynamic Views / Status Tabs */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', overflowX: 'auto' }}>
-         <Link href={workType ? `/tickets?workType=${workType}` : "/tickets"} style={{ padding: '0.5rem 1rem', textDecoration: 'none', color: !tab ? 'var(--primary-color)' : '#64748b', fontWeight: !tab ? 'bold' : '500', borderBottom: !tab ? '3px solid var(--primary-color)' : 'none', marginBottom: '-9px' }}>
+      <div className="ui-static-8f3fb50de8" style={{display: 'flex', overflowX: 'auto'}}>
+         <Link href={workType ? `/tickets?workType=${workType}` : "/tickets"} className="ui-static-be2cd19cf4" style={{textDecoration: 'none', color: !tab ? 'var(--primary-color)' : "var(--ui-info)", fontWeight: !tab ? 'bold' : '500', borderBottom: !tab ? '3px solid var(--primary-color)' : 'none'}}>
             All Active View
          </Link>
          {(isCS || user.role === 'Admin' || user.permissions?.includes('manage_sla') || user.permissions?.includes('view_all_tickets')) && (
-           <Link href={`/tickets?tab=cs_radar${workType ? `&workType=${workType}` : ""}`} style={{ padding: '0.5rem 1rem', textDecoration: 'none', color: tab === 'cs_radar' ? '#ef4444' : '#64748b', fontWeight: tab === 'cs_radar' ? 'bold' : '500', borderBottom: tab === 'cs_radar' ? '3px solid #ef4444' : 'none', marginBottom: '-9px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              📡 CS SLA Radar
+           <Link href={`/tickets?tab=cs_radar${workType ? `&workType=${workType}` : ""}`} className="ui-static-9c11788788" style={{textDecoration: 'none', color: tab === 'cs_radar' ? "var(--ui-danger)" : "var(--ui-info)", fontWeight: tab === 'cs_radar' ? 'bold' : '500', borderBottom: tab === 'cs_radar' ? '3px solid #ef4444' : 'none', display: 'flex', alignItems: 'center'}}>
+               CS SLA Radar
            </Link>
          )}
       </div>
 
-      <Suspense fallback={<div style={{ padding: '1.5rem', marginBottom: '1.5rem', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>Loading filters...</div>}>
+      <Suspense fallback={<div className="ui-static-595f5f4cf6" >Loading filters...</div>}>
         <TicketAdvancedFilter companies={companies} initialCompanyParam={companyParam} />
       </Suspense>
 
-      {workType === 'ServiceWork' && <nav aria-label="Filter jenis pekerjaan" style={{display:'flex',flexWrap:'wrap',gap:'0.5rem',margin:'1rem 0'}}>
+      {workType === 'ServiceWork' && <nav aria-label="Filter jenis pekerjaan" className="ui-static-d099538e24" style={{display:'flex', flexWrap:'wrap'}}>
         <Link href="/tickets?workType=ServiceWork" aria-current={!serviceWorkTypeId ? 'page' : undefined}>Semua pekerjaan</Link>
         <Link href="/tickets?workType=Installation">Instalasi (format lama)</Link>
-        {serviceWorkTypes.map(type => <Link key={type.id} href={`/tickets?workType=ServiceWork&serviceWorkTypeId=${type.id}`} aria-current={serviceWorkTypeId === type.id ? 'page' : undefined} style={{padding:'0.3rem 0.6rem',border:'1px solid var(--border-color)',borderRadius:'var(--radius-sm)'}}>{type.name}{type.active ? '' : ' (nonaktif)'}</Link>)}
+        {serviceWorkTypes.map(type => <Link key={type.id} href={`/tickets?workType=ServiceWork&serviceWorkTypeId=${type.id}`} aria-current={serviceWorkTypeId === type.id ? 'page' : undefined} className="ui-static-3d6ac67643" >{type.name}{type.active ? '' : ' (nonaktif)'}</Link>)}
       </nav>}
       <table className="data-table">
         <thead>
@@ -249,7 +249,7 @@ export default async function TicketsPage({ searchParams }) {
         </thead>
         <tbody>
           {tickets.length === 0 && (
-            <tr><td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>No tickets found matching your filters.</td></tr>
+            <tr><td colSpan="9" className="ui-static-39c1d6c828" style={{textAlign: 'center'}}>No tickets found matching your filters.</td></tr>
           )}
           {tickets.map(t => {
             const isCritical = t.priority === 'Critical';
@@ -281,60 +281,60 @@ export default async function TicketsPage({ searchParams }) {
 
             return (
               <tr key={t.id} className={rowClass}>
-                <td style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{t.trackingId}</td>
+                <td className="ui-static-a03c8f3240" >{t.trackingId}</td>
                 <td>
-                  <span style={{ fontWeight: '600', color: '#334155', fontSize: '0.9rem', display: 'block' }}>{extractedName}</span>
+                  <span className="ui-static-7f653ec309" style={{display: 'block'}}>{extractedName}</span>
                   {t.customData && t.customData["Order Origin"] && (
-                    <span style={{ display: 'inline-block', fontSize: '0.7rem', color: '#991b1b', background: '#fef2f2', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid #fecaca', fontWeight: 'bold', marginTop: '0.2rem', marginRight: '0.2rem' }} title="Order Origin">
-                      🏢 {t.customData["Order Origin"]}
+                    <span className="ui-static-7d0b48c22b" style={{display: 'inline-block'}} title="Order Origin">
+                       {t.customData["Order Origin"]}
                     </span>
                   )}
                   {t.customData && t.customData["Executing Vendor"] && (
-                    <span style={{ display: 'inline-block', fontSize: '0.7rem', color: '#1e40af', background: '#eff6ff', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid #bfdbfe', fontWeight: 'bold', marginTop: '0.2rem' }} title="Executing Vendor">
-                      🛠️ {t.customData["Executing Vendor"]}
+                    <span className="ui-static-4d2206b758" style={{display: 'inline-block'}} title="Executing Vendor">
+                       {t.customData["Executing Vendor"]}
                     </span>
                   )}
                 </td>
-                <td style={{ fontWeight: '600' }}>
-                  <Link href={`/tickets/${t.id}`} style={{color: 'var(--primary-color)'}}>
+                <td className="ui-static-5c05f4afaf" >
+                  <Link href={`/tickets/${t.id}`} className="ui-static-7521b95b4f" >
                     {t.title}
                   </Link>
-                  <div style={{ fontSize: '0.75rem', marginTop: '0.35rem' }}>
+                  <div className="ui-static-cefb247027" >
                     <span className="badge">{t.serviceWorkTypeLabel || WORK_TYPE_LABELS[t.workType] || WORK_TYPE_LABELS.Unclassified}</span>
                     {t.sapReference && <span> SAP: {t.sapReference}</span>}
                     {t.services?.some(service => getServiceCid(service)) && <span> CID: {t.services.map(service => getServiceCid(service)).filter(Boolean).join(', ')}</span>}
                   </div>
                   {t.slaBreaches > 0 && t.status !== 'Resolved' && (
-                    <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem', color: 'var(--danger-text, #b91c1c)', fontWeight: 'bold', background: 'var(--danger-bg, #fee2e2)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
-                      🔥 x{t.slaBreaches} CS Pings!
+                    <span className="ui-static-a7e19d1696" >
+                       x{t.slaBreaches} CS Pings!
                     </span>
                   )}
                   {expiryDateStr && t.status !== 'Resolved' && (
-                    <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', background: new Date(expiryDateStr) < new Date() ? 'var(--danger-bg, #ef4444)' : 'var(--warning-bg, #d946ef)', color: new Date(expiryDateStr) < new Date() ? 'var(--danger-text, white)' : 'var(--warning-text, white)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                    <span className="ui-static-2270ccd56e" style={{background: new Date(expiryDateStr) < new Date() ? 'var(--danger-bg, #ef4444)' : 'var(--warning-bg, #d946ef)', color: new Date(expiryDateStr) < new Date() ? 'var(--danger-text, white)' : 'var(--warning-text, white)'}}>
                       {new Date(expiryDateStr) < new Date() ? '⚠️ EXPIRED' : `⏳ Exp: ${new Date(expiryDateStr).toLocaleDateString()}`}
                     </span>
                   )}
                 </td>
                 <td>
                   {t.jobCategory ? (
-                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '0.15rem 0.5rem', borderRadius: '4px', background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd', whiteSpace: 'nowrap' }}>
+                    <span className="ui-static-4e3ab66524" style={{whiteSpace: 'nowrap'}}>
                       {t.jobCategory.name}
                     </span>
                   ) : (
-                    <span style={{ color: '#94a3b8', fontSize: '0.8rem', fontStyle: 'italic' }}>-</span>
+                    <span className="ui-static-60700bd225" style={{fontStyle: 'italic'}}>-</span>
                   )}
                 </td>
                 <td>
-                  <span className="badge" style={{ backgroundColor: t.status === 'Resolved' ? '#10b981' : (t.status === 'New' ? '#ef4444' : '#f59e0b') }}>
+                  <span className="badge" style={{ backgroundColor: t.status === 'Resolved' ? "var(--ui-success)" : (t.status === 'New' ? "var(--ui-danger)" : "var(--ui-warning)") }}>
                     {t.status}
                   </span>
                 </td>
-                <td style={{ fontWeight: isCritical ? 'bold' : 'normal', color: isCritical ? '#ef4444' : 'inherit' }}>{t.priority}</td>
-                <td style={{ color: '#64748b', fontSize: '0.85rem' }}>{timeAgo(t.updatedAt)}</td>
+                <td style={{ fontWeight: isCritical ? 'bold' : 'normal', color: isCritical ? "var(--ui-danger)" : 'inherit' }}>{t.priority}</td>
+                <td className="ui-static-9d7e95f546" >{timeAgo(t.updatedAt)}</td>
                 <td>{t.department?.name}</td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {t.assignee?.name || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>}
+                    {t.assignee?.name || <span className="ui-static-b9010af219" style={{fontStyle: 'italic'}}>Unassigned</span>}
                     {canViewAll && <TicketQuickActions ticketId={t.id} isUnassigned={!t.assigneeId} />}
                   </div>
                 </td>

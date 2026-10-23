@@ -384,43 +384,43 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const optionalFields = customFields?.filter(f => !visibleCustomFieldIds.includes(f.id)) || [];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 7fr) minmax(300px, 3fr)', gap: '2rem', alignItems: 'flex-start' }}>
+    <div className="ui-static-0410aac9fd" style={{display: 'grid', gridTemplateColumns: 'minmax(0, 7fr) minmax(300px, 3fr)', alignItems: 'flex-start'}}>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="ui-static-92254f43e7" style={{display: 'flex', flexDirection: 'column'}}>
         
-        <div style={{ background: 'var(--card-bg)', padding: '2rem', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div className="ui-static-4fe18a48ed" >
           {editingTicket ? (
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', color: 'var(--text-color)', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Subjek / Judul Tiket:</label>
+            <div className="ui-static-8bd9dc7312" >
+              <label className="ui-static-b2e12522e5" style={{display: 'block'}}>Subjek / Judul Tiket:</label>
               <input 
                 value={editTitle} 
                 onChange={e => setEditTitle(e.target.value)} 
                 placeholder="Masukkan subjek/judul tiket..."
-                style={{ width: '100%', fontSize: '1.25rem', fontWeight: 'bold', padding: '0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)' }} 
+                className="ui-static-dd68ef4f72" style={{width: '100%'}}
               />
             </div>
           ) : (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-              <h1 style={{ margin: 0, fontSize: '1.6rem', color: 'var(--heading-color)' }}>
+            <div className="ui-static-3e8220669e" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+              <h1 className="ui-static-9818f2ec7b" >
                 {ticket.title}
                 {ticket.customData && Object.values(ticket.customData).some(val => typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val) && new Date(val) < new Date()) && ticket.status !== 'Resolved' && (
-                  <span className="badge" style={{background: '#ef4444', color: 'white', marginLeft: '1rem', verticalAlign: 'middle', fontSize: '0.8rem'}}>⚠️ EXPIRED</span>
+                  <span className="badge ui-static-cb3bfb3d32" style={{verticalAlign: 'middle'}}> EXPIRED</span>
                 )}
               </h1>
               {ticket.enableSla && (
-                <div style={{ marginLeft: '1rem' }}>
+                <div className="ui-static-a7fa7be848" >
                   {(() => {
                     if (ticket.status === 'Resolved' || ticket.status === 'Waiting Reply') {
-                      return <span className="badge" style={{background: '#e2e8f0', color: '#64748b', fontSize: '0.8rem'}}>⏸️ SLA Paused</span>;
+                      return <span className="badge ui-static-48c0214ff2" > SLA Paused</span>;
                     }
                     if (!ticket.nextSlaDeadline) return null;
                     const diffMins = Math.round((new Date(ticket.nextSlaDeadline).getTime() - now) / 60000);
                     if (diffMins < 0) {
-                      return <span className="badge" style={{background: '#ef4444', color: 'white', border: '2px solid #b91c1c', fontSize: '0.9rem', fontWeight: 'bold'}}>🚨 OVERDUE: {Math.abs(diffMins)}m (Pings: {ticket.slaBreaches})</span>;
+                      return <span className="badge ui-static-157bcc3a57" > OVERDUE: {Math.abs(diffMins)}m (Pings: {ticket.slaBreaches})</span>;
                     } else if (diffMins <= 5) {
-                      return <span className="badge" style={{background: '#f59e0b', color: 'white', fontSize: '0.9rem'}}>⚠️ Due in: {diffMins}m (Pings: {ticket.slaBreaches})</span>;
+                      return <span className="badge ui-static-2996de5e80" > Due in: {diffMins}m (Pings: {ticket.slaBreaches})</span>;
                     } else {
-                      return <span className="badge" style={{background: '#10b981', color: 'white', fontSize: '0.9rem'}}>⏱️ Due in: {diffMins}m (Pings: {ticket.slaBreaches})</span>;
+                      return <span className="badge ui-static-ebf967d32d" > Due in: {diffMins}m (Pings: {ticket.slaBreaches})</span>;
                     }
                   })()}
                 </div>
@@ -429,10 +429,10 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           )}
 
           {ticket.actionItem && ticket.actionItem.meeting && (
-            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.75rem 1rem', borderRadius: '6px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span style={{ fontSize: '1.25rem' }}>🤝</span>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: '#166534', flex: 1 }}>
-                <strong>Autogenerated Tracking Task:</strong> Originates from Meeting <a href={`/meetings/${ticket.actionItem.meeting.id}`} style={{ color: '#15803d', textDecoration: 'underline', fontWeight: 'bold' }}>{ticket.actionItem.meeting.title}</a>
+            <div className="ui-static-fe61cac957" style={{display: 'flex', alignItems: 'center'}}>
+              <span className="ui-static-7f8da12489" ></span>
+              <p className="ui-static-72daf7908b" style={{flex: 1}}>
+                <strong>Autogenerated Tracking Task:</strong> Originates from Meeting <a href={`/meetings/${ticket.actionItem.meeting.id}`} className="ui-static-348aace156" style={{textDecoration: 'underline'}}>{ticket.actionItem.meeting.title}</a>
               </p>
             </div>
           )}
@@ -449,23 +449,23 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             }
 
             return (
-              <div style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '2rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f8fafc', padding: '0.3rem 0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#0f172a' }}>
-                  👤 <strong>{extractedName}</strong>
+              <div className="ui-static-b5e30dc658" style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center'}}>
+                <span className="ui-static-5f4bae914d" style={{display: 'flex', alignItems: 'center'}}>
+                   <strong>{extractedName}</strong>
                 </span>
                 {ticket.customData && ticket.customData.hasDowntime && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: ticket.customData.endDowntime ? '#fef3c7' : '#fff7ed', padding: '0.3rem 0.75rem', borderRadius: '4px', border: `1px solid ${ticket.customData.endDowntime ? '#fde68a' : '#fed7aa'}`, color: '#92400e', fontWeight: 'bold' }}>
-                    ⏱️ Downtime Outage: {formatDate(ticket.customData.startDowntime)} s/d {ticket.customData.endDowntime ? formatDate(ticket.customData.endDowntime) : 'Belum Selesai'} ({effectiveDowntimeMinutes(ticket.customData)} menit{ticket.customData.endDowntime ? '' : ' — live'})
+                  <span className="ui-static-422a1eafc4" style={{display: 'flex', alignItems: 'center', background: ticket.customData.endDowntime ? "var(--ui-warning-bg)" : "var(--ui-surface)", border: `1px solid ${ticket.customData.endDowntime ? "var(--ui-warning)" : "var(--ui-warning)"}`}}>
+                     Downtime Outage: {formatDate(ticket.customData.startDowntime)} s/d {ticket.customData.endDowntime ? formatDate(ticket.customData.endDowntime) : 'Belum Selesai'} ({effectiveDowntimeMinutes(ticket.customData)} menit{ticket.customData.endDowntime ? '' : ' — live'})
                   </span>
                 )}
                 {ticket.customData && ticket.customData["Order Origin"] && (
-                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#fef2f2', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid #fecaca', color: '#991b1b', fontSize: '0.8rem', fontWeight: 'bold' }} title="Order Origin (Selling Company)">
-                     🏢 {ticket.customData["Order Origin"]}
+                   <span className="ui-static-ad0950c73e" style={{display: 'flex', alignItems: 'center'}} title="Order Origin (Selling Company)">
+                      {ticket.customData["Order Origin"]}
                    </span>
                 )}
                 {ticket.customData && ticket.customData["Executing Vendor"] && (
-                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#eff6ff', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid #bfdbfe', color: '#1e40af', fontSize: '0.8rem', fontWeight: 'bold' }} title="Executing Vendor">
-                     🛠️ {ticket.customData["Executing Vendor"]}
+                   <span className="ui-static-db5f09cf58" style={{display: 'flex', alignItems: 'center'}} title="Executing Vendor">
+                      {ticket.customData["Executing Vendor"]}
                    </span>
                 )}
                 <span>Handling Tech: <strong>{ticket.assignee?.name || ticket.assignee?.email || 'Unassigned'}</strong></span>
@@ -474,8 +474,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             );
           })()}
           
-          <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.7', color: 'var(--text-color)', fontSize: '0.95rem' }}>
-            <p style={{ margin: '0 0 1rem 0' }}>Dear NOC,</p>
+          <div className="ui-static-493a8e8c34" style={{whiteSpace: 'pre-wrap'}}>
+            <p className="ui-static-072b12625d" >Dear NOC,</p>
             {!editingTicket && <p>Jenis pekerjaan: <strong>{ticket.serviceWorkTypeLabel || WORK_TYPE_LABELS[ticket.workType] || "Belum diklasifikasikan"}</strong>{["Installation", "ServiceWork"].includes(ticket.workType) && ticket.sapReference ? ` / SAP: ${ticket.sapReference}` : ""}{ticket.workType === "Trouble" ? ` / Gejala: ${ticket.symptomLabel || "—"} / Penyebab: ${ticket.causeLabel || "—"}` : ""}</p>}
             {ticket.serviceChange?.operation === 'BOD' ? <BodPanel ticket={ticket}/> : <ServiceWorkSummary ticket={ticket} />}
             <WorkPhasePanel ticketId={ticket.id} categories={jobCategories} canOverride={currentUser?.role === "Admin" || currentUser?.permissions?.includes("override_workflow_category")} />
@@ -486,8 +486,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                   {!["Trouble","ServiceWork"].includes(formData.workType) && <TicketServicePicker services={services} selectedIds={formData.serviceIds || []} onChange={serviceIds => setFormData(previous => ({ ...previous, serviceIds }))} />}
                 </> : <p>Perubahan layanan sudah diterapkan. Buat tiket baru dari halaman CID untuk pekerjaan berikutnya.</p>}
                 {/* Edit Customer / Reporter Name */}
-                <div style={{ marginBottom: '1rem', position: 'relative' }} ref={customerWrapperRef}>
-                  <label style={{ display: 'block', color: '#64748b', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Customer / Reporter Name:</label>
+                <div className="ui-static-3e8220669e" style={{position: 'relative'}} ref={customerWrapperRef}>
+                  <label className="ui-static-340e8192d7" style={{display: 'block'}}>Customer / Reporter Name:</label>
                   {isAuthorized ? (
                     <>
                       <input 
@@ -507,48 +507,29 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                           setIsCustomerDropdownOpen(true);
                         }}
                         onFocus={() => setIsCustomerDropdownOpen(true)}
-                        style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                        className="ui-static-5786b7f14c" style={{width: '100%'}}
                       />
                       
                       {isCustomerDropdownOpen && customerSearchTerm.length >= 2 && (
                         <div 
-                          style={{ 
-                            position: 'absolute', 
-                            top: '100%', 
-                            left: 0, 
-                            right: 0, 
-                            marginTop: '4px', 
-                            background: 'var(--card-bg, white)', 
-                            border: '1px solid var(--border-color, #cbd5e1)', 
-                            borderRadius: '4px', 
-                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', 
-                            zIndex: 99, 
-                            maxHeight: '200px', 
-                            overflowY: 'auto' 
-                          }}
+                          className="ui-static-4a72d3d804" style={{position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 99, maxHeight: '200px', overflowY: 'auto'}}
                         >
                           {matchingCustomerServices.length > 0 ? (
-                            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                            <ul className="ui-static-0d59a3d063" style={{listStyle: 'none'}}>
                               {matchingCustomerServices.map(s => (
                                 <li 
                                   key={s.id}
                                   onClick={() => handleSelectCustomerService(s)}
-                                  style={{ 
-                                    padding: '0.75rem', 
-                                    cursor: 'pointer', 
-                                    borderBottom: '1px solid var(--border-color, #f1f5f9)', 
-                                    fontSize: '0.9rem', 
-                                    color: 'var(--text-color, #334155)'
-                                  }}
+                                  className="ui-static-1bfa8b6ad5" style={{cursor: 'pointer'}}
                                   onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)'}
                                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                 >
-                                  <strong style={{ color: '#0f172a' }}>{s.customer?.name}</strong>: {s.name} <span style={{ opacity: 0.6, fontSize: '0.8rem' }}>({getServiceCid(s) || "CID belum tersedia"})</span>
+                                  <strong className="ui-static-94cf5c9a5e" >{s.customer?.name}</strong>: {s.name} <span className="ui-static-fc155e091a" style={{opacity: 0.6}}>({getServiceCid(s) || "CID belum tersedia"})</span>
                                 </li>
                               ))}
                             </ul>
                           ) : (
-                            <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>
+                            <div className="ui-static-abaa5b1f0b" style={{textAlign: 'center'}}>
                               Tidak ada kecocokan di inventory. Ketikan Anda akan disimpan sebagai input manual.
                             </div>
                           )}
@@ -560,14 +541,14 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                       type="text" 
                       value={customerSearchTerm} 
                       disabled 
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--hover-bg)', color: 'var(--text-color)', cursor: 'not-allowed' }} 
+                      className="ui-static-eb797948b8" style={{width: '100%', cursor: 'not-allowed'}}
                     />
                   )}
                 </div>
 
                 {/* Edit Downtime Outage */}
-                <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                <div className="ui-static-1b75bd3b0e" >
+                  <label className="ui-static-7aa1f2f55f" style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
                     <input 
                       type="checkbox" 
                       checked={formData.customData?.hasDowntime || false} 
@@ -586,13 +567,13 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                       }}
                       style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
                     />
-                    🚨 Catat Waktu Outage / Downtime (Trouble Ticket)
+                     Catat Waktu Outage / Downtime (Trouble Ticket)
                   </label>
                   
                   {formData.customData?.hasDowntime && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                    <div className="ui-static-4b2b7b9e13" style={{display: 'grid', gridTemplateColumns: '1fr 1fr'}}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>Mulai Downtime</label>
+                        <label className="ui-static-8eae2b6da2" style={{display: 'block'}}>Mulai Downtime</label>
                         <input 
                           type="datetime-local" 
                           value={toDatetimeLocalValue(formData.customData?.startDowntime)} 
@@ -609,14 +590,14 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                               }
                             });
                           }} 
-                          style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                          className="ui-static-a7b2f1ea69" style={{width: '100%'}}
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#475569', marginBottom: '0.3rem' }}>
-                          Selesai Downtime <span style={{ fontWeight: 'normal', color: '#94a3b8' }}>(opsional)</span>
+                        <label className="ui-static-8eae2b6da2" style={{display: 'block'}}>
+                          Selesai Downtime <span className="ui-static-3699709ad4" >(opsional)</span>
                         </label>
-                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <div className="ui-static-30f523173e" style={{display: 'flex'}}>
                           <input 
                             type="datetime-local" 
                             value={toDatetimeLocalValue(formData.customData?.endDowntime)} 
@@ -633,12 +614,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                                 }
                               });
                             }} 
-                            style={{ flex: 1, padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                            className="ui-static-a7b2f1ea69" style={{flex: 1}}
                           />
                           <button
                             type="button"
-                            className="secondary-btn"
-                            style={{ width: 'auto', padding: '0.4rem 0.6rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+                            className="secondary-btn ui-static-bc46fe7714"
+                            style={{width: 'auto', whiteSpace: 'nowrap'}}
                             title="Set selesai = sekarang (WIB)"
                             onClick={() => {
                               const val = nowDatetimeLocal();
@@ -661,13 +642,13 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                       </div>
                       
                       {formData.customData?.startDowntime && (
-                        <div style={{ gridColumn: '1 / -1', background: formData.customData?.endDowntime ? '#f0fdf4' : '#fff7ed', border: `1px solid ${formData.customData?.endDowntime ? '#bbf7d0' : '#fed7aa'}`, padding: '0.5rem 0.75rem', borderRadius: '4px', fontSize: '0.85rem', color: formData.customData?.endDowntime ? '#166534' : '#9a3412', fontWeight: 'bold' }}>
+                        <div className="ui-static-4ede6d8190" style={{gridColumn: '1 / -1', background: formData.customData?.endDowntime ? "var(--ui-surface)" : "var(--ui-surface)", border: `1px solid ${formData.customData?.endDowntime ? "var(--ui-success)" : "var(--ui-warning)"}`, color: formData.customData?.endDowntime ? "var(--ui-success)" : "var(--ui-warning)"}}>
                           {(() => {
                             const duration = getDowntimeDuration(formData.customData.startDowntime, formData.customData.endDowntime);
                             if (duration?.error) {
-                              return <span style={{ color: '#ef4444' }}>⚠️ {duration.error}</span>;
+                              return <span className="ui-static-d087b501d0" > {duration.error}</span>;
                             }
-                            return <span>⏱️ Total Durasi Downtime: {duration?.text}</span>;
+                            return <span> Total Durasi Downtime: {duration?.text}</span>;
                           })()}
                         </div>
                       )}
@@ -675,8 +656,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                   )}
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', color: 'var(--text-color)', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Deskripsi Tiket:</label>
+                <div className="ui-static-3e8220669e" >
+                  <label className="ui-static-b2e12522e5" style={{display: 'block'}}>Deskripsi Tiket:</label>
                   <textarea 
                     ref={textareaRef}
                     value={editDesc} 
@@ -685,33 +666,20 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                       adjustTextareaHeight();
                     }} 
                     placeholder="Masukkan deskripsi detail kendala..."
-                    style={{ 
-                      width: '100%', 
-                      padding: '0.75rem', 
-                      borderRadius: '6px', 
-                      border: '1px solid var(--border-color)', 
-                      background: 'var(--input-bg)', 
-                      color: 'var(--input-text)', 
-                      fontFamily: 'inherit', 
-                      overflowY: 'hidden',
-                      resize: 'none',
-                      minHeight: '200px',
-                      lineHeight: '1.6',
-                      fontSize: '0.95rem'
-                    }} 
+                    className="ui-static-355fc1d005" style={{width: '100%', overflowY: 'hidden', resize: 'none', minHeight: '200px'}}
                   />
                 </div>
                 
                 {customFields?.length > 0 && (
-                  <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '6px', border: '1px solid #e2e8f0', marginBottom: '1rem' }}>
-                    <h4 style={{ margin: '0 0 1rem 0', color: '#1e293b', fontSize: '0.9rem' }}>Configure Custom Parameters</h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="ui-static-8f27083c68" >
+                    <h4 className="ui-static-7c4283a16f" >Configure Custom Parameters</h4>
+                    <div className="ui-static-af81cc4264" style={{display: 'flex', flexDirection: 'column'}}>
                       {customFields.map(f => (
-                        <div key={f.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1fr) 3fr', alignItems: 'center', fontSize: '0.85rem' }}>
-                          <label style={{ color: '#64748b', fontWeight: 'bold' }}>{f.name}:</label>
+                        <div key={f.id} className="ui-static-6393964ce2" style={{display: 'grid', gridTemplateColumns: 'minmax(120px, 1fr) 3fr', alignItems: 'center'}}>
+                          <label className="ui-static-b674ec9d7d" >{f.name}:</label>
                           {f.type === 'textarea' ? (
                             <textarea 
-                              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', outline: 'none' }}
+                              className="ui-static-5786b7f14c" style={{outline: 'none'}}
                               value={formData.customData?.[f.name] || ''}
                               onChange={e => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: e.target.value }})}
                             />
@@ -736,7 +704,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                           ) : (
                             <input 
                               type={f.type === 'date' ? 'date' : 'text'}
-                              style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', outline: 'none' }}
+                              className="ui-static-5786b7f14c" style={{outline: 'none'}}
                               value={formData.customData?.[f.name] || ''}
                               onChange={e => setFormData({ ...formData, customData: { ...formData.customData, [f.name]: e.target.value }})}
                             />
@@ -747,8 +715,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                   </div>
                 )}
 
-                <div style={{ background: '#fffbeb', padding: '1.5rem', borderRadius: '6px', border: '1px solid #fde68a', marginBottom: '1rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#b45309', marginBottom: '0.5rem' }}>
+                <div className="ui-static-8f27083c68" >
+                  <label className="ui-static-e7c5f2f41a" style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
                     <input 
                       type="checkbox" 
                       checked={formData.enableSla} 
@@ -759,23 +727,23 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                     Enable SLA Enforcement Timer for this ticket
                   </label>
                   {formData.enableSla && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '2rem', marginTop: '0.5rem' }}>
+                    <div className="ui-static-5d44a1626d" style={{display: 'flex', alignItems: 'center'}}>
                       <input 
                         type="number" 
                         value={formData.slaTimerMins} 
                         onChange={e => setFormData({ ...formData, slaTimerMins: parseInt(e.target.value) || 15 })} 
                         min="5" max="1440" 
                         disabled={!canManageSla}
-                        style={{ width: '100px', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                        className="ui-static-1110c82e00" style={{width: '100px'}}
                       />
-                      <span style={{ fontSize: '0.85rem', color: '#b45309' }}>Minutes (frequency of CS follow-up pings)</span>
+                      <span className="ui-static-c4f6d9efa4" >Minutes (frequency of CS follow-up pings)</span>
                     </div>
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <button onClick={saveTicketEdit} style={{ background: '#10b981', color: 'white', padding: '0.4rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Save Changes</button>
-                  <button onClick={() => setEditingTicket(false)} style={{ background: '#e2e8f0', color: '#334155', padding: '0.4rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                <div className="ui-static-8451864047" style={{display: 'flex'}}>
+                  <button onClick={saveTicketEdit} className="ui-static-378fd6cdab" style={{cursor: 'pointer'}}>Save Changes</button>
+                  <button onClick={() => setEditingTicket(false)} className="ui-static-cf6242491a" style={{cursor: 'pointer'}}>Cancel</button>
                 </div>
               </div>
             ) : (
@@ -783,13 +751,13 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                 <div dangerouslySetInnerHTML={{ __html: linkify(ticket.description) }} />
                 
                 {formData.customData && Object.keys(formData.customData).filter(k => formData.customData[k]).length > 0 && (
-                  <div style={{ marginTop: '2rem', background: 'var(--hover-bg)', padding: '1.25rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                    <h4 style={{ margin: '0 0 1rem 0', color: 'var(--heading-color)', fontSize: '0.9rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Attached Parameters</h4>
-                    <div style={{ display: 'grid', gap: '0.75rem', fontSize: '0.85rem' }}>
+                  <div className="ui-static-fe041a7734" >
+                    <h4 className="ui-static-10dbdcd9e9" >Attached Parameters</h4>
+                    <div className="ui-static-e305c8eb6b" style={{display: 'grid'}}>
                       {Object.entries(formData.customData).filter(([k, v]) => v).map(([k, v]) => (
-                        <div key={k} style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 1fr) 4fr', gap: '1rem' }}>
-                          <span style={{ color: 'var(--text-color)', fontWeight: 'bold' }}>{k}</span>
-                          <span style={{ color: 'var(--heading-color)' }}>{v}</span>
+                        <div key={k} className="ui-static-af81cc4264" style={{display: 'grid', gridTemplateColumns: 'minmax(150px, 1fr) 4fr'}}>
+                          <span className="ui-static-b9b52aa8d4" >{k}</span>
+                          <span className="ui-static-bffd53f399" >{v}</span>
                         </div>
                       ))}
                     </div>
@@ -800,12 +768,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           </div>
 
           {ticket.attachments && ticket.attachments.length > 0 && (
-            <div style={{ marginTop: '1.5rem', background: 'var(--hover-bg)', padding: '1rem', borderRadius: '6px', border: '1px dashed var(--border-color)' }}>
-              <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-color)', marginBottom: '0.5rem' }}>Attachments ({ticket.attachments.length})</strong>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div className="ui-static-d52dc5b191" >
+              <strong className="ui-static-d216f19693" style={{display: 'block'}}>Attachments ({ticket.attachments.length})</strong>
+              <div className="ui-static-30f523173e" style={{display: 'flex', flexWrap: 'wrap'}}>
                 {ticket.attachments.map(att => (
-                   <a key={att.id} href={att.url} target="_blank" rel="noreferrer" style={{ background: 'var(--card-bg)', padding: '0.4rem 0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '0.85rem', color: '#3b82f6', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                     📎 {att.filename}
+                   <a key={att.id} href={att.url} target="_blank" rel="noreferrer" className="ui-static-dfe620dfda" style={{textDecoration: 'none', display: 'flex', alignItems: 'center'}}>
+                      {att.filename}
                    </a>
                 ))}
               </div>
@@ -815,36 +783,36 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
         </div>
 
         {ticket.comments?.map(c => (
-          <div key={c.id} style={{ background: 'var(--card-bg)', padding: '1.5rem 2rem', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.25rem', paddingBottom: '0.5rem', fontSize: '0.85rem' }}>
-              <span style={{ color: 'var(--text-color)' }}>
-                Reply by <strong style={{ color: 'var(--heading-color)' }}>{c.author?.name || c.author?.email}</strong> 
-                <span style={{ marginLeft: '0.5rem' }}>&gt; <span>{mounted ? new Date(c.createdAt).toLocaleString('en-CA') : '...'}</span></span>
+          <div key={c.id} className="ui-static-b8748b8852" >
+            <div className="ui-static-62c8efff6b" style={{display: 'flex', justifyContent: 'space-between'}}>
+              <span className="ui-static-fade3489ef" >
+                Reply by <strong className="ui-static-bffd53f399" >{c.author?.name || c.author?.email}</strong>
+                <span className="ui-static-656691997e" >&gt; <span>{mounted ? new Date(c.createdAt).toLocaleString('en-CA') : '...'}</span></span>
               </span>
               <span>
                 {(c.authorId === currentUserId || isAuthorized) && (
-                  <span onClick={() => { setEditingCommentId(c.id); setEditingCommentText(c.text); }} style={{ color: '#0ea5e9', cursor: 'pointer', fontWeight: 'bold' }}>Edit</span>
+                  <span onClick={() => { setEditingCommentId(c.id); setEditingCommentText(c.text); }} className="ui-static-b674ec9d7d" style={{cursor: 'pointer'}}>Edit</span>
                 )}
               </span>
             </div>
             {editingCommentId === c.id ? (
-              <div style={{ padding: '0.5rem 0' }}>
-                <textarea rows="4" value={editingCommentText} onChange={e => setEditingCommentText(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: 'inherit', boxSizing: 'border-box' }} />
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <button onClick={() => saveCommentEdit(c.id)} style={{ background: '#3b82f6', color: 'white', padding: '0.4rem 1rem', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Update Save</button>
-                  <button onClick={() => setEditingCommentId(null)} style={{ background: 'var(--hover-bg)', color: 'var(--heading-color)', padding: '0.4rem 1rem', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+              <div className="ui-static-fd5975142e" >
+                <textarea rows="4" value={editingCommentText} onChange={e => setEditingCommentText(e.target.value)} className="ui-static-17db404fdb" style={{width: '100%', boxSizing: 'border-box'}} />
+                <div className="ui-static-8451864047" style={{display: 'flex'}}>
+                  <button onClick={() => saveCommentEdit(c.id)} className="ui-static-39b03e44ab" style={{cursor: 'pointer'}}>Update Save</button>
+                  <button onClick={() => setEditingCommentId(null)} className="ui-static-4971779528" style={{cursor: 'pointer'}}>Cancel</button>
                 </div>
               </div>
             ) : (
-              <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: 'var(--text-color)', fontSize: '0.95rem' }} dangerouslySetInnerHTML={{ __html: linkify(c.text) }} />
+              <div className="ui-static-04b359dbf2" style={{whiteSpace: 'pre-wrap'}} dangerouslySetInnerHTML={{ __html: linkify(c.text) }} />
             )}
             
             {c.attachments && c.attachments.length > 0 && (
-              <div style={{ marginTop: '1rem', borderTop: '1px dashed var(--border-color)', paddingTop: '1rem' }}>
-                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div className="ui-static-d23a01b6ad" >
+                 <div className="ui-static-30f523173e" style={{display: 'flex', flexWrap: 'wrap'}}>
                   {c.attachments.map(att => (
-                     <a key={att.id} href={att.url} target="_blank" rel="noreferrer" style={{ background: 'var(--hover-bg)', padding: '0.4rem 0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '0.8rem', color: '#0ea5e9', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                       📎 {att.filename}
+                     <a key={att.id} href={att.url} target="_blank" rel="noreferrer" className="ui-static-a79306a496" style={{textDecoration: 'none', display: 'flex', alignItems: 'center'}}>
+                        {att.filename}
                      </a>
                   ))}
                 </div>
@@ -854,23 +822,23 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           </div>
         ))}
 
-        <div style={{ background: 'var(--hover-bg)', padding: '2rem', borderRadius: '8px', border: '1px solid var(--border-color)', marginTop: '1rem' }}>
-          <form onSubmit={handleCommentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--heading-color)' }}>Reply to ticket</h3>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+        <div className="ui-static-11d519e579" >
+          <form onSubmit={handleCommentSubmit} className="ui-static-af81cc4264" style={{display: 'flex', flexDirection: 'column'}}>
+            <div className="ui-static-af81cc4264" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap'}}>
+              <h3 className="ui-static-c470735159" >Reply to ticket</h3>
+              <label className="ui-static-68c4e844da" style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
                 <input type="checkbox" checked={isPublicReply} onChange={(e) => setIsPublicReply(e.target.checked)} />
                 Public reply (visible on track link)
               </label>
             </div>
             
             {optionalFields.length > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '-0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e0f2fe', padding: '0.4rem 1.25rem', borderRadius: '6px', border: '1px solid #bae6fd' }}>
-                  <span style={{ fontSize: '0.85rem', color: '#0369a1', fontWeight: 'bold' }}>+ Tambah Parameter:</span>
+              <div className="ui-static-18f7ac78e1" style={{display: 'flex', justifyContent: 'flex-end'}}>
+                <div className="ui-static-aeec96aa52" style={{display: 'flex', alignItems: 'center'}}>
+                  <span className="ui-static-c326169b80" >+ Tambah Parameter:</span>
                   <select 
                      defaultValue=""
-                     style={{ background: 'transparent', border: 'none', color: '#0f172a', fontWeight: 'bold', cursor: 'pointer', outline: 'none', fontSize: '0.85rem' }}
+                     className="ui-static-e6bf236d4c" style={{cursor: 'pointer', outline: 'none'}}
                      onChange={e => {
                        if(e.target.value) setVisibleCustomFieldIds([...visibleCustomFieldIds, parseInt(e.target.value)]);
                        e.target.value = "";
@@ -884,13 +852,13 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             )}
 
             {visibleCustomFieldIds.length > 0 && (
-              <div style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div className="ui-static-72ae98d62a" style={{display: 'flex', flexDirection: 'column'}}>
                 {customFields.filter(f => visibleCustomFieldIds.includes(f.id)).map(f => (
-                  <div key={f.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1fr) 3fr', alignItems: 'center', fontSize: '0.85rem' }}>
-                    <label style={{ color: 'var(--text-color)', fontWeight: 'bold' }}>{f.name}:</label>
+                  <div key={f.id} className="ui-static-6393964ce2" style={{display: 'grid', gridTemplateColumns: 'minmax(120px, 1fr) 3fr', alignItems: 'center'}}>
+                    <label className="ui-static-b9b52aa8d4" >{f.name}:</label>
                     {f.type === 'textarea' ? (
                       <textarea 
-                        style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--heading-color)', outline: 'none' }}
+                        className="ui-static-a5d32c45d4" style={{outline: 'none'}}
                         value={replyCustomData[f.name] || ''}
                         onChange={e => setReplyCustomData({ ...replyCustomData, [f.name]: e.target.value })}
                         required
@@ -909,7 +877,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                     ) : (
                       <input 
                         type={f.type === 'date' ? 'date' : 'text'}
-                        style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--heading-color)', outline: 'none' }}
+                        className="ui-static-a5d32c45d4" style={{outline: 'none'}}
                         value={replyCustomData[f.name] || ''}
                         onChange={e => setReplyCustomData({ ...replyCustomData, [f.name]: e.target.value })}
                         required
@@ -926,7 +894,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               <textarea 
                 rows="6" 
                 placeholder="Type your technical response here..." 
-                style={{ width: '100%', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'inherit', boxSizing: 'border-box', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.95rem' }}
+                className="ui-static-0e44beab41" style={{width: '100%', boxSizing: 'border-box'}}
                 value={commentText}
                 onChange={e => setCommentText(e.target.value)}
                 required={!file && visibleCustomFieldIds.length === 0}
@@ -934,8 +902,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             </div>
 
             {canManageSla && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', fontWeight: 'bold', color: '#1e293b' }}>
+              <div className="ui-static-c394f4ea60" style={{display: 'flex', flexDirection: 'column'}}>
+                <label className="ui-static-e9bf855066" style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
                   <input 
                     type="checkbox" 
                     checked={replyEnableSla} 
@@ -945,44 +913,44 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                   Reactivate / Modify External SLA Timer
                 </label>
                 {replyEnableSla && (
-                  <div style={{ paddingLeft: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div className="ui-static-c3b27cc598" style={{display: 'flex', alignItems: 'center'}}>
                     <input 
                       type="number" 
                       value={replySlaMins} 
                       onChange={e => setReplySlaMins(parseInt(e.target.value))} 
                       min="5" max="1440" 
-                      style={{ padding: '0.5rem', width: '80px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                      className="ui-static-2bf089dea9" style={{width: '80px'}}
                     />
-                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Minutes (Ticket Original: {ticket?.slaTimerMins || 15}m)</span>
+                    <span className="ui-static-dd90b11840" >Minutes (Ticket Original: {ticket?.slaTimerMins || 15}m)</span>
                   </div>
                 )}
               </div>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--input-bg)', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-color)', minWidth: '100px' }}>Attachment:</label>
-              <input type="file" onChange={e => setFile(e.target.files[0])} style={{ flex: 1, fontSize: '0.85rem', color: 'var(--input-text)' }} />
-              {file && <span style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 'bold' }}>Added ✓</span>}
+            <div className="ui-static-5783191274" style={{display: 'flex', alignItems: 'center'}}>
+              <label className="ui-static-f44d951558" style={{minWidth: '100px'}}>Attachment:</label>
+              <input type="file" onChange={e => setFile(e.target.files[0])} className="ui-static-2cd1b44acf" style={{flex: 1}} />
+              {file && <span className="ui-static-5e6e0287a2" >Added ✓</span>}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
-              <div style={{ position: 'relative', display: 'inline-flex', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                <button type="button" onClick={(e) => handleCommentSubmit(e, submitAction)} disabled={commentLoading} style={{ padding: '0.75rem 1.5rem', background: submitAction === 'finish' ? '#10b981' : '#3b82f6', color: 'white', border: 'none', borderRadius: '4px 0 0 4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', transition: 'background 0.2s' }}>
+            <div className="ui-static-58450472e8" style={{display: 'flex', justifyContent: 'flex-end', alignItems: 'center'}}>
+              <div className="ui-static-791d011e41" style={{position: 'relative', display: 'inline-flex'}}>
+                <button type="button" onClick={(e) => handleCommentSubmit(e, submitAction)} disabled={commentLoading} className="ui-static-48db7c15bb" style={{background: submitAction === 'finish' ? "var(--ui-success)" : "var(--ui-info)", cursor: 'pointer', transition: 'background 0.2s'}}>
                   {commentLoading ? 'Sending...' : (submitAction === 'finish' ? 'Submit & Mark Finished' : 'Submit Reply')}
                 </button>
-                <button type="button" onClick={() => setShowSubmitDropdown(!showSubmitDropdown)} disabled={commentLoading} style={{ padding: '0.75rem 0.5rem', background: submitAction === 'finish' ? '#059669' : '#2563eb', color: 'white', border: 'none', borderRadius: '0 4px 4px 0', cursor: 'pointer', borderLeft: `1px solid ${submitAction === 'finish' ? '#34d399' : '#60a5fa'}`, transition: 'background 0.2s' }}>
-                  <span style={{ fontSize: '0.7rem' }}>▼</span>
+                <button type="button" onClick={() => setShowSubmitDropdown(!showSubmitDropdown)} disabled={commentLoading} className="ui-static-464af54656" style={{background: submitAction === 'finish' ? "var(--ui-success)" : "var(--ui-info)", cursor: 'pointer', borderLeft: `1px solid ${submitAction === 'finish' ? "var(--ui-success)" : "var(--ui-info)"}`, transition: 'background 0.2s'}}>
+                  <span className="ui-static-56a9a1da55" >▼</span>
                 </button>
                 
                 {showSubmitDropdown && (
-                  <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '0.25rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '6px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)', zIndex: 10, minWidth: '220px', overflow: 'hidden' }}>
-                    <div onClick={() => { setSubmitAction('reply'); setShowSubmitDropdown(false); }} style={{ padding: '0.75rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', background: submitAction === 'reply' ? 'var(--hover-bg)' : 'var(--card-bg)', fontWeight: submitAction === 'reply' ? 'bold' : 'normal', fontSize: '0.85rem', color: 'var(--heading-color)' }}>
-                      <div style={{ marginBottom: '0.25rem' }}>Submit Reply</div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-color)', fontWeight: 'normal' }}>Status shifts automatically</span>
+                  <div className="ui-static-4c5f93b5d3" style={{position: 'absolute', top: '100%', right: 0, zIndex: 10, minWidth: '220px', overflow: 'hidden'}}>
+                    <div onClick={() => { setSubmitAction('reply'); setShowSubmitDropdown(false); }} className="ui-static-f04999b5c0" style={{cursor: 'pointer', background: submitAction === 'reply' ? 'var(--hover-bg)' : 'var(--card-bg)', fontWeight: submitAction === 'reply' ? 'bold' : 'normal'}}>
+                      <div className="ui-static-137aa26511" >Submit Reply</div>
+                      <span className="ui-static-aadf8c75a4" >Status shifts automatically</span>
                     </div>
-                    <div onClick={() => { setSubmitAction('finish'); setShowSubmitDropdown(false); }} style={{ padding: '0.75rem 1rem', cursor: 'pointer', background: submitAction === 'finish' ? 'var(--hover-bg)' : 'var(--card-bg)', fontWeight: submitAction === 'finish' ? 'bold' : 'normal', fontSize: '0.85rem', color: '#10b981' }}>
-                      <div style={{ marginBottom: '0.25rem' }}>Submit & Mark Finished</div>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-color)', fontWeight: 'normal' }}>Status shifts to Finish</span>
+                    <div onClick={() => { setSubmitAction('finish'); setShowSubmitDropdown(false); }} className="ui-static-f4b1b3c6e4" style={{cursor: 'pointer', background: submitAction === 'finish' ? 'var(--hover-bg)' : 'var(--card-bg)', fontWeight: submitAction === 'finish' ? 'bold' : 'normal'}}>
+                      <div className="ui-static-137aa26511" >Submit & Mark Finished</div>
+                      <span className="ui-static-aadf8c75a4" >Status shifts to Finish</span>
                     </div>
                   </div>
                 )}
@@ -993,12 +961,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div className="ui-static-92254f43e7" style={{display: 'flex', flexDirection: 'column'}}>
         
         {ticket.enableSla && ticket.status !== 'Resolved' && ticket.status !== 'Waiting Reply' && (
-           <div className="no-print" style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '1rem', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-             <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#b45309' }}>SLA Enforcement Active</h3>
-             <p style={{ margin: '0 0 1rem 0', fontSize: '0.8rem', color: '#92400e', lineHeight: '1.4' }}>The Customer Service team is required to follow up with the customer every {ticket.slaTimerMins} minutes.</p>
+           <div className="no-print ui-static-af064c5623" >
+             <h3 className="ui-static-00c0f4f797" >SLA Enforcement Active</h3>
+             <p className="ui-static-0afa5dcabc" >The Customer Service team is required to follow up with the customer every {ticket.slaTimerMins} minutes.</p>
              <button 
                onClick={async () => {
                  setSlaLoading(true);
@@ -1008,33 +976,33 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                  setSlaLoading(false);
                }} 
                disabled={slaLoading}
-               style={{ width: '100%', background: '#d97706', color: 'white', border: 'none', padding: '0.75rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+               className="ui-static-a7283a26a2" style={{width: '100%', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center'}}
              >
                {slaLoading ? 'Logging...' : '↻ Log Follow-Up (Ext. Channel)'}
              </button>
            </div>
         )}
 
-        <div className="no-print" style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="no-print ui-static-30f523173e" style={{display: 'flex'}}>
           {showTicketEdit && (
-            <button onClick={() => setEditingTicket(true)} style={{ flex: 1, background: 'var(--card-bg)', color: 'var(--heading-color)', border: '1px solid var(--border-color)', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontSize: '1rem' }}>✎</span> Edit
+            <button onClick={() => setEditingTicket(true)} className="ui-static-bffbf1dba5" style={{flex: 1, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+              <span className="ui-static-635656024d" ></span> Edit
             </button>
           )}
-          <button onClick={() => window.print()} className="print-btn" style={{ flex: 1, background: 'var(--card-bg)', color: 'var(--heading-color)', border: '1px solid var(--border-color)', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '1rem' }}>🖨</span> Print
+          <button onClick={() => window.print()} className="print-btn ui-static-bffbf1dba5" style={{flex: 1, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+            <span className="ui-static-635656024d" ></span> Print
           </button>
           {canDelete && (
-            <button onClick={handleDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.6rem 1rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>🗑 Delete</button>
+            <button onClick={handleDelete} className="ui-static-9520b8c320" style={{cursor: 'pointer'}}> Delete</button>
           )}
         </div>
 
-        <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div className="ui-static-5bc6e4fcaa" >
+          <div className="ui-static-6ef8599ce0" style={{display: 'flex', flexDirection: 'column'}}>
              
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-               <label style={{ color: 'var(--text-color)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Ticket Status</label>
-               <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: formData.status === 'Resolved' ? '#064e3b' : 'var(--input-bg)', color: formData.status === 'Resolved' ? '#34d399' : 'var(--input-text)', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem', outline: 'none' }} value={formData.status} onChange={e => triggerAutoSave('status', e.target.value)} disabled={!canChangeStatus}>
+             <div className="ui-static-0f8796a915" style={{display: 'flex', flexDirection: 'column'}}>
+               <label className="ui-static-b55d0546e4" style={{textTransform: 'uppercase'}}>Ticket Status</label>
+               <select className="ui-static-af51282eb0" style={{width: '100%', background: formData.status === 'Resolved' ? "var(--ui-success)" : 'var(--input-bg)', color: formData.status === 'Resolved' ? "var(--ui-success)" : 'var(--input-text)', cursor: 'pointer', outline: 'none'}} value={formData.status} onChange={e => triggerAutoSave('status', e.target.value)} disabled={!canChangeStatus}>
                  <option value="New">New</option>
                  <option value="Open">Open</option>
                  <option value="In Progress">In Progress</option>
@@ -1047,8 +1015,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
              </div>
 
              <div>
-               <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-color)', marginBottom: '0.35rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Type</label>
-               <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontWeight: '600', fontSize: '0.85rem' }} value={formData.ticketType} onChange={e => triggerAutoSave('ticketType', e.target.value)} disabled={!canModifyTicket}>
+               <label className="ui-static-117fa0fe87" style={{display: 'block', textTransform: 'uppercase'}}>Type</label>
+               <select className="ui-static-f6cbecb93c" style={{width: '100%'}} value={formData.ticketType} onChange={e => triggerAutoSave('ticketType', e.target.value)} disabled={!canModifyTicket}>
                  <option value="Incident">Incident</option>
                  <option value="Problem">Problem</option>
                  <option value="Change">Change</option>
@@ -1058,8 +1026,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
              {formData.ticketType === 'Change' && (
                <div>
-                 <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-color)', marginBottom: '0.35rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Approval</label>
-                 <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontWeight: '600', fontSize: '0.85rem' }} value={formData.approvalStatus || 'Pending'} onChange={e => triggerAutoSave('approvalStatus', e.target.value)} disabled={!isAdminOrManager}>
+                 <label className="ui-static-117fa0fe87" style={{display: 'block', textTransform: 'uppercase'}}>Approval</label>
+                 <select className="ui-static-f6cbecb93c" style={{width: '100%'}} value={formData.approvalStatus || 'Pending'} onChange={e => triggerAutoSave('approvalStatus', e.target.value)} disabled={!isAdminOrManager}>
                    <option value="Pending">Pending</option>
                    <option value="Approved">Approved</option>
                    <option value="Rejected">Rejected</option>
@@ -1078,14 +1046,14 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                    setWatching(true);
                  }
                }}
-               style={{ width: '100%', padding: '0.55rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: watching ? 'var(--secondary-color)' : 'var(--card-bg)', color: watching ? '#fff' : 'var(--heading-color)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+               className="ui-static-962506c519" style={{width: '100%', background: watching ? 'var(--secondary-color)' : 'var(--card-bg)', color: watching ? "var(--ui-on-accent)" : 'var(--heading-color)', cursor: 'pointer'}}
              >
                {watching ? 'Watching' : 'Watch ticket'}
              </button>
              
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-               <label style={{ color: 'var(--text-color)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Priority Level</label>
-               <select style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: formData.priority === 'Critical' ? '#e11d48' : 'var(--input-text)', fontWeight: '600', cursor: 'pointer', fontSize: '0.85rem', outline: 'none' }} value={formData.priority} onChange={e => triggerAutoSave('priority', e.target.value)} disabled={!canChangeStatus}>
+             <div className="ui-static-0f8796a915" style={{display: 'flex', flexDirection: 'column'}}>
+               <label className="ui-static-b55d0546e4" style={{textTransform: 'uppercase'}}>Priority Level</label>
+               <select className="ui-static-6cfc858e3f" style={{width: '100%', color: formData.priority === 'Critical' ? "var(--ui-danger)" : 'var(--input-text)', cursor: 'pointer', outline: 'none'}} value={formData.priority} onChange={e => triggerAutoSave('priority', e.target.value)} disabled={!canChangeStatus}>
                  <option value="Low">Low</option>
                  <option value="Medium">Medium</option>
                  <option value="High">High</option>
@@ -1093,8 +1061,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                </select>
              </div>
              
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-               <label style={{ color: 'var(--text-color)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Department</label>
+             <div className="ui-static-0f8796a915" style={{display: 'flex', flexDirection: 'column'}}>
+               <label className="ui-static-b55d0546e4" style={{textTransform: 'uppercase'}}>Department</label>
                <SearchableSelect 
                   options={(departments || []).map(d => ({ value: d.id, label: d.name }))} 
                   value={formData.departmentId} 
@@ -1104,8 +1072,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                 />
             </div>
 
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-               <label style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Assigned To</label>
+             <div className="ui-static-0f8796a915" style={{display: 'flex', flexDirection: 'column'}}>
+               <label className="ui-static-d6117e520d" style={{textTransform: 'uppercase'}}>Assigned To</label>
                <SearchableSelect 
                  options={users.map(u => ({ value: u.id, label: u.name || u.email }))} 
                  value={formData.assigneeId} 
@@ -1115,8 +1083,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                />
              </div>
              
-             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-               <label style={{ color: '#94a3b8', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Job Phase Category</label>
+             <div className="ui-static-0f8796a915" style={{display: 'flex', flexDirection: 'column'}}>
+               <label className="ui-static-d6117e520d" style={{textTransform: 'uppercase'}}>Job Phase Category</label>
                <SearchableSelect 
                  options={(jobCategories || []).map(c => ({ value: c.id, label: canChangeJobCategory ? `${c.name} (+${c.score} pt)` : c.name }))} 
                  value={formData.jobCategoryId} 
@@ -1128,29 +1096,29 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           </div>
         </div>
 
-        <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--heading-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Ticket Details</h3>
+        <div className="ui-static-5bc6e4fcaa" >
+          <h3 className="ui-static-99fe73b704" >Ticket Details</h3>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.85rem' }}>
+          <div className="ui-static-e305c8eb6b" style={{display: 'flex', flexDirection: 'column'}}>
             <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr' }}>
-              <span style={{ color: 'var(--text-color)' }}>Tracking ID:</span>
-              <span style={{ fontWeight: 'bold', color: 'var(--heading-color)' }}>{ticket.trackingId}</span>
+              <span className="ui-static-fade3489ef" >Tracking ID:</span>
+              <span className="ui-static-8356576a3b" >{ticket.trackingId}</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr' }}>
-              <span style={{ color: 'var(--text-color)' }}>Ticket #:</span>
-              <span style={{ color: 'var(--heading-color)' }}>{ticket.id}</span>
+              <span className="ui-static-fade3489ef" >Ticket #:</span>
+              <span className="ui-static-bffd53f399" >{ticket.id}</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr' }}>
-              <span style={{ color: 'var(--text-color)' }}>Created on:</span>
-              <span style={{ color: 'var(--heading-color)' }}>{mounted ? new Date(ticket.createdAt).toLocaleString('en-CA') : '...'}</span>
+              <span className="ui-static-fade3489ef" >Created on:</span>
+              <span className="ui-static-bffd53f399" >{mounted ? new Date(ticket.createdAt).toLocaleString('en-CA') : '...'}</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr' }}>
-              <span style={{ color: 'var(--text-color)' }}>Updated:</span>
-              <span style={{ color: 'var(--heading-color)' }}>{mounted ? new Date(ticket.updatedAt).toLocaleString('en-CA') : '...'}</span>
+              <span className="ui-static-fade3489ef" >Updated:</span>
+              <span className="ui-static-bffd53f399" >{mounted ? new Date(ticket.updatedAt).toLocaleString('en-CA') : '...'}</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr' }}>
-              <span style={{ color: 'var(--text-color)' }}>Replies:</span>
-              <span style={{ color: 'var(--heading-color)' }}>{ticket.comments?.length || 0}</span>
+              <span className="ui-static-fade3489ef" >Replies:</span>
+              <span className="ui-static-bffd53f399" >{ticket.comments?.length || 0}</span>
             </div>
           </div>
         </div>
@@ -1158,26 +1126,26 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
 
           {ticket.services && ticket.services.length > 0 && (
-            <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <h3 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--primary-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Network Topology (Impacted)</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="ui-static-5bc6e4fcaa" >
+              <h3 className="ui-static-69e2bff81d" >Network Topology (Impacted)</h3>
+              <div className="ui-static-af81cc4264" style={{display: 'flex', flexDirection: 'column'}}>
                 {ticket.services.map(srv => (
-                  <div key={srv.id} style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                    <div style={{ fontWeight: 'bold', color: 'var(--heading-color)', marginBottom: '0.2rem', fontSize: '0.9rem' }}>{srv.customer?.name}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', marginBottom: '0.8rem' }}>{srv.name}</div>
+                  <div key={srv.id} className="ui-static-8ac40da837" >
+                    <div className="ui-static-a5e625c9ab" >{srv.customer?.name}</div>
+                    <div className="ui-static-925c9f8d18" >{srv.name}</div>
                     
                     {srv.hops && srv.hops.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderLeft: '2px solid var(--primary-color)', paddingLeft: '0.8rem', marginLeft: '0.5rem', position: 'relative' }}>
+                      <div className="ui-static-560df0ec4d" style={{display: 'flex', flexDirection: 'column', position: 'relative'}}>
                         {srv.hops.map((hop, i) => (
-                          <div key={hop.id} style={{ position: 'relative', background: 'var(--input-bg)', padding: '0.5rem 0.8rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
-                            <div style={{ position: 'absolute', left: '-1.15rem', top: '10px', background: 'var(--card-bg)', border: '2px solid var(--primary-color)', width: '10px', height: '10px', borderRadius: '50%' }}></div>
-                            <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--heading-color)' }}>{hop.location}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-color)', fontFamily: 'monospace' }}>{hop.deviceName} • {hop.portName}</div>
+                          <div key={hop.id} className="ui-static-2a6a66339b" style={{position: 'relative'}}>
+                            <div className="ui-static-10fcb7e09f" style={{position: 'absolute', left: '-1.15rem', top: '10px', width: '10px', height: '10px'}}></div>
+                            <div className="ui-static-a849bc9536" >{hop.location}</div>
+                            <div className="ui-static-ee85763f8f" >{hop.deviceName} • {hop.portName}</div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-color)' }}>No routing hops mapped.</div>
+                      <div className="ui-static-2748f1debd" >No routing hops mapped.</div>
                     )}
                   </div>
                 ))}
@@ -1187,36 +1155,31 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
         {/* Activity Notes Panel (Phase 34) */}
         {canViewNotes && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div className="ui-static-5bc6e4fcaa" >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: notesExpanded ? '1rem' : '0', cursor: 'pointer' }} onClick={() => setNotesExpanded(!notesExpanded)}>
-              <h3 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <h3 className="ui-static-9c15ba00ea" style={{display: 'flex', alignItems: 'center'}}>
                 Activity Notes
-                <span style={{ background: 'var(--hover-bg)', color: 'var(--text-color)', padding: '0.1rem 0.5rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 'bold', fontFamily: 'var(--font-mono)' }}>{notes.length}</span>
+                <span className="ui-static-3669036e4a" >{notes.length}</span>
               </h3>
-              <span style={{ color: 'var(--text-color)', fontSize: '0.7rem', transform: notesExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+              <span className="ui-static-06c91ad709" style={{transform: notesExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s'}}>▼</span>
             </div>
 
             {notesExpanded && (
               <>
                 {canWriteNotes && (
-                  <div style={{ marginBottom: '1rem', background: 'var(--hover-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                    <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                  <div className="ui-static-d5e9b5a921" >
+                    <div className="ui-static-fd3a6e970b" style={{display: 'flex', flexWrap: 'wrap'}}>
                       {[
-                        { value: 'internal', label: 'Internal', color: '#0f766e' },
-                        { value: 'follow_up', label: 'Follow-up', color: '#d97706' },
-                        { value: 'escalation', label: 'Escalation', color: '#dc2626' },
-                        { value: 'customer_update', label: 'Customer', color: '#059669' }
+                        { value: 'internal', label: 'Internal', color: "var(--ui-info)" },
+                        { value: 'follow_up', label: 'Follow-up', color: "var(--ui-warning)" },
+                        { value: 'escalation', label: 'Escalation', color: "var(--ui-danger)" },
+                        { value: 'customer_update', label: 'Customer', color: "var(--ui-success)" }
                       ].map(t => (
                         <button
                           key={t.value}
                           type="button"
                           onClick={() => setNoteType(t.value)}
-                          style={{
-                            padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', cursor: 'pointer', border: 'none', transition: 'all 0.2s',
-                            background: noteType === t.value ? t.color : 'var(--card-bg)',
-                            color: noteType === t.value ? 'white' : 'var(--text-color)',
-                            outline: noteType === t.value ? 'none' : '1px solid var(--border-color)'
-                          }}
+                          className="ui-static-f45b65a91c" style={{cursor: 'pointer', transition: 'all 0.2s', background: noteType === t.value ? t.color : 'var(--card-bg)', color: noteType === t.value ? "var(--ui-on-accent)" : 'var(--text-color)', outline: noteType === t.value ? 'none' : '1px solid var(--border-color)'}}
                         >
                           {t.label}
                         </button>
@@ -1227,7 +1190,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                       placeholder="Tambah catatan internal..."
                       value={noteContent}
                       onChange={e => setNoteContent(e.target.value)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontFamily: 'inherit', boxSizing: 'border-box', fontSize: '0.8rem', resize: 'vertical' }}
+                      className="ui-static-8fb259e6db" style={{width: '100%', boxSizing: 'border-box', resize: 'vertical'}}
                     />
                     <button
                       type="button"
@@ -1248,35 +1211,35 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                         } catch (err) {}
                         setNoteLoading(false);
                       }}
-                      style={{ marginTop: '0.5rem', width: '100%', padding: '0.4rem', background: 'var(--secondary-color)', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: noteContent.trim() ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.8rem', opacity: noteContent.trim() ? 1 : 0.5, fontFamily: 'inherit' }}
+                      className="ui-static-62ec63d195" style={{width: '100%', cursor: noteContent.trim() ? 'pointer' : 'not-allowed', opacity: noteContent.trim() ? 1 : 0.5}}
                     >
                       {noteLoading ? 'Saving...' : 'Add note'}
                     </button>
                   </div>
                 )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '350px', overflowY: 'auto' }}>
+                <div className="ui-static-30f523173e" style={{display: 'flex', flexDirection: 'column', maxHeight: '350px', overflowY: 'auto'}}>
                   {notes.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-color)', fontSize: '0.8rem', fontStyle: 'italic' }}>Belum ada catatan. Tambahkan note pertama di atas.</div>
+                    <div className="ui-static-a099e950e5" style={{textAlign: 'center', fontStyle: 'italic'}}>Belum ada catatan. Tambahkan note pertama di atas.</div>
                   )}
                   {notes.map(note => {
                     const typeConfig = {
-                      internal: { color: '#0f766e', label: 'Internal' },
-                      follow_up: { color: '#d97706', label: 'Follow-up' },
-                      escalation: { color: '#dc2626', label: 'Escalation' },
-                      customer_update: { color: '#059669', label: 'Customer' }
+                      internal: { color: "var(--ui-info)", label: 'Internal' },
+                      follow_up: { color: "var(--ui-warning)", label: 'Follow-up' },
+                      escalation: { color: "var(--ui-danger)", label: 'Escalation' },
+                      customer_update: { color: "var(--ui-success)", label: 'Customer' }
                     };
                     const cfg = typeConfig[note.noteType] || typeConfig.internal;
                     return (
-                      <div key={note.id} style={{ padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', borderLeft: `3px solid ${cfg.color}`, background: 'var(--card-bg)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.3rem' }}>
-                          <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: cfg.color, letterSpacing: '0.03em', textTransform: 'uppercase' }}>
+                      <div key={note.id} className="ui-static-d8ea554952" style={{borderLeft: `3px solid ${cfg.color}`}}>
+                        <div className="ui-static-137aa26511" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                          <span className="ui-static-0db2f5adb4" style={{color: cfg.color, textTransform: 'uppercase'}}>
                             {cfg.label}
                           </span>
-                          <span style={{ fontSize: '0.65rem', color: 'var(--text-color)' }}>{mounted ? new Date(note.createdAt).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '...'}</span>
+                          <span className="ui-static-291febf571" >{mounted ? new Date(note.createdAt).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '...'}</span>
                         </div>
-                        <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.8rem', color: 'var(--heading-color)', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>{note.content}</p>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-color)' }}>— {note.author?.name || note.author?.email}</span>
+                        <p className="ui-static-279b24b0bc" style={{whiteSpace: 'pre-wrap'}}>{note.content}</p>
+                        <span className="ui-static-291febf571" >— {note.author?.name || note.author?.email}</span>
                       </div>
                     );
                   })}
@@ -1286,14 +1249,14 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           </div>
         )}
 
-        <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '0.9rem', color: 'var(--heading-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="ui-static-5bc6e4fcaa" >
+          <h3 className="ui-static-f226468cdc" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
             <span>Ticket History</span>
-            <span style={{ color: 'var(--text-color)', fontSize: '0.7rem' }}>ʌ</span>
+            <span className="ui-static-06c91ad709" >ʌ</span>
           </h3>
-          <ul style={{ listStyle: 'none', margin: '0 0 1rem 0', padding: 0, display: 'flex', flexDirection: 'column' }}>
+          <ul className="ui-static-9d965ed3cc" style={{listStyle: 'none', display: 'flex', flexDirection: 'column'}}>
             {(!ticket.historyLogs || ticket.historyLogs.length === 0) && (
-              <li style={{ color: '#94a3b8', fontSize: '0.8rem' }}>No history entries logged yet.</li>
+              <li className="ui-static-60700bd225" >No history entries logged yet.</li>
             )}
             {ticket.historyLogs?.slice(0, 5).map(log => {
                const d = new Date(log.createdAt);
@@ -1301,21 +1264,21 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                const timeStr = d.toLocaleTimeString('en-GB', {hour12: false});
                const authorName = log.actor?.name || log.actor?.email?.split('@')[0] || 'System';
                return (
-                <li key={log.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '1rem', paddingBottom: '1rem', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9', alignItems: 'flex-start' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', color: 'var(--text-color)', fontSize: '0.75rem', lineHeight: '1.4' }}>
+                <li key={log.id} className="ui-static-4fa2e9d873" style={{display: 'grid', gridTemplateColumns: '80px 1fr', alignItems: 'flex-start'}}>
+                  <div className="ui-static-3214ddca0f" style={{display: 'flex', flexDirection: 'column'}}>
                     <span>{mounted ? dateStr : '...'}</span>
                     <span>{mounted ? timeStr : '...'}</span>
                   </div>
-                  <div style={{ color: 'var(--heading-color)', fontSize: '0.8rem', lineHeight: '1.4' }}>
+                  <div className="ui-static-6a26d99d37" >
                     <span>{log.action}</span><br/>
-                    <span style={{ color: 'var(--text-color)' }}>by {authorName}</span>
+                    <span className="ui-static-fade3489ef" >by {authorName}</span>
                   </div>
                 </li>
                );
             })}
           </ul>
           {ticket.historyLogs?.length > 5 && (
-            <button onClick={() => setShowHistoryModal(true)} style={{ width: '100%', padding: '0.5rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', color: '#3b82f6', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}>
+            <button onClick={() => setShowHistoryModal(true)} className="ui-static-f16a6a702e" style={{width: '100%', cursor: 'pointer'}}>
               View Full History ({ticket.historyLogs.length})
             </button>
           )}
@@ -1325,27 +1288,27 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
       {showHistoryModal && (
         <div className="modal-overlay" onClick={() => setShowHistoryModal(false)} role="presentation">
-          <div className="modal-panel" style={{ padding: '2rem' }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Full Audit History">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--heading-color)' }}>Full Audit History</h2>
-              <button onClick={() => setShowHistoryModal(false)} style={{ background: 'var(--hover-bg)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: 'var(--heading-color)', fontWeight: 'bold' }}>✕</button>
+          <div className="modal-panel ui-static-39c1d6c828"  onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Full Audit History">
+            <div className="ui-static-377c070215" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+              <h2 className="ui-static-c470735159" >Full Audit History</h2>
+              <button onClick={() => setShowHistoryModal(false)} className="ui-static-6a560df0e4" style={{width: '32px', height: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer'}}>✕</button>
             </div>
-            <div style={{ overflowY: 'auto', flex: 1, paddingRight: '1rem' }}>
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
+            <div className="ui-static-b7a907b44e" style={{overflowY: 'auto', flex: 1}}>
+              <ul className="ui-static-0d59a3d063" style={{listStyle: 'none', display: 'flex', flexDirection: 'column'}}>
                 {ticket.historyLogs.map(log => {
                    const d = new Date(log.createdAt);
                    const dateStr = d.toLocaleDateString('en-CA');
                    const timeStr = d.toLocaleTimeString('en-GB', {hour12: false});
                    const authorName = log.actor?.name || log.actor?.email?.split('@')[0] || 'System';
                    return (
-                    <li key={log.id} style={{ display: 'grid', gridTemplateColumns: '90px 1fr', gap: '1rem', paddingBottom: '1.25rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', alignItems: 'flex-start' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', color: 'var(--text-color)', fontSize: '0.8rem', lineHeight: '1.4' }}>
-                        <span style={{ fontWeight: 'bold', color: 'var(--heading-color)' }}>{mounted ? dateStr : '...'}</span>
+                    <li key={log.id} className="ui-static-e5ce4ba115" style={{display: 'grid', gridTemplateColumns: '90px 1fr', alignItems: 'flex-start'}}>
+                      <div className="ui-static-91fc78cb3b" style={{display: 'flex', flexDirection: 'column'}}>
+                        <span className="ui-static-8356576a3b" >{mounted ? dateStr : '...'}</span>
                         <span>{mounted ? timeStr : '...'}</span>
                       </div>
-                      <div style={{ color: 'var(--heading-color)', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                        <span style={{ fontWeight: '500' }}>{log.action}</span><br/>
-                        <span style={{ color: 'var(--text-color)', fontSize: '0.8rem' }}>Actor: <strong style={{color:'var(--heading-color)'}}>{authorName}</strong></span>
+                      <div className="ui-static-504a7ff39b" >
+                        <span className="ui-static-af5bb0afde" >{log.action}</span><br/>
+                        <span className="ui-static-32cddf2bca" >Actor: <strong className="ui-static-bffd53f399" >{authorName}</strong></span>
                       </div>
                     </li>
                    );

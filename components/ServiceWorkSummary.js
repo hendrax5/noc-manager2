@@ -13,14 +13,14 @@ export default function ServiceWorkSummary({ ticket }) {
     !['bandwidthMbps','pairCount'].includes(key) && JSON.stringify(change.before?.customData?.[key]) !== JSON.stringify(change.after.customData[key]));
   for (const key of changedKeys) rows.push([key, change.before?.customData?.[key], change.after.customData[key]]);
   const display = value => value == null || value === '' ? '—' : typeof value === 'object' ? JSON.stringify(value) : String(value);
-  return <section aria-label="Ringkasan pekerjaan layanan" style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '1rem', margin: '1rem 0', minWidth: 0, overflowWrap: 'anywhere' }}>
-    <h2 style={{ fontSize: '1.1rem', margin: '0 0 0.6rem' }}>{ticket.serviceWorkTypeLabel || 'Pekerjaan Layanan'}</h2>
+  return <section aria-label="Ringkasan pekerjaan layanan" className="ui-static-90ddf9dc1e" style={{minWidth: 0, overflowWrap: 'anywhere'}}>
+    <h2 className="ui-static-66f3578e31" >{ticket.serviceWorkTypeLabel || 'Pekerjaan Layanan'}</h2>
     <p>CID: <strong>{change.before?.cid || '—'}</strong> · Tanggal efektif: {change.effectiveDate || '—'}</p>
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-        <caption style={{ textAlign: 'left', marginBottom: '0.5rem' }}>Kondisi sebelum dan sesudah pekerjaan</caption>
-        <thead><tr>{['Data', 'Sebelum', 'Sesudah'].map(label => <th key={label} scope="col" style={{ padding: '0.5rem', borderBottom: '1px solid var(--border-color)' }}>{label}</th>)}</tr></thead>
-        <tbody>{rows.map(([label, before, after]) => <tr key={label}><th scope="row" style={{ padding: '0.5rem', fontWeight: 500 }}>{label}</th><td style={{ padding: '0.5rem' }}>{display(before)}</td><td style={{ padding: '0.5rem' }}>{display(after)}</td></tr>)}</tbody>
+      <table className="ui-static-57b942e79e" style={{width: '100%', textAlign: 'left'}}>
+        <caption className="ui-static-fc11fc4f62" style={{textAlign: 'left'}}>Kondisi sebelum dan sesudah pekerjaan</caption>
+        <thead><tr>{['Data', 'Sebelum', 'Sesudah'].map(label => <th key={label} scope="col" className="ui-static-b206cfd32c" >{label}</th>)}</tr></thead>
+        <tbody>{rows.map(([label, before, after]) => <tr key={label}><th scope="row" className="ui-static-672f2700de" >{label}</th><td className="ui-static-ce5f724e09" >{display(before)}</td><td className="ui-static-ce5f724e09" >{display(after)}</td></tr>)}</tbody>
       </table>
     </div>
     {change.reason && <p>Alasan: {change.reason}</p>}

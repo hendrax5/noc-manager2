@@ -60,7 +60,7 @@ export default async function TicketDetailsPage({ params }) {
         <h1>Ticket {ticket.trackingId}</h1>
         <p>
           View and update this operational issue.{" "}
-          <a href={`/track/${encodeURIComponent(ticket.trackingId || ticket.id)}`} style={{ color: "var(--secondary-color)" }}>
+          <a href={`/track/${encodeURIComponent(ticket.trackingId || ticket.id)}`} className="ui-static-62d0ec9d1e" >
             Public track link
           </a>
         </p>

@@ -160,7 +160,7 @@ export default function SLAAnalyticsClient() {
             onChange={(e) => setCustomer(e.target.value)}
           />
         </label>
-        <button type="submit" className="primary-btn" disabled={loading} style={{ width: "auto", padding: "0.5rem 1rem" }}>
+        <button type="submit" className="primary-btn ui-static-7f62800e8e" disabled={loading} style={{width: "auto"}}>
           {loading ? "Memuat…" : "Terapkan"}
         </button>
         <div className="sla-filter-actions">
@@ -173,7 +173,7 @@ export default function SLAAnalyticsClient() {
         </div>
       </form>
 
-      {error && <div className="card" style={{ background: "#fee2e2", color: "#b91c1c" }}>{error}</div>}
+      {error && <div className="card ui-static-df2affce2c" >{error}</div>}
 
       {data && !loading && (
         <div id="printable-report">
@@ -184,7 +184,7 @@ export default function SLAAnalyticsClient() {
               {showInternal ? "Sembunyikan analitik internal" : "Tampilkan analitik internal"}
             </button>
             {showInternal && (
-              <div style={{ marginTop: "1.25rem" }}>
+              <div className="ui-static-0c8f5b75ba" >
                 <div className="sla-kpis">
                   <div>
                     <strong>{data.summary.uptimePercentage}%</strong>

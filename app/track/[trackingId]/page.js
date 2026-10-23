@@ -35,9 +35,9 @@ export default async function TrackPage({ params }) {
 
   if (!ticket || ticket.purpose === 'PersonalMonthlyReport') {
     return (
-      <div className="container" style={{ paddingTop: "3rem" }}>
+      <div className="container ui-static-57c84916d4" >
         <h1>Ticket not found</h1>
-        <p style={{ color: "var(--muted-text)" }}>
+        <p className="ui-static-a64efbfeda" >
           Check the tracking ID and try again.
         </p>
       </div>

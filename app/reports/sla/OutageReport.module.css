@@ -73,3 +73,5 @@
   .table tr, .signatures { break-inside: avoid; }
   .secondary, .footnote { color: #444; }
 }
+
+:where(.page,.portfolio,.inventory,.panel,.list) :where(input,select,textarea,button){font:inherit;border-radius:var(--ui-radius)}

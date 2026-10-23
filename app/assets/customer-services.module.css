@@ -46,7 +46,7 @@
   width: 100%;
   min-height: var(--asset-customer-row-min);
   border: 0;
-  border-radius: 0;
+  border-radius: var(--ui-radius);
   padding: var(--asset-space-3) var(--asset-space-4);
   text-align: left;
   background: transparent;
@@ -95,3 +95,5 @@
   .desktopServices th { color: var(--asset-muted); font-size: var(--asset-meta-size); font-weight: 600; }
   .desktopServices td, .desktopServices th { padding: var(--asset-space-3) var(--asset-space-2); border-bottom: var(--asset-divider-width) solid var(--border-color); vertical-align: top; overflow-wrap: anywhere; }
 }
+
+:where(.page,.portfolio,.inventory,.panel,.list) :where(input,select,textarea,button){font:inherit;border-radius:var(--ui-radius)}

@@ -1,0 +1,1 @@
+const fs=require('fs'),path=require('path');module.exports=()=>['ui-tokens.css','globals.css','legacy-ui.css','ui-foundation.css'].map(f=>fs.readFileSync(path.join(__dirname,'../app',f),'utf8')).join('\n');

@@ -208,58 +208,58 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
   const SortHeader = ({ field, children }) => (
     <th
       onClick={() => handleSort(field)}
-      style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', fontSize: '0.75rem', padding: '0.6rem 0.5rem', textAlign: 'left', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold', borderBottom: '2px solid var(--border-color)' }}
+      className="ui-static-e17edd45ee" style={{cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', textAlign: 'left', textTransform: 'uppercase'}}
     >
       {children} {sortField === field ? (sortDir === 'asc' ? '↑' : '↓') : ''}
     </th>
   );
 
   return (
-    <div style={{ background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+    <div className="ui-static-48c0e01ac7" style={{overflow: 'hidden'}}>
       {/* Header Bar */}
-      <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>📋</span> Live Operations Board
+      <div className="ui-static-4c5eed3b4c" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap'}}>
+        <div className="ui-static-e59a73fd03" style={{display: 'flex', alignItems: 'center'}}>
+          <h2 className="ui-static-9c15ba00ea" style={{display: 'flex', alignItems: 'center'}}>
+            <span className="ui-static-7f8da12489" ></span> Live Operations Board
           </h2>
-          {loading && <span style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: 'bold', animation: 'pulse 1.5s infinite' }}>⟳ Updating...</span>}
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-color)', background: 'var(--hover-bg)', padding: '0.2rem 0.6rem', borderRadius: '10px', fontWeight: 'bold' }}>{filteredTickets.length} tiket</span>
+          {loading && <span className="ui-static-61b6d2c8fb" style={{animation: 'pulse 1.5s infinite'}}>⟳ Updating...</span>}
+          <span className="ui-static-6a219f4627" >{filteredTickets.length} tiket</span>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button onClick={exportCSV} style={{ padding: '0.4rem 0.8rem', background: 'var(--hover-bg)', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--heading-color)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            📥 Export CSV
+        <div className="ui-static-30f523173e" style={{display: 'flex', flexWrap: 'wrap'}}>
+          <button onClick={exportCSV} className="ui-static-ec8b0dffc1" style={{cursor: 'pointer', display: 'flex', alignItems: 'center'}}>
+             Export CSV
           </button>
-          <button onClick={fetchData} style={{ padding: '0.4rem 0.8rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>
+          <button onClick={fetchData} className="ui-static-99856dbbc3" style={{cursor: 'pointer'}}>
             ↻ Refresh
           </button>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', background: 'var(--hover-bg)' }}>
+      <div className="ui-static-208f9b605e" style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center'}}>
         <input
           type="text"
           placeholder="🔍 Cari tiket, customer, PIC..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          style={{ padding: '0.4rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.8rem', minWidth: '200px', flex: '1', maxWidth: '300px' }}
+          className="ui-static-d9806e42a1" style={{minWidth: '200px', flex: '1', maxWidth: '300px'}}
         />
-        <select value={dateRange} onChange={e => setDateRange(e.target.value)} style={{ padding: '0.4rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.8rem', cursor: 'pointer' }}>
-          <option value="today">📅 Hari Ini</option>
-          <option value="week">📅 7 Hari Terakhir</option>
-          <option value="all">📅 Semua</option>
+        <select value={dateRange} onChange={e => setDateRange(e.target.value)} className="ui-static-893b2f04a7" style={{cursor: 'pointer'}}>
+          <option value="today"> Hari Ini</option>
+          <option value="week"> 7 Hari Terakhir</option>
+          <option value="all"> Semua</option>
         </select>
-        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ padding: '0.4rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.8rem', cursor: 'pointer' }}>
-          <option value="">🏷️ Semua Kategori</option>
+        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="ui-static-893b2f04a7" style={{cursor: 'pointer'}}>
+          <option value=""> Semua Kategori</option>
           {jobCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
         </select>
-        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: '0.4rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', fontSize: '0.8rem', cursor: 'pointer' }}>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="ui-static-893b2f04a7" style={{cursor: 'pointer'}}>
           <option value="">All statuses</option>
           {TICKET_STATUSES.map((st) => (
             <option key={st} value={st}>{st}</option>
           ))}
         </select>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-color)', cursor: 'pointer', marginLeft: 'auto' }}>
+        <label className="ui-static-b4bf3f29ba" style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
           <input 
             type="checkbox"
             checked={showResolved}
@@ -272,24 +272,24 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
 
       {/* Table */}
       <div className={`live-ops-body${loading ? " is-refreshing" : ""}`} style={{ overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
-          <thead style={{ position: 'sticky', top: 0, zIndex: 5, background: 'var(--card-bg)' }}>
+        <table className="ui-static-581d169cdc" style={{width: '100%'}}>
+          <thead className="ui-static-11d9ca5a15" style={{position: 'sticky', top: 0, zIndex: 5}}>
             <tr>
               <SortHeader field="trackingId">ID</SortHeader>
-              <th style={{ fontSize: '0.75rem', padding: '0.6rem 0.5rem', textAlign: 'left', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold', borderBottom: '2px solid var(--border-color)' }}>Customer/Site</th>
-              <th style={{ fontSize: '0.75rem', padding: '0.6rem 0.5rem', textAlign: 'left', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold', borderBottom: '2px solid var(--border-color)' }}>Subject</th>
+              <th className="ui-static-e17edd45ee" style={{textAlign: 'left', textTransform: 'uppercase'}}>Customer/Site</th>
+              <th className="ui-static-e17edd45ee" style={{textAlign: 'left', textTransform: 'uppercase'}}>Subject</th>
               <SortHeader field="category">Category</SortHeader>
               <SortHeader field="status">Status</SortHeader>
               <SortHeader field="createdAt">Time Down</SortHeader>
               <SortHeader field="duration">Duration</SortHeader>
               <SortHeader field="assignee">PIC</SortHeader>
-              <th style={{ fontSize: '0.75rem', padding: '0.6rem 0.5rem', textAlign: 'left', color: 'var(--text-color)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold', borderBottom: '2px solid var(--border-color)' }}>Last Note</th>
+              <th className="ui-static-e17edd45ee" style={{textAlign: 'left', textTransform: 'uppercase'}}>Last Note</th>
               <SortHeader field="slaBreaches">SLA</SortHeader>
             </tr>
           </thead>
           <tbody>
             {filteredTickets.length === 0 && (
-              <tr><td colSpan="10" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-color)', fontStyle: 'italic' }}>Tidak ada tiket yang ditemukan untuk filter ini.</td></tr>
+              <tr><td colSpan="10" className="ui-static-3bdb82cc13" style={{textAlign: 'center', fontStyle: 'italic'}}>Tidak ada tiket yang ditemukan untuk filter ini.</td></tr>
             )}
             {filteredTickets.map(t => {
               const customerName = getCustomerName(t);
@@ -315,60 +315,60 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
               const durationColor = hoursActive > 4 ? '#ef4444' : (hoursActive > 2 ? '#f59e0b' : 'var(--text-color)');
 
               return (
-                <tr key={t.id} style={{ borderBottom: '1px solid var(--border-color)', background: rowBg, transition: 'background 0.15s' }} className="hover-bg">
-                  <td style={{ padding: '0.5rem', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.75rem', color: 'var(--heading-color)', whiteSpace: 'nowrap' }}>
-                    <a href={`/tickets/${t.id}`} style={{ color: '#3b82f6', textDecoration: 'none' }}>{t.trackingId?.substring(0, 12) || `#${t.id}`}</a>
+                <tr key={t.id} style={{background: rowBg, transition: 'background 0.15s'}} className="hover-bg ui-static-31df06b618">
+                  <td className="ui-static-9210427316" style={{whiteSpace: 'nowrap'}}>
+                    <a href={`/tickets/${t.id}`} className="ui-static-b9010af219" style={{textDecoration: 'none'}}>{t.trackingId?.substring(0, 12) || `#${t.id}`}</a>
                   </td>
-                  <td style={{ padding: '0.5rem', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--heading-color)', fontWeight: '600' }}>
+                  <td className="ui-static-457d06ea92" style={{maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
                     {customerName}
                   </td>
-                  <td style={{ padding: '0.5rem', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--heading-color)' }}>
-                    <a href={`/tickets/${t.id}`} style={{ color: 'var(--heading-color)', textDecoration: 'none' }}>{t.title}</a>
+                  <td className="ui-static-ff5c5a0df3" style={{maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                    <a href={`/tickets/${t.id}`} className="ui-static-bffd53f399" style={{textDecoration: 'none'}}>{t.title}</a>
                   </td>
-                  <td style={{ padding: '0.5rem' }}>
+                  <td className="ui-static-ce5f724e09" >
                     {t.jobCategory ? (
-                      <span style={{ background: `${catColor}15`, color: catColor, padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', whiteSpace: 'nowrap', border: `1px solid ${catColor}30` }}>
+                      <span className="ui-static-5745689772" style={{background: `${catColor}15`, color: catColor, whiteSpace: 'nowrap', border: `1px solid ${catColor}30`}}>
                         {t.jobCategory.name}
                       </span>
                     ) : (
-                      <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontStyle: 'italic' }}>-</span>
+                      <span className="ui-static-4a0a218c1e" style={{fontStyle: 'italic'}}>-</span>
                     )}
                   </td>
-                  <td style={{ padding: '0.5rem' }}>
-                    <span style={{ background: stColor.bg, color: stColor.color, padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', whiteSpace: 'nowrap', border: `1px solid ${stColor.border}` }}>
+                  <td className="ui-static-ce5f724e09" >
+                    <span className="ui-static-5745689772" style={{background: stColor.bg, color: stColor.color, whiteSpace: 'nowrap', border: `1px solid ${stColor.border}`}}>
                       {displayStatus}
                     </span>
                   </td>
-                  <td style={{ padding: '0.5rem', fontSize: '0.75rem', color: hasDt ? '#f59e0b' : 'var(--text-color)', fontWeight: hasDt ? 'bold' : 'normal', whiteSpace: 'nowrap' }}>
+                  <td className="ui-static-7f9453e354" style={{color: hasDt ? '#f59e0b' : 'var(--text-color)', fontWeight: hasDt ? 'bold' : 'normal', whiteSpace: 'nowrap'}}>
                     {mounted ? (
                       hasDt && dtStart ? (
                         <div>
                           <span title={`Downtime Mulai: ${new Date(dtStart).toLocaleString('id-ID')}`}>
-                            ⏱️ {new Date(dtStart).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                             {new Date(dtStart).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                           </span>
-                          <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'normal', marginTop: '0.15rem' }}>
+                          <div className="ui-static-c424da7186" >
                             Created: {new Date(t.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} ({getTimeAgo(t.createdAt)})
                           </div>
                         </div>
                       ) : (
                         <div>
                           <div>{new Date(t.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
-                          <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'normal', marginTop: '0.15rem' }}>
+                          <div className="ui-static-c424da7186" >
                             ({getTimeAgo(t.createdAt)})
                           </div>
                         </div>
                       )
                     ) : '...'}
                   </td>
-                  <td style={{ padding: '0.5rem', fontSize: '0.75rem', fontWeight: '600', color: durationColor, whiteSpace: 'nowrap' }}>
+                  <td className="ui-static-b0de371098" style={{color: durationColor, whiteSpace: 'nowrap'}}>
                     {hasDt && dtStart ? (
                       <div>
                         <div>{getDuration(dtStart, dtEnd)}</div>
-                        <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 'normal', marginTop: '0.15rem' }}>
+                        <div className="ui-static-c424da7186" >
                           Real Age: {getDuration(t.createdAt, t.resolvedAt && t.status === 'Resolved' ? t.resolvedAt : null)}
                         </div>
                         {t.status !== 'Resolved' && (
-                          <div style={{ fontSize: '0.65rem', color: hoursIdle > 2 ? '#ef4444' : '#64748b', fontWeight: hoursIdle > 2 ? 'bold' : 'normal', marginTop: '0.05rem' }}>
+                          <div className="ui-static-fcc3bd24cb" style={{color: hoursIdle > 2 ? '#ef4444' : '#64748b', fontWeight: hoursIdle > 2 ? 'bold' : 'normal'}}>
                             Idle: {getTimeAgo(t.updatedAt)}
                           </div>
                         )}
@@ -377,19 +377,19 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
                       <div>
                         <div>{getDuration(t.customData?.reopenedAt || t.createdAt, t.resolvedAt && t.status === 'Resolved' ? t.resolvedAt : null)}</div>
                         {t.status !== 'Resolved' && (
-                          <div style={{ fontSize: '0.65rem', color: hoursIdle > 2 ? '#ef4444' : '#64748b', fontWeight: hoursIdle > 2 ? 'bold' : 'normal', marginTop: '0.1rem' }}>
+                          <div className="ui-static-fcc3bd24cb" style={{color: hoursIdle > 2 ? '#ef4444' : '#64748b', fontWeight: hoursIdle > 2 ? 'bold' : 'normal'}}>
                             Idle: {getTimeAgo(t.updatedAt)}
                           </div>
                         )}
                       </div>
                     )}
                   </td>
-                  <td style={{ padding: '0.5rem', fontSize: '0.8rem', color: t.assignee ? 'var(--heading-color)' : '#94a3b8', fontWeight: t.assignee ? '600' : 'normal', fontStyle: t.assignee ? 'normal' : 'italic', whiteSpace: 'nowrap' }}>
+                  <td className="ui-static-4b7193c251" style={{color: t.assignee ? 'var(--heading-color)' : '#94a3b8', fontWeight: t.assignee ? '600' : 'normal', fontStyle: t.assignee ? 'normal' : 'italic', whiteSpace: 'nowrap'}}>
                     {t.assignee?.name || 'Unassigned'}
                   </td>
-                  <td style={{ padding: '0.5rem', maxWidth: '160px' }}>
+                  <td className="ui-static-ce5f724e09" style={{maxWidth: '160px'}}>
                     {inlineNoteId === t.id ? (
-                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                      <div className="ui-static-0f8796a915" style={{display: 'flex'}}>
                         <input
                           type="text"
                           value={inlineNoteText}
@@ -397,36 +397,36 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
                           placeholder="Quick note..."
                           autoFocus
                           onKeyDown={e => e.key === 'Enter' && handleInlineNote(t.id)}
-                          style={{ padding: '0.25rem 0.4rem', border: '1px solid #3b82f6', borderRadius: '4px', fontSize: '0.75rem', flex: 1, minWidth: '80px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+                          className="ui-static-e2caedb32c" style={{flex: 1, minWidth: '80px'}}
                         />
-                        <button onClick={() => handleInlineNote(t.id)} disabled={inlineNoteLoading} style={{ padding: '0.2rem 0.4rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                        <button onClick={() => handleInlineNote(t.id)} disabled={inlineNoteLoading} className="ui-static-27f9036d0a" style={{cursor: 'pointer'}}>
                           {inlineNoteLoading ? '...' : '✓'}
                         </button>
-                        <button onClick={() => { setInlineNoteId(null); setInlineNoteText(''); }} style={{ padding: '0.2rem 0.4rem', background: 'var(--hover-bg)', color: 'var(--text-color)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem' }}>
+                        <button onClick={() => { setInlineNoteId(null); setInlineNoteText(''); }} className="ui-static-993e88a533" style={{cursor: 'pointer'}}>
                           ✕
                         </button>
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer' }} onClick={() => setInlineNoteId(t.id)}>
+                      <div className="ui-static-0f8796a915" style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}} onClick={() => setInlineNoteId(t.id)}>
                         {t.notes && t.notes.length > 0 ? (
-                          <span style={{ fontSize: '0.73rem', color: 'var(--text-color)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '130px', display: 'block' }} title={t.notes[0].content}>
+                          <span className="ui-static-6d93d6f90d" style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '130px', display: 'block'}} title={t.notes[0].content}>
                             {t.notes[0].content.substring(0, 40)}{t.notes[0].content.length > 40 ? '...' : ''}
                           </span>
                         ) : (
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontStyle: 'italic' }}>+ add note</span>
+                          <span className="ui-static-3fb49e1cf0" style={{fontStyle: 'italic'}}>+ add note</span>
                         )}
                       </div>
                     )}
                   </td>
-                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                  <td className="ui-static-ce5f724e09" style={{textAlign: 'center'}}>
                     {t.slaBreaches > 0 && t.status !== 'Resolved' ? (
-                      <span style={{ background: '#fef2f2', color: '#dc2626', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', border: '1px solid #fecaca' }}>
-                        🔥 x{t.slaBreaches}
+                      <span className="ui-static-30fa22db78" >
+                         x{t.slaBreaches}
                       </span>
                     ) : t.enableSla ? (
-                      <span style={{ color: '#10b981', fontSize: '0.8rem' }}>✓</span>
+                      <span className="ui-static-79401780ef" >✓</span>
                     ) : (
-                      <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>-</span>
+                      <span className="ui-static-4a0a218c1e" >-</span>
                     )}
                   </td>
                 </tr>

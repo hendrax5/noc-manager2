@@ -48,26 +48,26 @@ export default function MeetingForm({ users, departments }) {
   };
 
   return (
-    <div className="card" style={{ maxWidth: '800px', margin: '0' }}>
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 1fr)', gap: '2rem' }}>
+    <div className="card ui-static-ff227d0632" style={{maxWidth: '800px'}}>
+      <form onSubmit={handleSubmit} className="ui-static-0410aac9fd" style={{display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(300px, 1fr)'}}>
         <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-          <label style={{ fontWeight: 'bold' }}>Meeting Title</label>
+          <label className="ui-static-78d7af8b7e" >Meeting Title</label>
           <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} placeholder="e.g. NOC Core Weekly Sync" />
         </div>
         
         <div className="form-group">
-          <label style={{ fontWeight: 'bold' }}>Scheduled Date & Time</label>
+          <label className="ui-static-78d7af8b7e" >Scheduled Date & Time</label>
           <input 
             type="datetime-local" 
             required 
-            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}
+            className="ui-static-b1c5641fa6" style={{width: '100%'}}
             value={formData.scheduledAt} 
             onChange={e => setFormData({...formData, scheduledAt: e.target.value})} 
           />
         </div>
 
         <div className="form-group" style={{ gridRow: 'span 2' }}>
-          <label style={{ fontWeight: 'bold' }}>Invite Attendees</label>
+          <label className="ui-static-78d7af8b7e" >Invite Attendees</label>
           <SearchableAttendeeSelect 
              users={users} 
              departments={departments}
@@ -77,10 +77,10 @@ export default function MeetingForm({ users, departments }) {
         </div>
 
         <div className="form-group">
-          <label style={{ fontWeight: 'bold' }}>Agenda Topics</label>
+          <label className="ui-static-78d7af8b7e" >Agenda Topics</label>
           <textarea 
             rows="4" 
-            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'inherit' }}
+            className="ui-static-077b25649f" style={{width: '100%'}}
             value={formData.agenda} 
             onChange={e => setFormData({...formData, agenda: e.target.value})}
             placeholder="Bullet points of topics to discuss..."
@@ -88,18 +88,18 @@ export default function MeetingForm({ users, departments }) {
         </div>
         
         <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-          <label style={{ fontWeight: 'bold' }}>Known Problems to Address</label>
+          <label className="ui-static-78d7af8b7e" >Known Problems to Address</label>
           <textarea 
             rows="3" 
-            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'inherit' }}
+            className="ui-static-077b25649f" style={{width: '100%'}}
             value={formData.problems} 
             onChange={e => setFormData({...formData, problems: e.target.value})}
             placeholder="Outline systemic issues or pain points..."
           ></textarea>
         </div>
 
-        <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-          <button type="submit" className="primary-btn" disabled={loading} style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
+        <div className="ui-static-14b98d08ef" style={{gridColumn: '1 / -1'}}>
+          <button type="submit" className="primary-btn ui-static-59859585a7" disabled={loading} style={{width: '100%'}}>
             {loading ? 'Scheduling...' : 'Launch Meeting Room'}
           </button>
         </div>

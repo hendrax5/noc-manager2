@@ -24,24 +24,24 @@ export default function LoginClient({ title = "NOC System Login", subtitle = "Si
   };
 
   return (
-    <div className="login-container">
+    <main className="login-container">
       <div className="login-card">
-        <h2>{title}</h2>
+        <h1>{title}</h1>
         {subtitle && <p className="login-subtitle">{subtitle}</p>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Email</label>
+            <label htmlFor="login-email">Email</label>
             <input 
-              type="email" 
+              id="login-email" type="email"
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)} 
             />
           </div>
           <div className="form-group">
-            <label>Password</label>
+            <label htmlFor="login-password">Password</label>
             <input 
-              type="password" 
+              id="login-password" type="password"
               required 
               value={password}
               onChange={(e) => setPassword(e.target.value)} 
@@ -51,6 +51,6 @@ export default function LoginClient({ title = "NOC System Login", subtitle = "Si
           <button type="submit" className="primary-btn">Log In</button>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

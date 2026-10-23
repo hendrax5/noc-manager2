@@ -74,43 +74,43 @@ export default function UserTableClient({ users, roles, departments }) {
               {isEditing ? (
                 <>
                   <td>
-                    <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} style={{ width: '100%', marginBottom: '0.4rem', padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} placeholder="Name" />
-                    <input type="email" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} style={{ width: '100%', padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} placeholder="Email" />
+                    <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="ui-static-3e817ea73a" style={{width: '100%'}} placeholder="Name" />
+                    <input type="email" value={editForm.email} onChange={e => setEditForm({...editForm, email: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}} placeholder="Email" />
                   </td>
                   <td>
-                    <input type="text" value={editForm.password} onChange={e => setEditForm({...editForm, password: e.target.value})} style={{ width: '100%', padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} placeholder="(Leave blank to reserve)" />
+                    <input type="text" value={editForm.password} onChange={e => setEditForm({...editForm, password: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}} placeholder="(Leave blank to reserve)" />
                   </td>
                   <td>
-                    <select value={editForm.roleId} onChange={e => setEditForm({...editForm, roleId: e.target.value})} style={{ padding: '0.4rem', width: '100%', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                    <select value={editForm.roleId} onChange={e => setEditForm({...editForm, roleId: e.target.value})} className="ui-static-11c1bd4406" style={{width: '100%'}}>
                       {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </select>
                   </td>
                   <td>
-                    <select value={editForm.departmentId} onChange={e => setEditForm({...editForm, departmentId: e.target.value})} style={{ padding: '0.4rem', width: '100%', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                    <select value={editForm.departmentId} onChange={e => setEditForm({...editForm, departmentId: e.target.value})} className="ui-static-11c1bd4406" style={{width: '100%'}}>
                       {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button onClick={() => handleSaveEdit(u.id)} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Save</button>
-                      <button onClick={handleCancelEdit} style={{ background: '#94a3b8', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>
+                    <div className="ui-static-30f523173e" style={{display: 'flex'}}>
+                      <button onClick={() => handleSaveEdit(u.id)} className="ui-static-38ea3d73f4" style={{cursor: 'pointer'}}>Save</button>
+                      <button onClick={handleCancelEdit} className="ui-static-d3eb43631e" style={{cursor: 'pointer'}}>Cancel</button>
                     </div>
                   </td>
                 </>
               ) : (
                 <>
                   <td>
-                    <div style={{ fontWeight: '600' }}>{u.name || 'Staff User'}</div>
-                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{u.email}</div>
+                    <div className="ui-static-5c05f4afaf" >{u.name || 'Staff User'}</div>
+                    <div className="ui-static-dd90b11840" >{u.email}</div>
                   </td>
                   <td>
-                    <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>••••••••</div>
+                    <div className="ui-static-dd90b11840" >••••••••</div>
                   </td>
                   <td>
-                    <div style={{ padding: '0.4rem' }}>{roles.find(r => r.id === u.roleId)?.name}</div>
+                    <div className="ui-static-ce5f724e09" >{roles.find(r => r.id === u.roleId)?.name}</div>
                   </td>
                   <td>
-                    <div style={{ padding: '0.4rem' }}>{departments.find(d => d.id === u.departmentId)?.name}</div>
+                    <div className="ui-static-ce5f724e09" >{departments.find(d => d.id === u.departmentId)?.name}</div>
                   </td>
                   <td>
                      <div>
@@ -118,10 +118,10 @@ export default function UserTableClient({ users, roles, departments }) {
                           if (e.target.value === 'edit') handleEditClick(u);
                           if (e.target.value === 'delete') handleDelete(u.id);
                           e.target.value = '';
-                        }} style={{ padding: '0.3rem 0.6rem', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer', background: '#f8fafc', fontWeight: 'bold' }}>
+                        }} className="ui-static-bde7137215" style={{cursor: 'pointer'}}>
                           <option value="" disabled>Actions ▾</option>
-                          <option value="edit">✎ Edit</option>
-                          <option value="delete">🗑 Delete</option>
+                          <option value="edit"> Edit</option>
+                          <option value="delete"> Delete</option>
                         </select>
                      </div>
                   </td>

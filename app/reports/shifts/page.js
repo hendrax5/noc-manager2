@@ -21,7 +21,7 @@ export default async function ShiftFairnessReportPage() {
 
   return (
     <main className="container">
-      <header className="page-header" style={{ marginBottom: "1.25rem" }}>
+      <header className="page-header ui-static-f23443a9ea" >
         <h1>Shift Fairness</h1>
         <p>
           Ringkasan distribusi shift per orang (S1/S2/OC/OFF, lembur, total jam) per departemen

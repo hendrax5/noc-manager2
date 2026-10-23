@@ -2,7 +2,7 @@
 .toolbar { display:flex;flex-wrap:wrap;gap:var(--asset-space-3);align-items:end; }
 .toolbar label { flex:1 1 var(--asset-search-width);font-weight:600; }
 .toolbar input { display:block;width:100%;min-width:0;min-height:var(--asset-control-min);padding:var(--asset-space-3);margin-top:var(--asset-space-2);border:var(--asset-divider-width) solid var(--border-color);border-radius:var(--asset-radius);background:var(--input-bg);color:var(--input-text);font:inherit; }
-.list button { min-height:var(--asset-control-min);padding:var(--asset-space-2) var(--asset-space-3);background:var(--card-bg);color:var(--text-color);border:var(--asset-divider-width) solid var(--border-color);border-radius:var(--asset-radius);font:inherit;cursor:pointer; }
+.list button { min-height:var(--asset-control-min);padding:var(--ui-space-2) var(--ui-space-3) var(--asset-space-3);background:var(--card-bg);color:var(--text-color);border:var(--asset-divider-width) solid var(--border-color);border-radius:var(--asset-radius);font:inherit;cursor:pointer; }
 .list button:hover { background:var(--hover-bg); }
 .list button:disabled { opacity:var(--asset-disabled-opacity);cursor:not-allowed; }
 .list :focus-visible { outline:var(--asset-focus-width) solid var(--asset-focus);outline-offset:var(--asset-space-1); }
@@ -11,7 +11,7 @@
 .list table { width:100%;border-collapse:collapse;text-align:left;table-layout:fixed; }
 .list thead { display:none; }
 .list tr { display:block;border-bottom:var(--asset-divider-width) solid var(--border-color);padding:var(--asset-space-3) 0; }
-.list td { display:block;overflow-wrap:anywhere;padding:var(--asset-space-2); }
+.list td { display:block;overflow-wrap:anywhere;padding:var(--ui-space-2) var(--ui-space-3); }
 .list td::before { content:attr(data-label);display:block;font-size:var(--asset-meta-size);color:var(--asset-muted); }
 .list small { display:block;color:var(--asset-muted);font-size:var(--asset-meta-size); }
 .list td > div { display:flex;gap:var(--asset-space-2);flex-wrap:wrap; }
@@ -27,3 +27,5 @@
   .list td::before { display:none; }
 }
 .list button[data-danger="true"] { color:var(--danger-text); }
+
+:where(.page,.portfolio,.inventory,.panel,.list) :where(input,select,textarea,button){font:inherit;border-radius:var(--ui-radius)}

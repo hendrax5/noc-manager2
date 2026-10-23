@@ -60,12 +60,12 @@ function MasterSelect({ kind, value, snapshot, onChange }) {
         }
       }} />
     {open && <div id={`${id}-options`} role="listbox" aria-label={`Pilihan ${label.toLowerCase()}`}
-      style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, maxHeight: "240px", overflowY: "auto", background: "var(--input-bg)", border: "1px solid var(--border-color)", borderRadius: "4px" }}>
+      className="ui-static-1f7d5a1c58" style={{position: "absolute", top: "100%", left: 0, right: 0, zIndex: 20, maxHeight: "240px", overflowY: "auto"}}>
       {options.map((item, index) => <div key={item.id} id={`${id}-option-${item.id}`} role="option" aria-selected={String(item.id) === String(value)}
-        style={{ padding: "0.65rem", cursor: "pointer", background: highlight === index ? "var(--border-color)" : undefined }}
+        className="ui-static-b52e2fe28a" style={{cursor: "pointer", background: highlight === index ? "var(--border-color)" : undefined}}
         ref={element => { if (element && highlight === index) element.scrollIntoView({ block: "nearest" }); }}
         onMouseDown={event => event.preventDefault()} onClick={() => choose(item)}>{item.name}</div>)}
-      {!options.length && <p role="status" style={{ padding: "0.65rem" }}>{loading ? "Memuat pilihan…" : error ? "Pilihan gagal dimuat." : "Tidak ada pilihan yang cocok."}</p>}
+      {!options.length && <p role="status" className="ui-static-b52e2fe28a" >{loading ? "Memuat pilihan…" : error ? "Pilihan gagal dimuat." : "Tidak ada pilihan yang cocok."}</p>}
     </div>}
     <small id={`${id}-help`}>{kind === 'symptom' ? 'Pilih gejala yang terlihat, misalnya Down atau Packet Loss.' : 'Pilih penyebab gangguan; gunakan “Belum diketahui” jika masih investigasi.'}</small>
     {/^\s*SAP-/i.test(search || "") && <p role="alert">Teks ini terlihat seperti CID. Gunakan kolom Cari &amp; pilih CID layanan di atas.</p>}
@@ -79,13 +79,13 @@ export function TicketServicePicker({ services, selectedIds, onChange, single = 
   const id = useId();
   const [search, setSearch] = useState("");
   const matches = services.filter(service => getServiceSearchText(service).toLowerCase().includes(search.toLowerCase()));
-  return <fieldset style={{ border: "1px solid var(--border-color)", margin: "1rem 0", minWidth: 0, overflowWrap: "anywhere" }}>
+  return <fieldset className="ui-static-31f92a9838" style={{minWidth: 0, overflowWrap: "anywhere"}}>
     <legend>Layanan / CID terkait</legend>
     <label htmlFor={id}>Cari &amp; pilih CID layanan</label>
     <input id={id} style={inputStyle} value={search} onChange={event => setSearch(event.target.value)} placeholder="Ketik CID, nama customer, atau nama layanan" />
     <small>{single ? 'Pilih satu circuit untuk pekerjaan ini.' : 'Centang circuit yang terganggu.'} Customer mengikuti layanan yang dipilih.</small>
     <div style={{ maxHeight: "200px", overflow: "auto" }}>
-      {matches.map(service => <label key={service.id} style={{ display: "block", padding: "0.4rem" }}>
+      {matches.map(service => <label key={service.id} className="ui-static-ce5f724e09" style={{display: "block"}}>
         <input type={single ? "radio" : "checkbox"} name={`${id}-service`} checked={selectedIds.includes(service.id)} onChange={event => onChange(single ? [service.id] : event.target.checked ? [...selectedIds, service.id] : selectedIds.filter(value => value !== service.id))} />{" "}
         {getServiceCid(service) || "CID belum tersedia"} — {formatCustomerId({id:service.customerId??service.customer?.id})} — {service.customer?.name || "Tanpa pelanggan"} / {service.name}
       </label>)}
@@ -108,7 +108,7 @@ export default function TicketWorkClassification({ value, onChange, services = [
     return () => { active = false; };
   }, []);
   const selection = value.workType === 'ServiceWork' && value.serviceWorkTypeId ? 'service:' + value.serviceWorkTypeId : value.workType || 'Unclassified';
-  return <fieldset style={{ gridColumn: "1 / -1", border: "1px solid var(--border-color)", padding: "1rem", minWidth: 0, marginBottom: "1rem" }}>
+  return <fieldset className="ui-static-dfb77db8ce" style={{gridColumn: "1 / -1", minWidth: 0}}>
     <legend>Klasifikasi pekerjaan</legend>
     <label htmlFor={id}>Jenis pekerjaan</label>
     <select id={id} style={inputStyle} value={selection} onChange={event => {
@@ -129,7 +129,7 @@ export default function TicketWorkClassification({ value, onChange, services = [
       <p>{value.workType === "Installation" ? "Field lama dan waktu downtime tetap tersimpan. Installation tidak dihitung dalam downtime SLA." : "Pekerjaan layanan tidak dihitung dalam downtime SLA."}</p>
     </div>}
     {value.workType === "ServiceWork" && <ServiceWorkFields value={value} onChange={onChange} services={services} serviceTemplates={serviceTemplates} workTypes={types} />}
-    {value.workType === "Trouble" && <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
+    {value.workType === "Trouble" && <div className="ui-static-4b2b7b9e13" style={{display: "grid"}}>
       <p>1. Pilih CID layanan yang terganggu. 2. Pilih gejala yang terlihat. 3. Pilih penyebab; gunakan “Belum diketahui” jika masih investigasi.</p>
       <TicketServicePicker services={services} selectedIds={value.serviceIds || []} onChange={serviceIds=>onChange({serviceIds})} />
       <MasterSelect kind="symptom" value={value.symptomId} snapshot={value.symptomLabel} onChange={(symptomId, symptomLabel) => onChange({ symptomId, symptomLabel })} />

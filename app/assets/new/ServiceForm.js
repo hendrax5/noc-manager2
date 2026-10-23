@@ -1,4 +1,5 @@
 'use client';
+import CapacityInput from '@/components/CapacityInput';
 import {isDarkFiber,isPairField,readPairCount} from '@/lib/services/productUnits';
 
 
@@ -107,25 +108,25 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
 
   return (
     <main className="container" style={{ maxWidth: '1000px' }}>
-      <header className="page-header" style={{ marginBottom: '2rem' }}>
-        <Link href="/assets" style={{ color: 'var(--text-color)', textDecoration: 'none', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'inline-block' }}>← Back to Inventory</Link>
-        <h1 style={{ marginTop: '0.5rem' }}>Provision New Service Asset</h1>
+      <header className="page-header ui-static-a5e927dc66" >
+        <Link href="/assets" className="ui-static-0c7b8f63ec" style={{textDecoration: 'none', display: 'inline-block'}}>← Back to Inventory</Link>
+        <h1 className="ui-static-084dc32886" >Provision New Service Asset</h1>
         {ticketSetup && <p>Daftarkan customer dan CID untuk instalasi baru. Circuit disimpan sebagai Pending; setelah ini lanjut membuat tiket instalasi. Layanan diaktifkan saat tiket Resolve.</p>}
       </header>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2.5rem', position: 'relative', padding: '0 2rem' }}>
-         <div style={{ position: 'absolute', top: '50%', left: '2rem', right: '2rem', height: '3px', background: 'var(--border-color)', zIndex: 0, transform: 'translateY(-50%)' }}></div>
-         <div style={{ position: 'absolute', top: '50%', left: '2rem', height: '3px', background: 'var(--primary-color)', zIndex: 1, width: currentStep === 1 ? '0%' : currentStep === 2 ? '50%' : 'calc(100% - 4rem)', transition: 'all 0.4s ease', transform: 'translateY(-50%)' }}></div>
+      <div className="ui-static-b7efa54e0b" style={{display: 'flex', justifyContent: 'space-between', position: 'relative'}}>
+         <div className="ui-static-b3d82d4be4" style={{position: 'absolute', top: '50%', left: '2rem', right: '2rem', height: '3px', zIndex: 0, transform: 'translateY(-50%)'}}></div>
+         <div className="ui-static-ef5a4549cc" style={{position: 'absolute', top: '50%', left: '2rem', height: '3px', zIndex: 1, width: currentStep === 1 ? '0%' : currentStep === 2 ? '50%' : 'calc(100% - 4rem)', transition: 'all 0.4s ease', transform: 'translateY(-50%)'}}></div>
          
          {['Basic Info', 'Parameters', 'Topology Hops'].map((label, idx) => {
            const stepNum = idx + 1;
            const isActive = currentStep >= stepNum;
            return (
-             <div key={stepNum} style={{ zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-               <div style={{ background: isActive ? 'var(--primary-color)' : 'var(--card-bg)', color: isActive ? 'white' : 'var(--text-color)', width: '38px', height: '38px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: '3px solid', borderColor: isActive ? 'var(--primary-color)' : 'var(--border-color)', transition: 'all 0.3s' }}>
+             <div key={stepNum} className="ui-static-30f523173e" style={{zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+               <div className="ui-static-66daff2a8d" style={{background: isActive ? 'var(--primary-color)' : 'var(--card-bg)', color: isActive ? 'white' : 'var(--text-color)', width: '38px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderColor: isActive ? 'var(--primary-color)' : 'var(--border-color)', transition: 'all 0.3s'}}>
                  {isActive && currentStep > stepNum ? '✓' : stepNum}
                </div>
-               <span style={{ fontSize: '0.8rem', fontWeight: isActive ? 'bold' : 'normal', color: isActive ? 'var(--primary-color)' : 'var(--text-color)' }}>{label}</span>
+               <span className="ui-static-fc155e091a" style={{fontWeight: isActive ? 'bold' : 'normal', color: isActive ? 'var(--primary-color)' : 'var(--text-color)'}}>{label}</span>
              </div>
            );
          })}
@@ -136,38 +137,37 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
           
           {/* STEP 1: Basic Config */}
           {currentStep === 1 && (
-            <div className="bg-white-card scale-in" style={{ padding: '2.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', flexGrow: 1 }}>
-              <h2 style={{ margin: '0 0 2rem 0', color: 'var(--heading-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>📦 Step 1: Core Configuration</h2>
+            <div className="bg-white-card scale-in ui-static-f932d0c67a" style={{flexGrow: 1}}>
+              <h2 className="ui-static-06cb2ac976" > Step 1: Core Configuration</h2>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
+              <div className="ui-static-908f0c3ed9" style={{display: 'flex', flexDirection: 'column', maxWidth: '600px'}}>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.95rem', color: 'var(--heading-color)' }}>Select Customer</label>
-                  <select className="input-field" required value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value})} style={{ padding: '0.8rem', fontSize: '1.05rem' }}>
+                  <label className="ui-static-955921f9b4" style={{display: 'block'}}>Select Customer</label>
+                  <select className="input-field ui-static-90fb66f0af" required value={formData.customerId} onChange={e => setFormData({...formData, customerId: e.target.value})} >
                     <option value="">-- Assign Customer --</option>
                     {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.95rem', color: 'var(--heading-color)' }}>Service Bundle / Template</label>
-                  <select className="input-field" required value={formData.templateId} onChange={e => setFormData({...formData, templateId: e.target.value})} style={{ padding: '0.8rem', fontSize: '1.05rem' }}>
+                  <label className="ui-static-955921f9b4" style={{display: 'block'}}>Service Bundle / Template</label>
+                  <select className="input-field ui-static-90fb66f0af" required value={formData.templateId} onChange={e => setFormData({...formData, templateId: e.target.value})} >
                     <option value="">-- Select Framework --</option>
                     {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                 </div>
                 
                 <div>
-                  <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.95rem', color: 'var(--heading-color)' }}>Service Alias / Reference Name</label>
-                  <input type="text" className="input-field" required placeholder="e.g. IPLC Jakarta-Singapore 10G" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} style={{ padding: '0.8rem', fontSize: '1.05rem' }} />
+                  <label className="ui-static-955921f9b4" style={{display: 'block'}}>Service Alias / Reference Name</label>
+                  <input type="text" className="input-field ui-static-90fb66f0af" required placeholder="e.g. IPLC Jakarta-Singapore 10G" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}  />
                 </div>
                 <div>
-                  <label htmlFor="service-cid" style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem' }}>CID layanan / link</label>
+                  <label htmlFor="service-cid" className="ui-static-ffdc3ed5d1" style={{display: 'block'}}>CID layanan / link</label>
                   <input id="service-cid" type="text" className="input-field" required={ticketSetup} maxLength={100} value={formData.cid} onChange={e => setFormData({ ...formData, cid: e.target.value })} placeholder="CID unik untuk layanan ini" />
                   <small>Digunakan untuk menautkan trouble dan laporan SLA per layanan.</small>
                 </div>
                 <div>
-                  <label htmlFor="service-capacity" style={{display:'block',fontWeight:'bold',marginBottom:'0.5rem'}}>{isDarkFiber(selectedTemplate)?'Jumlah pair':'Bandwidth (Gbps)'}</label>
-                  <input id="service-capacity" type="number" min={isDarkFiber(selectedTemplate)?1:minimumBandwidthGbps(selectedTemplate)} step={isDarkFiber(selectedTemplate)?1:"any"} className="input-field" value={isDarkFiber(selectedTemplate)?customData.pairCount??1:customData.bandwidthMbps==null?'':customData.bandwidthMbps/1000} onChange={e => setCustomData({...customData,...(isDarkFiber(selectedTemplate)?{pairCount:e.target.value===''?'':Number(e.target.value)}:{bandwidthMbps:e.target.value === '' ? null : Number(e.target.value)*1000})})} />
+                  <CapacityInput id="service-capacity" unit={isDarkFiber(selectedTemplate)?'pair':'Gbps'} min={isDarkFiber(selectedTemplate)?1:minimumBandwidthGbps(selectedTemplate)} value={isDarkFiber(selectedTemplate)?customData.pairCount??1:customData.bandwidthMbps==null?'':customData.bandwidthMbps/1000} onChange={e=>setCustomData({...customData,...(isDarkFiber(selectedTemplate)?{pairCount:e.target.value===''?'':Number(e.target.value)}:{bandwidthMbps:e.target.value===''?null:Number(e.target.value)*1000})})}/>
                   <small>Kapasitas awal untuk Inventory. Kapasitas tujuan dapat dilengkapi pada tiket instalasi.</small>
                 </div>
               </div>
@@ -176,20 +176,20 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
 
           {/* STEP 2: Parameters */}
           {currentStep === 2 && (
-            <div className="bg-white-card scale-in" style={{ padding: '2.5rem', borderRadius: '12px', border: '1px dashed var(--primary-color)', background: 'rgba(59,130,246,0.01)', flexGrow: 1 }}>
-              <h2 style={{ margin: '0 0 2rem 0', color: 'var(--primary-color)', borderBottom: '1px solid var(--primary-color)', paddingBottom: '0.5rem' }}>⚙️ Step 2: Technical Parameters</h2>
+            <div className="bg-white-card scale-in ui-static-20066c994c" style={{flexGrow: 1}}>
+              <h2 className="ui-static-3ce93dbefa" > Step 2: Technical Parameters</h2>
               
               {dynamicFields.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-color)' }}>
-                   <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✓</div>
+                <div className="ui-static-0dfa991ce7" style={{textAlign: 'center'}}>
+                   <div className="ui-static-917c0011b7" >✓</div>
                    <h3>No specialized technical parameters are required for this Template.</h3>
                    <p>You may proceed directly to Step 3.</p>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                <div className="ui-static-92254f43e7" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))'}}>
                   {dynamicFields.filter(f=>!isBandwidthField(f.name)&&!isPlaceholderField(f.name)&&!isPairField(f.name)).map((f, i) => (
-                    <div key={i} className="bg-white-card" style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                      <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-color)' }}>{f.name}</label>
+                    <div key={i} className="bg-white-card ui-static-cb39be5cc9" >
+                      <label className="ui-static-98c683fce1" style={{display: 'block'}}>{f.name}</label>
                       <input 
                         type={f.type === 'number' ? 'number' : 'text'} 
                         className="input-field" 
@@ -207,37 +207,37 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
 
           {/* STEP 3: Route Topology */}
           {currentStep === 3 && (
-            <div className="bg-white-card scale-in" style={{ padding: '2.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', flexGrow: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-                <h2 style={{ margin: 0, color: 'var(--heading-color)' }}>🖧 Step 3: Architecture & Hops</h2>
-                <button type="button" onClick={addHop} style={{ background: 'var(--primary-color)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>+ Add New Node</button>
+            <div className="bg-white-card scale-in ui-static-f932d0c67a" style={{flexGrow: 1}}>
+              <div className="ui-static-6809ba0885" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <h2 className="ui-static-ee96dc83fb" > Step 3: Architecture & Hops</h2>
+                <button type="button" onClick={addHop} className="ui-static-95d7382751" style={{cursor: 'pointer'}}>+ Add New Node</button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className="ui-static-92254f43e7" style={{display: 'flex', flexDirection: 'column'}}>
                 {hops.map((hop, i) => (
-                  <div key={i} style={{ position: 'relative', background: 'var(--hover-bg)', padding: '2rem 1.5rem 1.5rem 1.5rem', borderRadius: '12px', borderLeft: '5px solid var(--primary-color)', borderTop: '1px solid var(--border-color)', borderRight: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
-                    <div style={{ position: 'absolute', top: '-14px', left: '-16px', background: 'var(--primary-color)', color: 'white', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1rem', border: '3px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{i + 1}</div>
+                  <div key={i} className="ui-static-792facd00f" style={{position: 'relative'}}>
+                    <div className="ui-static-0cb6e7183c" style={{position: 'absolute', top: '-14px', left: '-16px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>{i + 1}</div>
                     
                     {hops.length > 1 && (
-                      <button type="button" onClick={() => removeHop(i)} style={{ position: 'absolute', top: '0.8rem', right: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: 'none', color: '#ef4444', height: '30px', width: '30px', borderRadius: '50%', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>×</button>
+                      <button type="button" onClick={() => removeHop(i)} className="ui-static-5bf62bc694" style={{position: 'absolute', top: '0.8rem', right: '1rem', height: '30px', width: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'}}>×</button>
                     )}
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1.5rem' }}>
+                    <div className="ui-static-92254f43e7" style={{display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)'}}>
                       <div>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-color)', marginBottom: '0.3rem', display: 'block' }}>Location / POP</label>
-                        <input type="text" placeholder="e.g. Cyber-1 lantai 2" list="topology-locations" className="input-field" style={{ padding: '0.8rem', fontSize: '0.9rem' }} value={hop.location} onChange={e => handleHopChange(i, 'location', e.target.value)} />
+                        <label className="ui-static-f256375bc1" style={{display: 'block'}}>Location / POP</label>
+                        <input type="text" placeholder="e.g. Cyber-1 lantai 2" list="topology-locations" className="input-field ui-static-6811bec797"  value={hop.location} onChange={e => handleHopChange(i, 'location', e.target.value)} />
                       </div>
                       <div>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-color)', marginBottom: '0.3rem', display: 'block' }}>Router / Device</label>
-                        <input type="text" placeholder="e.g. CSR-01-JKT" list="topology-devices" className="input-field" style={{ padding: '0.8rem', fontSize: '0.9rem' }} value={hop.deviceName} onChange={e => handleHopChange(i, 'deviceName', e.target.value)} />
+                        <label className="ui-static-f256375bc1" style={{display: 'block'}}>Router / Device</label>
+                        <input type="text" placeholder="e.g. CSR-01-JKT" list="topology-devices" className="input-field ui-static-6811bec797"  value={hop.deviceName} onChange={e => handleHopChange(i, 'deviceName', e.target.value)} />
                       </div>
                       <div>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-color)', marginBottom: '0.3rem', display: 'block' }}>Port Name</label>
-                        <input type="text" placeholder="e.g. xe-0/0/0" list="topology-ports" className="input-field" style={{ padding: '0.8rem', fontSize: '0.9rem' }} value={hop.portName} onChange={e => handleHopChange(i, 'portName', e.target.value)} />
+                        <label className="ui-static-f256375bc1" style={{display: 'block'}}>Port Name</label>
+                        <input type="text" placeholder="e.g. xe-0/0/0" list="topology-ports" className="input-field ui-static-6811bec797"  value={hop.portName} onChange={e => handleHopChange(i, 'portName', e.target.value)} />
                       </div>
                       <div>
-                        <label style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-color)', marginBottom: '0.3rem', display: 'block' }}>Cross-Connect (XC) / Desc</label>
-                        <input type="text" placeholder="e.g. Patchcord to ODF" className="input-field" style={{ padding: '0.8rem', fontSize: '0.9rem' }} value={hop.description} onChange={e => handleHopChange(i, 'description', e.target.value)} />
+                        <label className="ui-static-f256375bc1" style={{display: 'block'}}>Cross-Connect (XC) / Desc</label>
+                        <input type="text" placeholder="e.g. Patchcord to ODF" className="input-field ui-static-6811bec797"  value={hop.description} onChange={e => handleHopChange(i, 'description', e.target.value)} />
                       </div>
                     </div>
                   </div>
@@ -249,17 +249,17 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
         </div>
 
         {/* CONTROLS */}
-        <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 -4px 10px rgba(0,0,0,0.02)' }}>
+        <div className="ui-static-c09db111b1" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
            <div>
              {currentStep === 1 && <Link href="/assets" className="secondary-btn" style={{ textDecoration: 'none' }}>Cancel</Link>}
-             {currentStep > 1 && <button type="button" onClick={handleBack} className="secondary-btn" style={{ padding: '0 2rem' }}>← Back</button>}
+             {currentStep > 1 && <button type="button" onClick={handleBack} className="secondary-btn ui-static-2d6f137a15" >← Back</button>}
            </div>
            
            <div>
              {currentStep < 3 ? (
-                <button type="button" onClick={handleNext} className="primary-btn" style={{ fontSize: '1.05rem', padding: '0 2.5rem' }}>Next Step →</button>
+                <button type="button" onClick={handleNext} className="primary-btn ui-static-3c6a0e9c89" >Next Step →</button>
              ) : (
-                <button type="submit" disabled={isSubmitting} className="primary-btn" style={{ background: '#10b981', fontSize: '1.05rem', padding: '0 2.5rem', boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }}>
+                <button type="submit" disabled={isSubmitting} className="primary-btn ui-static-5651b260d2" >
                   {isSubmitting ? 'Provisioning...' : '✅ Provision Service Core'}
                 </button>
              )}

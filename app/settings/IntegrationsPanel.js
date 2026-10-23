@@ -161,9 +161,9 @@ export default function IntegrationsPanel({ departments = [] }) {
 
   return (
     <div>
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h3 style={{ marginTop: 0 }}>Integration Apps (API v1)</h3>
-        <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
+      <div className="ui-static-8bd9dc7312" >
+        <h3 className="ui-static-c312289912" >Integration Apps (API v1)</h3>
+        <p className="ui-static-8513c719f9" >
           Create per-app API keys with scopes. Machine-readable spec:{" "}
           <a href="/api/v1/openapi" target="_blank" rel="noreferrer">
             OpenAPI JSON
@@ -175,23 +175,17 @@ export default function IntegrationsPanel({ departments = [] }) {
 
       {createdKey && (
         <div
-          style={{
-            background: "#ecfdf5",
-            border: "1px solid #6ee7b7",
-            padding: "1rem",
-            borderRadius: 8,
-            marginBottom: "1.5rem",
-          }}
+          className="ui-static-44397b3b80"
         >
           <strong>API key (copy now — shown once):</strong>
-          <pre style={{ margin: "0.5rem 0 0", wordBreak: "break-all" }}>{createdKey}</pre>
-          <button type="button" className="btn" style={{ marginTop: 8 }} onClick={() => setCreatedKey(null)}>
+          <pre className="ui-static-0d79798c88" style={{wordBreak: "break-all"}}>{createdKey}</pre>
+          <button type="button" className="btn ui-static-084dc32886"  onClick={() => setCreatedKey(null)}>
             Dismiss
           </button>
         </div>
       )}
 
-      <form onSubmit={createApp} style={{ display: "grid", gap: "0.75rem", marginBottom: "2rem", maxWidth: 640 }}>
+      <form onSubmit={createApp} className="ui-static-67c42c59ef" style={{display: "grid", maxWidth: 640}}>
         <input
           className="form-control"
           placeholder="App name (e.g. Zabbix, Customer Portal)"
@@ -223,9 +217,9 @@ export default function IntegrationsPanel({ departments = [] }) {
             </option>
           ))}
         </select>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+        <div className="ui-static-30f523173e" style={{display: "flex", flexWrap: "wrap"}}>
           {availableScopes.map((s) => (
-            <label key={s} style={{ fontSize: "0.85rem", display: "flex", gap: 6, alignItems: "center" }}>
+            <label key={s} className="ui-static-8af4b6ba2f" style={{display: "flex", alignItems: "center"}}>
               <input type="checkbox" checked={form.scopes.includes(s)} onChange={() => toggleScope(s)} />
               {s}
             </label>
@@ -239,9 +233,9 @@ export default function IntegrationsPanel({ departments = [] }) {
       {loading ? (
         <p>Loading…</p>
       ) : apps.length === 0 ? (
-        <p style={{ color: "var(--text-muted)" }}>No integration apps yet. Legacy EXTERNAL_API_KEY still works for create.</p>
+        <p className="ui-static-bf4b678785" >No integration apps yet. Legacy EXTERNAL_API_KEY still works for create.</p>
       ) : (
-        <table className="table" style={{ width: "100%", fontSize: "0.9rem" }}>
+        <table className="table ui-static-6393964ce2" style={{width: "100%"}}>
           <thead>
             <tr>
               <th>Name</th>
@@ -259,7 +253,7 @@ export default function IntegrationsPanel({ departments = [] }) {
                   <td>
                     <strong>{app.name}</strong>
                     {app.description ? (
-                      <div style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>{app.description}</div>
+                      <div className="ui-static-2ddb68e1f2" >{app.description}</div>
                     ) : null}
                   </td>
                   <td>
@@ -285,15 +279,15 @@ export default function IntegrationsPanel({ departments = [] }) {
                 </tr>
                 {editingId === app.id ? (
                   <tr>
-                    <td colSpan={6} style={{ background: "var(--hover-bg, #f8fafc)", padding: "1rem" }}>
-                      <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>
+                    <td colSpan={6} className="ui-static-cbc5ff71a2" >
+                      <div className="ui-static-5963e47692" >
                         Edit scopes — {app.name}
                       </div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                      <div className="ui-static-bcc03ba549" style={{display: "flex", flexWrap: "wrap"}}>
                         {availableScopes.map((s) => (
                           <label
                             key={s}
-                            style={{ fontSize: "0.85rem", display: "flex", gap: 6, alignItems: "center" }}
+                            className="ui-static-8af4b6ba2f" style={{display: "flex", alignItems: "center"}}
                           >
                             <input
                               type="checkbox"
@@ -315,7 +309,7 @@ export default function IntegrationsPanel({ departments = [] }) {
                       <button type="button" className="btn" onClick={cancelEditScopes} disabled={savingScopes}>
                         Cancel
                       </button>
-                      <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 8 }}>
+                      <div className="ui-static-02685c1976" >
                         Key tidak berubah — hanya permission scope yang diupdate.
                       </div>
                     </td>

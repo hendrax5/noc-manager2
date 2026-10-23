@@ -77,87 +77,87 @@ export default function ProfileClient({ user }) {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(0, 2fr)', gap: '2rem', alignItems: 'flex-start' }}>
+    <div className="ui-static-0410aac9fd" style={{display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) minmax(0, 2fr)', alignItems: 'flex-start'}}>
       
       {/* Read-Only Stats & Avatar Card */}
-      <div className="card" style={{ padding: '2rem', textAlign: 'center' }}>
-        <div style={{ position: 'relative', width: '120px', height: '120px', margin: '0 auto 1.5rem', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '4px solid white', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+      <div className="card ui-static-39c1d6c828" style={{textAlign: 'center'}}>
+        <div className="ui-static-bca5898176" style={{position: 'relative', width: '120px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'}}>
           {avatarUrl ? (
             <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <span style={{ fontSize: '3rem', color: '#94a3b8' }}>👤</span>
+            <span className="ui-static-96b2547c3a" ></span>
           )}
           <div 
              onClick={() => fileInputRef.current?.click()}
-             style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.75rem', padding: '0.4rem 0', cursor: 'pointer', fontWeight: 'bold' }}
+             className="ui-static-4c69d84c46" style={{position: 'absolute', bottom: 0, left: 0, right: 0, cursor: 'pointer'}}
           >
              Upload
           </div>
           <input type="file" ref={fileInputRef} onChange={handleAvatarUpload} accept="image/*" style={{ display: 'none' }} />
         </div>
         
-        <h2 style={{ margin: '0 0 0.5rem 0', color: '#0f172a' }}>{user.name || "NOC Member"}</h2>
-        <p style={{ margin: '0 0 1.5rem 0', color: '#64748b', fontSize: '0.9rem' }}>{user.email}</p>
+        <h2 className="ui-static-8fc28424f0" >{user.name || "NOC Member"}</h2>
+        <p className="ui-static-2eab973988" >{user.email}</p>
         
-        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'left', display: 'grid', gap: '0.75rem' }}>
+        <div className="ui-static-e087a4e644" style={{textAlign: 'left', display: 'grid'}}>
            <div>
-             <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase' }}>Role Authorization</span>
-             <span style={{ color: '#1e293b', fontWeight: '500' }}>{user.role.name}</span>
+             <span className="ui-static-a62c2220e9" style={{display: 'block', textTransform: 'uppercase'}}>Role Authorization</span>
+             <span className="ui-static-51a577857b" >{user.role.name}</span>
            </div>
            <div>
-             <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase' }}>Department Tag</span>
-             <span style={{ color: '#1e293b', fontWeight: '500' }}>{user.department.name}</span>
+             <span className="ui-static-a62c2220e9" style={{display: 'block', textTransform: 'uppercase'}}>Department Tag</span>
+             <span className="ui-static-51a577857b" >{user.department.name}</span>
            </div>
         </div>
       </div>
 
       {/* Edit Form Card */}
-      <div className="card" style={{ padding: '2rem' }}>
-        <h2 style={{ margin: '0 0 1.5rem 0', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', color: '#0f172a' }}>Configuration Pipeline</h2>
+      <div className="card ui-static-39c1d6c828" >
+        <h2 className="ui-static-cf0b454385" >Configuration Pipeline</h2>
         
         {message && (
-          <div style={{ padding: '1rem', marginBottom: '1.5rem', borderRadius: '6px', background: message.type === 'success' ? '#ecfdf5' : '#fef2f2', border: `1px solid ${message.type === 'success' ? '#a7f3d0' : '#fecaca'}`, color: message.type === 'success' ? '#065f46' : '#991b1b', fontWeight: 'bold', fontSize: '0.9rem' }}>
+          <div className="ui-static-edeb725f55" style={{background: message.type === 'success' ? '#ecfdf5' : '#fef2f2', border: `1px solid ${message.type === 'success' ? '#a7f3d0' : '#fecaca'}`, color: message.type === 'success' ? '#065f46' : '#991b1b'}}>
             {message.type === 'success' ? '✅' : '🚨'} {message.text}
           </div>
         )}
 
-        <form onSubmit={handleSave} style={{ display: 'grid', gap: '1.5rem' }}>
+        <form onSubmit={handleSave} className="ui-static-92254f43e7" style={{display: 'grid'}}>
           
           <div>
-            <h3 style={{ fontSize: '1rem', color: '#334155', marginBottom: '1rem' }}>General Identity</h3>
-            <div className="form-group" style={{ marginBottom: '1rem' }}>
-              <label style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Display Name</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} style={{ padding: '0.75rem', width: '100%', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+            <h3 className="ui-static-f924731e8b" >General Identity</h3>
+            <div className="form-group ui-static-3e8220669e" >
+              <label className="ui-static-a0ab726de6" >Display Name</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} className="ui-static-4234f20878" style={{width: '100%'}} />
             </div>
             <div className="form-group">
-              <label style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Communication Signature</label>
-              <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 0.5rem 0' }}>This block will be automatically appended to the bottom of your Ticket Replies.</p>
-              <textarea rows="4" value={signature} onChange={e => setSignature(e.target.value)} placeholder="--\nHendra (NOC L1)\nPT Telematika" style={{ padding: '0.75rem', width: '100%', borderRadius: '4px', border: '1px solid #cbd5e1', fontFamily: 'inherit' }} />
+              <label className="ui-static-a0ab726de6" >Communication Signature</label>
+              <p className="ui-static-df3f8b78c5" >This block will be automatically appended to the bottom of your Ticket Replies.</p>
+              <textarea rows="4" value={signature} onChange={e => setSignature(e.target.value)} placeholder="--\nHendra (NOC L1)\nPT Telematika" className="ui-static-22c3168f4e" style={{width: '100%'}} />
             </div>
           </div>
 
           <div>
-            <h3 style={{ fontSize: '1rem', color: '#334155', marginBottom: '1rem', borderTop: '1px dashed #e2e8f0', paddingTop: '1.5rem' }}>Security Credentials</h3>
-            <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 1rem 0' }}>Leave fields blank if you do not wish to mutate your existing password.</p>
+            <h3 className="ui-static-17dfefe4d7" >Security Credentials</h3>
+            <p className="ui-static-3b451fbe3b" >Leave fields blank if you do not wish to mutate your existing password.</p>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) minmax(200px, 1fr)', gap: '1rem' }}>
+            <div className="ui-static-af81cc4264" style={{display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) minmax(200px, 1fr)'}}>
               <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                <label style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Current Password</label>
-                <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} style={{ padding: '0.75rem', width: '100%', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                <label className="ui-static-a0ab726de6" >Current Password</label>
+                <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="ui-static-4234f20878" style={{width: '100%'}} />
               </div>
               <div className="form-group">
-                <label style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>New Password</label>
-                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} style={{ padding: '0.75rem', width: '100%', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                <label className="ui-static-a0ab726de6" >New Password</label>
+                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="ui-static-4234f20878" style={{width: '100%'}} />
               </div>
               <div className="form-group">
-                <label style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>Confirm New Password</label>
-                <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={{ padding: '0.75rem', width: '100%', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                <label className="ui-static-a0ab726de6" >Confirm New Password</label>
+                <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="ui-static-4234f20878" style={{width: '100%'}} />
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-            <button type="submit" disabled={saving} className="primary-btn" style={{ padding: '0.75rem 2rem', fontWeight: 'bold' }}>
+          <div className="ui-static-14b98d08ef" style={{display: 'flex', justifyContent: 'flex-end'}}>
+            <button type="submit" disabled={saving} className="primary-btn ui-static-8daebf9218" >
               {saving ? 'Processing...' : 'Apply Modifications'}
             </button>
           </div>

@@ -31,7 +31,7 @@ export default function TicketQuickActions({ ticketId, isUnassigned }) {
     <button 
       onClick={handleTake} 
       disabled={loading}
-      style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.25rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem' }}>
+      className="ui-static-3c13282aa6" style={{cursor: 'pointer'}}>
       {loading ? '...' : 'Take It'}
     </button>
   );

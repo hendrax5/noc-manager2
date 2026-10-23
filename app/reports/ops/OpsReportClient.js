@@ -86,20 +86,14 @@ export default function OpsReportClient() {
   return (
     <div>
       <div
-        className="card"
-        style={{
-          marginBottom: "1.5rem",
-          display: "flex",
-          gap: "1rem",
-          flexWrap: "wrap",
-          alignItems: "flex-end",
-        }}
+        className="card ui-static-4e7e8d73d6"
+        style={{display: "flex", flexWrap: "wrap", alignItems: "flex-end"}}
       >
         <div>
-          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>
+          <label className="ui-static-eec2ca914a" style={{display: "block"}}>
             Periode
           </label>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div className="ui-static-30f523173e" style={{display: "flex"}}>
             <button
               type="button"
               className={period === "week" ? "primary-btn" : "secondary-btn"}
@@ -128,35 +122,35 @@ export default function OpsReportClient() {
         </div>
         {period !== "custom" && (
         <div>
-          <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>
+          <label className="ui-static-eec2ca914a" style={{display: "block"}}>
             Tanggal acuan
           </label>
           <input
             type="date"
             value={anchor}
             onChange={(e) => setAnchor(e.target.value)}
-            style={{ padding: "0.5rem", borderRadius: 4, border: "1px solid #cbd5e1" }}
+            className="ui-static-11c1bd4406"
           />
         </div>
         )}
         {period === "custom" && (
           <>
             <div>
-              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>Dari</label>
+              <label className="ui-static-eec2ca914a" style={{display: "block"}}>Dari</label>
               <input
                 type="date"
                 value={customStart}
                 onChange={(e) => setCustomStart(e.target.value)}
-                style={{ padding: "0.5rem", borderRadius: 4, border: "1px solid #cbd5e1" }}
+                className="ui-static-11c1bd4406"
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>Sampai</label>
+              <label className="ui-static-eec2ca914a" style={{display: "block"}}>Sampai</label>
               <input
                 type="date"
                 value={customEnd}
                 onChange={(e) => setCustomEnd(e.target.value)}
-                style={{ padding: "0.5rem", borderRadius: 4, border: "1px solid #cbd5e1" }}
+                className="ui-static-11c1bd4406"
               />
             </div>
           </>
@@ -165,7 +159,7 @@ export default function OpsReportClient() {
           Muat ulang
         </button>
         {data && (
-          <p style={{ margin: 0, color: "#64748b", fontSize: "0.875rem", alignSelf: "center" }}>
+          <p className="ui-static-93c5174987" style={{alignSelf: "center"}}>
             Rentang: <strong>{data.startDate}</strong> → <strong>{data.endDate}</strong>
             {period === "week" ? " (Sen–Min)" : period === "month" ? " (bulan kalender)" : " (custom)"} · hitung per tiket
           </p>
@@ -174,7 +168,7 @@ export default function OpsReportClient() {
 
       {loading && <p>Memuat Ops Report…</p>}
       {error && (
-        <p style={{ color: "#b91c1c", background: "#fef2f2", padding: "0.75rem 1rem", borderRadius: 6 }}>
+        <p className="ui-static-fda6668d59" >
           {error}
         </p>
       )}
@@ -182,88 +176,76 @@ export default function OpsReportClient() {
       {data && !loading && (
         <>
           <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: "1rem",
-              marginBottom: "1.5rem",
-            }}
+            className="ui-static-133a06227d" style={{display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))"}}
           >
             {SECTIONS.map((s) => (
               <button
                 key={s.key}
                 type="button"
                 onClick={() => setActiveTab(s.key)}
-                style={{
-                  textAlign: "left",
-                  padding: "1rem 1.25rem",
-                  borderRadius: 8,
-                  border: `2px solid ${activeTab === s.key ? s.color : s.border}`,
-                  background: s.bg,
-                  cursor: "pointer",
-                }}
+                className="ui-static-1f6c085bf9" style={{textAlign: "left", border: `2px solid ${activeTab === s.key ? s.color : s.border}`, background: s.bg, cursor: "pointer"}}
               >
-                <div style={{ fontSize: "0.75rem", fontWeight: 600, color: s.color, textTransform: "uppercase" }}>
+                <div className="ui-static-572d825eec" style={{color: s.color, textTransform: "uppercase"}}>
                   {s.title}
                 </div>
-                <div style={{ fontSize: "2rem", fontWeight: 700, color: s.color, lineHeight: 1.2 }}>
+                <div className="ui-static-d887231769" style={{color: s.color}}>
                   {data.counts?.[s.key] ?? 0}
                 </div>
-                <div style={{ fontSize: "0.75rem", color: "#64748b" }}>tiket</div>
+                <div className="ui-static-f0ec965903" >tiket</div>
               </button>
             ))}
           </div>
 
           <div className="card" style={{ overflowX: "auto" }}>
-            <h2 style={{ marginTop: 0, fontSize: "1.1rem" }}>
+            <h2 className="ui-static-fd1312781a" >
               {SECTIONS.find((s) => s.key === activeTab)?.title} ({rows.length})
             </h2>
             {rows.length === 0 ? (
-              <p style={{ color: "#94a3b8" }}>Tidak ada tiket di kategori ini untuk periode ini.</p>
+              <p className="ui-static-b9010af219" >Tidak ada tiket di kategori ini untuk periode ini.</p>
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+              <table className="ui-static-e81f1882ce" style={{width: "100%"}}>
                 <thead>
-                  <tr style={{ background: "#f1f5f9", textAlign: "left" }}>
-                    <th style={{ padding: "0.6rem", borderBottom: "1px solid #e2e8f0" }}>Tiket</th>
-                    <th style={{ padding: "0.6rem", borderBottom: "1px solid #e2e8f0" }}>Customer</th>
-                    <th style={{ padding: "0.6rem", borderBottom: "1px solid #e2e8f0" }}>Category</th>
-                    <th style={{ padding: "0.6rem", borderBottom: "1px solid #e2e8f0" }}>Status</th>
+                  <tr className="ui-static-6d7b6af7b6" style={{textAlign: "left"}}>
+                    <th className="ui-static-ee6b240f5a" >Tiket</th>
+                    <th className="ui-static-ee6b240f5a" >Customer</th>
+                    <th className="ui-static-ee6b240f5a" >Category</th>
+                    <th className="ui-static-ee6b240f5a" >Status</th>
                     {activeTab === "downtime" && (
-                      <th style={{ padding: "0.6rem", borderBottom: "1px solid #e2e8f0" }}>Downtime</th>
+                      <th className="ui-static-ee6b240f5a" >Downtime</th>
                     )}
-                    <th style={{ padding: "0.6rem", borderBottom: "1px solid #e2e8f0" }}>
+                    <th className="ui-static-ee6b240f5a" >
                       {activeTab === "downtime" ? "Resolved / Outage end" : "Resolved"}
                     </th>
-                    <th style={{ padding: "0.6rem", borderBottom: "1px solid #e2e8f0" }}>Assignee</th>
+                    <th className="ui-static-ee6b240f5a" >Assignee</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((r) => (
                     <tr key={r.id}>
-                      <td style={{ padding: "0.6rem", borderBottom: "1px solid #f1f5f9" }}>
-                        <Link href={`/tickets/${r.id}`} style={{ fontWeight: 600 }}>
+                      <td className="ui-static-ee6b240f5a" >
+                        <Link href={`/tickets/${r.id}`} className="ui-static-5c05f4afaf" >
                           #{r.ticketNumber}
                         </Link>
-                        <div style={{ color: "#64748b", fontSize: "0.8rem" }}>{r.title}</div>
+                        <div className="ui-static-60700bd225" >{r.title}</div>
                       </td>
-                      <td style={{ padding: "0.6rem", borderBottom: "1px solid #f1f5f9" }}>{r.customer}</td>
-                      <td style={{ padding: "0.6rem", borderBottom: "1px solid #f1f5f9" }}>
+                      <td className="ui-static-ee6b240f5a" >{r.customer}</td>
+                      <td className="ui-static-ee6b240f5a" >
                         {r.jobCategory || "—"}
                       </td>
-                      <td style={{ padding: "0.6rem", borderBottom: "1px solid #f1f5f9" }}>{r.status}</td>
+                      <td className="ui-static-ee6b240f5a" >{r.status}</td>
                       {activeTab === "downtime" && (
-                        <td style={{ padding: "0.6rem", borderBottom: "1px solid #f1f5f9", fontWeight: 600 }}>
+                        <td className="ui-static-56697727d3" >
                           {r.downtimeHours} jam
-                          <div style={{ fontWeight: 400, color: "#64748b", fontSize: "0.75rem" }}>
+                          <div className="ui-static-6158a5a8ad" >
                             ({r.downtimeMinutes} mnt)
                             {r.downtimeOngoing ? " · masih berjalan" : ""}
                           </div>
                         </td>
                       )}
-                      <td style={{ padding: "0.6rem", borderBottom: "1px solid #f1f5f9" }}>
+                      <td className="ui-static-ee6b240f5a" >
                         {fmtDate(r.resolvedAt)}
                       </td>
-                      <td style={{ padding: "0.6rem", borderBottom: "1px solid #f1f5f9" }}>
+                      <td className="ui-static-ee6b240f5a" >
                         {r.assignee || "—"}
                       </td>
                     </tr>
@@ -273,7 +255,7 @@ export default function OpsReportClient() {
             )}
           </div>
 
-          <p style={{ marginTop: "1rem", fontSize: "0.8rem", color: "#94a3b8" }}>
+          <p className="ui-static-f72e2d38ed" >
             New / Terminate / Upgrade: tiket Resolved/Closed + Job Category cocok. Downtime: dari field
             &quot;Catat Waktu Outage / Downtime&quot; (durasi efektif, termasuk outage yang masih berjalan) &gt;{" "}
             {data.thresholdHours} jam.

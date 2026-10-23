@@ -18,3 +18,5 @@
 .fields small, .fields p { overflow-wrap: anywhere; }
 .layout, .panel, .fields, .fields label { min-width: 0; }
 .layout select:focus-visible { outline: 2px solid var(--secondary-color); outline-offset: 3px; }
+
+:where(.page,.portfolio,.inventory,.panel,.list) :where(input,select,textarea,button){font:inherit;border-radius:var(--ui-radius)}

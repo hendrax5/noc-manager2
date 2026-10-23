@@ -1,4 +1,5 @@
 'use client';
+import CapacityInput from '@/components/CapacityInput';
 import {isBandwidthField,isPlaceholderField} from '@/lib/services/fields';
 import {isDarkFiber,isPairField,readPairCount} from '@/lib/services/productUnits';
 
@@ -346,20 +347,20 @@ export default function ServiceDetailClient({ service, session }) {
 
   return (
     <main className="container" style={{ maxWidth: '1100px' }}>
-      <header className="page-header" style={{ marginBottom: '2rem' }}>
-        <Link href="/assets" style={{ color: 'var(--text-color)', textDecoration: 'none', fontSize: '0.9rem', marginBottom: '1rem', display: 'inline-block' }}>← Back to Inventory</Link>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'flex-start', overflowWrap: 'anywhere' }}>
+      <header className="page-header ui-static-a5e927dc66" >
+        <Link href="/assets" className="ui-static-37b8c17cf4" style={{textDecoration: 'none', display: 'inline-block'}}>← Back to Inventory</Link>
+        <div className="ui-static-af81cc4264" style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', overflowWrap: 'anywhere'}}>
           <div>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.5rem' }}>
-               <h1 style={{ margin: 0 }}>{service.name}</h1>
-               <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: service.status === 'Active' ? '#10b981' : '#ef4444', background: service.status === 'Active' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', padding: '0.3rem 0.8rem', borderRadius: '12px' }}>
+             <div className="ui-static-c8def3163d" style={{display: 'flex', alignItems: 'center'}}>
+               <h1 className="ui-static-ff227d0632" >{service.name}</h1>
+               <span className="ui-static-c0f9521575" style={{color: service.status === 'Active' ? "var(--ui-success)" : "var(--ui-danger)", background: service.status === 'Active' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'}}>
                   {service.status}
                </span>
              </div>
-             <p style={{ margin: 0, color: 'var(--text-color)', fontSize: '1.1rem' }}>
-               <strong style={{ color: 'var(--heading-color)' }}>{service.customer?.name}</strong> • {service.template?.name}
+             <p className="ui-static-15f3dacdde" >
+               <strong className="ui-static-bffd53f399" >{service.customer?.name}</strong> • {service.template?.name}
              </p>
-             <div style={{ fontSize: '0.85rem', color: 'var(--text-color)', marginTop: '0.5rem' }}>
+             <div className="ui-static-20195eee1a" >
                 Provisioned: {mounted ? new Date(service.createdAt).toLocaleString() : ''}
              </div>
           </div>
@@ -369,69 +370,69 @@ export default function ServiceDetailClient({ service, session }) {
           {canCreateTicket && <Link href={`/tickets/new?serviceId=${service.id}&workType=ServiceWork`} className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>Buat Tiket</Link>}
           {canCreateTicket && <Link href={`/tickets/new?serviceId=${service.id}&workType=Trouble`} className="secondary-btn" style={{ width: 'auto', textDecoration: 'none' }}>Buat Trouble</Link>}
           {isAdmin && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
-              <button onClick={() => setShowEditModal(true)} className="secondary-btn">✏️ Edit Details</button>
-              <button onClick={handleDelete} className="secondary-btn" style={{ color: '#ef4444', borderColor: '#fca5a5' }}>Delete Service</button>
+            <div className="ui-static-af81cc4264" style={{display: 'flex', flexWrap: 'wrap'}}>
+              <button onClick={() => setShowEditModal(true)} className="secondary-btn"> Edit Details</button>
+              <button onClick={handleDelete} className="secondary-btn ui-static-f9a371332a" >Delete Service</button>
             </div>
           )}
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))', gap: '2rem' }}>
+      <div className="ui-static-0410aac9fd" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))'}}>
         
         {/* Left Col: Params & SLA Tabs */}
-        <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div className="no-print ui-static-0410aac9fd" style={{display: 'flex', flexDirection: 'column'}}>
           
           {/* Tabs Navigation */}
-          <div style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+          <div className="ui-static-cca6147c33" style={{display: 'flex'}}>
             <button 
               onClick={() => setActiveTab('parameters')} 
-              style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'parameters' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'parameters' ? 'var(--primary-color)' : 'var(--text-color)', transition: 'all 0.2s' }}
+              className="ui-static-14cdf42bd4" style={{cursor: 'pointer', borderBottom: activeTab === 'parameters' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'parameters' ? 'var(--primary-color)' : 'var(--text-color)', transition: 'all 0.2s'}}
             >
               Technical Parameters
             </button>
             <button 
               onClick={() => setActiveTab('sla')} 
-              style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'sla' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'sla' ? 'var(--primary-color)' : 'var(--text-color)', transition: 'all 0.2s' }}
+              className="ui-static-14cdf42bd4" style={{cursor: 'pointer', borderBottom: activeTab === 'sla' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'sla' ? 'var(--primary-color)' : 'var(--text-color)', transition: 'all 0.2s'}}
             >
               SLA & Analytics
             </button>
             <button 
               onClick={() => setActiveTab('tickets')} 
-              style={{ background: 'none', border: 'none', padding: '0.5rem 1rem', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', borderBottom: activeTab === 'tickets' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'tickets' ? 'var(--primary-color)' : 'var(--text-color)', transition: 'all 0.2s' }}
+              className="ui-static-14cdf42bd4" style={{cursor: 'pointer', borderBottom: activeTab === 'tickets' ? '3px solid var(--primary-color)' : '3px solid transparent', color: activeTab === 'tickets' ? 'var(--primary-color)' : 'var(--text-color)', transition: 'all 0.2s'}}
             >
               Linked Tickets
             </button>
           </div>
 
           {activeTab === 'parameters' && (
-            <div className="bg-white-card scale-in" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+            <div className="bg-white-card scale-in ui-static-239a0228f6" >
               {service.customData && Object.keys(service.customData).length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="ui-static-af81cc4264" style={{display: 'flex', flexDirection: 'column'}}>
                    {Object.entries(service.customData).filter(([key])=>!isDarkFiber(service.template)||!isBandwidthField(key)).map(([key, val]) => (
                       <div key={key}>
-                         <div style={{ fontSize: '0.8rem', color: 'var(--text-color)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>{isPairField(key)?'Jumlah pair':key}</div>
-                         <div style={{ fontSize: '1.05rem', color: 'var(--heading-color)', background: 'var(--hover-bg)', padding: '0.5rem 0.8rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'monospace' }}>{isDarkFiber(service.template)&&isPairField(key)?val+' pair':val || '-'}</div>
+                         <div className="ui-static-ecd350dcb3" style={{textTransform: 'uppercase'}}>{isPairField(key)?'Jumlah pair':key}</div>
+                         <div className="ui-static-1d732f7131" >{isDarkFiber(service.template)&&isPairField(key)?val+' pair':val || '-'}</div>
                       </div>
                    ))}
                 </div>
               ) : (
-                <p style={{ color: 'var(--text-color)', fontSize: '0.9rem' }}>No custom network parameters defined.</p>
+                <p className="ui-static-1602df5bc5" >No custom network parameters defined.</p>
               )}
             </div>
           )}
 
           {activeTab === 'sla' && (
-            <div className="bg-white-card scale-in" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', flexWrap: 'wrap' }}>
-                <h3 style={{ margin: 0, color: 'var(--heading-color)' }}>Analisis SLA & Downtime</h3>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--text-color)', textTransform: 'uppercase' }}>
+            <div className="bg-white-card scale-in ui-static-239a0228f6" >
+              <div className="ui-static-877675b836" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap'}}>
+                <h3 className="ui-static-ee96dc83fb" >Analisis SLA & Downtime</h3>
+                <div className="ui-static-30f523173e" style={{display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end'}}>
+                  <label className="ui-static-fe7eeb1944" style={{display: 'flex', flexDirection: 'column', textTransform: 'uppercase'}}>
                     Preset bulan
                     <select
                       value={selectedMonth}
                       onChange={(e) => applyMonth(e.target.value)}
-                      style={{ padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-color)', fontWeight: 'bold', fontSize: '0.85rem', cursor: 'pointer' }}
+                      className="ui-static-ad76914dac" style={{cursor: 'pointer'}}
                     >
                       {(() => {
                         const options = [];
@@ -446,41 +447,41 @@ export default function ServiceDetailClient({ service, session }) {
                       })()}
                     </select>
                   </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--text-color)', textTransform: 'uppercase' }}>
+                  <label className="ui-static-fe7eeb1944" style={{display: 'flex', flexDirection: 'column', textTransform: 'uppercase'}}>
                     Dari
                     <input
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      style={{ padding: '0.4rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-color)', fontSize: '0.85rem' }}
+                      className="ui-static-e1cf8ab780"
                     />
                   </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--text-color)', textTransform: 'uppercase' }}>
+                  <label className="ui-static-fe7eeb1944" style={{display: 'flex', flexDirection: 'column', textTransform: 'uppercase'}}>
                     Sampai
                     <input
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      style={{ padding: '0.4rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-color)', fontSize: '0.85rem' }}
+                      className="ui-static-e1cf8ab780"
                     />
                   </label>
-                  <button onClick={handlePrint} style={{ background: '#18181b', color: 'white', border: 'none', padding: '0.45rem 0.85rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>Export PDF klien</button>
+                  <button onClick={handlePrint} className="ui-static-af57253ec1" style={{cursor: 'pointer'}}>Export PDF klien</button>
                 </div>
               </div>
 
-              <p style={{ margin: '0 0 1rem', fontSize: '0.85rem', color: 'var(--text-color)' }}>
+              <p className="ui-static-0845ea31a1" >
                 Periode {periodLabel(rangeStartYmd, rangeEndYmd)}
               </p>
 
               {isAdmin && (
-                <div style={{ margin: '0 0 1rem', padding: '0.85rem 1rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--hover-bg)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <div className="ui-static-4dfe3c7144" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap'}}>
                   <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--heading-color)' }}>Logo PDF klien</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-color)', marginTop: '0.2rem' }}>
+                    <div className="ui-static-a849bc9536" >Logo PDF klien</div>
+                    <div className="ui-static-bfa4405942" >
                       Upload logo agar cover laporan sesuai dokumen resmi.
                     </div>
                   </div>
-                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: '#18181b', color: 'white', borderRadius: '6px', padding: '0.5rem 0.8rem', cursor: logoUploading ? 'wait' : 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                  <label className="ui-static-ec53a2420e" style={{display: 'inline-flex', alignItems: 'center', cursor: logoUploading ? 'wait' : 'pointer'}}>
                     <input
                       type="file"
                       accept="image/png,image/jpeg,image/svg+xml,image/webp"
@@ -494,48 +495,40 @@ export default function ServiceDetailClient({ service, session }) {
               )}
 
               {/* KPI Cards Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-                <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Tiket gangguan</div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--heading-color)', marginTop: '0.25rem' }}>{periodTickets.length}</div>
+              <div className="ui-static-7b101c5d25" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))'}}>
+                <div className="ui-static-8ac40da837" style={{textAlign: 'center'}}>
+                  <div className="ui-static-61b6d2c8fb" style={{textTransform: 'uppercase'}}>Tiket gangguan</div>
+                  <div className="ui-static-b34bf2a93b" >{periodTickets.length}</div>
                 </div>
 
-                <div style={{ background: 'var(--hover-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'bold', textTransform: 'uppercase' }}>Total downtime</div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--heading-color)', marginTop: '0.4rem' }}>
+                <div className="ui-static-8ac40da837" style={{textAlign: 'center'}}>
+                  <div className="ui-static-61b6d2c8fb" style={{textTransform: 'uppercase'}}>Total downtime</div>
+                  <div className="ui-static-452f5439a3" >
                     {formatDurationMins(totalDowntimeMins)}
                   </div>
                 </div>
 
-                <div style={{
-                  background: slaMet ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                  border: `1px solid ${slaMet ? '#10b981' : '#ef4444'}`,
-                  padding: '1rem', borderRadius: '8px', textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: '0.75rem', color: slaMet ? '#065f46' : '#991b1b', fontWeight: 'bold', textTransform: 'uppercase' }}>SLA uptime</div>
-                  <div style={{
-                    fontSize: '1.8rem', fontWeight: 'bold',
-                    color: slaMet ? '#10b981' : '#ef4444',
-                    marginTop: '0.3rem'
-                  }}>
+                <div className="ui-static-8efc41f990" style={{background: slaMet ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${slaMet ? "var(--ui-success)" : "var(--ui-danger)"}`, textAlign: 'center'}}>
+                  <div className="ui-static-96b9d77a63" style={{color: slaMet ? "var(--ui-success)" : "var(--ui-danger)", textTransform: 'uppercase'}}>SLA uptime</div>
+                  <div className="ui-static-af4000f520" style={{color: slaMet ? "var(--ui-success)" : "var(--ui-danger)"}}>
                     {slaPercentage.toFixed(3)}%
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-color)', marginTop: '0.25rem' }}>
+                  <div className="ui-static-1393e97943" >
                     Target {SLA_TARGET_PCT}% · {slaMet ? 'Memenuhi' : 'Tidak memenuhi'}
                   </div>
                 </div>
               </div>
 
               {/* 12-Month Trend Chart */}
-              <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--heading-color)', textTransform: 'uppercase' }}>Tren Uptime 12 Bulan Terakhir</h4>
-              <div style={{ height: '200px', marginBottom: '2rem' }}>
+              <h4 className="ui-static-7a3778a9c4" style={{textTransform: 'uppercase'}}>Tren Uptime 12 Bulan Terakhir</h4>
+              <div className="ui-static-a5e927dc66" style={{height: '200px'}}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={yearlyTrend} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" fontSize={10} />
                     <YAxis domain={[90, 100]} fontSize={10} />
                     <RechartsTooltip formatter={(value) => `${value}%`} />
-                    <Bar dataKey="uptime" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Uptime %" />
+                    <Bar dataKey="uptime" fill="var(--ui-info)" radius={[4, 4, 0, 0]} name="Uptime %" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -543,21 +536,21 @@ export default function ServiceDetailClient({ service, session }) {
               {/* List of Outages in selectedMonth */}
               {outageTickets.length > 0 ? (
                 <div>
-                  <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#64748b', textTransform: 'uppercase' }}>Kronologi outage</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+                  <h4 className="ui-static-8358d83cb3" style={{textTransform: 'uppercase'}}>Kronologi outage</h4>
+                  <div className="ui-static-30f523173e" style={{display: 'flex', flexDirection: 'column', maxHeight: '300px', overflowY: 'auto'}}>
                     {outageTickets.map(t => {
                       const dStart = t.customData.startDowntime ? new Date(t.customData.startDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
                       const dEnd = t.customData.endDowntime ? new Date(t.customData.endDowntime).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Belum selesai';
                       const dtMins = downtimeMinutesInRange(t.customData, rangeStart, rangeEnd);
                       return (
-                        <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--hover-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
-                          <div style={{ flex: 1, minWidth: 0, marginRight: '0.5rem' }}>
-                            <Link href={`/tickets/${t.id}`} style={{ fontWeight: 'bold', color: 'var(--primary-color)', textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div key={t.id} className="ui-static-dd10036014" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                          <div className="ui-static-5ed417d1fb" style={{flex: 1, minWidth: 0}}>
+                            <Link href={`/tickets/${t.id}`} className="ui-static-233d64da35" style={{textDecoration: 'none', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
                               {t.trackingId ? `#${t.trackingId}` : `#${t.id}`} — {t.title}
                             </Link>
-                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{dStart} s/d {dEnd}</span>
+                            <span className="ui-static-f0ec965903" >{dStart} s/d {dEnd}</span>
                           </div>
-                          <span style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#b91c1c', border: '1px solid #fecaca', padding: '0.3rem 0.6rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                          <span className="ui-static-d64a11387c" style={{whiteSpace: 'nowrap'}}>
                             {formatDurationMins(dtMins)}
                           </span>
                         </div>
@@ -566,7 +559,7 @@ export default function ServiceDetailClient({ service, session }) {
                   </div>
                 </div>
               ) : (
-                <div style={{ fontSize: '0.9rem', color: '#64748b', textAlign: 'center', padding: '2rem', background: 'var(--hover-bg)', borderRadius: '8px' }}>
+                <div className="ui-static-2626b9e03b" style={{textAlign: 'center'}}>
                   Tidak ada riwayat downtime pada periode ini.
                 </div>
               )}
@@ -574,28 +567,28 @@ export default function ServiceDetailClient({ service, session }) {
           )}
 
           {activeTab === 'tickets' && (
-            <div className="bg-white-card scale-in" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+            <div className="bg-white-card scale-in ui-static-239a0228f6" >
+              <div className="ui-static-2a0b357ce7" style={{display: 'flex', flexWrap: 'wrap'}}>
                 <label>Jenis pekerjaan <select aria-label="Filter riwayat jenis pekerjaan" value={historyWorkType} onChange={event => setHistoryWorkType(event.target.value)}><option value="">Semua jenis</option>{WORK_TYPES.map(type => <option key={type} value={type}>{WORK_TYPE_LABELS[type]}</option>)}</select></label>
                 <label>Status <select aria-label="Filter riwayat status" value={historyStatus} onChange={event => setHistoryStatus(event.target.value)}><option value="">Semua status</option>{[...new Set((service.tickets || []).map(ticket => ticket.status))].map(status => <option key={status} value={status}>{status}</option>)}</select></label>
               </div>
               {historyTickets.length > 0 ? (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                <ul className="ui-static-9a8354becc" style={{listStyle: 'none', display: 'flex', flexDirection: 'column'}}>
                    {historyTickets.map(t => (
-                      <li key={t.id} style={{ padding: '1rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                         <Link href={`/tickets/${t.id}`} style={{ textDecoration: 'none', color: 'var(--heading-color)', fontWeight: 'bold', display: 'block', marginBottom: '0.3rem' }}>
+                      <li key={t.id} className="ui-static-df8e4860f8" >
+                         <Link href={`/tickets/${t.id}`} className="ui-static-e879263bc6" style={{textDecoration: 'none', display: 'block'}}>
                            {t.trackingId ? `#${t.trackingId}` : `Ticket #${t.id}`} - {t.title}
                          </Link>
-                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-color)' }}>
+                         <div className="ui-static-2748f1debd" style={{display: 'flex', justifyContent: 'space-between'}}>
                            <span>{t.serviceWorkTypeLabel || WORK_TYPE_LABELS[t.workType] || WORK_TYPE_LABELS.Unclassified}</span>
-                           <span style={{ color: t.status === 'Resolved' ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>{t.status}</span>
+                           <span className="ui-static-78d7af8b7e" style={{color: t.status === 'Resolved' ? "var(--ui-success)" : "var(--ui-warning)"}}>{t.status}</span>
                            <span>{new Date(t.createdAt).toLocaleDateString()}</span>
                          </div>
                       </li>
                    ))}
                 </ul>
               ) : (
-                <p style={{ color: 'var(--text-color)', fontSize: '0.9rem' }}>Tidak ada tiket yang cocok dengan filter riwayat.</p>
+                <p className="ui-static-1602df5bc5" >Tidak ada tiket yang cocok dengan filter riwayat.</p>
               )}
             </div>
           )}
@@ -604,82 +597,82 @@ export default function ServiceDetailClient({ service, session }) {
 
         {/* Right Col: Circuit Hop Topology */}
         <div>
-          <div className="bg-white-card" style={{ padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', minHeight: '100%', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-              <h3 style={{ margin: 0, color: 'var(--heading-color)' }}>Circuit Topology (Hops)</h3>
+          <div className="bg-white-card ui-static-239a0228f6" style={{minHeight: '100%'}}>
+            <div className="ui-static-3a05f9c755" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+              <h3 className="ui-static-ee96dc83fb" >Circuit Topology (Hops)</h3>
               {isAdmin && !isEditingHops && (
-                <button onClick={() => { setEditableHops(service.hops || []); setIsEditingHops(true); }} className="secondary-btn" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>✏️ Edit Route</button>
+                <button onClick={() => { setEditableHops(service.hops || []); setIsEditingHops(true); }} className="secondary-btn ui-static-98c47ac18d" > Edit Route</button>
               )}
               {isEditingHops && (
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                   <button onClick={() => setIsEditingHops(false)} className="secondary-btn" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>Cancel</button>
-                   <button onClick={saveHops} disabled={isSaving} className="primary-btn" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', background: '#10b981' }}>{isSaving ? '...' : 'Save Hops'}</button>
+                <div className="ui-static-30f523173e" style={{display: 'flex'}}>
+                   <button onClick={() => setIsEditingHops(false)} className="secondary-btn ui-static-98c47ac18d" >Cancel</button>
+                   <button onClick={saveHops} disabled={isSaving} className="primary-btn ui-static-3d998e9216" >{isSaving ? '...' : 'Save Hops'}</button>
                 </div>
               )}
             </div>
             
             {isEditingHops ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <button type="button" onClick={addHop} style={{ background: 'var(--primary-color)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '0.5rem', alignSelf: 'flex-start' }}>+ Add Network Node</button>
+              <div className="ui-static-92254f43e7" style={{display: 'flex', flexDirection: 'column'}}>
+                <button type="button" onClick={addHop} className="ui-static-ba722cc2cf" style={{cursor: 'pointer', alignSelf: 'flex-start'}}>+ Add Network Node</button>
                 {editableHops.map((hop, i) => (
-                  <div key={i} style={{ position: 'relative', background: 'var(--hover-bg)', padding: '1.5rem', borderRadius: '8px', borderLeft: '4px solid var(--primary-color)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                       <span style={{ fontWeight: 'bold', color: 'var(--primary-color)' }}>Node #{i + 1}</span>
-                       <button onClick={() => removeHop(i)} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '0.2rem 0.5rem', fontWeight: 'bold' }}>Delete</button>
+                  <div key={i} className="ui-static-af61258d71" style={{position: 'relative'}}>
+                    <div className="ui-static-3e8220669e" style={{display: 'flex', justifyContent: 'space-between'}}>
+                       <span className="ui-static-233d64da35" >Node #{i + 1}</span>
+                       <button onClick={() => removeHop(i)} className="ui-static-df346c4cbe" style={{cursor: 'pointer'}}>Delete</button>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem' }}>
+                    <div className="ui-static-af81cc4264" style={{display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)'}}>
                       <div>
-                         <label style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Location</label>
-                         <input type="text" list="service-locations" className="input-field" value={hop.location} onChange={e => handleHopChange(i, 'location', e.target.value)} style={{ width: '100%', padding: '0.5rem' }} />
+                         <label className="ui-static-7e5eaaca0d" >Location</label>
+                         <input type="text" list="service-locations" className="input-field ui-static-ce5f724e09" value={hop.location} onChange={e => handleHopChange(i, 'location', e.target.value)} style={{width: '100%'}} />
                       </div>
                       <div>
-                         <label style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Device Name</label>
-                         <input type="text" list="service-devices" className="input-field" value={hop.deviceName} onChange={e => handleHopChange(i, 'deviceName', e.target.value)} style={{ width: '100%', padding: '0.5rem' }} />
+                         <label className="ui-static-7e5eaaca0d" >Device Name</label>
+                         <input type="text" list="service-devices" className="input-field ui-static-ce5f724e09" value={hop.deviceName} onChange={e => handleHopChange(i, 'deviceName', e.target.value)} style={{width: '100%'}} />
                       </div>
                       <div>
-                         <label style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Port Name</label>
-                         <input type="text" list="service-ports" className="input-field" value={hop.portName} onChange={e => handleHopChange(i, 'portName', e.target.value)} style={{ width: '100%', padding: '0.5rem' }} />
+                         <label className="ui-static-7e5eaaca0d" >Port Name</label>
+                         <input type="text" list="service-ports" className="input-field ui-static-ce5f724e09" value={hop.portName} onChange={e => handleHopChange(i, 'portName', e.target.value)} style={{width: '100%'}} />
                       </div>
                       <div>
-                         <label style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Description (XC)</label>
-                         <input type="text" className="input-field" value={hop.description || ''} onChange={e => handleHopChange(i, 'description', e.target.value)} style={{ width: '100%', padding: '0.5rem' }} />
+                         <label className="ui-static-7e5eaaca0d" >Description (XC)</label>
+                         <input type="text" className="input-field ui-static-ce5f724e09" value={hop.description || ''} onChange={e => handleHopChange(i, 'description', e.target.value)} style={{width: '100%'}} />
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : service.hops && service.hops.length > 0 ? (
-              <div style={{ position: 'relative', paddingLeft: '2rem' }}>
+              <div className="ui-static-19ec31c049" style={{position: 'relative'}}>
                 {/* Vertical Line Connector */}
-                <div style={{ position: 'absolute', top: '10px', bottom: '20px', left: '11px', width: '2px', background: 'var(--border-color)', zIndex: 0 }}></div>
+                <div className="ui-static-b3d82d4be4" style={{position: 'absolute', top: '10px', bottom: '20px', left: '11px', width: '2px', zIndex: 0}}></div>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', position: 'relative', zIndex: 1 }}>
+                <div className="ui-static-0410aac9fd" style={{display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1}}>
                   {service.hops.map((hop, i) => (
                     <div key={hop.id} style={{ position: 'relative' }}>
-                      <div style={{ position: 'absolute', left: '-33px', top: '0', background: 'var(--primary-color)', color: 'white', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '0.8rem', boxShadow: '0 0 0 4px var(--card-bg)' }}>
+                      <div className="ui-static-6f23525f4e" style={{position: 'absolute', left: '-33px', top: '0', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
                         {i + 1}
                       </div>
                       
-                      <div style={{ background: 'var(--hover-bg)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)' }}>
-                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <strong style={{ fontSize: '1.1rem', color: 'var(--heading-color)' }}>{hop.location}</strong>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--primary-color)', fontWeight: 'bold', background: 'rgba(59,130,246,0.1)', padding: '0.2rem 0.6rem', borderRadius: '4px' }}>Hop #{i+1}</span>
+                      <div className="ui-static-74c31552a0" >
+                         <div className="ui-static-fc11fc4f62" style={{display: 'flex', justifyContent: 'space-between'}}>
+                            <strong className="ui-static-863045cba0" >{hop.location}</strong>
+                            <span className="ui-static-c51713bd7c" >Hop #{i+1}</span>
                          </div>
                          
-                         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem', marginTop: '1rem', fontSize: '0.9rem' }}>
+                         <div className="ui-static-3e62d99b33" style={{display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)'}}>
                            <div>
-                             <div style={{ color: 'var(--text-color)', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Device / Router</div>
-                             <div style={{ color: 'var(--heading-color)', fontWeight: 'bold', fontFamily: 'monospace', marginTop: '0.2rem' }}>{hop.deviceName || '-'}</div>
+                             <div className="ui-static-55926e004f" style={{textTransform: 'uppercase'}}>Device / Router</div>
+                             <div className="ui-static-58b8fdb785" >{hop.deviceName || '-'}</div>
                            </div>
                            <div>
-                             <div style={{ color: 'var(--text-color)', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 'bold' }}>Port Intf</div>
-                             <div style={{ color: 'var(--heading-color)', fontWeight: 'bold', fontFamily: 'monospace', marginTop: '0.2rem' }}>{hop.portName || '-'}</div>
+                             <div className="ui-static-55926e004f" style={{textTransform: 'uppercase'}}>Port Intf</div>
+                             <div className="ui-static-58b8fdb785" >{hop.portName || '-'}</div>
                            </div>
                          </div>
                          
                          {hop.description && (
-                           <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', color: 'var(--text-color)', fontSize: '0.85rem' }}>
-                             <strong style={{ color: 'var(--heading-color)' }}>Patch Notes:</strong> {hop.description}
+                           <div className="ui-static-f6bff94344" >
+                             <strong className="ui-static-bffd53f399" >Patch Notes:</strong> {hop.description}
                            </div>
                          )}
                       </div>
@@ -688,9 +681,9 @@ export default function ServiceDetailClient({ service, session }) {
                 </div>
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
-                <span style={{ fontSize: '2rem' }}>🪢</span>
-                <p style={{ color: 'var(--text-color)', marginTop: '1rem' }}>No topological nodes bounded strictly measuring this subscription flow.</p>
+              <div className="ui-static-e55bfb3591" style={{textAlign: 'center'}}>
+                <span className="ui-static-12dae84fc3" ></span>
+                <p className="ui-static-d9a4c20251" >No topological nodes bounded strictly measuring this subscription flow.</p>
               </div>
             )}
             
@@ -701,22 +694,22 @@ export default function ServiceDetailClient({ service, session }) {
 
       {/* EDIT CORE MODAL */}
       {showEditModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <div className="bg-white-card scale-in" style={{ width: '100%', maxWidth: '500px', padding: '2rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--heading-color)' }}>Edit Asset Details</h2>
+        <div className="ui-static-a809d66476" style={{position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)'}}>
+          <div className="bg-white-card scale-in ui-static-239a0228f6" style={{width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto'}}>
+            <h2 className="ui-static-1c88149a3f" >Edit Asset Details</h2>
             <form onSubmit={handleSaveCore}>
-               <div style={{ marginBottom: '1rem' }}>
-                 <label htmlFor="edit-service-cid" style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem' }}>CID layanan / link</label>
-                 <input id="edit-service-cid" type="text" maxLength={100} className="input-field" value={editData.cid} onChange={e => setEditData({ ...editData, cid: e.target.value })} style={{ width: '100%', padding: '0.8rem' }} />
+               <div className="ui-static-3e8220669e" >
+                 <label htmlFor="edit-service-cid" className="ui-static-ffdc3ed5d1" style={{display: 'block'}}>CID layanan / link</label>
+                 <input id="edit-service-cid" type="text" maxLength={100} className="input-field ui-static-b52e2fe28a" value={editData.cid} onChange={e => setEditData({ ...editData, cid: e.target.value })} style={{width: '100%'}} />
                </div>
-               <div style={{ marginBottom: '1rem' }}>
-                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(--heading-color)', fontSize: '0.9rem' }}>Service Name / Alias</label>
-                 <input type="text" required className="input-field" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} style={{ width: '100%', padding: '0.8rem' }} />
+               <div className="ui-static-3e8220669e" >
+                 <label className="ui-static-abe0244be5" style={{display: 'block'}}>Service Name / Alias</label>
+                 <input type="text" required className="input-field ui-static-b52e2fe28a" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} style={{width: '100%'}} />
                </div>
                
-               <div style={{ marginBottom: '1.5rem' }}>
-                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(-- heading-color)', fontSize: '0.9rem' }}>Operational Status</label>
-                 <select className="input-field" value={editData.status} onChange={e => setEditData({...editData, status: e.target.value})} style={{ width: '100%', padding: '0.8rem' }}>
+               <div className="ui-static-8bd9dc7312" >
+                 <label className="ui-static-eea8f0a130" style={{display: 'block'}}>Operational Status</label>
+                 <select className="input-field ui-static-b52e2fe28a" value={editData.status} onChange={e => setEditData({...editData, status: e.target.value})} style={{width: '100%'}}>
                     <option value="Active">Active</option>
                     <option value="Pending">Pending</option>
                     <option value="Terminated">Terminated</option>
@@ -725,24 +718,24 @@ export default function ServiceDetailClient({ service, session }) {
                  </select>
                </div>
 
-               <div style={{marginBottom:'1rem'}}>
-                 <label htmlFor="edit-service-capacity">{isDarkFiber(service.template)?'Jumlah pair':'Kapasitas layanan (Mbps)'}</label>
-                 <input id="edit-service-capacity" type="number" min={isDarkFiber(service.template)?1:0.001} step={isDarkFiber(service.template)?1:"any"} className="input-field" value={isDarkFiber(service.template)?editData.customData.pairCount??readPairCount(service)??1:Object.hasOwn(editData.customData,'bandwidthMbps') ? editData.customData.bandwidthMbps ?? '' : readServiceBandwidthMbps(service) ?? ''} onChange={e => setEditData({ ...editData, customData: { ...editData.customData, ...(isDarkFiber(service.template)?{pairCount:e.target.value===''?'':Number(e.target.value)}:{bandwidthMbps: e.target.value === '' ? null : Number(e.target.value)}) } })} style={{width:'100%',padding:'0.8rem'}} />
+               <div className="ui-static-3e8220669e" >
+                 <CapacityInput id="edit-service-capacity" unit={isDarkFiber(service.template)?'pair':'Gbps'} value={isDarkFiber(service.template)?editData.customData.pairCount??readPairCount(service)??1:(Object.hasOwn(editData.customData,'bandwidthMbps')?editData.customData.bandwidthMbps:readServiceBandwidthMbps(service))==null?'':(Object.hasOwn(editData.customData,'bandwidthMbps')?editData.customData.bandwidthMbps:readServiceBandwidthMbps(service))/1000} onChange={e=>setEditData({...editData,customData:{...editData.customData,...(isDarkFiber(service.template)?{pairCount:e.target.value===''?'':Number(e.target.value)}:{bandwidthMbps:e.target.value===''?null:Number(e.target.value)*1000})}})}/>
+
                  <small>Isi kapasitas saat ini sebelum membuat tiket Upgrade/Downgrade jika data lama belum memiliki satuan yang jelas.</small>
                </div>
                {templateFields.length > 0 && (
-                 <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--hover-bg)', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
-                   <h4 style={{ margin: '0 0 1rem 0', color: 'var(--heading-color)' }}>Technical Parameters</h4>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                 <div className="ui-static-d6cf051c1a" >
+                   <h4 className="ui-static-980d0fe234" >Technical Parameters</h4>
+                   <div className="ui-static-af81cc4264" style={{display: 'flex', flexDirection: 'column'}}>
                      {templateFields.filter(f=>!isPlaceholderField(f.name)&&!isPairField(f.name)&&(!isDarkFiber(service.template)||!isBandwidthField(f.name))).map((f, i) => (
                        <div key={i}>
-                         <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.4rem', color: 'var(--text-color)', fontSize: '0.85rem' }}>{f.name}</label>
+                         <label className="ui-static-5828b8b2e5" style={{display: 'block'}}>{f.name}</label>
                          <input 
                            type={f.type === 'number' ? 'number' : 'text'} 
-                           className="input-field" 
+                           className="input-field ui-static-ce5f724e09"
                            value={editData.customData[f.name] || ''} 
                            onChange={e => setEditData({ ...editData, customData: { ...editData.customData, [f.name]: e.target.value } })} 
-                           style={{ width: '100%', padding: '0.6rem' }} 
+                           style={{width: '100%'}}
                          />
                        </div>
                      ))}
@@ -750,7 +743,7 @@ export default function ServiceDetailClient({ service, session }) {
                  </div>
                )}
 
-               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+               <div className="ui-static-af81cc4264" style={{display: 'flex', justifyContent: 'flex-end'}}>
                  <button type="button" onClick={() => setShowEditModal(false)} className="secondary-btn">Cancel</button>
                  <button type="submit" disabled={isSaving} className="primary-btn">{isSaving ? 'Updating...' : 'Save Changes'}</button>
                </div>
@@ -818,7 +811,7 @@ export default function ServiceDetailClient({ service, session }) {
             <div className="sla-print-meta">Customer {service.customer?.name || '-'}</div>
             <div className="sla-print-meta">Periode {monthLabelUpper(yrMonth)}</div>
             <div className="sla-print-meta">Service {service.template?.name || service.name}</div>
-            <div className="sla-print-meta" style={{ marginBottom: '0.75rem' }}>Problem side ION Network</div>
+            <div className="sla-print-meta ui-static-3bfe860463" >Problem side ION Network</div>
 
             <table className="sla-print-table">
               <thead>

@@ -26,14 +26,14 @@ export default function ReportForm() {
   };
 
   return (
-    <div className="login-card" style={{ maxWidth: '800px', margin: '0' }}>
+    <div className="login-card ui-static-ff227d0632" style={{maxWidth: '800px'}}>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Report Content</label>
           <textarea 
             required 
             rows="12" 
-            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', fontFamily: 'inherit', boxSizing: 'border-box' }}
+            className="ui-static-077b25649f" style={{width: '100%', boxSizing: 'border-box'}}
             value={content} 
             onChange={e => setContent(e.target.value)}
             placeholder="Describe alarms handled, tickets solved, or operations done during your shift..."

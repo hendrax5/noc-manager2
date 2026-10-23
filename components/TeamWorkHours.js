@@ -114,45 +114,28 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+    <div className="ui-static-92254f43e7" style={{display: "flex", flexDirection: "column"}}>
       
       {/* Date & Department Filters */}
-      <div className="card" style={{ padding: "1.25rem", margin: 0, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+      <div className="card ui-static-6e298e325f" style={{display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap"}}>
+        <div className="ui-static-92254f43e7" style={{display: "flex", alignItems: "center", flexWrap: "wrap"}}>
           
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <label style={{ fontSize: "0.85rem", fontWeight: "bold", color: "#64748b" }}>Tanggal:</label>
+          <div className="ui-static-30f523173e" style={{display: "flex", alignItems: "center"}}>
+            <label className="ui-static-fcde453bb3" >Tanggal:</label>
             <input 
               type="date" 
               value={selectedDate} 
               onChange={(e) => setSelectedDate(e.target.value)}
-              style={{
-                padding: "0.4rem 0.75rem",
-                borderRadius: "6px",
-                border: "1px solid var(--border-color)",
-                background: "var(--input-bg)",
-                color: "var(--input-text)",
-                fontSize: "0.9rem",
-                fontFamily: "inherit"
-              }}
+              className="ui-static-419193b796"
             />
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <label style={{ fontSize: "0.85rem", fontWeight: "bold", color: "#64748b" }}>Departemen:</label>
+          <div className="ui-static-30f523173e" style={{display: "flex", alignItems: "center"}}>
+            <label className="ui-static-fcde453bb3" >Departemen:</label>
             <select 
               value={selectedDept} 
               onChange={(e) => setSelectedDept(e.target.value)}
-              style={{
-                padding: "0.4rem 0.75rem",
-                borderRadius: "6px",
-                border: "1px solid var(--border-color)",
-                background: "var(--input-bg)",
-                color: "var(--input-text)",
-                fontSize: "0.9rem",
-                fontFamily: "inherit",
-                minWidth: "150px"
-              }}
+              className="ui-static-419193b796" style={{minWidth: "150px"}}
             >
               <option value="">Semua Departemen</option>
               {departments.map(d => (
@@ -168,8 +151,8 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
             setSelectedDate(todayStr);
             setSelectedDept("");
           }}
-          className="logout-btn"
-          style={{ padding: "0.4rem 1rem", fontSize: "0.85rem", margin: 0, height: "36px" }}
+          className="logout-btn ui-static-d2ab73263b"
+          style={{height: "36px"}}
         >
           Reset Filter
         </button>
@@ -177,14 +160,14 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
 
       {/* Loading & Error States */}
       {loading && (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "200px", flexDirection: "column", gap: "1rem" }}>
-          <div style={{ width: "35px", height: "35px", border: "4px solid #cbd5e1", borderTopColor: "var(--secondary-color)", borderRadius: "50%", animation: "spin 1s linear infinite" }}></div>
-          <span style={{ color: "#64748b", fontSize: "0.9rem" }}>Memproses lini masa aktivitas tim...</span>
+        <div className="ui-static-af81cc4264" style={{display: "flex", justifyContent: "center", alignItems: "center", minHeight: "200px", flexDirection: "column"}}>
+          <div className="ui-static-be074adbd1" style={{width: "35px", height: "35px", animation: "spin 1s linear infinite"}}></div>
+          <span className="ui-static-9d7e95f546" >Memproses lini masa aktivitas tim...</span>
         </div>
       )}
 
       {error && (
-        <div className="card" style={{ borderLeft: "4px solid #ef4444", padding: "1rem", color: "#ef4444", margin: 0 }}>
+        <div className="card ui-static-91b770bb63" >
           Terjadi kesalahan: {error}
         </div>
       )}
@@ -194,28 +177,28 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
         <>
           <div className="sky-view-grid">
             <div className="kpi-card">
-              <div className="kpi-icon" style={{ background: "#e0f2fe", color: "#0369a1" }}>🕒</div>
+              <div className="kpi-icon ui-static-6b3235db06" ></div>
               <div className="kpi-content">
                 <span className="kpi-value">{teamStats.avgEfficiency}%</span>
                 <span className="kpi-label">Efisiensi Rata-rata Tim</span>
               </div>
             </div>
             <div className="kpi-card">
-              <div className="kpi-icon" style={{ background: "#dcfce7", color: "#15803d" }}>👤</div>
+              <div className="kpi-icon ui-static-7c914a6a61" ></div>
               <div className="kpi-content">
-                <span className="kpi-value">{teamStats.activeCount} <span style={{ fontSize: "0.85rem", fontWeight: "normal", color: "#64748b" }}>/ {data.users.length}</span></span>
+                <span className="kpi-value">{teamStats.activeCount} <span className="ui-static-90d3402874" >/ {data.users.length}</span></span>
                 <span className="kpi-label">Operator Aktif Hari Ini</span>
               </div>
             </div>
             <div className="kpi-card">
-              <div className="kpi-icon" style={{ background: "#f3e8ff", color: "#6b21a8" }}>⚡</div>
+              <div className="kpi-icon ui-static-6b3235db06" ></div>
               <div className="kpi-content">
                 <span className="kpi-value">{formatDuration(teamStats.totalEffectiveHours)}</span>
                 <span className="kpi-label">Total Jam Kerja Efektif</span>
               </div>
             </div>
             <div className="kpi-card">
-              <div className="kpi-icon" style={{ background: "#fef3c7", color: "#b45309" }}>🔥</div>
+              <div className="kpi-icon ui-static-b0deb02a07" ></div>
               <div className="kpi-content">
                 <span className="kpi-value">{teamStats.overtimeCases}</span>
                 <span className="kpi-label">Staf Mengambil Lembur</span>
@@ -224,33 +207,26 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
           </div>
 
           {/* Timeline Table Grid */}
-          <div className="card" style={{ padding: "1.25rem", margin: 0, overflowX: "auto" }}>
-            <h3 style={{ margin: "0 0 1.5rem 0", fontSize: "1.1rem", fontWeight: "700", color: "var(--heading-color)" }}>
+          <div className="card ui-static-77923e1f2b" style={{overflowX: "auto"}}>
+            <h3 className="ui-static-18be4c6b3d" >
               Visualisasi Lini Masa Waktu Bekerja Tim
             </h3>
 
             {data.users.length === 0 ? (
-              <div style={{ textAlign: "center", color: "#64748b", padding: "2rem" }}>
+              <div className="ui-static-bee680cf02" style={{textAlign: "center"}}>
                 Tidak ada data tim ditemukan untuk tanggal/filter departemen ini.
               </div>
             ) : (
               <div style={{ minWidth: "800px" }}>
                 
                 {/* Timeline Axis Ticks Ruler */}
-                <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: "1.5rem", marginBottom: "0.5rem" }}>
+                <div className="ui-static-7b301f66c7" style={{display: "grid", gridTemplateColumns: "240px 1fr"}}>
                   <div></div> {/* Empty for alignment with avatar column */}
-                  <div style={{ position: "relative", height: "20px", borderBottom: "1px solid var(--border-color)" }}>
+                  <div className="ui-static-31df06b618" style={{position: "relative", height: "20px"}}>
                     {timelineTicks.map(tick => (
                       <span 
                         key={tick.label} 
-                        style={{ 
-                          position: "absolute", 
-                          left: `${tick.pct}%`, 
-                          transform: "translateX(-50%)", 
-                          fontSize: "0.75rem", 
-                          color: "#64748b",
-                          fontWeight: "500"
-                        }}
+                        className="ui-static-a6c74a3341" style={{position: "absolute", left: `${tick.pct}%`, transform: "translateX(-50%)"}}
                       >
                         {tick.label}
                       </span>
@@ -259,7 +235,7 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                 </div>
 
                 {/* Team Rows */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div className="ui-static-af81cc4264" style={{display: "flex", flexDirection: "column"}}>
                   {data.users.map(u => {
                     const startMs = new Date(data.globalRange.start).getTime();
                     const endMs = new Date(data.globalRange.end).getTime();
@@ -268,75 +244,59 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                     const isExpanded = expandedUser === u.user.id;
 
                     return (
-                      <div key={u.user.id} style={{ borderBottom: "1px solid var(--border-color)", paddingBottom: "1rem" }}>
+                      <div key={u.user.id} className="ui-static-1e82d9362c" >
                         
                         {/* User Row Header and Timeline Bar */}
-                        <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: "1.5rem", alignItems: "center" }}>
+                        <div className="ui-static-92254f43e7" style={{display: "grid", gridTemplateColumns: "240px 1fr", alignItems: "center"}}>
                           
                           {/* Left Column: User details */}
                           <div 
                             onClick={() => toggleExpandUser(u.user.id)}
-                            style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer" }}
+                            className="ui-static-e59a73fd03" style={{display: "flex", alignItems: "center", cursor: "pointer"}}
                           >
-                            <div className="podium-avatar" style={{ 
-                              margin: 0, 
-                              background: u.stats.efficiencyRate >= 60 ? "#10b981" : u.stats.efficiencyRate >= 30 ? "#f59e0b" : "#ef4444", 
-                              width: "36px", 
-                              height: "36px",
-                              fontSize: "0.85rem",
-                              flexShrink: 0
-                            }}>
+                            <div className="podium-avatar ui-static-d929e0b517" style={{background: u.stats.efficiencyRate >= 60 ? "#10b981" : u.stats.efficiencyRate >= 30 ? "#f59e0b" : "#ef4444", width: "36px", height: "36px", flexShrink: 0}}>
                               {u.user.avatarUrl ? (
-                                <img src={u.user.avatarUrl} alt="Avatar" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+                                <img src={u.user.avatarUrl} alt="Avatar" className="ui-static-30e89704d0" style={{width: "100%", height: "100%", objectFit: "cover"}} />
                               ) : (
                                 getInitials(u.user.name)
                               )}
                             </div>
                             <div style={{ overflow: "hidden" }}>
-                              <div style={{ fontWeight: "700", fontSize: "0.875rem", color: "var(--heading-color)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={u.user.name}>
+                              <div className="ui-static-e82100d373" style={{whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"}} title={u.user.name}>
                                 {u.user.name}
                               </div>
-                              <div style={{ fontSize: "0.75rem", color: "#64748b", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                              <div className="ui-static-edd773fc7f" style={{display: "flex", alignItems: "center"}}>
                                 <span>{u.user.department}</span>
                                 <span>•</span>
-                                <span style={{ fontWeight: "bold" }}>{u.stats.efficiencyRate}% Efisien</span>
+                                <span className="ui-static-78d7af8b7e" >{u.stats.efficiencyRate}% Efisien</span>
                               </div>
                             </div>
                           </div>
 
                           {/* Right Column: Visual timeline bar */}
-                          <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                          <div className="ui-static-0f8796a915" style={{display: "flex", flexDirection: "column"}}>
                             
                             {/* Shift window limits labels */}
-                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: "#94a3b8" }}>
+                            <div className="ui-static-3fb49e1cf0" style={{display: "flex", justifyContent: "space-between"}}>
                               <span>
                                 Shift: {u.shift.name} ({u.shift.startTime} - {u.shift.endTime})
                                 {u.shift.onCall && ` • On-call ${u.shift.onCall.startTime} - ${u.shift.onCall.endTime}`}
                                 {u.shift.workMode === "wfh" && (
-                                  <span style={{ marginLeft: "0.4rem", padding: "0 0.35rem", borderRadius: "4px", background: "rgba(139, 92, 246, 0.15)", color: "#8b5cf6", fontWeight: "bold" }}>WFH</span>
+                                  <span className="ui-static-e6e8123f1c" >WFH</span>
                                 )}
                               </span>
-                              <span style={{ display: "flex", gap: "0.6rem" }}>
+                              <span className="ui-static-30f523173e" style={{display: "flex"}}>
                                 {u.stats.onCallHours > 0 && (
-                                  <span style={{ color: "#8b5cf6", fontWeight: "bold" }}>📞 On-call: {formatDuration(u.stats.onCallHours)}</span>
+                                  <span className="ui-static-b674ec9d7d" > On-call: {formatDuration(u.stats.onCallHours)}</span>
                                 )}
                                 {u.stats.overtimeHours > 0 && (
-                                  <span style={{ color: "#f97316", fontWeight: "bold" }}>⚡ Lembur: {formatDuration(u.stats.overtimeHours)}</span>
+                                  <span className="ui-static-1b3b267cb2" > Lembur: {formatDuration(u.stats.overtimeHours)}</span>
                                 )}
                               </span>
                             </div>
 
                             {/* Timeline Bar */}
-                            <div style={{ 
-                              display: "flex", 
-                              height: "28px", 
-                              width: "100%", 
-                              borderRadius: "6px", 
-                              overflow: "hidden", 
-                              background: "rgba(148, 163, 184, 0.08)",
-                              border: "1px solid var(--border-color)",
-                              position: "relative"
-                            }}>
+                            <div className="ui-static-54076a6659" style={{display: "flex", height: "28px", width: "100%", overflow: "hidden", position: "relative"}}>
                               {u.segments.map((seg, idx) => {
                                 const segStartMs = new Date(seg.start).getTime();
                                 const segEndMs = new Date(seg.end).getTime();
@@ -365,23 +325,7 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                                   <div 
                                     key={idx} 
                                     title={title}
-                                    style={{
-                                      position: "absolute",
-                                      top: 0,
-                                      left: `${leftPct}%`,
-                                      width: `${widthPct}%`,
-                                      background: bg,
-                                      height: "100%",
-                                      cursor: "help",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      color: "white",
-                                      fontSize: "0.65rem",
-                                      fontWeight: "bold",
-                                      transition: "filter 0.1s",
-                                      borderRight: "1px solid rgba(255, 255, 255, 0.1)"
-                                    }}
+                                    className="ui-static-00d3d47706" style={{position: "absolute", top: 0, left: `${leftPct}%`, width: `${widthPct}%`, background: bg, height: "100%", cursor: "help", display: "flex", alignItems: "center", justifyContent: "center", transition: "filter 0.1s"}}
                                     onMouseEnter={(e) => e.currentTarget.style.filter = "brightness(1.1)"}
                                     onMouseLeave={(e) => e.currentTarget.style.filter = "none"}
                                   >
@@ -399,47 +343,47 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
 
                         {/* Collapsible Details Row */}
                         {isExpanded && (
-                          <div style={{ marginTop: "1rem", display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "1.5rem", animation: "fadeIn 0.2s ease-out" }}>
+                          <div className="ui-static-9857071992" style={{display: "grid", gridTemplateColumns: "1fr 1.5fr", animation: "fadeIn 0.2s ease-out"}}>
                             
                             {/* Summary Statistics & Loyalty Analysis */}
-                            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                            <div className="ui-static-af81cc4264" style={{display: "flex", flexDirection: "column"}}>
                               {/* Statistics Card */}
-                              <div className="card" style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem", background: "var(--hover-bg)", margin: 0 }}>
-                                <h4 style={{ margin: 0, color: "var(--heading-color)", fontSize: "0.85rem", fontWeight: "700" }}>Statistik Harian: {u.user.name}</h4>
+                              <div className="card ui-static-f4e990dd94" style={{display: "flex", flexDirection: "column"}}>
+                                <h4 className="ui-static-d27798b3be" >Statistik Harian: {u.user.name}</h4>
                                 
-                                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", fontSize: "0.8rem" }}>
+                                <div className="ui-static-90022612d6" style={{display: "flex", flexDirection: "column"}}>
                                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span style={{ color: "#64748b" }}>Durasi Shift:</span>
-                                    <span style={{ fontWeight: "600", color: "var(--heading-color)" }}>{formatDuration(u.stats.shiftHours)}</span>
+                                    <span className="ui-static-b9010af219" >Durasi Shift:</span>
+                                    <span className="ui-static-832fde8c1f" >{formatDuration(u.stats.shiftHours)}</span>
                                   </div>
                                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span style={{ color: "#10b981", fontWeight: "500" }}>Kerja Efektif Shift:</span>
-                                    <span style={{ fontWeight: "600", color: "var(--heading-color)" }}>{formatDuration(u.stats.activeHours)}</span>
+                                    <span className="ui-static-98076d77c2" >Kerja Efektif Shift:</span>
+                                    <span className="ui-static-832fde8c1f" >{formatDuration(u.stats.activeHours)}</span>
                                   </div>
                                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span style={{ color: "#f97316", fontWeight: "500" }}>Kerja Lembur:</span>
-                                    <span style={{ fontWeight: "600", color: "var(--heading-color)" }}>{formatDuration(u.stats.overtimeHours)}</span>
+                                    <span className="ui-static-d00d74db66" >Kerja Lembur:</span>
+                                    <span className="ui-static-832fde8c1f" >{formatDuration(u.stats.overtimeHours)}</span>
                                   </div>
                                   {u.shift.onCall && (
                                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                      <span style={{ color: "#8b5cf6", fontWeight: "500" }}>Kerja On-call (WFH):</span>
-                                      <span style={{ fontWeight: "600", color: "var(--heading-color)" }}>{formatDuration(u.stats.onCallHours || 0)}</span>
+                                      <span className="ui-static-6f1a5c2e7a" >Kerja On-call (WFH):</span>
+                                      <span className="ui-static-832fde8c1f" >{formatDuration(u.stats.onCallHours || 0)}</span>
                                     </div>
                                   )}
                                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span style={{ color: "#64748b" }}>Waktu Kosong (Shift):</span>
-                                    <span style={{ fontWeight: "600", color: "var(--heading-color)" }}>{formatDuration(u.stats.idleHours)}</span>
+                                    <span className="ui-static-b9010af219" >Waktu Kosong (Shift):</span>
+                                    <span className="ui-static-832fde8c1f" >{formatDuration(u.stats.idleHours)}</span>
                                   </div>
-                                  <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border-color)", paddingTop: "0.5rem", marginTop: "0.25rem" }}>
-                                    <span style={{ fontWeight: "bold", color: "var(--heading-color)" }}>Rasio Efisiensi Shift:</span>
-                                    <span style={{ fontWeight: "bold", color: u.stats.efficiencyRate >= 60 ? "#10b981" : u.stats.efficiencyRate >= 30 ? "#f59e0b" : "#ef4444" }}>
+                                  <div className="ui-static-0664cbeecc" style={{display: "flex", justifyContent: "space-between"}}>
+                                    <span className="ui-static-8356576a3b" >Rasio Efisiensi Shift:</span>
+                                    <span className="ui-static-78d7af8b7e" style={{color: u.stats.efficiencyRate >= 60 ? "#10b981" : u.stats.efficiencyRate >= 30 ? "#f59e0b" : "#ef4444"}}>
                                       {u.stats.efficiencyRate}%
                                     </span>
                                   </div>
                                 </div>
 
                                 {/* Progress bar representing shift efficiency */}
-                                <div className="ttr-bar-container" style={{ margin: "0.25rem 0 0 0" }}>
+                                <div className="ttr-bar-container ui-static-8351b97388" >
                                   <div 
                                     className="ttr-bar" 
                                     style={{ 
@@ -452,36 +396,28 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
 
                               {/* Loyalty/Diligence Analysis Card */}
                               {u.diligence && (
-                                <div className="card" style={{ 
-                                  padding: "1rem", 
-                                  display: "flex", 
-                                  flexDirection: "column", 
-                                  gap: "0.75rem", 
-                                  background: u.diligence.score >= 75 ? "rgba(16, 185, 129, 0.04)" : u.diligence.score >= 50 ? "rgba(59, 130, 246, 0.04)" : u.diligence.score >= 25 ? "var(--hover-bg)" : "rgba(239, 68, 68, 0.04)",
-                                  borderLeft: `4px solid ${u.diligence.score >= 75 ? "#10b981" : u.diligence.score >= 50 ? "#3b82f6" : u.diligence.score >= 25 ? "#64748b" : "#ef4444"}`,
-                                  margin: 0 
-                                }}>
-                                  <h4 style={{ margin: 0, color: "var(--heading-color)", fontSize: "0.85rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                                    🧠 Analisis Kualitas Kerja & Loyalitas
+                                <div className="card ui-static-f64eae4332" style={{display: "flex", flexDirection: "column", background: u.diligence.score >= 75 ? "rgba(16, 185, 129, 0.04)" : u.diligence.score >= 50 ? "rgba(59, 130, 246, 0.04)" : u.diligence.score >= 25 ? "var(--hover-bg)" : "rgba(239, 68, 68, 0.04)", borderLeft: `4px solid ${u.diligence.score >= 75 ? "#10b981" : u.diligence.score >= 50 ? "#3b82f6" : u.diligence.score >= 25 ? "#64748b" : "#ef4444"}`}}>
+                                  <h4 className="ui-static-2d58ea64ff" style={{display: "flex", alignItems: "center"}}>
+                                     Analisis Kualitas Kerja & Loyalitas
                                   </h4>
                                   
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <span style={{ fontSize: "0.8rem", fontWeight: "bold", color: u.diligence.score >= 75 ? "#10b981" : u.diligence.score >= 50 ? "#3b82f6" : u.diligence.score >= 25 ? "var(--heading-color)" : "#ef4444" }}>
+                                    <span className="ui-static-7e5eaaca0d" style={{color: u.diligence.score >= 75 ? "#10b981" : u.diligence.score >= 50 ? "#3b82f6" : u.diligence.score >= 25 ? "var(--heading-color)" : "#ef4444"}}>
                                       {u.diligence.level}
                                     </span>
-                                    <span style={{ fontSize: "0.7rem", fontWeight: "bold", background: "var(--border-color)", padding: "0.15rem 0.4rem", borderRadius: "4px" }}>
+                                    <span className="ui-static-aa1bd4b4bf" >
                                       Indeks: {u.diligence.score}/100
                                     </span>
                                   </div>
 
-                                  <p style={{ fontSize: "0.75rem", color: "var(--text-color)", margin: 0, lineHeight: "1.4" }}>
+                                  <p className="ui-static-3f677735b2" >
                                     {u.diligence.feedbackText}
                                   </p>
 
                                   {u.diligence.keywordsDetected.length > 0 && (
-                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem", marginTop: "0.25rem" }}>
+                                    <div className="ui-static-950dea6c48" style={{display: "flex", flexWrap: "wrap"}}>
                                       {u.diligence.keywordsDetected.map(kw => (
-                                        <span key={kw} style={{ fontSize: "0.65rem", background: "rgba(148, 163, 184, 0.15)", padding: "0.1rem 0.35rem", borderRadius: "3px", color: "var(--text-color)" }}>
+                                        <span key={kw} className="ui-static-ab271ad4d4" >
                                           #{kw}
                                         </span>
                                       ))}
@@ -492,45 +428,36 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                             </div>
 
                             {/* Activities Log Timeline */}
-                            <div className="card" style={{ padding: "1rem", overflow: "hidden", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                              <h4 style={{ margin: 0, color: "var(--heading-color)", fontSize: "0.85rem", fontWeight: "700" }}>Rincian Aktivitas Tiket</h4>
+                            <div className="card ui-static-e418acdc7c" style={{overflow: "hidden", display: "flex", flexDirection: "column"}}>
+                              <h4 className="ui-static-d27798b3be" >Rincian Aktivitas Tiket</h4>
                               
-                              <div style={{ overflowY: "auto", maxHeight: "250px", display: "flex", flexDirection: "column", gap: "0.75rem", paddingRight: "0.25rem" }}>
+                              <div className="ui-static-73db728ca8" style={{overflowY: "auto", maxHeight: "250px", display: "flex", flexDirection: "column"}}>
                                 {u.activities.length === 0 ? (
-                                  <div style={{ textAlign: "center", color: "#64748b", padding: "1.5rem", fontSize: "0.8rem" }}>
+                                  <div className="ui-static-c8e85162f1" style={{textAlign: "center"}}>
                                     Tidak ada aktivitas tiket yang tercatat hari ini.
                                   </div>
                                 ) : (
-                                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", borderLeft: "2px solid var(--border-color)", paddingLeft: "1rem", marginLeft: "0.5rem" }}>
+                                  <div className="ui-static-c5899cfb2e" style={{display: "flex", flexDirection: "column"}}>
                                     {u.activities.map(act => {
                                       const timeStr = new Date(act.timestamp).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                                       const isComment = act.action?.includes("Reply") || act.id?.startsWith("comment");
                                       const isOvertime = new Date(act.timestamp) < new Date(u.shift.start) || new Date(act.timestamp) > new Date(u.shift.end);
 
                                       return (
-                                        <div key={act.id} style={{ position: "relative", fontSize: "0.8rem" }}>
+                                        <div key={act.id} className="ui-static-fc155e091a" style={{position: "relative"}}>
                                           {/* Circle timeline dot */}
-                                          <div style={{ 
-                                            position: "absolute", 
-                                            left: "-1.35rem", 
-                                            top: "0.25rem", 
-                                            width: "7px", 
-                                            height: "7px", 
-                                            borderRadius: "50%", 
-                                            backgroundColor: isOvertime ? "#f97316" : isComment ? "var(--secondary-color)" : "#10b981",
-                                            boxShadow: "0 0 0 3px var(--card-bg)"
-                                          }} />
+                                          <div className="ui-static-489db56d2d" style={{position: "absolute", left: "-1.35rem", top: "0.25rem", width: "7px", height: "7px", backgroundColor: isOvertime ? "#f97316" : isComment ? "var(--secondary-color)" : "#10b981"}} />
                                           
-                                          <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
-                                            <span style={{ fontWeight: "700", color: "var(--heading-color)" }}>{act.action}</span>
-                                            <span style={{ fontSize: "0.7rem", color: "#94a3b8" }}>
-                                              {timeStr} {isOvertime && <span style={{ color: "#f97316", fontWeight: "bold" }}>(Lembur)</span>}
+                                          <div className="ui-static-30f523173e" style={{display: "flex", justifyContent: "space-between", flexWrap: "wrap"}}>
+                                            <span className="ui-static-b8f3c0ff5c" >{act.action}</span>
+                                            <span className="ui-static-3fb49e1cf0" >
+                                              {timeStr} {isOvertime && <span className="ui-static-1b3b267cb2" >(Lembur)</span>}
                                             </span>
                                           </div>
                                           
                                           {act.ticketId && (
-                                            <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "0.1rem" }}>
-                                              Tiket: <Link href={`/tickets/${act.ticketId}`} target="_blank" style={{ color: "var(--secondary-color)", textDecoration: "none", fontWeight: "600" }}>[{act.ticketTrackingId}]</Link> - {act.ticketTitle}
+                                            <div className="ui-static-0cb42f860f" >
+                                              Tiket: <Link href={`/tickets/${act.ticketId}`} target="_blank" className="ui-static-1f56a9dcfa" style={{textDecoration: "none"}}>[{act.ticketTrackingId}]</Link> - {act.ticketTitle}
                                             </div>
                                           )}
                                         </div>

@@ -135,39 +135,35 @@ export default function TeamAccessManager({ users, roles, departments, companies
     });
 
   return (
-    <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', background: '#f8fafc' }}>
+    <div className="card ui-static-bcb0a0d8bd" style={{overflow: 'hidden'}}>
+      <div className="ui-static-7ad892b6d2" style={{display: 'flex'}}>
         {availableTabs.map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
-            style={{ 
-              flex: 1, padding: '1rem', border: 'none', background: activeTab === tab ? 'white' : 'transparent', 
-              borderBottom: activeTab === tab ? '3px solid var(--primary-color)' : '3px solid transparent',
-              fontWeight: activeTab === tab ? 'bold' : 'normal', cursor: 'pointer', fontSize: '1rem', textTransform: 'capitalize', transition: 'all 0.2s'
-            }}
+            className="ui-static-7d67a0faa0" style={{flex: 1, background: activeTab === tab ? "var(--ui-surface)" : 'transparent', borderBottom: activeTab === tab ? '3px solid var(--primary-color)' : '3px solid transparent', fontWeight: activeTab === tab ? 'bold' : 'normal', cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s'}}
           >
             {tab}
           </button>
         ))}
       </div>
 
-      <div style={{ padding: '2rem' }}>
+      <div className="ui-static-39c1d6c828" >
         {activeTab === 'users' && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                <h2 style={{ margin: 0 }}>Manage Users</h2>
-                <span style={{ fontSize: '0.8rem', color: '#64748b', background: '#f1f5f9', padding: '0.25rem 0.65rem', borderRadius: 999, border: '1px solid #e2e8f0' }}>
+            <div className="ui-static-be5b2f6887" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap'}}>
+              <div className="ui-static-e59a73fd03" style={{display: 'flex', alignItems: 'center', flexWrap: 'wrap'}}>
+                <h2 className="ui-static-ff227d0632" >Manage Users</h2>
+                <span className="ui-static-09a5a64ca2" >
                   {filteredUsers.length} user{filteredUsers.length === 1 ? '' : 's'}
                   {deptFilter ? ` · ${departments.find(d => String(d.id) === String(deptFilter))?.name || 'dept'}` : ''}
                 </span>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className="ui-static-30f523173e" style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center'}}>
                 <select
                   value={deptFilter}
                   onChange={(e) => { setDeptFilter(e.target.value); setUserPage(1); }}
-                  style={{ padding: '0.55rem 0.75rem', borderRadius: 8, border: '1px solid #cbd5e1', background: 'white', minWidth: 180 }}
+                  className="ui-static-f1182528bd" style={{minWidth: 180}}
                   title="Filter by department"
                 >
                   <option value="">All departments</option>
@@ -178,7 +174,7 @@ export default function TeamAccessManager({ users, roles, departments, companies
                 <select
                   value={userSort}
                   onChange={(e) => { setUserSort(e.target.value); setUserPage(1); }}
-                  style={{ padding: '0.55rem 0.75rem', borderRadius: 8, border: '1px solid #cbd5e1', background: 'white' }}
+                  className="ui-static-f1182528bd"
                   title="Sort users"
                 >
                   <option value="name">Sort: Name A–Z</option>
@@ -189,41 +185,41 @@ export default function TeamAccessManager({ users, roles, departments, companies
                   placeholder="Search name or email…" 
                   value={userSearchQuery}
                   onChange={e => {setUserSearchQuery(e.target.value); setUserPage(1);}}
-                  style={{ width: '260px', padding: '0.6rem 1rem', borderRadius: '50px', border: '1px solid #cbd5e1', outline: 'none' }}
+                  className="ui-static-ea9e089afc" style={{width: '260px', outline: 'none'}}
                 />
               </div>
             </div>
-            <form onSubmit={handleAddUser} style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '1rem', marginBottom: '2rem', background: '#f1f5f9', padding: '1.5rem', borderRadius: '6px' }}>
-              <input type="text" placeholder="Full Name" required value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} style={{ padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
-              <input type="email" placeholder="Email Address" required value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} style={{ padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
-              <input type="text" placeholder="Password" required value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} style={{ padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
-              <select value={newUser.roleId} onChange={e => setNewUser({...newUser, roleId: e.target.value})} required style={{ padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+            <form onSubmit={handleAddUser} className="ui-static-2d649ec674" style={{display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)'}}>
+              <input type="text" placeholder="Full Name" required value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} className="ui-static-2bf089dea9"  />
+              <input type="email" placeholder="Email Address" required value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} className="ui-static-2bf089dea9"  />
+              <input type="text" placeholder="Password" required value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} className="ui-static-2bf089dea9"  />
+              <select value={newUser.roleId} onChange={e => setNewUser({...newUser, roleId: e.target.value})} required className="ui-static-2bf089dea9" >
                 <option value="" disabled>Select Role...</option>
                 {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
-              <select value={newUser.departmentId} onChange={e => setNewUser({...newUser, departmentId: e.target.value})} required style={{ padding: '0.6rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
+              <select value={newUser.departmentId} onChange={e => setNewUser({...newUser, departmentId: e.target.value})} required className="ui-static-2bf089dea9" >
                 <option value="" disabled>Select Dept...</option>
                 {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
-              <button type="submit" className="primary-btn" style={{ padding: '0.6rem 1rem' }}>+ Create User</button>
+              <button type="submit" className="primary-btn ui-static-7f62800e8e" >+ Create User</button>
             </form>
             <UserTableClient users={filteredUsers.slice((userPage-1)*userPageSize, userPage*userPageSize)} roles={roles} departments={departments} />
             
             {filteredUsers.length > userPageSize && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+              <div className="ui-static-dd3681565c" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div className="ui-static-dd90b11840" >
                   Showing <strong>{((userPage - 1) * userPageSize) + 1}</strong> to <strong>{Math.min(userPage * userPageSize, filteredUsers.length)}</strong> of <strong>{filteredUsers.length}</strong> entries
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => setUserPage(p => Math.max(1, p - 1))} disabled={userPage === 1} style={{ padding: '0.5rem 1rem', background: userPage > 1 ? 'white' : '#f1f5f9', color: userPage > 1 ? '#3b82f6' : '#94a3b8', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: userPage > 1 ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>&laquo; Prev</button>
-                  <span style={{ padding: '0.5rem 1rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '4px', fontWeight: 'bold' }}>Page {userPage}</span>
-                  <button onClick={() => setUserPage(p => Math.min(Math.ceil(filteredUsers.length / userPageSize), p + 1))} disabled={userPage >= Math.ceil(filteredUsers.length / userPageSize)} style={{ padding: '0.5rem 1rem', background: userPage < Math.ceil(filteredUsers.length / userPageSize) ? 'white' : '#f1f5f9', color: userPage < Math.ceil(filteredUsers.length / userPageSize) ? '#3b82f6' : '#94a3b8', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: userPage < Math.ceil(filteredUsers.length / userPageSize) ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}>Next &raquo;</button>
+                <div className="ui-static-30f523173e" style={{display: 'flex'}}>
+                  <button onClick={() => setUserPage(p => Math.max(1, p - 1))} disabled={userPage === 1} className="ui-static-bf2977b962" style={{background: userPage > 1 ? "var(--ui-surface)" : "var(--ui-surface)", color: userPage > 1 ? "var(--ui-info)" : "var(--ui-info)", cursor: userPage > 1 ? 'pointer' : 'not-allowed'}}>&laquo; Prev</button>
+                  <span className="ui-static-028aa61c6d" >Page {userPage}</span>
+                  <button onClick={() => setUserPage(p => Math.min(Math.ceil(filteredUsers.length / userPageSize), p + 1))} disabled={userPage >= Math.ceil(filteredUsers.length / userPageSize)} className="ui-static-bf2977b962" style={{background: userPage < Math.ceil(filteredUsers.length / userPageSize) ? "var(--ui-surface)" : "var(--ui-surface)", color: userPage < Math.ceil(filteredUsers.length / userPageSize) ? "var(--ui-info)" : "var(--ui-info)", cursor: userPage < Math.ceil(filteredUsers.length / userPageSize) ? 'pointer' : 'not-allowed'}}>Next &raquo;</button>
                 </div>
               </div>
             )}
             
             {filteredUsers.length === 0 && (
-              <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', fontStyle: 'italic', border: '1px dashed #cbd5e1', borderRadius: '8px' }}>
+              <div className="ui-static-8324dd8abf" style={{textAlign: 'center', fontStyle: 'italic'}}>
                 No users found
                 {userSearchQuery ? ` matching "${userSearchQuery}"` : ''}
                 {deptFilter ? ` in selected department` : ''}.
@@ -235,33 +231,33 @@ export default function TeamAccessManager({ users, roles, departments, companies
         {activeTab === 'roles' && (
           <div>
             <h2>Manage Roles</h2>
-            <form onSubmit={handleAddRole} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-              <input type="text" placeholder="New Role Name" required value={newRole} onChange={e => setNewRole(e.target.value)} style={{ padding: '0.75rem', width: '300px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
-              <button type="submit" className="primary-btn" style={{ width: 'auto', padding: '0.75rem 1.5rem' }}>+ Add Role</button>
+            <form onSubmit={handleAddRole} className="ui-static-7b101c5d25" style={{display: 'flex'}}>
+              <input type="text" placeholder="New Role Name" required value={newRole} onChange={e => setNewRole(e.target.value)} className="ui-static-b9ca49b7f6" style={{width: '300px'}} />
+              <button type="submit" className="primary-btn ui-static-4577864700" style={{width: 'auto'}}>+ Add Role</button>
             </form>
-            <ul className="list-group" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: 0, listStyle: 'none' }}>
+            <ul className="list-group ui-static-eb0779f480" style={{display: 'flex', flexDirection: 'column', listStyle: 'none'}}>
               {roles.map(r => {
                 if (editingRoleId === r.id) {
                   const isAdminRole = r.name === 'Admin';
                   return (
-                    <li key={r.id} className="list-item" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--hover-bg)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', marginBottom: '0.75rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '1rem' }}>
-                        <input type="text" value={editRoleName} onChange={e => setEditRoleName(e.target.value)} style={{ padding: '0.6rem', border: '1px solid var(--border-color)', background: 'var(--input-bg)', color: 'var(--input-text)', borderRadius: '6px', flex: 1 }} placeholder="Role Name" />
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button onClick={() => handleSaveRole(r.id)} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>💾 Save</button>
-                          <button onClick={() => setEditingRoleId(null)} style={{ background: '#64748b', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>✕ Cancel</button>
+                    <li key={r.id} className="list-item ui-static-90d05461b8" style={{display: 'flex', flexDirection: 'column'}}>
+                      <div className="ui-static-af81cc4264" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
+                        <input type="text" value={editRoleName} onChange={e => setEditRoleName(e.target.value)} className="ui-static-e6b8be0e4b" style={{flex: 1}} placeholder="Role Name" />
+                        <div className="ui-static-30f523173e" style={{display: 'flex'}}>
+                          <button onClick={() => handleSaveRole(r.id)} className="ui-static-f0b33b9c0d" style={{cursor: 'pointer'}}> Save</button>
+                          <button onClick={() => setEditingRoleId(null)} className="ui-static-26ad8d43e4" style={{cursor: 'pointer'}}>✕ Cancel</button>
                         </div>
                       </div>
                       
                       {/* Permission checklist grid */}
                       <div style={{ width: '100%' }}>
-                        <h4 style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', color: 'var(--heading-color)', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.25rem' }}>Configure Permissions (Capabilities):</h4>
+                        <h4 className="ui-static-f2f8d52d13" >Configure Permissions (Capabilities):</h4>
                         {isAdminRole ? (
-                          <div style={{ padding: '0.5rem', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '6px', color: '#b91c1c', fontSize: '0.8rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span>🛡️</span> Role 'Admin' has hardlocked full permissions to prevent administrative lock-out.
+                          <div className="ui-static-1af8047d5b" style={{display: 'flex', alignItems: 'center'}}>
+                            <span></span> Role 'Admin' has hardlocked full permissions to prevent administrative lock-out.
                           </div>
                         ) : (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                          <div className="ui-static-e59a73fd03" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))'}}>
                             {[
                               { key: "view_all_tickets", label: "🌐 View All Tickets (Global Scope)" },
                               { key: "manage_tickets", label: "🎫 Manage Tickets (Master Permission)" },
@@ -291,7 +287,7 @@ export default function TeamAccessManager({ users, roles, departments, companies
                             ].map(p => {
                               const isChecked = editRolePermissions.includes(p.key);
                               return (
-                                <label key={p.key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', cursor: 'pointer', color: 'var(--text-color)', background: 'var(--card-bg)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', transition: 'all 0.15s' }}>
+                                <label key={p.key} className="ui-static-b1a5d7e3bc" style={{display: 'flex', alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s'}}>
                                   <input 
                                     type="checkbox" 
                                     checked={isChecked}
@@ -311,27 +307,27 @@ export default function TeamAccessManager({ users, roles, departments, companies
                 const isSystemRole = ['Admin', 'Manager', 'User'].includes(r.name);
                 const rolePerms = r.permissions || [];
                 return (
-                  <li key={r.id} className="list-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                  <li key={r.id} className="list-item ui-static-aa8677f079" style={{display: 'flex', flexDirection: 'column'}}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <strong style={{ fontSize: '1.05rem', color: 'var(--heading-color)' }}>{r.name}</strong>
+                      <strong className="ui-static-c4618ca26a" >{r.name}</strong>
                       <div>
                         <select defaultValue="" onChange={(e) => {
                           if (e.target.value === 'edit') handleEditRole(r);
                           if (e.target.value === 'delete') handleDeleteRole(r.id);
                           e.target.value = '';
-                        }} style={{ padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer', background: '#f8fafc', fontWeight: 'bold' }}>
+                        }} className="ui-static-2b848f090e" style={{cursor: 'pointer'}}>
                           <option value="" disabled>Actions ▾</option>
-                          <option value="edit">✎ Edit & Permissions</option>
-                          {!isSystemRole && <option value="delete">🗑 Delete</option>}
+                          <option value="edit"> Edit & Permissions</option>
+                          {!isSystemRole && <option value="delete"> Delete</option>}
                         </select>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.25rem' }}>
+                    <div className="ui-static-950dea6c48" style={{display: 'flex', flexWrap: 'wrap'}}>
                       {rolePerms.length === 0 ? (
-                        <span style={{ fontSize: '0.73rem', fontStyle: 'italic', color: '#94a3b8' }}>No custom capabilities assigned (Basic staff access only)</span>
+                        <span className="ui-static-f0ec965903" style={{fontStyle: 'italic'}}>No custom capabilities assigned (Basic staff access only)</span>
                       ) : (
                         rolePerms.map(p => (
-                          <span key={p} style={{ fontSize: '0.7rem', background: 'var(--hover-bg)', color: 'var(--text-color)', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', fontWeight: '500', textTransform: 'capitalize' }}>
+                          <span key={p} className="ui-static-4a3c2b8c21" style={{textTransform: 'capitalize'}}>
                             {p.replace(/_/g, ' ')}
                           </span>
                         ))
@@ -347,45 +343,45 @@ export default function TeamAccessManager({ users, roles, departments, companies
         {activeTab === 'departments' && (
           <div>
             <h2>Manage Departments</h2>
-            <form onSubmit={handleAddDept} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-              <input type="text" placeholder="New Dept Name" required value={newDept} onChange={e => setNewDept(e.target.value)} style={{ padding: '0.75rem', width: '300px', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
-              <button type="submit" className="primary-btn" style={{ width: 'auto', padding: '0.75rem 1.5rem' }}>+ Add Department</button>
+            <form onSubmit={handleAddDept} className="ui-static-7b101c5d25" style={{display: 'flex'}}>
+              <input type="text" placeholder="New Dept Name" required value={newDept} onChange={e => setNewDept(e.target.value)} className="ui-static-b9ca49b7f6" style={{width: '300px'}} />
+              <button type="submit" className="primary-btn ui-static-4577864700" style={{width: 'auto'}}>+ Add Department</button>
             </form>
             <ul className="list-group">
               {departments.map(d => {
                 if (editingDeptId === d.id) {
                   return (
                     <li key={d.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', flex: 1, gap: '1rem', marginRight: '1rem', flexWrap: 'wrap' }}>
-                        <input type="text" value={editDeptName} onChange={e => setEditDeptName(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '200px' }} placeholder="Dept Name..." />
-                        <select value={editDeptCompany} onChange={e => setEditDeptCompany(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '150px' }}>
+                      <div className="ui-static-f534b4fb6a" style={{display: 'flex', flex: 1, flexWrap: 'wrap'}}>
+                        <input type="text" value={editDeptName} onChange={e => setEditDeptName(e.target.value)} className="ui-static-2bf089dea9" style={{minWidth: '200px'}} placeholder="Dept Name..." />
+                        <select value={editDeptCompany} onChange={e => setEditDeptCompany(e.target.value)} className="ui-static-2bf089dea9" style={{minWidth: '150px'}}>
                           <option value="">-- No Configured Company --</option>
                           {companies.map((c, i) => <option key={i} value={c}>{c}</option>)}
                         </select>
-                        <select value={editDeptAutoRoute} onChange={e => setEditDeptAutoRoute(e.target.value)} style={{ padding: '0.4rem', border: '1px solid #cbd5e1', borderRadius: '4px', minWidth: '200px' }}>
+                        <select value={editDeptAutoRoute} onChange={e => setEditDeptAutoRoute(e.target.value)} className="ui-static-2bf089dea9" style={{minWidth: '200px'}}>
                           <option value="">-- No Default Ticket Route --</option>
                           {departments.map(tDept => <option key={tDept.id} value={tDept.id}>{tDept.name}</option>)}
                         </select>
                       </div>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={() => handleSaveDept(d.id)} style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Save</button>
-                        <button onClick={() => setEditingDeptId(null)} style={{ background: '#64748b', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Cancel</button>
+                      <div className="ui-static-30f523173e" style={{display: 'flex'}}>
+                        <button onClick={() => handleSaveDept(d.id)} className="ui-static-66e91e8487" style={{cursor: 'pointer'}}>Save</button>
+                        <button onClick={() => setEditingDeptId(null)} className="ui-static-52dfaadc78" style={{cursor: 'pointer'}}>Cancel</button>
                       </div>
                     </li>
                   );
                 }
                 return (
                   <li key={d.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div className="ui-static-af81cc4264" style={{display: 'flex', alignItems: 'center', flexWrap: 'wrap'}}>
                       <strong>{d.name}</strong>
                       {deptCompanyMap[d.id] && (
-                        <span style={{ fontSize: '0.75rem', background: '#eff6ff', color: '#1e40af', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #bfdbfe', fontWeight: 'bold' }}>
-                           🏢 Entity: {deptCompanyMap[d.id]}
+                        <span className="ui-static-c527fed352" >
+                            Entity: {deptCompanyMap[d.id]}
                         </span>
                       )}
                       {deptAutoRouteMap[d.id] && (
-                        <span style={{ fontSize: '0.75rem', background: '#fdf4ff', color: '#86198f', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid #f5d0fe', fontWeight: 'bold' }}>
-                           🎯 Routes to: {departments.find(x => String(x.id) === String(deptAutoRouteMap[d.id]))?.name || "Unknown"}
+                        <span className="ui-static-c527fed352" >
+                            Routes to: {departments.find(x => String(x.id) === String(deptAutoRouteMap[d.id]))?.name || "Unknown"}
                         </span>
                       )}
                     </div>
@@ -394,10 +390,10 @@ export default function TeamAccessManager({ users, roles, departments, companies
                           if (e.target.value === 'edit') handleEditDept(d);
                           if (e.target.value === 'delete') handleDeleteDept(d.id);
                           e.target.value = '';
-                        }} style={{ padding: '0.4rem 0.8rem', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer', background: '#f8fafc', fontWeight: 'bold' }}>
+                        }} className="ui-static-2b848f090e" style={{cursor: 'pointer'}}>
                           <option value="" disabled>Actions ▾</option>
-                          <option value="edit">✎ Edit</option>
-                          <option value="delete">🗑 Delete</option>
+                          <option value="edit"> Edit</option>
+                          <option value="delete"> Delete</option>
                         </select>
                     </div>
                   </li>

@@ -13,7 +13,7 @@ async function main() {
   const now = new Date('2026-10-21T12:00:00+07:00');
   const tickets = [4,7,10,12].map((hours,i)=>({id:i+1,trackingId:`TT-${i+1}`,title:'Link Klender down',description:'FO CUT',status:'Resolved',customData:{hasDowntime:true,startDowntime:`2026-10-0${i+1}T00:00`,endDowntime:`2026-10-0${i+1}T${String(hours).padStart(2,'0')}:00`},services:[{name:'Link Klender',customer:{id:1,name:'Customer A'}}],comments:[{text:'Penyambungan core.',isPublic:true}]}));
   const built = await esbuild.build({
-    stdin:{contents:`import React from 'react'; import {createRoot} from 'react-dom/client'; import OutageReportClient from './app/reports/sla/OutageReportClient'; import './app/globals.css'; createRoot(document.getElementById('app')).render(<OutageReportClient/>);`,resolveDir:root,sourcefile:'outage-harness.jsx',loader:'jsx'},
+    stdin:{contents:`import React from 'react'; import {createRoot} from 'react-dom/client'; import OutageReportClient from './app/reports/sla/OutageReportClient'; import './app/ui-tokens.css';import './app/globals.css';import './app/legacy-ui.css';import './app/ui-foundation.css'; createRoot(document.getElementById('app')).render(<OutageReportClient/>);`,resolveDir:root,sourcefile:'outage-harness.jsx',loader:'jsx'},
     bundle:true,write:false,outdir:'out',loader:{'.js':'jsx'},jsx:'automatic',alias:{'@':root},
     plugins:[{name:'next-link-harness',setup(build){build.onResolve({filter:/^next\/link$/},()=>({path:'link',namespace:'harness'}));build.onLoad({filter:/.*/,namespace:'harness'},()=>({contents:"import React from 'react'; export default function Link(props){return React.createElement('a',props)}",loader:'jsx',resolveDir:root}));}}],
   });

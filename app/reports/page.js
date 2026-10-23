@@ -34,7 +34,7 @@ export default async function ReportsPage({ searchParams }) {
 
   return (
     <>
-      <div className="container" style={{ paddingBottom: 0 }}>
+      <div className="container ui-static-46dc7cdb01" >
         <ServiceDeskMetrics days={30} />
       </div>
       <LeaderboardClient

@@ -1,21 +1,21 @@
 export default function TicketsLoading() {
   return (
-    <div className="container" style={{ paddingTop: "1.5rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", gap: "1rem", flexWrap: "wrap" }}>
+    <div className="container ui-static-2766893f5c" >
+      <div className="ui-static-f15c085aca" style={{display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap"}}>
         <div>
-          <div className="skeleton" style={{ width: "120px", height: "1.6rem", marginBottom: "0.5rem" }} />
+          <div className="skeleton ui-static-fc11fc4f62" style={{width: "120px", height: "1.6rem"}} />
           <div className="skeleton" style={{ width: "220px", height: "0.85rem" }} />
         </div>
         <div className="skeleton" style={{ width: "140px", height: "2.25rem" }} />
       </div>
 
-      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+      <div className="ui-static-2a0b357ce7" style={{display: "flex", flexWrap: "wrap"}}>
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="skeleton" style={{ width: "88px", height: "2rem" }} />
         ))}
       </div>
 
-      <div style={{ background: "var(--card-bg)", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
+      <div className="ui-static-5f263a65e4" style={{overflow: "hidden"}}>
         <table className="ticket-table-skeleton">
           <thead>
             <tr>

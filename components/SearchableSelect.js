@@ -71,31 +71,13 @@ export default function SearchableSelect({ options = [], value, onChange, placeh
           disabled={disabled}
           placeholder={placeholder}
           required={required && !value}
-          style={{ 
-            width: '100%', 
-            padding: '0.75rem 2rem 0.75rem 0.75rem', 
-            border: '1px solid var(--border-color, #cbd5e1)', 
-            borderRadius: '4px', 
-            background: disabled ? 'var(--hover-bg, #f1f5f9)' : 'var(--input-bg, white)', 
-            color: 'var(--input-text, #0f172a)',
-            outline: 'none',
-            fontSize: '0.95rem'
-          }}
+          className="ui-static-992dbde99b" style={{width: '100%', background: disabled ? 'var(--hover-bg, #f1f5f9)' : 'var(--input-bg, white)', outline: 'none'}}
         />
         {value && !disabled && (
           <button 
             type="button" 
             onClick={handleClear}
-            style={{ 
-              position: 'absolute', 
-              right: '0.75rem', 
-              background: 'none', 
-              border: 'none', 
-              color: '#94a3b8', 
-              cursor: 'pointer',
-              fontSize: '1rem',
-              padding: 0
-            }}
+            className="ui-static-4037a8dc46" style={{position: 'absolute', right: '0.75rem', cursor: 'pointer'}}
           >
             ✕
           </button>
@@ -103,22 +85,9 @@ export default function SearchableSelect({ options = [], value, onChange, placeh
       </div>
       
       {isOpen && !disabled && (
-        <div style={{ 
-          position: 'absolute', 
-          top: '100%', 
-          left: 0, 
-          right: 0, 
-          marginTop: '4px', 
-          background: 'var(--card-bg, white)', 
-          border: '1px solid var(--border-color, #cbd5e1)', 
-          borderRadius: '4px', 
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', 
-          zIndex: 200, 
-          maxHeight: '200px', 
-          overflowY: 'auto' 
-        }}>
+        <div className="ui-static-4a72d3d804" style={{position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200, maxHeight: '200px', overflowY: 'auto'}}>
           {filteredOptions.length > 0 ? (
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            <ul className="ui-static-0d59a3d063" style={{listStyle: 'none'}}>
               {filteredOptions.map((opt, i) => {
                 const isSelected = String(opt.value) === String(value);
                 return (
@@ -128,15 +97,7 @@ export default function SearchableSelect({ options = [], value, onChange, placeh
                       e.preventDefault();
                       handleSelectOption(opt);
                     }}
-                    style={{ 
-                      padding: '0.75rem', 
-                      cursor: 'pointer', 
-                      borderBottom: '1px solid var(--border-color, #f1f5f9)', 
-                      fontSize: '0.9rem', 
-                      color: isSelected ? 'var(--primary-color, #2563eb)' : 'var(--text-color, #334155)',
-                      fontWeight: isSelected ? 'bold' : 'normal',
-                      background: isSelected ? 'var(--hover-bg, #f1f5f9)' : 'transparent'
-                    }}
+                    className="ui-static-6b40bc7f96" style={{cursor: 'pointer', color: isSelected ? 'var(--primary-color, #2563eb)' : 'var(--text-color, #334155)', fontWeight: isSelected ? 'bold' : 'normal', background: isSelected ? 'var(--hover-bg, #f1f5f9)' : 'transparent'}}
                     onMouseEnter={(e) => {
                       if (!isSelected) e.currentTarget.style.background = 'var(--hover-bg, #f1f5f9)';
                     }}
@@ -150,7 +111,7 @@ export default function SearchableSelect({ options = [], value, onChange, placeh
               })}
             </ul>
           ) : (
-            <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>No results found</div>
+            <div className="ui-static-abaa5b1f0b" style={{textAlign: 'center'}}>No results found</div>
           )}
         </div>
       )}

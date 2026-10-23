@@ -124,7 +124,7 @@ export default async function DashboardPage({ searchParams }) {
   });
 
   return (
-    <main className="container" style={{ paddingBottom: '3rem' }}>
+    <main className="container ui-static-ce99c5c81b" >
       <BodReminders scope={scope}/>
       <DashboardClient 
         session={session}

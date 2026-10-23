@@ -91,7 +91,7 @@ export default function PerformanceDrawer({ userId, onClose, startDate = "", end
 
         <div className="drawer-body">
           {loading && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div className="ui-static-e59a73fd03" style={{display: "flex", flexDirection: "column"}}>
               <div className="skeleton" style={{ height: 72 }} />
               <div className="skeleton" style={{ height: 160 }} />
               <div className="skeleton" style={{ height: 200 }} />
@@ -99,12 +99,12 @@ export default function PerformanceDrawer({ userId, onClose, startDate = "", end
           )}
 
           {error && (
-            <p className="error-text" style={{ margin: 0 }}>{error}</p>
+            <p className="error-text ui-static-ff227d0632" >{error}</p>
           )}
 
           {!loading && !error && data && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-              <section className="report-score-block" style={{ boxShadow: "none" }}>
+            <div className="ui-static-92254f43e7" style={{display: "flex", flexDirection: "column"}}>
+              <section className="report-score-block ui-static-791d011e41" >
                 <div className="report-score-main">
                   <span className="report-score-label">Total poin</span>
                   <span className="report-score-value kpi-value">{headline}</span>

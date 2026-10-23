@@ -173,22 +173,22 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
 
   if (isEditingMeeting) {
     return (
-      <div className="card" style={{ maxWidth: '800px', margin: '0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ margin: 0, color: '#0f172a' }}>Edit Megathread</h2>
-          <button onClick={() => setIsEditingMeeting(false)} style={{ background: 'transparent', border: '1px solid #cbd5e1', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+      <div className="card ui-static-ff227d0632" style={{maxWidth: '800px'}}>
+        <div className="ui-static-8bd9dc7312" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <h2 className="ui-static-4a072deec5" >Edit Megathread</h2>
+          <button onClick={() => setIsEditingMeeting(false)} className="ui-static-8c78147113" style={{cursor: 'pointer'}}>Cancel</button>
         </div>
-        <form onSubmit={handleEditMeeting} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <form onSubmit={handleEditMeeting} className="ui-static-92254f43e7" style={{display: 'flex', flexDirection: 'column'}}>
           <div className="form-group">
-            <label style={{ fontWeight: 'bold' }}>Meeting Title</label>
-            <input type="text" required value={editFormData.title} onChange={e => setEditFormData({...editFormData, title: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+            <label className="ui-static-78d7af8b7e" >Meeting Title</label>
+            <input type="text" required value={editFormData.title} onChange={e => setEditFormData({...editFormData, title: e.target.value})} className="ui-static-4234f20878" style={{width: '100%'}} />
           </div>
           <div className="form-group">
-            <label style={{ fontWeight: 'bold' }}>Scheduled Date</label>
-            <input type="datetime-local" value={editFormData.scheduledAt} onChange={e => setEditFormData({...editFormData, scheduledAt: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+            <label className="ui-static-78d7af8b7e" >Scheduled Date</label>
+            <input type="datetime-local" value={editFormData.scheduledAt} onChange={e => setEditFormData({...editFormData, scheduledAt: e.target.value})} className="ui-static-4234f20878" style={{width: '100%'}} />
           </div>
           <div className="form-group" style={{ zIndex: 99 }}>
-            <label style={{ fontWeight: 'bold' }}>Invited Global Attendees</label>
+            <label className="ui-static-78d7af8b7e" >Invited Global Attendees</label>
             <SearchableAttendeeSelect 
                users={allUsers} 
                departments={allDepartments}
@@ -196,7 +196,7 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
                onChange={(newIds) => setEditFormData({...editFormData, attendees: newIds})}
             />
           </div>
-          <button type="submit" className="primary-btn" style={{ padding: '0.75rem' }}>Save Changes</button>
+          <button type="submit" className="primary-btn ui-static-b52e2fe28a" >Save Changes</button>
         </form>
       </div>
     );
@@ -206,33 +206,33 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
     <div>
       <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-            <h1 style={{ margin: 0 }}>{meeting.title}</h1>
-            <span className="badge" style={{ backgroundColor: meeting.status === 'Completed' ? '#10b981' : meeting.status === 'In Progress' ? '#3b82f6' : '#f59e0b', fontSize: '1rem' }}>
+          <div className="ui-static-8d1f3419f7" style={{display: 'flex', alignItems: 'center'}}>
+            <h1 className="ui-static-ff227d0632" >{meeting.title}</h1>
+            <span className="badge ui-static-635656024d" style={{backgroundColor: meeting.status === 'Completed' ? "var(--ui-success)" : meeting.status === 'In Progress' ? "var(--ui-info)" : "var(--ui-warning)"}}>
               {meeting.status}
             </span>
             {isSuperAdmin && (
                <div style={{ position: 'relative' }}>
-                  <button onClick={() => setShowActions(!showActions)} className="primary-btn" style={{ padding: '0.2rem 0.5rem', background: '#e2e8f0', color: '#1e293b', border: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                     ⚙️ Admin
+                  <button onClick={() => setShowActions(!showActions)} className="primary-btn ui-static-348bdd4fdd" style={{display: 'flex', alignItems: 'center'}}>
+                      Admin
                   </button>
                   {showActions && (
-                     <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '0.25rem', background: 'var(--card-bg)', border: '1px solid var(--border-color)', shadow: '0 4px 6px rgba(0,0,0,0.1)', borderRadius: '4px', zIndex: 10, display: 'flex', flexDirection: 'column', minWidth: '150px' }}>
-                        <button onClick={() => { setIsEditingMeeting(true); setShowActions(false); }} style={{ padding: '0.75rem', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}>✎ Edit Meeting</button>
+                     <div className="ui-static-26d75cc849" style={{position: 'absolute', top: '100%', left: 0, shadow: '0 4px 6px rgba(0,0,0,0.1)', zIndex: 10, display: 'flex', flexDirection: 'column', minWidth: '150px'}}>
+                        <button onClick={() => { setIsEditingMeeting(true); setShowActions(false); }} className="ui-static-b7cf0c57fa" style={{textAlign: 'left', cursor: 'pointer'}}> Edit Meeting</button>
                         <button onClick={async () => {
                           if (confirm('Irreversible: Delete this entire Megathread and ALL its sessions?')) {
                             const del = await fetch(`/api/meetings/${meeting.id}`, { method: 'DELETE' });
                             if (del.ok) router.push('/meetings');
                           }
-                        }} style={{ padding: '0.75rem', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444', fontWeight: 'bold' }}>🗑️ Delete Meeting</button>
+                        }} className="ui-static-f8cbd796a0" style={{textAlign: 'left', cursor: 'pointer'}}> Delete Meeting</button>
                      </div>
                   )}
                </div>
             )}
           </div>
-          <p style={{ margin: 0, color: '#64748b' }}>
+          <p className="ui-static-a750cb1a96" >
             Megathread Initiated: <span suppressHydrationWarning>{mounted && meeting.scheduledAt ? new Date(meeting.scheduledAt).toLocaleDateString() : '...'}</span> | 
-            Organizer: <strong style={{ color: '#475569' }}>{meeting.organizedBy?.name || meeting.organizedBy?.email || 'System'}</strong>
+            Organizer: <strong className="ui-static-b9010af219" >{meeting.organizedBy?.name || meeting.organizedBy?.email || 'System'}</strong>
           </p>
         </div>
         {meeting.status !== 'Completed' && canFinalize && (
@@ -242,41 +242,41 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
               body: JSON.stringify({ status: "Completed" })
             });
             if (res.ok) { setMeeting(await res.json()); }
-          }} className="primary-btn" style={{ background: '#10b981' }}>
+          }} className="primary-btn ui-static-15adb7a44f" >
             Close Entire Megathread ✓
           </button>
         )}
       </header>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <div className="ui-static-0410aac9fd" style={{display: 'flex', flexDirection: 'column'}}>
         
         {/* Pre-Scheduling Matrix / Add Session Block */}
         {meeting.status !== 'Completed' && (
-          <div className="card" style={{ background: '#f8fafc', border: '1px dashed #cbd5e1' }}>
-            <h3 style={{ margin: '0 0 1rem 0', color: '#334155' }}>+ Schedule New Session Block</h3>
-            <form onSubmit={handleCreateSession} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div className="card ui-static-2f448698d5" >
+            <h3 className="ui-static-4db96b46e7" >+ Schedule New Session Block</h3>
+            <form onSubmit={handleCreateSession} className="ui-static-af81cc4264" style={{display: 'flex', alignItems: 'flex-end', flexWrap: 'wrap'}}>
               <div style={{ flex: '1 1 200px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.25rem', color: '#64748b' }}>Session Title</label>
+                <label className="ui-static-219a9f3a85" style={{display: 'block'}}>Session Title</label>
                 <input 
                   type="text" 
                   placeholder="e.g. Week 1: Core Sync" 
                   value={newSessionTitle} 
                   onChange={e => setNewSessionTitle(e.target.value)} 
                   required 
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                  className="ui-static-4234f20878" style={{width: '100%'}}
                 />
               </div>
               <div style={{ flex: '1 1 200px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.25rem', color: '#64748b' }}>Session Date</label>
+                <label className="ui-static-219a9f3a85" style={{display: 'block'}}>Session Date</label>
                 <input 
                   type="datetime-local" 
                   value={newSessionDate} 
                   onChange={e => setNewSessionDate(e.target.value)} 
                   required 
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1' }}
+                  className="ui-static-4234f20878" style={{width: '100%'}}
                 />
               </div>
-              <button type="submit" className="primary-btn" disabled={isAddingSession} style={{ width: 'auto', padding: '0.75rem 1.5rem', alignSelf: 'flex-end' }}>
+              <button type="submit" className="primary-btn ui-static-4577864700" disabled={isAddingSession} style={{width: 'auto', alignSelf: 'flex-end'}}>
                 {isAddingSession ? "Creating..." : "Add Session Block"}
               </button>
             </form>
@@ -285,7 +285,7 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
 
         {/* Hierarchical Timeline (Sessions) */}
         {(!meeting.sessions || meeting.sessions.length === 0) && (
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', fontStyle: 'italic', background: '#f8fafc', borderRadius: '8px' }}>
+          <div className="ui-static-f4b6363ad0" style={{textAlign: 'center', fontStyle: 'italic'}}>
             No sessions scheduled in this megathread yet.
           </div>
         )}
@@ -294,118 +294,118 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
           const inputs = taskInputs[session.id] || { assigneeType: 'user', generateTicket: true, task: '', assigneeId: '', departmentId: '' };
           
           return (
-            <div key={session.id} className="card" style={{ padding: '0', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+            <div key={session.id} className="card ui-static-06f04f7095" style={{overflow: 'hidden'}}>
               
               {/* Session Header */}
-              <div style={{ background: '#1e293b', color: 'white', padding: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="meeting-session-header ui-static-cc5bca5231" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                 <div>
-                  <h2 style={{ margin: '0 0 0.25rem 0', color: 'white', fontSize: '1.25rem' }}>{session.title || `Session ${index + 1}`}</h2>
-                  <span style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
-                    🗓️ {mounted && session.scheduledFor ? new Date(session.scheduledFor).toLocaleString('en-CA', { dateStyle: 'long', timeStyle: 'short' }) : 'Pending'}
-                    &nbsp; | &nbsp; 👤 {session.author?.name || session.author?.email}
+                  <h2 className="ui-static-8d62b04a95" >{session.title || `Session ${index + 1}`}</h2>
+                  <span className="ui-static-dd90b11840" >
+                     {mounted && session.scheduledFor ? new Date(session.scheduledFor).toLocaleString('en-CA', { dateStyle: 'long', timeStyle: 'short' }) : 'Pending'}
+                      |    {session.author?.name || session.author?.email}
                   </span>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 2fr) minmax(250px, 1fr)', gap: '1px', background: '#e2e8f0' }}>
+              <div className="ui-static-f06f47c069" style={{display: 'grid', gridTemplateColumns: 'minmax(300px, 2fr) minmax(250px, 1fr)'}}>
                 
                 {/* Left Column: Discussion Notes & Action Items */}
-                <div style={{ background: 'var(--card-bg)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem', borderRadius: '8px' }}>
+                <div className="ui-static-247e0a6cda" style={{display: 'flex', flexDirection: 'column'}}>
                   
                   {/* Notes Content */}
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem' }}>
-                      <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.1rem' }}>💬 Meeting Notes</h3>
+                    <div className="ui-static-051a376dfa" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                      <h3 className="ui-static-7a5a81d0c2" > Meeting Notes</h3>
                       {editingSessionId !== session.id && (
-                        <button onClick={() => { setEditingSessionId(session.id); setEditingContent(session.content || ""); }} style={{ background: 'transparent', border: '1px solid #cbd5e1', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>
-                          ✎ Edit Notes
+                        <button onClick={() => { setEditingSessionId(session.id); setEditingContent(session.content || ""); }} className="ui-static-407b1250a0" style={{cursor: 'pointer'}}>
+                           Edit Notes
                         </button>
                       )}
                     </div>
 
                     {editingSessionId === session.id ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div className="ui-static-30f523173e" style={{display: 'flex', flexDirection: 'column'}}>
                         <textarea 
                           rows="6" 
                           value={editingContent}
                           onChange={e => setEditingContent(e.target.value)}
-                          style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', fontFamily: 'inherit' }}
+                          className="ui-static-22c3168f4e" style={{width: '100%'}}
                           placeholder="Type agenda, problems discussed, or summary here..."
                         />
-                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                          <button onClick={() => setEditingSessionId(null)} style={{ background: 'transparent', border: '1px solid #cbd5e1', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
-                          <button onClick={() => saveSessionContent(session.id)} className="primary-btn" style={{ width: 'auto', padding: '0.5rem 1rem' }}>Save Notes</button>
+                        <div className="ui-static-30f523173e" style={{display: 'flex', justifyContent: 'flex-end'}}>
+                          <button onClick={() => setEditingSessionId(null)} className="ui-static-8c78147113" style={{cursor: 'pointer'}}>Cancel</button>
+                          <button onClick={() => saveSessionContent(session.id)} className="primary-btn ui-static-7f62800e8e" style={{width: 'auto'}}>Save Notes</button>
                         </div>
                       </div>
                     ) : (
-                      <div style={{ whiteSpace: 'pre-wrap', color: session.content ? '#334155' : '#94a3b8', lineHeight: '1.6', minHeight: '60px' }}>
+                      <div className="ui-static-6dbc24b775" style={{whiteSpace: 'pre-wrap', color: session.content ? "var(--ui-info)" : "var(--ui-info)", minHeight: '60px'}}>
                         {session.content || <em>No notes recorded for this session yet. Click Edit to start logging.</em>}
                       </div>
                     )}
                   </div>
 
                   {/* Nested Action Items */}
-                  <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <h3 style={{ margin: '0 0 1rem 0', color: '#0f172a', fontSize: '1.1rem' }}>📌 Session Follow-Ups</h3>
+                  <div className="ui-static-e95087ba5b" >
+                    <h3 className="ui-static-7c4283a16f" > Session Follow-Ups</h3>
                     
                     {meeting.status !== 'Completed' && (
-                      <form onSubmit={(e) => handleAddActionItem(e, session.id)} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                      <form onSubmit={(e) => handleAddActionItem(e, session.id)} className="ui-static-169c552110" style={{display: 'flex', flexDirection: 'column'}}>
                         <input 
                           type="text" 
                           placeholder="Describe task springing from this session..." 
                           value={inputs.task} 
                           onChange={e => updateTaskInput(session.id, 'task', e.target.value)} 
                           required 
-                          style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                          className="ui-static-b9ca49b7f6" style={{width: '100%'}}
                         />
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          <select value={inputs.assigneeType} onChange={e => updateTaskInput(session.id, 'assigneeType', e.target.value)} style={{ padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}>
+                        <div className="ui-static-30f523173e" style={{display: 'flex', flexWrap: 'wrap'}}>
+                          <select value={inputs.assigneeType} onChange={e => updateTaskInput(session.id, 'assigneeType', e.target.value)} className="ui-static-5b3a2ff5f2" >
                             <option value="user">User</option>
                             <option value="dept">Team</option>
                           </select>
                           
                           {inputs.assigneeType === 'user' ? (
-                            <select value={inputs.assigneeId} onChange={e => updateTaskInput(session.id, 'assigneeId', e.target.value)} style={{ flex: 1, padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}>
+                            <select value={inputs.assigneeId} onChange={e => updateTaskInput(session.id, 'assigneeId', e.target.value)} className="ui-static-5b3a2ff5f2" style={{flex: 1}}>
                               <option value="">-- Person --</option>
                               {allUsers.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
                             </select>
                           ) : (
-                            <select value={inputs.departmentId} onChange={e => updateTaskInput(session.id, 'departmentId', e.target.value)} style={{ flex: 1, padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}>
+                            <select value={inputs.departmentId} onChange={e => updateTaskInput(session.id, 'departmentId', e.target.value)} className="ui-static-5b3a2ff5f2" style={{flex: 1}}>
                               <option value="">-- Department --</option>
                               {allDepartments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                             </select>
                           )}
-                          <button type="submit" className="primary-btn" style={{ width: 'auto', padding: '0.75rem 1.5rem' }}>+ Add</button>
+                          <button type="submit" className="primary-btn ui-static-4577864700" style={{width: 'auto'}}>+ Add</button>
                         </div>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem', color: '#1e293b', marginTop: '0.25rem' }}>
+                        <label className="ui-static-e82e0bebbb" style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
                           <input type="checkbox" checked={inputs.generateTicket} onChange={e => updateTaskInput(session.id, 'generateTicket', e.target.checked)} style={{ width: '1.2rem', height: '1.2rem' }} />
                           Auto-generate Support Ticket
                         </label>
                       </form>
                     )}
 
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {(!session.actionItems || session.actionItems.length === 0) && <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>No tasks assigned.</span>}
+                    <ul className="ui-static-9a8354becc" style={{listStyle: 'none', display: 'flex', flexDirection: 'column'}}>
+                      {(!session.actionItems || session.actionItems.length === 0) && <span className="ui-static-9d7e95f546" >No tasks assigned.</span>}
                       {session.actionItems?.map(item => (
-                        <li key={item.id} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', background: item.status === 'Completed' ? '#f8fafc' : 'white', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '8px', opacity: item.status === 'Completed' ? 0.7 : 1 }}>
+                        <li key={item.id} className="ui-static-4f38db4618" style={{display: 'flex', alignItems: 'flex-start', background: item.status === 'Completed' ? "var(--ui-surface)" : "var(--ui-surface)", opacity: 1}}>
                           <input 
                             type="checkbox" 
                             checked={item.status === 'Completed'} 
                             onChange={() => toggleActionItemStatus(session.id, item.id, item.status)}
-                            style={{ width: '1.25rem', height: '1.25rem', marginTop: '0.2rem', cursor: 'pointer' }}
+                            className="ui-static-ad0775fa5f" style={{width: '1.25rem', height: '1.25rem', cursor: 'pointer'}}
                           />
                           <div style={{ flex: 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                              <p style={{ margin: '0 0 0.25rem 0', fontWeight: 'bold', color: item.status === 'Completed' ? '#94a3b8' : '#1e293b', textDecoration: item.status === 'Completed' ? 'line-through' : 'none' }}>
+                              <p className="ui-static-1094711509" style={{color: item.status === 'Completed' ? "var(--ui-info)" : "var(--ui-ink)", textDecoration: item.status === 'Completed' ? 'line-through' : 'none'}}>
                                 {item.task}
                               </p>
                               {item.linkedTicketId && (
-                                <a href={`/tickets/${item.linkedTicketId}`} style={{ fontSize: '0.75rem', background: '#dbeafe', color: '#1d4ed8', padding: '0.2rem 0.5rem', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>
+                                <a href={`/tickets/${item.linkedTicketId}`} className="ui-static-f82f7b4098" style={{textDecoration: 'none'}}>
                                   Ticket #{item.linkedTicketId}
                                 </a>
                               )}
                             </div>
-                            <span style={{ fontSize: '0.75rem', color: '#64748b', background: '#e2e8f0', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
+                            <span className="ui-static-fe641e3b91" >
                               To: {item.assignee ? (item.assignee.name || item.assignee.email) : item.department ? item.department.name : 'Unassigned'}
                             </span>
                           </div>
@@ -416,20 +416,20 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
                 </div>
 
                 {/* Right Column: Discrete Session Attendance */}
-                <div style={{ background: '#f8fafc', padding: '1.5rem' }}>
-                  <h3 style={{ margin: '0 0 1rem 0', color: '#0f172a', fontSize: '1.1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>✓ Attendance Check</h3>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div className="ui-static-b0c7aad1e6" >
+                  <h3 className="ui-static-b58ab2bb57" >✓ Attendance Check</h3>
+                  <ul className="ui-static-9a8354becc" style={{listStyle: 'none', display: 'flex', flexDirection: 'column'}}>
                     {meeting.attendees.map(a => {
                       const isPresent = session.presentAttendees?.some(p => p.id === a.id);
                       const canCheck = isOrganizer || isAdminOrManager || a.id === currentUser.id;
 
                       return (
-                        <li key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.9rem', color: '#334155', background: isPresent ? '#ecfdf5' : 'white', padding: '0.5rem', borderRadius: '6px', border: `1px solid ${isPresent ? '#a7f3d0' : '#e2e8f0'}` }}>
-                          <span style={{ fontWeight: isPresent ? 'bold' : 'normal', color: isPresent ? '#065f46' : '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                        <li key={a.id} className="ui-static-7dee9abcae" style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isPresent ? "var(--ui-surface)" : "var(--ui-surface)", border: `1px solid ${isPresent ? "var(--ui-success)" : "var(--ui-on-accent)"}`}}>
+                          <span style={{ fontWeight: isPresent ? 'bold' : 'normal', color: isPresent ? "var(--ui-success)" : "var(--ui-info)", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
                             {a.name || a.email.split('@')[0]}
                           </span>
                           {canCheck ? (
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', fontSize: '0.75rem', color: '#64748b' }}>
+                            <label className="ui-static-d405de5c91" style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}}>
                               <input 
                                 type="checkbox" 
                                 checked={isPresent || false} 
@@ -440,15 +440,15 @@ export default function MeetingDetailClient({ initialMeeting, currentUser, allUs
                             </label>
                           ) : (
                             isPresent ? (
-                              <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 'bold' }}>✓</span>
+                              <span className="ui-static-ca31c5a52a" >✓</span>
                             ) : (
-                              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>-</span>
+                              <span className="ui-static-f0ec965903" >-</span>
                             )
                           )}
                         </li>
                       );
                     })}
-                    {meeting.attendees.length === 0 && <li style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No invitees global.</li>}
+                    {meeting.attendees.length === 0 && <li className="ui-static-9d7e95f546" >No invitees global.</li>}
                   </ul>
                 </div>
               </div>

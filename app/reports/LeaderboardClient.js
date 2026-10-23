@@ -97,7 +97,7 @@ export default function LeaderboardClient({
   };
 
   const renderTable = ({ rows, page, totalPages, setPage, emptyLabel, columns }) => (
-    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+    <div className="card ui-static-bcb0a0d8bd" style={{overflow: "hidden"}}>
       <table className="data-table">
         <thead>
           <tr>
@@ -131,18 +131,18 @@ export default function LeaderboardClient({
                       />
                     </td>
                   )}
-                  <td className="kpi-value" style={{ color: "var(--muted-text)", fontWeight: rank <= 3 ? 700 : 500 }}>
+                  <td className="kpi-value ui-static-a64efbfeda" style={{fontWeight: rank <= 3 ? 700 : 500}}>
                     {rank}
                   </td>
                   <td>
                     {compareMode ? (
-                      <span style={{ fontWeight: 600, color: "var(--heading-color)" }}>{l.name}</span>
+                      <span className="ui-static-832fde8c1f" >{l.name}</span>
                     ) : (
                       <button type="button" className="report-name-btn" onClick={() => openPerson(l.id)}>
                         {l.name}
                       </button>
                     )}
-                    <div style={{ fontSize: "0.8rem", color: "var(--muted-text)" }}>{l.department}</div>
+                    <div className="ui-static-2188c20d97" >{l.department}</div>
                   </td>
                   {columns.map((col) => (
                     <td key={col.key} className="kpi-value" style={{ textAlign: col.align || "right" }}>
@@ -172,9 +172,9 @@ export default function LeaderboardClient({
 
   return (
     <main className="container">
-      <header className="page-header" style={{ marginBottom: "1.25rem" }}>
+      <header className="page-header ui-static-f23443a9ea" >
         <h1>Performance</h1>
-        <p style={{ color: "var(--muted-text)", margin: 0 }}>
+        <p className="ui-static-054e197f0f" >
           Skor operator dan waktu resolusi. Periode: {periodLabel}.
         </p>
       </header>
@@ -213,7 +213,7 @@ export default function LeaderboardClient({
           />
 
           {isAdmin && (
-            <section style={{ marginBottom: "1.75rem" }}>
+            <section className="ui-static-8bd9dc7312" >
               <h2 className="report-section-title">Ringkasan tim</h2>
               <div className="report-stat-row">
                 <div>
@@ -234,12 +234,12 @@ export default function LeaderboardClient({
                 </div>
               </div>
 
-              <div className="card" style={{ marginTop: "1rem" }}>
-                <h3 style={{ margin: "0 0 0.85rem", fontSize: "0.95rem", fontWeight: 600, color: "var(--heading-color)" }}>
+              <div className="card ui-static-14b98d08ef" >
+                <h3 className="ui-static-e5f2db7c32" >
                   TTR rata-rata per kategori
                 </h3>
                 {globalCategoryTtr.length === 0 ? (
-                  <p className="report-empty" style={{ padding: "0.5rem 0" }}>Tidak ada data resolusi pada periode ini.</p>
+                  <p className="report-empty ui-static-fd5975142e" >Tidak ada data resolusi pada periode ini.</p>
                 ) : (
                   <ul className="report-ttr-list">
                     {globalCategoryTtr.map((cat) => {
@@ -270,8 +270,8 @@ export default function LeaderboardClient({
                 <span>Pilih 2–4 orang</span>
                 <button
                   type="button"
-                  className="primary-btn"
-                  style={{ width: "auto", padding: "0.45rem 1rem", minHeight: 36, fontSize: "0.85rem" }}
+                  className="primary-btn ui-static-7f44db8657"
+                  style={{width: "auto", minHeight: 36}}
                   onClick={handleStartCompare}
                   disabled={selectedUsers.length < 2}
                 >
@@ -279,8 +279,8 @@ export default function LeaderboardClient({
                 </button>
                 <button
                   type="button"
-                  className="logout-btn"
-                  style={{ margin: 0, padding: "0.4rem 0.9rem", height: 36, fontSize: "0.85rem" }}
+                  className="logout-btn ui-static-f163cd8592"
+                  style={{height: 36}}
                   onClick={() => { setCompareMode(false); setSelectedUsers([]); }}
                 >
                   Batal
@@ -289,8 +289,8 @@ export default function LeaderboardClient({
             ) : (
               <button
                 type="button"
-                className="logout-btn"
-                style={{ margin: 0, padding: "0.45rem 1rem", height: 36, fontSize: "0.85rem" }}
+                className="logout-btn ui-static-f163cd8592"
+                style={{height: 36}}
                 onClick={() => setCompareMode(true)}
               >
                 Bandingkan orang

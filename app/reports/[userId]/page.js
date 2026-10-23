@@ -177,12 +177,12 @@ export default async function UserReportDetail({ params, searchParams }) {
         {backLabel}
       </Link>
 
-      <header className="page-header" style={{ marginBottom: "1.25rem" }}>
+      <header className="page-header ui-static-f23443a9ea" >
         <p className="report-kicker">{targetUser.department?.name || "General"}</p>
-        <h1 style={{ marginBottom: "0.35rem" }}>
+        <h1 className="ui-static-137aa26511" >
           {isOwnReport ? "Poin saya" : (targetUser.name || targetUser.email)}
         </h1>
-        <p style={{ margin: 0, color: "var(--muted-text)" }}>
+        <p className="ui-static-c137f8fc61" >
           {isOwnReport ? (targetUser.name || targetUser.email) + " · " : null}
           Periode {periodLabel}
         </p>
@@ -218,8 +218,8 @@ export default async function UserReportDetail({ params, searchParams }) {
       </section>
 
       {personalCategoryTtr.length > 0 && (
-        <section className="card" style={{ marginTop: "1.25rem" }}>
-          <h2 style={{ margin: "0 0 1rem", fontSize: "1rem" }}>Rata-rata TTR per kategori</h2>
+        <section className="card ui-static-0c8f5b75ba" >
+          <h2 className="ui-static-6292fdccf2" >Rata-rata TTR per kategori</h2>
           <ul className="report-ttr-list">
             {personalCategoryTtr.map((cat) => {
               const pct = Math.min(100, (cat.avgMins / 240) * 100);
@@ -239,7 +239,7 @@ export default async function UserReportDetail({ params, searchParams }) {
         </section>
       )}
 
-      <section className="card" style={{ marginTop: "1.25rem", padding: 0, overflow: "hidden" }}>
+      <section className="card ui-static-ce6eee0472" style={{overflow: "hidden"}}>
         <div className="report-section-head">
           <h2>Tiket terselesaikan</h2>
           <span>{totalTicketsCount} tiket</span>
@@ -259,12 +259,12 @@ export default async function UserReportDetail({ params, searchParams }) {
             <tbody>
               {paginatedTickets.map((t) => (
                 <tr key={t.id}>
-                  <td style={{ color: "var(--muted-text)" }}>{new Date(t.updatedAt).toLocaleDateString("id-ID")}</td>
+                  <td className="ui-static-a64efbfeda" >{new Date(t.updatedAt).toLocaleDateString("id-ID")}</td>
                   <td className="kpi-value">{formatDuration(t.customData?.reopenedAt || t.createdAt, t.resolvedAt || t.updatedAt)}</td>
                   <td>
                     <Link href={`/tickets/${t.id}`}>{t.trackingId}</Link>
                     {t.jobCategory?.name ? (
-                      <div style={{ fontSize: "0.8rem", color: "var(--muted-text)", fontWeight: 400 }}>{t.jobCategory.name}</div>
+                      <div className="ui-static-d2d1cb1b87" >{t.jobCategory.name}</div>
                     ) : null}
                   </td>
                   <td className="kpi-value" style={{ textAlign: "right" }}>+{t.awardedScore}</td>
@@ -274,14 +274,14 @@ export default async function UserReportDetail({ params, searchParams }) {
           </table>
         )}
         {totalTicketsCount > pageSize && (
-          <div style={{ borderTop: "1px solid var(--border-color)" }}>
+          <div className="ui-static-882a3e24f8" >
             <Pagination totalCount={totalTicketsCount} pageSize={pageSize} />
           </div>
         )}
       </section>
 
       <div className="report-split">
-        <section className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <section className="card ui-static-bcb0a0d8bd" style={{overflow: "hidden"}}>
           <div className="report-section-head">
             <h2>Balasan terbaru</h2>
             <span>{totalComments} balasan</span>
@@ -301,7 +301,7 @@ export default async function UserReportDetail({ params, searchParams }) {
           )}
         </section>
 
-        <section className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <section className="card ui-static-bcb0a0d8bd" style={{overflow: "hidden"}}>
           <div className="report-section-head">
             <h2>Aktivitas</h2>
             <span>{allActivities.length} aksi</span>

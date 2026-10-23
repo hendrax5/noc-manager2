@@ -1,0 +1,46 @@
+/* Shared NOC interface theme. Product/status colors use semantic roles. */
+:root {
+  --ui-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ui-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --ui-ink: #182333; --ui-text: #344454; --ui-muted: #566474;
+  --ui-bg: #f5f6f8; --ui-surface: #fff; --ui-subtle: #fafbfc;
+  --ui-line: #d9dfe6; --ui-control-line: #aeb9c5;
+  --ui-accent: #087b76; --ui-accent-hover: #07665f; --ui-tint: #eaf6f4;
+  --ui-on-accent: #fff; --ui-focus: #075ca8;
+  --ui-danger: #b42332; --ui-danger-bg: #fff0f1;
+  --ui-warning: #805600; --ui-warning-bg: #fff5d9;
+  --ui-success: #176043; --ui-success-bg: #e2f3eb;
+  --ui-info: #19589c; --ui-info-bg: #edf4ff;
+  --ui-violet: #563d91; --ui-violet-bg: #efeaff;
+  --ui-indigo: #45458e; --ui-indigo-bg: #eeefff;
+  --ui-orange: #97420c; --ui-orange-bg: #fff3e8;
+  --ui-highlight-ink: #182333;
+  --ui-radius: .3125rem; --ui-radius-lg: .5rem;
+  --ui-shadow: 0 .375rem 1rem rgb(22 37 55 / .09);
+  --ui-overlay: rgb(13 32 43 / .62);
+  --ui-space-0: 0; --ui-space-1: .25rem; --ui-space-2: .5rem;
+  --ui-space-3: .75rem; --ui-space-4: 1rem; --ui-space-5: 1.25rem;
+  --ui-space-6: 1.5rem; --ui-space-8: 2rem; --ui-space-10: 2.5rem;
+  --ui-space-12: 3rem; --ui-space-16: 4rem;
+  --ui-type-xs: .6875rem; --ui-type-sm: .75rem; --ui-type-meta: .8125rem;
+  --ui-type-body: .875rem; --ui-type-section: 1rem; --ui-type-subtitle: 1.125rem;
+  --ui-type-title: 1.625rem; --ui-type-metric: 1.5rem; --ui-type-display: 2rem;
+  --ui-hairline: 1px; --ui-focus-width: 2px; --ui-focus-offset: 3px; --ui-speed: 150ms;
+  --ui-control-height: 2.75rem; --ui-page-max: 90rem;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --ui-ink: #ecf1f5; --ui-text: #d3dee6; --ui-muted: #adbecb;
+  --ui-bg: #111a23; --ui-surface: #18242f; --ui-subtle: #1d2d3a;
+  --ui-line: #3c5060; --ui-control-line: #7f96a8;
+  --ui-accent: #78d9ca; --ui-accent-hover: #9be9dd; --ui-tint: #203d3c;
+  --ui-on-accent: #102c2a; --ui-focus: #94c8ff;
+  --ui-danger: #ffacb6; --ui-danger-bg: #452b34;
+  --ui-warning: #f7d686; --ui-warning-bg: #403519;
+  --ui-success: #94e4b9; --ui-success-bg: #183d30;
+  --ui-info: #a4cbff; --ui-info-bg: #233d56;
+  --ui-violet: #d2bbff; --ui-violet-bg: #342b4b;
+  --ui-indigo: #c5c5ff; --ui-indigo-bg: #2c2d49;
+  --ui-orange: #ffd1a3; --ui-orange-bg: #3f3024;
+  --ui-shadow: 0 .375rem 1rem rgb(0 0 0 / .25);
+}

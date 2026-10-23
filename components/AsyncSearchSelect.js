@@ -76,15 +76,15 @@ export default function AsyncSearchSelect({ value, onChange, placeholder, apiRou
         onFocus={() => { if(searchTerm.length >= 3) fetchOptions(searchTerm); }}
         disabled={disabled}
         placeholder={placeholder}
-        style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--input-bg)', color: 'var(--input-text)' }}
+        className="ui-static-5b3a2ff5f2" style={{width: '100%'}}
       />
       
       {isOpen && (searchTerm.length >= 3) && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '4px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', zIndex: 50, maxHeight: '200px', overflowY: 'auto' }}>
+        <div className="ui-static-4c5f93b5d3" style={{position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, maxHeight: '200px', overflowY: 'auto'}}>
           {loading ? (
-            <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>Searching...</div>
+            <div className="ui-static-abaa5b1f0b" style={{textAlign: 'center'}}>Searching...</div>
           ) : options.length > 0 ? (
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            <ul className="ui-static-0d59a3d063" style={{listStyle: 'none'}}>
               {options.map((opt, i) => (
                 <li 
                   key={i} 
@@ -92,7 +92,7 @@ export default function AsyncSearchSelect({ value, onChange, placeholder, apiRou
                     e.preventDefault();
                     handleSelectOption(opt);
                   }}
-                  style={{ padding: '0.75rem', cursor: 'pointer', borderBottom: '1px solid var(--border-color)', fontSize: '0.9rem', color: 'var(--text-color)' }}
+                  className="ui-static-d58296cc67" style={{cursor: 'pointer'}}
                   onMouseEnter={(e) => e.currentTarget.style.background = 'var(--hover-bg)'}
                   onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                 >
@@ -101,7 +101,7 @@ export default function AsyncSearchSelect({ value, onChange, placeholder, apiRou
               ))}
             </ul>
           ) : (
-            <div style={{ padding: '0.75rem', color: '#64748b', fontSize: '0.9rem', textAlign: 'center' }}>No exact matches found.</div>
+            <div className="ui-static-abaa5b1f0b" style={{textAlign: 'center'}}>No exact matches found.</div>
           )}
         </div>
       )}

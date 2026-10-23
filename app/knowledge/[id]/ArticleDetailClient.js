@@ -41,49 +41,49 @@ export default function ArticleDetailClient({ article, session, categories }) {
   return (
     <main className="container" style={{ maxWidth: '900px' }}>
       
-      <div style={{ marginBottom: '2rem' }}>
-        <Link href="/knowledge" style={{ color: 'var(--text-color)', textDecoration: 'none', fontSize: '0.9rem', marginBottom: '1rem', display: 'inline-block' }}>← Back to Knowledge Base</Link>
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.85rem', background: 'var(--hover-bg)', padding: '0.3rem 0.8rem', borderRadius: '4px', color: 'var(--text-color)', fontWeight: 'bold' }}>
+      <div className="ui-static-a5e927dc66" >
+        <Link href="/knowledge" className="ui-static-37b8c17cf4" style={{textDecoration: 'none', display: 'inline-block'}}>← Back to Knowledge Base</Link>
+        <div className="ui-static-9f3a956920" style={{display: 'flex', alignItems: 'center'}}>
+          <span className="ui-static-ab4d7e2c3c" >
             {article.category?.icon} {article.category?.name}
           </span>
           {!article.isPublished && (
-            <span style={{ fontSize: '0.85rem', background: '#fef3c7', color: '#92400e', padding: '0.3rem 0.8rem', borderRadius: '4px', fontWeight: 'bold' }}>
+            <span className="ui-static-a292956bd7" >
               Draft (Not Public)
             </span>
           )}
         </div>
-        <h1 style={{ fontSize: '2.5rem', margin: '0 0 1.5rem 0', color: 'var(--heading-color)', lineHeight: 1.2 }}>{article.title}</h1>
+        <h1 className="ui-static-b1ee677670" >{article.title}</h1>
         
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+        <div className="ui-static-26afef260e" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+          <div className="ui-static-e59a73fd03" style={{display: 'flex', alignItems: 'center'}}>
              {article.author?.avatarUrl ? (
-                <img src={article.author.avatarUrl} alt="avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }} />
+                <img src={article.author.avatarUrl} alt="avatar" className="ui-static-1fe1125b86" style={{width: '40px', height: '40px', objectFit: 'cover'}} />
              ) : (
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 'bold' }}>
+                <div className="ui-static-a39bc21992" style={{width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
                   {article.author?.name?.charAt(0) || 'U'}
                 </div>
              )}
              <div>
-               <div style={{ fontWeight: 'bold', color: 'var(--heading-color)', fontSize: '1.05rem' }}>{article.author?.name}</div>
-               <div style={{ fontSize: '0.85rem', color: 'var(--text-color)' }}>{article.author?.role?.name} • Last updated {mounted ? new Date(article.updatedAt).toLocaleString() : new Date(article.updatedAt).toISOString().split('T')[0]}</div>
+               <div className="ui-static-26536ead24" >{article.author?.name}</div>
+               <div className="ui-static-1d95690500" >{article.author?.role?.name} • Last updated {mounted ? new Date(article.updatedAt).toLocaleString() : new Date(article.updatedAt).toISOString().split('T')[0]}</div>
              </div>
           </div>
           
           {canEdit && (
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button onClick={() => setIsEditing(true)} className="secondary-btn" style={{ padding: '0.5rem 1rem' }}>Edit Article</button>
+            <div className="ui-static-30f523173e" style={{display: 'flex'}}>
+              <button onClick={() => setIsEditing(true)} className="secondary-btn ui-static-7f62800e8e" >Edit Article</button>
               {(session.user.role === 'Admin' || session.user.permissions?.includes('manage_knowledge')) && (
-                <button onClick={handleDelete} style={{ padding: '0.5rem 1rem', background: 'transparent', color: '#ef4444', border: '1px solid #fca5a5', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Delete</button>
+                <button onClick={handleDelete} className="ui-static-ec5dee5ff6" style={{cursor: 'pointer'}}>Delete</button>
               )}
             </div>
           )}
         </div>
       </div>
 
-      <div className="bg-white-card" style={{ padding: '2.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)', minHeight: '400px' }}>
+      <div className="bg-white-card ui-static-27c20d2d81" style={{minHeight: '400px'}}>
         <div data-color-mode="light">
-           <MDPreview source={article.content} style={{ backgroundColor: 'transparent', color: 'var(--heading-color)', fontSize: '1.05rem', lineHeight: 1.7 }} />
+           <MDPreview source={article.content} className="ui-static-39e15bd634"  />
         </div>
       </div>
 

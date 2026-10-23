@@ -436,21 +436,10 @@ export default function SchedulesClient({
     if (!card) return null;
     return (
       <div
-        style={{
-          border: "1px solid #e4e4e7",
-          borderRadius: "0.5rem",
-          overflow: "hidden",
-          marginBottom: "0.75rem",
-          background: "#fff",
-        }}
+        className="ui-static-8f7eb8bd10" style={{overflow: "hidden"}}
       >
         <div
-          style={{
-            background: "#18181b",
-            color: "#e4e4e7",
-            padding: "0.45rem 0.75rem",
-            fontSize: "0.85rem",
-          }}
+          className="ui-static-27160dac1a"
         >
           <strong>
             Ringkasan fairness — {card.deptName} · {monthName} {calYear}
@@ -458,34 +447,19 @@ export default function SchedulesClient({
         </div>
         <div style={{ overflowX: "auto" }}>
           <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "0.82rem",
-            }}
+            className="ui-static-581d169cdc" style={{width: "100%"}}
           >
             <thead>
               <tr>
                 <th
-                  style={{
-                    padding: "0.45rem 0.65rem",
-                    textAlign: "left",
-                    borderBottom: "1px solid #e4e4e7",
-                    background: "#f4f4f5",
-                  }}
+                  className="ui-static-78ad5db4f0" style={{textAlign: "left"}}
                 >
                   Nama
                 </th>
                 {card.fairness.columns.map((col) => (
                   <th
                     key={col.key}
-                    style={{
-                      padding: "0.45rem 0.65rem",
-                      textAlign: "center",
-                      borderBottom: "1px solid #e4e4e7",
-                      background: "#f4f4f5",
-                      fontFamily: "var(--font-mono, ui-monospace, monospace)",
-                    }}
+                    className="ui-static-a98510d213" style={{textAlign: "center"}}
                   >
                     {col.label}
                   </th>
@@ -497,7 +471,7 @@ export default function SchedulesClient({
                 <tr>
                   <td
                     colSpan={card.fairness.columns.length + 1}
-                    style={{ padding: "0.65rem", color: "#71717a" }}
+                    className="ui-static-366a14adf5"
                   >
                     Belum ada data jadwal.
                   </td>
@@ -506,24 +480,14 @@ export default function SchedulesClient({
                 card.fairness.rows.map((r) => (
                   <tr key={r.userId}>
                     <td
-                      style={{
-                        padding: "0.4rem 0.65rem",
-                        borderBottom: "1px solid #f4f4f5",
-                        textAlign: "left",
-                        fontWeight: 600,
-                      }}
+                      className="ui-static-9fa5402fe9" style={{textAlign: "left"}}
                     >
                       {r.name}
                     </td>
                     {card.fairness.columns.map((col) => (
                       <td
                         key={col.key}
-                        style={{
-                          padding: "0.4rem 0.65rem",
-                          borderBottom: "1px solid #f4f4f5",
-                          textAlign: "center",
-                          fontFamily: "var(--font-mono, ui-monospace, monospace)",
-                        }}
+                        className="ui-static-aae50439c6" style={{textAlign: "center"}}
                       >
                         {r[col.key]}
                       </td>
@@ -541,14 +505,7 @@ export default function SchedulesClient({
   return (
     <div>
       <div
-        style={{
-          marginBottom: "1rem",
-          padding: "0.75rem 1rem",
-          borderRadius: 8,
-          background: solverHealth?.ok ? "#ecfdf5" : "#fef2f2",
-          border: `1px solid ${solverHealth?.ok ? "#6ee7b7" : "#fecaca"}`,
-          fontSize: "0.9rem",
-        }}
+        className="ui-static-7f4ba5929a" style={{background: solverHealth?.ok ? "var(--ui-surface)" : "var(--ui-surface)", border: `1px solid ${solverHealth?.ok ? "var(--ui-success)" : "var(--ui-danger)"}`}}
       >
         <strong>Shift solver:</strong>{" "}
         {solverHealth == null
@@ -558,8 +515,8 @@ export default function SchedulesClient({
             : `offline — ${solverHealth.error || "unreachable"}`}
         <button
           type="button"
-          className="secondary-btn"
-          style={{ width: "auto", marginLeft: 12, padding: "0.25rem 0.6rem", fontSize: "0.8rem" }}
+          className="secondary-btn ui-static-4e52a3d8fe"
+          style={{width: "auto"}}
           onClick={() => {
             setSolverHealth(null);
             fetch("/api/schedules/solver-health")
@@ -573,14 +530,7 @@ export default function SchedulesClient({
       </div>
 
       <div
-        style={{
-          display: "flex",
-          gap: "1rem",
-          marginBottom: "1.5rem",
-          borderBottom: "1px solid #e2e8f0",
-          paddingBottom: "1rem",
-          flexWrap: "wrap",
-        }}
+        className="ui-static-dc1b4980be" style={{display: "flex", flexWrap: "wrap"}}
       >
         <button
           onClick={() => setActiveTab("calendar")}
@@ -619,23 +569,15 @@ export default function SchedulesClient({
       </div>
 
       {activeTab === "calendar" && (
-        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div className="card ui-static-bcb0a0d8bd" style={{overflow: "hidden"}}>
           <div
-            style={{
-              padding: "1.5rem",
-              background: "#f8fafc",
-              borderBottom: "1px solid #e2e8f0",
-              display: "flex",
-              justifyContent: "space-between",
-              flexWrap: "wrap",
-              gap: "1rem",
-            }}
+            className="ui-static-26439d4fa2" style={{display: "flex", justifyContent: "space-between", flexWrap: "wrap"}}
           >
-            <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+            <div className="ui-static-e59a73fd03" style={{display: "flex", alignItems: "center", flexWrap: "wrap"}}>
               <select
                 value={calMonth}
                 onChange={(e) => setCalMonth(parseInt(e.target.value, 10))}
-                style={{ padding: "0.5rem", borderRadius: 4, border: "1px solid #cbd5e1" }}
+                className="ui-static-11c1bd4406"
               >
                 {Array.from({ length: 12 }).map((_, i) => (
                   <option key={i} value={i}>
@@ -646,7 +588,7 @@ export default function SchedulesClient({
               <select
                 value={calYear}
                 onChange={(e) => setCalYear(parseInt(e.target.value, 10))}
-                style={{ padding: "0.5rem", borderRadius: 4, border: "1px solid #cbd5e1" }}
+                className="ui-static-11c1bd4406"
               >
                 <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
                 <option value={new Date().getFullYear() + 1}>{new Date().getFullYear() + 1}</option>
@@ -654,7 +596,7 @@ export default function SchedulesClient({
               <select
                 value={calDepartment}
                 onChange={(e) => setCalDepartment(e.target.value)}
-                style={{ padding: "0.5rem", borderRadius: 4, border: "1px solid #cbd5e1" }}
+                className="ui-static-11c1bd4406"
               >
                 <option value="">All Departments</option>
                 {departments.map((d) => (
@@ -667,7 +609,7 @@ export default function SchedulesClient({
               <select
                 value={calLocation}
                 onChange={(e) => setCalLocation(e.target.value)}
-                style={{ padding: "0.5rem", borderRadius: 4, border: "1px solid #cbd5e1" }}
+                className="ui-static-11c1bd4406"
               >
                 <option value="">All Locations</option>
                 {locations.map((loc) => (
@@ -680,7 +622,7 @@ export default function SchedulesClient({
                 <select
                   value={genPola}
                   onChange={(e) => setGenPola(e.target.value)}
-                  style={{ padding: "0.5rem", borderRadius: 4, border: "1px solid #cbd5e1" }}
+                  className="ui-static-11c1bd4406"
                   title="Override pola for this run (blank = department default)"
                 >
                   <option value="">Pola: dept default</option>
@@ -692,7 +634,7 @@ export default function SchedulesClient({
                 </select>
               )}
             </div>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <div className="ui-static-30f523173e" style={{display: "flex", flexWrap: "wrap"}}>
               <button
                 type="button"
                 className="secondary-btn"
@@ -707,8 +649,8 @@ export default function SchedulesClient({
                   className="secondary-btn"
                   style={{
                     width: "auto",
-                    background: swapMode ? "#fef3c7" : undefined,
-                    borderColor: swapMode ? "#f59e0b" : undefined,
+                    background: swapMode ? "var(--ui-warning-bg)" : undefined,
+                    borderColor: swapMode ? "var(--ui-warning)" : undefined,
                   }}
                   onClick={() => {
                     setSwapMode((v) => !v);
@@ -726,104 +668,57 @@ export default function SchedulesClient({
                 <button
                   onClick={handleGenerate}
                   disabled={generating}
-                  className="primary-btn"
-                  style={{ width: "auto", background: "#0f766e" }}
+                  className="primary-btn ui-static-ff7bdbad96"
+                  style={{width: "auto"}}
                 >
                   {generating ? "Generating…" : "Generate POLA Roster"}
                 </button>
               )}
             </div>
           </div>
-          <p style={{ margin: "0 1.5rem", fontSize: "0.8rem", color: "#64748b" }}>
+          <p className="ui-static-9c588baf9f" >
             {isEditor
               ? "Klik sel untuk ubah shift, stabilo, atau catatan. Mode Swap untuk tukar dua sel. Titik oranye = ada catatan (hover untuk teks penuh)."
               : "Titik oranye di sel = ada catatan. Hover (atau tekan lama di mobile) untuk membaca. Catatan pendek juga tampil di bawah label shift."}
           </p>
 
           <div
-            style={{
-              maxHeight: "min(70vh, 900px)",
-              overflow: "auto",
-              padding: "1.5rem",
-              borderTop: "1px solid #e2e8f0",
-            }}
+            className="ui-static-43a90c0929" style={{maxHeight: "min(70vh, 900px)", overflow: "auto"}}
           >
             {loadingCal ? (
               <p>Loading Schedule Matrix...</p>
             ) : groupedRows.length === 0 ? (
-              <p style={{ padding: "2rem", color: "#94a3b8", textAlign: "center" }}>
+              <p className="ui-static-bd68909f2e" style={{textAlign: "center"}}>
                 No schedules generated for this range.
               </p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+              <div className="ui-static-92254f43e7" style={{display: "flex", flexDirection: "column"}}>
                 {groupedRows.map((group) => {
                   const colors = departmentColor(group.deptId);
                   const fairnessCard = fairnessByDeptId.get(String(group.deptId));
                   return (
                     <section key={`dept-${group.deptId}`}>
                       <div
-                        style={{
-                          padding: "0.55rem 0.75rem",
-                          textAlign: "left",
-                          fontWeight: 700,
-                          fontSize: "0.9rem",
-                          letterSpacing: "0.02em",
-                          color: colors.text,
-                          background: colors.header,
-                          border: `1px solid ${colors.accent}33`,
-                          borderRadius: "0.5rem 0.5rem 0 0",
-                          borderBottom: "none",
-                        }}
+                        className="ui-static-d93749eb31" style={{textAlign: "left", color: colors.text, background: colors.header, border: `1px solid color-mix(in srgb, ${colors.accent} 20%, transparent)`}}
                       >
                         {group.deptName}
-                        <span style={{ fontWeight: 500, opacity: 0.75, marginLeft: 8 }}>
+                        <span className="ui-static-ee87aa5220" style={{opacity: 1}}>
                           ({group.rows.length} orang)
                         </span>
                       </div>
                       {renderFairnessBlock(fairnessCard)}
                       <table
-                        style={{
-                          width: "100%",
-                          borderCollapse: "separate",
-                          borderSpacing: 0,
-                          textAlign: "center",
-                          minWidth: 1200,
-                        }}
+                        className="ui-static-55f015b4c7" style={{width: "100%", textAlign: "center", minWidth: 1200}}
                       >
                         <thead>
                           <tr>
                             <th
-                              style={{
-                                padding: "0.75rem",
-                                background: "#e2e8f0",
-                                border: "1px solid #cbd5e1",
-                                textAlign: "left",
-                                position: "sticky",
-                                top: 0,
-                                left: 0,
-                                zIndex: 5,
-                                minWidth: NAME_STICKY_W,
-                                width: NAME_STICKY_W,
-                                boxShadow: "2px 0 0 #cbd5e1",
-                              }}
+                              className="ui-static-6aedc289c3" style={{textAlign: "left", position: "sticky", top: 0, left: 0, zIndex: 5, minWidth: NAME_STICKY_W, width: NAME_STICKY_W}}
                             >
                               Employee / Team
                             </th>
                             <th
-                              style={{
-                                padding: "0.5rem",
-                                background: "#e2e8f0",
-                                border: "1px solid #cbd5e1",
-                                fontSize: "0.8rem",
-                                minWidth: JAM_STICKY_W,
-                                width: JAM_STICKY_W,
-                                whiteSpace: "nowrap",
-                                position: "sticky",
-                                top: 0,
-                                left: NAME_STICKY_W,
-                                zIndex: 5,
-                                boxShadow: "2px 0 0 #cbd5e1",
-                              }}
+                              className="ui-static-e0463787ae" style={{minWidth: JAM_STICKY_W, width: JAM_STICKY_W, whiteSpace: "nowrap", position: "sticky", top: 0, left: NAME_STICKY_W, zIndex: 5}}
                             >
                               Total Jam
                             </th>
@@ -834,19 +729,10 @@ export default function SchedulesClient({
                               return (
                                 <th
                                   key={d}
-                                  style={{
-                                    padding: "0.5rem",
-                                    background: isWeekend ? "#fecaca" : "#f1f5f9",
-                                    border: "1px solid #cbd5e1",
-                                    fontSize: "0.8rem",
-                                    minWidth: 40,
-                                    position: "sticky",
-                                    top: 0,
-                                    zIndex: 4,
-                                  }}
+                                  className="ui-static-8180824b76" style={{background: isWeekend ? "var(--ui-danger-bg)" : "var(--ui-surface)", minWidth: 40, position: "sticky", top: 0, zIndex: 4}}
                                 >
                                   <div>{d}</div>
-                                  <div style={{ fontSize: "0.65rem", color: "#64748b" }}>
+                                  <div className="ui-static-3fb49e1cf0" >
                                     {dateObj.toLocaleDateString("en-US", {
                                       weekday: "short",
                                     })}
@@ -860,50 +746,18 @@ export default function SchedulesClient({
                           {group.rows.map((row) => (
                             <tr key={row.user.id} style={{ background: colors.bg }}>
                               <td
-                                style={{
-                                  padding: "0.75rem",
-                                  border: "1px solid #cbd5e1",
-                                  textAlign: "left",
-                                  fontWeight: "bold",
-                                  background: colors.bg,
-                                  color: colors.text,
-                                  position: "sticky",
-                                  left: 0,
-                                  zIndex: 2,
-                                  minWidth: NAME_STICKY_W,
-                                  width: NAME_STICKY_W,
-                                  borderLeft: `4px solid ${colors.accent}`,
-                                  boxShadow: "2px 0 0 #cbd5e1",
-                                }}
+                                className="ui-static-d1d08f44ab" style={{textAlign: "left", background: colors.bg, color: colors.text, position: "sticky", left: 0, zIndex: 2, minWidth: NAME_STICKY_W, width: NAME_STICKY_W, borderLeft: `4px solid ${colors.accent}`}}
                               >
                                 {row.user.name || row.user.email || `#${row.user.id}`}
                                 <br />
                                 <span
-                                  style={{
-                                    fontSize: "0.7rem",
-                                    opacity: 0.75,
-                                    fontWeight: "normal",
-                                  }}
+                                  className="ui-static-baee2465e7" style={{opacity: 1}}
                                 >
                                   {row.user.location?.city || "No Location"}
                                 </span>
                               </td>
                               <td
-                                style={{
-                                  padding: "0.5rem",
-                                  border: "1px solid #cbd5e1",
-                                  background: colors.bg,
-                                  color: colors.text,
-                                  fontWeight: 600,
-                                  fontSize: "0.8rem",
-                                  whiteSpace: "nowrap",
-                                  position: "sticky",
-                                  left: NAME_STICKY_W,
-                                  zIndex: 2,
-                                  minWidth: JAM_STICKY_W,
-                                  width: JAM_STICKY_W,
-                                  boxShadow: "2px 0 0 #cbd5e1",
-                                }}
+                                className="ui-static-71a6146450" style={{background: colors.bg, color: colors.text, whiteSpace: "nowrap", position: "sticky", left: NAME_STICKY_W, zIndex: 2, minWidth: JAM_STICKY_W, width: JAM_STICKY_W}}
                               >
                                 {totalHoursByUserId.has(row.user.id)
                                   ? totalHoursByUserId.get(row.user.id)
@@ -942,14 +796,14 @@ export default function SchedulesClient({
                                   ? null
                                   : shiftCellColor(isOff ? null : shift?.name);
                                 const bg = selected
-                                  ? "#fef3c7"
+                                  ? "var(--ui-warning-bg)"
                                   : cell?.highlightColor
                                     ? cell.highlightColor
                                     : isPending
                                       ? colors.bg
                                       : shiftColor.bg;
-                                const cellText = cell?.highlightColor
-                                  ? colors.text
+                                const cellText = selected ? "var(--ui-warning)" : cell?.highlightColor
+                                  ? "var(--ui-highlight-ink)"
                                   : shiftColor?.text || colors.text;
                                 const noteText =
                                   typeof cell?.note === "string" ? cell.note.trim() : "";
@@ -972,63 +826,33 @@ export default function SchedulesClient({
                                           ? "Klik untuk edit / swap"
                                           : undefined
                                     }
-                                    style={{
-                                      padding: "0.5rem",
-                                      border: selected
+                                    className="ui-static-7f9453e354" style={{border: selected
                                         ? "2px solid #f59e0b"
                                         : cell?.highlightColor
                                           ? `2px solid ${colors.accent}`
-                                          : "1px solid #cbd5e1",
-                                      fontSize: "0.75rem",
-                                      background: bg,
-                                      cursor: isEditor ? "pointer" : "default",
-                                      color: cellText,
-                                      position: "relative",
-                                      verticalAlign: "middle",
-                                    }}
+                                          : "1px solid #cbd5e1", background: bg, cursor: isEditor ? "pointer" : "default", color: cellText, position: "relative", verticalAlign: "middle"}}
                                   >
                                     {isOff ? (
-                                      <span style={{ fontWeight: 600, opacity: 0.85 }}>
+                                      <span className="ui-static-5c05f4afaf" style={{opacity: 1}}>
                                         OFF
                                       </span>
                                     ) : isPending ? (
-                                      <span style={{ opacity: 0.35 }}>-</span>
+                                      <span style={{ opacity: 1 }}>-</span>
                                     ) : (
-                                      <div style={{ fontWeight: "bold", lineHeight: 1.15 }}>
+                                      <div className="ui-static-48830ce0e3" >
                                         {shiftLabel}
                                       </div>
                                     )}
                                     {shortPreview ? (
                                       <div
-                                        style={{
-                                          marginTop: 2,
-                                          fontSize: "0.62rem",
-                                          fontWeight: 500,
-                                          lineHeight: 1.2,
-                                          opacity: 0.85,
-                                          maxWidth: 56,
-                                          overflow: "hidden",
-                                          textOverflow: "ellipsis",
-                                          whiteSpace: "nowrap",
-                                          marginLeft: "auto",
-                                          marginRight: "auto",
-                                        }}
+                                        className="ui-static-96a8aaf291" style={{opacity: 1, maxWidth: 56, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}
                                       >
                                         {shortPreview}
                                       </div>
                                     ) : null}
                                     {hasNote ? (
                                       <span
-                                        style={{
-                                          position: "absolute",
-                                          top: 3,
-                                          right: 4,
-                                          width: 7,
-                                          height: 7,
-                                          borderRadius: "50%",
-                                          background: "#ea580c",
-                                          boxShadow: "0 0 0 1px #fff",
-                                        }}
+                                        className="ui-static-4741c62896" style={{position: "absolute", top: 3, right: 4, width: 7, height: 7}}
                                         aria-label="Ada catatan"
                                       />
                                     ) : null}
@@ -1046,74 +870,34 @@ export default function SchedulesClient({
             )}
             {groupedRows.length > 0 && (
               <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "0.75rem",
-                  marginTop: "1rem",
-                  fontSize: "0.8rem",
-                  alignItems: "center",
-                }}
+                className="ui-static-e78e8defcd" style={{display: "flex", flexWrap: "wrap", alignItems: "center"}}
               >
-                <span style={{ color: "#64748b", fontWeight: 600, marginRight: 4 }}>Shift:</span>
+                <span className="ui-static-f6f4cd8389" >Shift:</span>
                 {SHIFT_COLOR_LEGEND.map((sc) => (
                   <span
                     key={`shift-${sc.label}`}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "0.25rem 0.6rem",
-                      borderRadius: 4,
-                      background: sc.bg,
-                      color: sc.text,
-                      border: "1px solid #cbd5e1",
-                      fontWeight: 600,
-                    }}
+                    className="ui-static-c6f552af93" style={{display: "inline-flex", alignItems: "center", background: sc.bg, color: sc.text}}
                   >
                     {sc.label}
                   </span>
                 ))}
                 <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    padding: "0.25rem 0.6rem",
-                    borderRadius: 4,
-                    border: "1px dashed #94a3b8",
-                    color: "#475569",
-                    fontSize: "0.75rem",
-                  }}
+                  className="ui-static-abdce31e20" style={{display: "inline-flex", alignItems: "center"}}
                   title="Khusus POLA_2 / NOC Core di Sabtu–Minggu"
                 >
                   (WFH) = weekend duty
                 </span>
-                <span style={{ color: "#94a3b8", margin: "0 0.25rem" }}>|</span>
-                <span style={{ color: "#64748b", fontWeight: 600, marginRight: 4 }}>Dept:</span>
+                <span className="ui-static-072ab7fbbe" >|</span>
+                <span className="ui-static-f6f4cd8389" >Dept:</span>
                 {groupedRows.map((g) => {
                   const c = departmentColor(g.deptId);
                   return (
                     <span
                       key={`leg-${g.deptId}`}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                        padding: "0.25rem 0.6rem",
-                        borderRadius: 999,
-                        background: c.header,
-                        color: c.text,
-                        border: `1px solid ${c.accent}44`,
-                      }}
+                      className="ui-static-c41efa6b09" style={{display: "inline-flex", alignItems: "center", background: c.header, color: c.text, border: `1px solid color-mix(in srgb, ${c.accent} 20%, transparent)`}}
                     >
                       <span
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: 2,
-                          background: c.accent,
-                          display: "inline-block",
-                        }}
+                        className="ui-static-2e363ceebd" style={{width: 10, height: 10, background: c.accent, display: "inline-block"}}
                       />
                       {g.deptName}
                     </span>
@@ -1126,26 +910,26 @@ export default function SchedulesClient({
       )}
 
       {activeTab === "pola" && isScheduleAdmin && (
-        <div style={{ display: "grid", gap: "1.5rem" }}>
+        <div className="ui-static-92254f43e7" style={{display: "grid"}}>
           <div className="card">
-            <h2 style={{ marginTop: 0 }}>Default Pola per Departemen</h2>
-            <p style={{ color: "#64748b" }}>
+            <h2 className="ui-static-c312289912" >Default Pola per Departemen</h2>
+            <p className="ui-static-b9010af219" >
               Centang <strong>Generate</strong> hanya untuk dept yang butuh roster (NOC/CS). Yang tidak dicentang
               di-skip saat auto-generate / generate semua. Engine OR-Tools (adopsi absen). Auto tanggal {autoDay}{" "}
               generate <strong>bulan berikutnya</strong>.
             </p>
-            <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table className="table ui-static-57b942e79e" style={{width: "100%"}}>
               <thead>
-                <tr style={{ background: "#f1f5f9" }}>
-                  <th style={{ padding: "0.75rem", textAlign: "left" }}>Generate</th>
-                  <th style={{ padding: "0.75rem", textAlign: "left" }}>Department</th>
-                  <th style={{ padding: "0.75rem", textAlign: "left" }}>Default Pola</th>
+                <tr className="ui-static-6d7b6af7b6" >
+                  <th className="ui-static-b52e2fe28a" style={{textAlign: "left"}}>Generate</th>
+                  <th className="ui-static-b52e2fe28a" style={{textAlign: "left"}}>Department</th>
+                  <th className="ui-static-b52e2fe28a" style={{textAlign: "left"}}>Default Pola</th>
                 </tr>
               </thead>
               <tbody>
                 {departments.map((d) => (
-                  <tr key={d.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                    <td style={{ padding: "0.75rem" }}>
+                  <tr key={d.id} className="ui-static-30a64148c8" >
+                    <td className="ui-static-b52e2fe28a" >
                       <input
                         type="checkbox"
                         checked={d.scheduleEnabled !== false}
@@ -1153,20 +937,20 @@ export default function SchedulesClient({
                         title="Ikut generate roster / auto-absen"
                       />
                     </td>
-                    <td style={{ padding: "0.75rem", fontWeight: 600 }}>
+                    <td className="ui-static-0b957f5ffd" >
                       {d.name}
                       {d.scheduleEnabled === false && (
-                        <span style={{ marginLeft: 8, fontSize: "0.75rem", color: "#94a3b8", fontWeight: 400 }}>
+                        <span className="ui-static-a9f8c1573f" >
                           (skip)
                         </span>
                       )}
                     </td>
-                    <td style={{ padding: "0.75rem" }}>
+                    <td className="ui-static-b52e2fe28a" >
                       <select
                         value={d.schedulePola || "POLA_1"}
                         disabled={d.scheduleEnabled === false}
                         onChange={(e) => saveDeptPola(d.id, { schedulePola: e.target.value })}
-                        style={{ padding: "0.5rem", minWidth: 280 }}
+                        className="ui-static-ce5f724e09" style={{minWidth: 280}}
                       >
                         {SCHEDULE_POLAS.map((p) => (
                           <option key={p.id} value={p.id}>
@@ -1179,16 +963,16 @@ export default function SchedulesClient({
                 ))}
                 {departments.length === 0 && (
                   <tr>
-                    <td colSpan={3} style={{ padding: "1rem", color: "#94a3b8" }}>
+                    <td colSpan={3} className="ui-static-5c2ba1a5f6" >
                       Belum ada department.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
-            <div style={{ marginTop: "1rem", fontSize: "0.85rem", color: "#64748b" }}>
+            <div className="ui-static-a5fc251c28" >
               {SCHEDULE_POLAS.map((p) => (
-                <div key={p.id} style={{ marginBottom: 4 }}>
+                <div key={p.id} className="ui-static-137aa26511" >
                   <strong>{p.id}</strong> — {p.summary}
                 </div>
               ))}
@@ -1196,13 +980,13 @@ export default function SchedulesClient({
           </div>
 
           <div className="card">
-            <h2 style={{ marginTop: 0 }}>Auto-Generate</h2>
-            <p style={{ color: "#64748b" }}>
+            <h2 className="ui-static-c312289912" >Auto-Generate</h2>
+            <p className="ui-static-b9010af219" >
               Setiap tanggal yang dikonfigurasi, sistem generate roster <strong>bulan depan</strong> untuk
               semua departemen (pola default masing-masing). Last run key:{" "}
               <code>{lastKey || "—"}</code>
             </p>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.75rem" }}>
+            <label className="ui-static-bcc03ba549" style={{display: "flex", alignItems: "center"}}>
               <input
                 type="checkbox"
                 checked={autoEnabled}
@@ -1210,7 +994,7 @@ export default function SchedulesClient({
               />
               Enable auto-generate
             </label>
-            <label style={{ display: "block", marginBottom: "0.75rem" }}>
+            <label className="ui-static-3bfe860463" style={{display: "block"}}>
               Tanggal tiap bulan{" "}
               <input
                 type="number"
@@ -1218,10 +1002,10 @@ export default function SchedulesClient({
                 max={28}
                 value={autoDay}
                 onChange={(e) => setAutoDay(e.target.value)}
-                style={{ width: 64, padding: "0.4rem", marginLeft: 8 }}
+                className="ui-static-a975179b71" style={{width: 64}}
               />
             </label>
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+            <div className="ui-static-e59a73fd03" style={{display: "flex", flexWrap: "wrap"}}>
               <button type="button" className="primary-btn" style={{ width: "auto" }} onClick={saveAutoConfig}>
                 Save settings
               </button>
@@ -1240,20 +1024,20 @@ export default function SchedulesClient({
 
       {activeTab === "preferences" && isScheduleAdmin && (
         <div className="card">
-          <h2 style={{ marginTop: 0 }}>Team Roster Preferences</h2>
-          <p style={{ color: "#64748b", marginBottom: "1.5rem" }}>
+          <h2 className="ui-static-c312289912" >Team Roster Preferences</h2>
+          <p className="ui-static-236da243d4" >
             Flag (Umum/Kristen/Kuliah) dipakai constraint POLA. Mode FIXED/RANDOM hanya untuk legacy
             generator.
           </p>
-          <table className="table" style={{ width: "100%", textAlign: "left", borderCollapse: "collapse" }}>
+          <table className="table ui-static-57b942e79e" style={{width: "100%", textAlign: "left"}}>
             <thead>
-              <tr style={{ background: "#f1f5f9" }}>
-                <th style={{ padding: "1rem" }}>User</th>
-                <th style={{ padding: "1rem" }}>Flag</th>
-                <th style={{ padding: "1rem" }}>Mode</th>
-                <th style={{ padding: "1rem" }}>Fixed Shift</th>
-                <th style={{ padding: "1rem" }}>Fixed Off-Days</th>
-                <th style={{ padding: "1rem" }}>Actions</th>
+              <tr className="ui-static-6d7b6af7b6" >
+                <th className="ui-static-d2395016e6" >User</th>
+                <th className="ui-static-d2395016e6" >Flag</th>
+                <th className="ui-static-d2395016e6" >Mode</th>
+                <th className="ui-static-d2395016e6" >Fixed Shift</th>
+                <th className="ui-static-d2395016e6" >Fixed Off-Days</th>
+                <th className="ui-static-d2395016e6" >Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1272,11 +1056,11 @@ export default function SchedulesClient({
                 const isEditing = editPrefId === u.id;
                 const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
                 return (
-                  <tr key={u.id} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                    <td style={{ padding: "1rem", fontWeight: "bold" }}>{u.name || u.email}</td>
+                  <tr key={u.id} className="ui-static-30a64148c8" >
+                    <td className="ui-static-53d65f57e0" >{u.name || u.email}</td>
                     {isEditing ? (
                       <>
-                        <td style={{ padding: "1rem" }}>
+                        <td className="ui-static-d2395016e6" >
                           <select
                             value={prefFormData.scheduleFlag || "Umum"}
                             onChange={(e) =>
@@ -1290,7 +1074,7 @@ export default function SchedulesClient({
                             ))}
                           </select>
                         </td>
-                        <td style={{ padding: "1rem" }}>
+                        <td className="ui-static-d2395016e6" >
                           <select
                             value={prefFormData.scheduleMode}
                             onChange={(e) =>
@@ -1302,7 +1086,7 @@ export default function SchedulesClient({
                             <option value="FIXED">Fixed</option>
                           </select>
                         </td>
-                        <td style={{ padding: "1rem" }}>
+                        <td className="ui-static-d2395016e6" >
                           <select
                             disabled={prefFormData.scheduleMode !== "FIXED"}
                             value={prefFormData.fixedShiftId || ""}
@@ -1318,19 +1102,14 @@ export default function SchedulesClient({
                             ))}
                           </select>
                         </td>
-                        <td style={{ padding: "1rem", fontSize: "0.8rem" }}>
-                          <div style={{ display: "flex", gap: "0.2rem", flexWrap: "wrap" }}>
+                        <td className="ui-static-93e54e7bac" >
+                          <div className="ui-static-0f8796a915" style={{display: "flex", flexWrap: "wrap"}}>
                             {daysOfWeek.map((dayName, idx) => (
                               <label
                                 key={idx}
-                                style={{
-                                  background: prefFormData.fixedOffDays?.includes(idx)
-                                    ? "#fca5a5"
-                                    : "#f1f5f9",
-                                  padding: "0.2rem 0.4rem",
-                                  borderRadius: 4,
-                                  cursor: "pointer",
-                                }}
+                                className="ui-static-d6cbc0ccf1" style={{background: prefFormData.fixedOffDays?.includes(idx)
+                                    ? "var(--ui-danger-bg)"
+                                    : "var(--ui-surface)", cursor: "pointer"}}
                               >
                                 <input
                                   type="checkbox"
@@ -1343,18 +1122,18 @@ export default function SchedulesClient({
                             ))}
                           </div>
                         </td>
-                        <td style={{ padding: "1rem" }}>
+                        <td className="ui-static-d2395016e6" >
                           <button
                             onClick={() => handleSavePreference(u.id)}
-                            className="primary-btn"
-                            style={{ width: "auto", padding: "0.4rem 0.8rem", marginRight: "0.5rem" }}
+                            className="primary-btn ui-static-3bfef27863"
+                            style={{width: "auto"}}
                           >
                             Save
                           </button>
                           <button
                             onClick={() => setEditPrefId(null)}
-                            className="secondary-btn"
-                            style={{ width: "auto", padding: "0.4rem 0.8rem" }}
+                            className="secondary-btn ui-static-acd24ceb61"
+                            style={{width: "auto"}}
                           >
                             Cancel
                           </button>
@@ -1362,17 +1141,17 @@ export default function SchedulesClient({
                       </>
                     ) : (
                       <>
-                        <td style={{ padding: "1rem" }}>{u.scheduleFlag || "Umum"}</td>
-                        <td style={{ padding: "1rem" }}>
+                        <td className="ui-static-d2395016e6" >{u.scheduleFlag || "Umum"}</td>
+                        <td className="ui-static-d2395016e6" >
                           <span className="badge">{pref.scheduleMode}</span>
                         </td>
-                        <td style={{ padding: "1rem", color: "#64748b" }}>
+                        <td className="ui-static-5c2ba1a5f6" >
                           {pref.scheduleMode === "FIXED" && pref.fixedShift ? pref.fixedShift.name : "-"}
                         </td>
-                        <td style={{ padding: "1rem", fontSize: "0.8rem" }}>
+                        <td className="ui-static-93e54e7bac" >
                           {offDays.length > 0 ? offDays.map((d) => daysOfWeek[d]).join(", ") : "None"}
                         </td>
-                        <td style={{ padding: "1rem" }}>
+                        <td className="ui-static-d2395016e6" >
                           <button
                             onClick={() => {
                               setPrefFormData({
@@ -1383,13 +1162,7 @@ export default function SchedulesClient({
                               });
                               setEditPrefId(u.id);
                             }}
-                            style={{
-                              padding: "0.4rem 0.8rem",
-                              background: "#e2e8f0",
-                              border: "none",
-                              borderRadius: 4,
-                              cursor: "pointer",
-                            }}
+                            className="ui-static-583f3e2faa" style={{cursor: "pointer"}}
                           >
                             Config
                           </button>
@@ -1406,8 +1179,8 @@ export default function SchedulesClient({
 
       {activeTab === "types" && isScheduleAdmin && (
         <div className="card" style={{ maxWidth: 600 }}>
-          <h2 style={{ marginTop: 0 }}>Shift Types</h2>
-          <p style={{ color: "#64748b", fontSize: "0.9rem" }}>
+          <h2 className="ui-static-c312289912" >Shift Types</h2>
+          <p className="ui-static-9d7e95f546" >
             POLA engine memakai nama S1 / S2 / S3 / S1+OC (di-seed otomatis saat generate).
           </p>
           <form
@@ -1423,58 +1196,50 @@ export default function SchedulesClient({
                 setShiftFormData({ name: "", startTime: "", endTime: "" });
               }
             }}
-            style={{ display: "flex", gap: "1rem", marginBottom: "2rem", alignItems: "flex-end" }}
+            className="ui-static-7b101c5d25" style={{display: "flex", alignItems: "flex-end"}}
           >
             <div style={{ flex: 1 }}>
-              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "bold" }}>Name</label>
+              <label className="ui-static-7e5eaaca0d" style={{display: "block"}}>Name</label>
               <input
                 type="text"
                 required
                 value={shiftFormData.name}
                 onChange={(e) => setShiftFormData({ ...shiftFormData, name: e.target.value })}
-                style={{ width: "100%", padding: "0.5rem" }}
+                className="ui-static-ce5f724e09" style={{width: "100%"}}
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "bold" }}>Start</label>
+              <label className="ui-static-7e5eaaca0d" style={{display: "block"}}>Start</label>
               <input
                 type="time"
                 required
                 value={shiftFormData.startTime}
                 onChange={(e) => setShiftFormData({ ...shiftFormData, startTime: e.target.value })}
-                style={{ padding: "0.5rem" }}
+                className="ui-static-ce5f724e09"
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "bold" }}>End</label>
+              <label className="ui-static-7e5eaaca0d" style={{display: "block"}}>End</label>
               <input
                 type="time"
                 required
                 value={shiftFormData.endTime}
                 onChange={(e) => setShiftFormData({ ...shiftFormData, endTime: e.target.value })}
-                style={{ padding: "0.5rem" }}
+                className="ui-static-ce5f724e09"
               />
             </div>
-            <button type="submit" className="primary-btn" style={{ width: "auto", padding: "0.6rem 1rem" }}>
+            <button type="submit" className="primary-btn ui-static-7f62800e8e" style={{width: "auto"}}>
               Add
             </button>
           </form>
-          <ul style={{ listStyle: "none", padding: 0 }}>
+          <ul className="ui-static-bcb0a0d8bd" style={{listStyle: "none"}}>
             {shiftTypes.map((st) => (
               <li
                 key={st.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  padding: "1rem",
-                  border: "1px solid #e2e8f0",
-                  marginBottom: "0.5rem",
-                  borderRadius: 4,
-                  background: "#f8fafc",
-                }}
+                className="ui-static-9432c9a3cb" style={{display: "flex", justifyContent: "space-between"}}
               >
                 <strong>{st.name}</strong>
-                <span style={{ color: "#64748b" }}>
+                <span className="ui-static-b9010af219" >
                   {st.startTime} to {st.endTime}
                 </span>
               </li>
@@ -1491,20 +1256,17 @@ export default function SchedulesClient({
           onClick={() => setCellEditor(null)}
         >
           <div
-            className="modal-panel"
-            style={{
-              padding: "1.25rem 1.5rem",
-              maxWidth: 420,
-            }}
+            className="modal-panel ui-static-aa20b24520"
+            style={{maxWidth: 420}}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ margin: "0 0 0.25rem", fontSize: "1.1rem" }}>Edit sel</h3>
-            <p style={{ margin: "0 0 1rem", color: "#64748b", fontSize: "0.875rem" }}>
+            <h3 className="ui-static-41a291de10" >Edit sel</h3>
+            <p className="ui-static-9b082ecf64" >
               {cellEditor.userName} · tgl {cellEditor.day}/
               {calMonth + 1}/{calYear}
             </p>
 
-            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>
+            <label className="ui-static-eec2ca914a" style={{display: "block"}}>
               Shift
             </label>
             <select
@@ -1518,13 +1280,7 @@ export default function SchedulesClient({
                     shift === "OFF" || !isWorkingShiftName(shift) ? false : c.isLembur,
                 }));
               }}
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                marginBottom: "1rem",
-                borderRadius: 4,
-                border: "1px solid #cbd5e1",
-              }}
+              className="ui-static-289cca83cc" style={{width: "100%"}}
             >
               <option value="OFF">OFF</option>
               {[...new Set(["S1", "S2", "S3", "S1+OC", ...shiftTypes.map((s) => s.name)])].map(
@@ -1537,16 +1293,9 @@ export default function SchedulesClient({
             </select>
 
             {cellEditor.shift !== "OFF" && isWorkingShiftName(cellEditor.shift) && (
-              <div style={{ marginBottom: "1rem" }}>
+              <div className="ui-static-3e8220669e" >
                 <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    fontSize: "0.875rem",
-                    fontWeight: 500,
-                    cursor: "pointer",
-                  }}
+                  className="ui-static-e2b81e90cd" style={{display: "flex", alignItems: "center", cursor: "pointer"}}
                 >
                   <input
                     type="checkbox"
@@ -1558,29 +1307,21 @@ export default function SchedulesClient({
                   Lembur (panggil dari OFF)
                 </label>
                 {cellEditor.generatedShiftTypeId == null && (
-                  <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: 4 }}>
+                  <div className="ui-static-39f847cf97" >
                     Baseline generate: OFF — default dianggap lembur jika diisi shift kerja.
                   </div>
                 )}
               </div>
             )}
 
-            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 6 }}>
+            <label className="ui-static-eec2ca914a" style={{display: "block"}}>
               Stabilo
             </label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: "1rem" }}>
+            <div className="ui-static-9f3a956920" style={{display: "flex", flexWrap: "wrap"}}>
               <button
                 type="button"
                 onClick={() => setCellEditor((c) => ({ ...c, highlightColor: null }))}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 4,
-                  border: !cellEditor.highlightColor ? "2px solid #0f172a" : "1px solid #cbd5e1",
-                  background: "#fff",
-                  cursor: "pointer",
-                  fontSize: 11,
-                }}
+                className="ui-static-46a13c5f8e" style={{width: 32, height: 32, border: !cellEditor.highlightColor ? "2px solid #0f172a" : "1px solid #cbd5e1", cursor: "pointer"}}
                 title="Tanpa warna"
               >
                 ✕
@@ -1591,22 +1332,15 @@ export default function SchedulesClient({
                   type="button"
                   title={c.label}
                   onClick={() => setCellEditor((ed) => ({ ...ed, highlightColor: c.hex }))}
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 4,
-                    border:
+                  className="ui-static-2e363ceebd" style={{width: 32, height: 32, border:
                       cellEditor.highlightColor === c.hex
                         ? "2px solid #0f172a"
-                        : "1px solid #94a3b8",
-                    background: c.hex,
-                    cursor: "pointer",
-                  }}
+                        : "1px solid #94a3b8", background: c.hex, cursor: "pointer"}}
                 />
               ))}
             </div>
 
-            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: 4 }}>
+            <label className="ui-static-eec2ca914a" style={{display: "block"}}>
               Catatan
             </label>
             <textarea
@@ -1614,18 +1348,10 @@ export default function SchedulesClient({
               onChange={(e) => setCellEditor((c) => ({ ...c, note: e.target.value }))}
               rows={3}
               placeholder="Catatan untuk sel ini…"
-              style={{
-                width: "100%",
-                padding: "0.5rem",
-                marginBottom: "1.25rem",
-                borderRadius: 4,
-                border: "1px solid #cbd5e1",
-                resize: "vertical",
-                fontFamily: "inherit",
-              }}
+              className="ui-static-1c078a5680" style={{width: "100%", resize: "vertical"}}
             />
 
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <div className="ui-static-30f523173e" style={{display: "flex", justifyContent: "flex-end"}}>
               <button
                 type="button"
                 className="secondary-btn"

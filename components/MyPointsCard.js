@@ -46,11 +46,11 @@ export default function MyPointsCard({ userId }) {
   return (
     <section className="card my-points-card">
       <div>
-        <h2 style={{ margin: 0, fontSize: "1rem" }}>Poin saya</h2>
-        <p style={{ margin: "0.25rem 0 0", color: "var(--muted-text)", fontSize: "0.85rem" }}>Bulan ini</p>
+        <h2 className="ui-static-5468ee426f" >Poin saya</h2>
+        <p className="ui-static-705612920b" >Bulan ini</p>
       </div>
-      {error && <p className="error-text" style={{ margin: "0.75rem 0 0" }}>{error}</p>}
-      {!data && !error && <div className="skeleton" style={{ height: 48, marginTop: "0.75rem" }} />}
+      {error && <p className="error-text ui-static-99443e25ca" >{error}</p>}
+      {!data && !error && <div className="skeleton ui-static-ef6035b9cf" style={{height: 48}} />}
       {data && (
         <div className="my-points-body">
           <span className="report-score-value kpi-value">{headline}</span>

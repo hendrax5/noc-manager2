@@ -14,3 +14,5 @@
 .scroll thead { background: var(--table-header-bg); }
 .layout button:focus-visible, .layout input:focus-visible, .layout textarea:focus-visible { outline: 2px solid var(--secondary-color); outline-offset: 3px; }
 .layout button:disabled { opacity: .6; cursor: wait; }
+
+:where(.page,.portfolio,.inventory,.panel,.list) :where(input,select,textarea,button){font:inherit;border-radius:var(--ui-radius)}

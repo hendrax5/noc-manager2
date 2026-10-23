@@ -39,28 +39,28 @@ export default async function MeetingsPage({ searchParams }) {
         {meetings.length === 0 && <p style={{ gridColumn: '1 / -1' }}>No upcoming meetings.</p>}
         {meetings.map(m => (
           <div key={m.id} className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <h3 style={{ margin: 0, color: 'var(--primary-color)' }}>{m.title}</h3>
-                <span className="badge" style={{ backgroundColor: m.status === 'Completed' ? '#10b981' : m.status === 'In Progress' ? '#3b82f6' : '#64748b' }}>
+            <div className="ui-static-3e8220669e" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+              <div className="ui-static-af81cc4264" style={{display: 'flex', alignItems: 'center'}}>
+                <h3 className="ui-static-d826886008" >{m.title}</h3>
+                <span className="badge" style={{ backgroundColor: m.status === 'Completed' ? "var(--ui-success)" : m.status === 'In Progress' ? "var(--ui-info)" : "var(--ui-info)" }}>
                   {m.status}
                 </span>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <span className="badge" style={{ backgroundColor: '#f59e0b', display: 'block', marginBottom: '0.25rem' }}>
+                <span className="badge ui-static-99a7c447a7" style={{display: 'block'}}>
                   {new Date(m.scheduledAt).toLocaleString('en-CA', { dateStyle: 'medium', timeStyle: 'short' })}
                 </span>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Org: {m.organizedBy?.name || 'System'}</span>
+                <span className="ui-static-f0ec965903" >Org: {m.organizedBy?.name || 'System'}</span>
               </div>
             </div>
-            <p style={{ whiteSpace: 'pre-wrap', color: '#475569', fontSize: '0.9rem', marginBottom: '1rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <p className="ui-static-540c2f76be" style={{whiteSpace: 'pre-wrap', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>
               <strong>Agenda:</strong> {m.agenda || "No agenda attached."}
             </p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
-              <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+            <div className="ui-static-948cfb11c2" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+              <span className="ui-static-bb72f3d5d6" >
                 {m.attendees?.length || 0} Attendees Invoked
               </span>
-              <a href={`/meetings/${m.id}`} className="primary-btn" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', textDecoration: 'none', background: 'transparent', border: '1px solid var(--primary-color)', color: 'var(--primary-color)' }}>
+              <a href={`/meetings/${m.id}`} className="primary-btn ui-static-bd3197200f" style={{textDecoration: 'none'}}>
                 Enter Control Room →
               </a>
             </div>

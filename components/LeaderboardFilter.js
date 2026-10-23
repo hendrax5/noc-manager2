@@ -117,40 +117,26 @@ export default function LeaderboardFilter({
   };
 
   return (
-    <div className="card no-print" style={{ marginBottom: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem", padding: "1.25rem" }}>
+    <div className="card no-print ui-static-d2904cf742" style={{display: "flex", flexDirection: "column"}}>
       {/* Row 1: Search & Department Filter */}
-      <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "flex-end" }}>
+      <div className="ui-static-af81cc4264" style={{display: "flex", flexWrap: "wrap", alignItems: "flex-end"}}>
         <div style={{ flex: "1 1 250px" }}>
-          <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "bold", marginBottom: "0.4rem", color: "#64748b" }}>Cari Operator / Teknisi</label>
+          <label className="ui-static-702bf4227e" style={{display: "block"}}>Cari Operator / Teknisi</label>
           <input 
             type="text" 
             placeholder="Ketik nama untuk mencari..." 
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
-            style={{ 
-              width: "100%",
-              padding: "0.6rem 0.8rem", 
-              borderRadius: "6px", 
-              border: "1px solid var(--border-color)",
-              backgroundColor: "var(--input-bg)",
-              color: "var(--input-text)"
-            }}
+            className="ui-static-f699dddc93" style={{width: "100%"}}
           />
         </div>
 
         <div style={{ flex: "1 1 200px" }}>
-          <label style={{ display: "block", fontSize: "0.85rem", fontWeight: "bold", marginBottom: "0.4rem", color: "#64748b" }}>Departemen</label>
+          <label className="ui-static-702bf4227e" style={{display: "block"}}>Departemen</label>
           <select 
             value={selectedDept}
             onChange={(e) => handleDeptChange(e.target.value)}
-            style={{ 
-              width: "100%",
-              padding: "0.6rem 0.8rem", 
-              borderRadius: "6px", 
-              border: "1px solid var(--border-color)",
-              backgroundColor: "var(--input-bg)",
-              color: "var(--input-text)"
-            }}
+            className="ui-static-f699dddc93" style={{width: "100%"}}
           >
             <option value="">Semua Departemen</option>
             {departments.map((dept) => (
@@ -162,17 +148,8 @@ export default function LeaderboardFilter({
         {(search || selectedDept || dateRange.start || dateRange.end) && (
           <button 
             onClick={clearAllFilters}
-            className="logout-btn"
-            style={{ 
-              padding: "0.6rem 1rem", 
-              margin: 0,
-              height: "40px",
-              borderColor: "#ef4444",
-              color: "#ef4444",
-              background: "transparent",
-              fontWeight: "600",
-              fontSize: "0.85rem"
-            }}
+            className="logout-btn ui-static-18204160ee"
+            style={{height: "40px"}}
             onMouseEnter={(e) => e.currentTarget.style.background = "#fef2f2"}
             onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
           >
@@ -181,87 +158,42 @@ export default function LeaderboardFilter({
         )}
       </div>
 
-      <hr style={{ border: 0, borderTop: "1px solid var(--border-color)", margin: 0 }} />
+      <hr className="ui-static-e58a035eaf"  />
 
       {/* Row 2: Date Filters & Presets */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem" }}>
+      <div className="ui-static-af81cc4264" style={{display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap"}}>
         
         {/* Presets */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#64748b' }}>Rentang Waktu Cepat</span>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+        <div className="ui-static-30f523173e" style={{display: "flex", flexDirection: "column"}}>
+          <span className="ui-static-fcde453bb3" >Rentang Waktu Cepat</span>
+          <div className="ui-static-30f523173e" style={{display: "flex", flexWrap: "wrap"}}>
             <button 
               onClick={() => setPreset("today")}
-              style={{
-                padding: "0.4rem 0.8rem",
-                borderRadius: "20px",
-                border: "1px solid var(--border-color)",
-                fontSize: "0.8rem",
-                cursor: "pointer",
-                background: searchParams.get("start") === formatDateForPreset(new Date()) ? "var(--secondary-color)" : "var(--card-bg)",
-                color: searchParams.get("start") === formatDateForPreset(new Date()) ? "white" : "var(--text-color)",
-                fontWeight: "500"
-              }}
+              className="ui-static-01bf21d4c0" style={{cursor: "pointer", background: searchParams.get("start") === formatDateForPreset(new Date()) ? "var(--secondary-color)" : "var(--card-bg)", color: searchParams.get("start") === formatDateForPreset(new Date()) ? "white" : "var(--text-color)"}}
             >
               Hari Ini
             </button>
             <button 
               onClick={() => setPreset("week")}
-              style={{
-                padding: "0.4rem 0.8rem",
-                borderRadius: "20px",
-                border: "1px solid var(--border-color)",
-                fontSize: "0.8rem",
-                cursor: "pointer",
-                background: (searchParams.get("start") && searchParams.get("start") !== formatDateForPreset(new Date()) && searchParams.get("start") !== getMonthStartPreset()) ? "var(--secondary-color)" : "var(--card-bg)",
-                color: (searchParams.get("start") && searchParams.get("start") !== formatDateForPreset(new Date()) && searchParams.get("start") !== getMonthStartPreset()) ? "white" : "var(--text-color)",
-                fontWeight: "500"
-              }}
+              className="ui-static-01bf21d4c0" style={{cursor: "pointer", background: (searchParams.get("start") && searchParams.get("start") !== formatDateForPreset(new Date()) && searchParams.get("start") !== getMonthStartPreset()) ? "var(--secondary-color)" : "var(--card-bg)", color: (searchParams.get("start") && searchParams.get("start") !== formatDateForPreset(new Date()) && searchParams.get("start") !== getMonthStartPreset()) ? "white" : "var(--text-color)"}}
             >
               Minggu Ini
             </button>
             <button 
               onClick={() => setPreset("month")}
-              style={{
-                padding: "0.4rem 0.8rem",
-                borderRadius: "20px",
-                border: "1px solid var(--border-color)",
-                fontSize: "0.8rem",
-                cursor: "pointer",
-                background: searchParams.get("start") === getMonthStartPreset() ? "var(--secondary-color)" : "var(--card-bg)",
-                color: searchParams.get("start") === getMonthStartPreset() ? "white" : "var(--text-color)",
-                fontWeight: "500"
-              }}
+              className="ui-static-01bf21d4c0" style={{cursor: "pointer", background: searchParams.get("start") === getMonthStartPreset() ? "var(--secondary-color)" : "var(--card-bg)", color: searchParams.get("start") === getMonthStartPreset() ? "white" : "var(--text-color)"}}
             >
               Bulan Ini
             </button>
             <button 
               onClick={() => setPreset("30days")}
-              style={{
-                padding: "0.4rem 0.8rem",
-                borderRadius: "20px",
-                border: "1px solid var(--border-color)",
-                fontSize: "0.8rem",
-                cursor: "pointer",
-                background: "var(--card-bg)",
-                color: "var(--text-color)",
-                fontWeight: "500"
-              }}
+              className="ui-static-e28f409028" style={{cursor: "pointer"}}
             >
               30 Hari Terakhir
             </button>
             <button 
               onClick={() => setPreset("all")}
-              style={{
-                padding: "0.4rem 0.8rem",
-                borderRadius: "20px",
-                border: "1px solid var(--border-color)",
-                fontSize: "0.8rem",
-                cursor: "pointer",
-                background: !searchParams.get("start") ? "var(--secondary-color)" : "var(--card-bg)",
-                color: !searchParams.get("start") ? "white" : "var(--text-color)",
-                fontWeight: "500"
-              }}
+              className="ui-static-01bf21d4c0" style={{cursor: "pointer", background: !searchParams.get("start") ? "var(--secondary-color)" : "var(--card-bg)", color: !searchParams.get("start") ? "white" : "var(--text-color)"}}
             >
               Semua Waktu
             </button>
@@ -269,37 +201,29 @@ export default function LeaderboardFilter({
         </div>
 
         {/* Custom Date Form */}
-        <form onSubmit={handleCustomDateSubmit} style={{ display: "flex", gap: "0.75rem", alignItems: "flex-end", flexWrap: "wrap" }}>
+        <form onSubmit={handleCustomDateSubmit} className="ui-static-e59a73fd03" style={{display: "flex", alignItems: "flex-end", flexWrap: "wrap"}}>
           <div>
-            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.25rem", color: "#64748b" }}>Mulai</label>
+            <label className="ui-static-d3cc39924a" style={{display: "block"}}>Mulai</label>
             <input 
               type="date" 
               value={dateRange.start} 
               onChange={e => setDateRange({...dateRange, start: e.target.value})} 
-              style={{ padding: "0.45rem 0.6rem", borderRadius: "6px", border: "1px solid var(--border-color)", backgroundColor: "var(--input-bg)", color: "var(--input-text)" }}
+              className="ui-static-e61ca57d3a"
             />
           </div>
           <div>
-            <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.25rem", color: "#64748b" }}>Sampai</label>
+            <label className="ui-static-d3cc39924a" style={{display: "block"}}>Sampai</label>
             <input 
               type="date" 
               value={dateRange.end} 
               onChange={e => setDateRange({...dateRange, end: e.target.value})} 
-              style={{ padding: "0.45rem 0.6rem", borderRadius: "6px", border: "1px solid var(--border-color)", backgroundColor: "var(--input-bg)", color: "var(--input-text)" }}
+              className="ui-static-e61ca57d3a"
             />
           </div>
           <button 
             type="submit" 
-            className="primary-btn" 
-            style={{ 
-              padding: "0.5rem 1rem", 
-              width: "auto", 
-              height: "36px", 
-              fontSize: "0.85rem",
-              background: "var(--secondary-color)",
-              display: "flex",
-              alignItems: "center"
-            }}
+            className="primary-btn ui-static-72f9169d7e"
+            style={{width: "auto", height: "36px", display: "flex", alignItems: "center"}}
           >
             Terapkan Tanggal
           </button>

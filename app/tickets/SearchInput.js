@@ -17,15 +17,15 @@ export default function SearchInput({ defaultQuery }) {
   };
 
   return (
-    <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+    <form onSubmit={handleSearch} className="ui-static-93bb8864d9" style={{display: 'flex'}}>
       <input 
         type="text" 
         placeholder="🔍  Search by Tracking ID (e.g., HSK-...) or Ticket Subject" 
         value={q} 
         onChange={e => setQ(e.target.value)}
-        style={{ padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', width: '100%', maxWidth: '400px', fontSize: '0.95rem' }}
+        className="ui-static-691aae7aa0" style={{width: '100%', maxWidth: '400px'}}
       />
-      <button type="submit" className="primary-btn" style={{ width: 'auto', padding: '0.75rem 1.5rem' }}>Search Tickets</button>
+      <button type="submit" className="primary-btn ui-static-4577864700" style={{width: 'auto'}}>Search Tickets</button>
       {q && (
         <button 
           type="button" 
@@ -35,7 +35,7 @@ export default function SearchInput({ defaultQuery }) {
             if (currentTab) params.set('tab', currentTab);
             router.push(`/tickets?${params.toString()}`); 
           }} 
-          style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '0.75rem 1.5rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+          className="ui-static-0fea4c91dd" style={{cursor: 'pointer'}}
         >
           Clear
         </button>

@@ -38,14 +38,14 @@ export default async function TeamPage() {
 
   return (
     <main className="container">
-      <header className="page-header" style={{ marginBottom: '1rem' }}>
+      <header className="page-header ui-static-3e8220669e" >
         <h1>Team & Access Management</h1>
         <p>Complete control over NOC staff assignments, sub-departments, and global security roles.</p>
       </header>
 
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '2px solid #e2e8f0' }}>
-        <Link href="/team" style={{ padding: '0.75rem 1.5rem', textDecoration: 'none', borderBottom: '3px solid #3b82f6', fontWeight: 'bold', color: '#1e293b', marginBottom: '-2px' }}>Members & Access</Link>
-        <Link href="/team/schedules" style={{ padding: '0.75rem 1.5rem', textDecoration: 'none', color: '#64748b', fontWeight: '500' }}>Shift Schedules</Link>
+      <div className="ui-static-4a8d184217" style={{display: 'flex'}}>
+        <Link href="/team" className="ui-static-f18cac270c" style={{textDecoration: 'none'}}>Members & Access</Link>
+        <Link href="/team/schedules" className="ui-static-d465603229" style={{textDecoration: 'none'}}>Shift Schedules</Link>
       </div>
 
       <TeamAccessManager 
