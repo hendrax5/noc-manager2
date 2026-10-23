@@ -13,3 +13,13 @@ Verification: 102/102 library tests; work-v2 browser flow, axe WCAG, 320px viewp
 Release assets: /opt/noc-manager2/releases/ticket-forms-bod-v1 (root-only backup/env, build logs, HTTP results, compose overrides, rollback.sh). Deploy immutable image using compose override and explicit startup without db push. Refresh pg_dump immediately before migration.
 
 Rollback: run root-only release rollback.sh. Compatibility image keeps all new schema/backend/privacy/BOD lifecycle and dashboard guards, with previous new-ticket form UI; new BOD creation hidden in fallback UI. Existing BOD can be restored and resolved. Keep additive schema and live data. Do not restore backup routinely or use raw release-82dbcfb after BOD data exists; backup restore can discard new transactions and requires separate approval.
+
+Production result (23 October 2026)
+
+- App image `noc-manager2-app:release-bce258b`, OCI revision `bce258b`; 338 runtime/source files verified against git after normalizing CRLF/LF.
+- Local/domain authenticated pages, workflow/report APIs, BOD master/API and dashboard PASS; anonymous API access denied.
+- Before/after: customers620, services853, circuit identifiers747, BFI services13, tickets28531. Company names preserved: ION, SDC, Sistercompany, Indotel, PRODC.
+- Flags preserved: work_phase_enabled=true, structured_daily_enabled=true, monthly_evaluation_mode=simulation; evaluation exclusions4/10/11 unchanged.
+- Runtime uses `docker-compose.prod.yml` plus release override; upload volume `noc-manager2_noc_uploads` preserved. First rollout check targeted an obsolete container name and automatically fell back; corrected to production Compose and service-container ID, then redeployed and verified successfully.
+- Rollback tested with full isolated HTTP/PG suite. Production rollback command: `sudo /opt/noc-manager2/releases/ticket-forms-bod-v1/rollback.sh`. Do not use development docker-compose.yml, which mounts the working directory and anonymous build volumes.
+- QA containers removed after verifying their task labels; QA secret file removed. Production backup and rollback images retained. No test tickets/customer/services written in production.
