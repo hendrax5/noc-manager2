@@ -1,0 +1,2 @@
+import {getServerSession} from 'next-auth';import {authOptions} from '@/app/api/auth/[...nextauth]/route';import {redirect} from 'next/navigation';import EvaluationSettingsClient from './EvaluationSettingsClient';
+export default async function Page(){const s=await getServerSession(authOptions);if(!s)redirect('/login');if(s.user.role!=='Admin')redirect('/');return <main className="container"><h1>Aturan evaluasi dan akses tim</h1><p>Konfigurasi target, penempatan, dan akses tanpa mengubah poin historis.</p><EvaluationSettingsClient/></main>;}

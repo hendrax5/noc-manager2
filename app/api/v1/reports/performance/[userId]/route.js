@@ -1,10 +1,13 @@
+import { integrationReportScope } from '@/lib/integration/dailyReports';
 import { httpError, integrationGet, parseIntParam, parseYmdParam } from "@/lib/integration/handler";
 import { buildUserPerformance } from "@/lib/reports/performance";
 
-export const GET = integrationGet(["reports:performance:read"], async ({ query, params }) => {
+export const GET = integrationGet(["reports:performance:read"], async ({ query, params, auth }) => {
   const userId = parseIntParam(params.userId, "userId");
   if (!userId) throw httpError(400, "Invalid userId");
 
+  const ids = await integrationReportScope(auth.app.id);
+  if (ids && !ids.includes(userId)) throw httpError(403,"Forbidden");
   const report = await buildUserPerformance({
     userId,
     start: parseYmdParam(query.start, "start"),
