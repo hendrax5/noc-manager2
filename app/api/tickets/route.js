@@ -166,6 +166,7 @@ export async function POST(req) {
       },
     });
 
+      if(body.installation&&classification.serviceIds?.[0]){const circuit=await tx.service.findUnique({where:{id:classification.serviceIds[0]},select:{customerId:true}});await tx.customerPickerUse.create({data:{userId,customerId:circuit.customerId,ticketId:created.id}});}
       await syncBodWindow(tx,created);
       if (phasesEnabled && created.assigneeId) {
         const assigned = await tx.user.findUnique({where:{id:created.assigneeId},select:{roleId:true}});

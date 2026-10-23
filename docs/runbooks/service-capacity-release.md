@@ -1,0 +1,15 @@
+# Service capacity / customer picker release
+
+Approved plan: docs/service-work/2026-10-23-circuit-capacity-redesign.md. Scope: singleCID and canonical Gbps form, legacy capacity semantics, customer picker limit10, successful personal selection history30days, service portfolio totals/drilldown.
+
+Canonical storage remains Mbps. Explicit unit-bearing legacy keys may be read; unitless values are unknown. Bandwith/Bandwidth/Kapasitas are semantic fields and do not render twice. Placeholder '-' in actualDARKFIBER schema is not a required business parameter. Existing sapReference/customData fields remain; no existing customer/CID/company ownership rewrite and no auto-merge products.
+
+Portfolio uses distinct service IDs with validCID. All owners of a normalized conflicting CID are excluded and flagged, independent of record order. Totals use integer microMbps and decimal Gbps presentation; malformed/out-of-range values are unknown. Active BOD uses normal subscription bandwidth. Customer counts are globally unique, not the sum across products. Filters apply before totals and pagination; service ID ordering is stable.
+
+CustomerPickerUse is an additive usage table linked to successful installation tickets. Creation is in the same transaction as customer/circuit/ticket. Only authenticated user usage in30days ranks frequent suggestions; fallback is honestly labelled customer with newest service. PickerAPI returns10 projections max and supports normalized name/CustomerID search. No full registry payload in the picker. Original Assets auth scope is retained.
+
+Verification:108/108 library tests; actual form with legacy Bandwith and21customers, keyboard/axe/mobile; actual portfolio200CID/500Gbps, paginated totals, company isolation, empty/retry/axe/mobile; existing customer inventory/registry/product/details regression. Real isolated PostgreSQL/HTTP exercises all7original active product templates plus synthetic test templates, rollback on invalid installation, personal picker frequency, canonical bandwidth, auth, and BOD lifecycle. Both main and compatibility images passed.
+
+Release directory: /opt/noc-manager2/releases/service-capacity-v1. Deploy with docker-compose.prod.yml plus immutable release override; explicit startup bypasses db push. Production backup refreshed immediately before additive migration. Keep noc_uploads volume and workflow/report simulation flags.
+
+Rollback: root-only rollback.sh in release directory. Compatibility image retains new Prisma/backend field validation, BOD/privacy guards and additive data; only prior form/Assets UI falls back. Rawbce258b is insufficient for newly-created Pending installations whose unitless Bandwith fields are fulfilled by canonical bandwidth. Do not restore database routinely; restore can discard transactions and needs separate approval.

@@ -36,6 +36,7 @@ model Location {
 }
 
 model User {
+  pickerUses CustomerPickerUse[]
   id           Int         @id @default(autoincrement())
   email        String      @unique
   name         String?
@@ -75,6 +76,7 @@ model User {
 }
 
 model Ticket {
+  pickerUses CustomerPickerUse[]
   id           Int        @id @default(autoincrement())
   trackingId   String?    @unique @default(uuid())
   title        String
@@ -360,6 +362,7 @@ model KnowledgeArticle {
 // ==========================================
 
 model Customer {
+  pickerUses CustomerPickerUse[]
   id           Int      @id @default(autoincrement())
   name         String   @unique
   contactEmail String?
@@ -774,4 +777,16 @@ model BodWindow {
  createdAt DateTime @default(now())
  @@index([serviceId, endsAt])
  @@index([restoredAt, cancelledAt, endsAt])
+}
+
+model CustomerPickerUse {
+ id Int @id @default(autoincrement())
+ userId Int
+ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+ customerId Int
+ customer Customer @relation(fields:[customerId],references:[id],onDelete:Cascade)
+ ticketId Int @unique
+ ticket Ticket @relation(fields:[ticketId],references:[id],onDelete:Cascade)
+ createdAt DateTime @default(now())
+ @@index([userId,createdAt,customerId])
 }

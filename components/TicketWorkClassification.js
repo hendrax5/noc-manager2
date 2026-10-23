@@ -122,7 +122,7 @@ export default function TicketWorkClassification({ value, onChange, services = [
       {types.map(type => <option key={type.id} value={'service:' + type.id}>{type.name}</option>)}
     </select>
     {typesError && <p role="alert">Jenis pekerjaan layanan gagal dimuat. Muat ulang halaman untuk mencoba lagi.</p>}
-    {(value.workType === "Installation" || types.find(t=>String(t.id)===String(value.serviceWorkTypeId))?.operation === "Installation") && <div>
+    {(value.editExistingServiceWork && value.sapReference) && <div>
       <label>Referensi SAP (opsional)
         <input style={inputStyle} value={value.sapReference || ""} onChange={event => onChange({ sapReference: event.target.value })} placeholder="Masukkan referensi SAP secara manual" />
       </label>

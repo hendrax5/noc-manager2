@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatCustomerId } from '@/lib/customers/identity';
 import SapCircuitsClient from './SapCircuitsClient';
+import ServicePortfolio from './ServicePortfolio';
 import CustomerServiceInventory from './CustomerServiceInventory';
 import ui from './assets-ui.module.css';
 import AssetMasterList from './AssetMasterList';
@@ -12,7 +13,7 @@ function readTemplateFields(value) {
   try { const parsed=typeof value==='string'?JSON.parse(value):value;return Array.isArray(parsed)?parsed.filter(f=>f&&typeof f.name==='string'):[]; } catch { return []; }
 }
 export default function AssetClient({ session, initialCustomers, initialTemplates, initialServices }) {
-  const [activeTab, setActiveTab] = useState('inventory');
+  const [activeTab, setActiveTab] = useState('portfolio');
   
   const [customers, setCustomers] = useState(initialCustomers || []);
   const [templates, setTemplates] = useState(initialTemplates || []);
@@ -20,7 +21,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
   
   const [blastQuery, setBlastQuery] = useState('');
   useEffect(() => {
-    const syncHash = () => setActiveTab(['#sap-circuits','#circuit-candidates'].includes(window.location.hash) ? 'sap' : 'inventory');
+    const syncHash = () => setActiveTab(['#sap-circuits','#circuit-candidates'].includes(window.location.hash) ? 'sap' : window.location.hash==='#inventory'?'inventory':'portfolio');
     syncHash(); window.addEventListener('hashchange', syncHash);
     return () => window.removeEventListener('hashchange', syncHash);
   }, []);
@@ -47,12 +48,13 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
       </header>
       <nav className={ui.tabs} aria-label="Pengelolaan Assets">
         {[
-          ['inventory','Customer & layanan'],['customers',`Customers Registry (${customers.length})`],
+          ['portfolio','Ringkasan layanan'],['inventory','Daftar circuit'],['customers',`Customers Registry (${customers.length})`],
           ...(isAdmin ? [['sap','Penautan CID']] : []),['templates',`Produk layanan (${templates.length})`],['blast','Analisis dampak']
-        ].map(([key,label])=><button key={key} type="button" aria-pressed={activeTab===key} onClick={()=>{setActiveTab(key);window.history.replaceState(null,'',key==='sap'?'#sap-circuits':window.location.pathname);}}>{label}</button>)}
+        ].map(([key,label])=><button key={key} type="button" aria-pressed={activeTab===key} onClick={()=>{setActiveTab(key);window.history.replaceState(null,'',key==='sap'?'#sap-circuits':key==='inventory'?'#inventory':window.location.pathname);}}>{label}</button>)}
       </nav>
       {activeTab === 'sap' && isAdmin && <SapCircuitsClient customers={customers} templates={templates} services={services} onMapped={async()=>{const response=await fetch('/api/assets/services',{cache:'no-store'});if(response.ok)setServices(await response.json());}} onCreateCustomer={()=>{setActiveTab('customers');setEditCustomerId(null);setCustomerData({name:'',contactEmail:'',contactPhone:''});setShowCustomerModal(true);}} onManageProducts={()=>setActiveTab('templates')} />}
 
+      {activeTab === 'portfolio' && <ServicePortfolio/>}
       {activeTab === 'inventory' && <CustomerServiceInventory customers={customers} services={services} canManage={isAdmin} />}
 
       {activeTab === 'customers' && <AssetMasterList title="Customers Registry" columns={['Customer','Customer ID','Kontak','Layanan',...(isAdmin?['Aksi']:[])]} addLabel="Tambah customer" onAdd={isAdmin?()=>{setEditCustomerId(null);setCustomerData({name:'',contactEmail:'',contactPhone:''});setShowCustomerModal(true);}:undefined} rows={customers.map(c=>({id:c.id,search:[c.name,formatCustomerId(c),c.contactEmail,c.contactPhone].filter(Boolean).join(' '),cells:[<strong key="name">{c.name}</strong>,<span key="id" className="font-mono">{formatCustomerId(c)}</span>,<span key="contact">{c.contactEmail||'Belum diisi'}{c.contactPhone&&<small>{c.contactPhone}</small>}</span>,services.filter(service=>(service.customerId??service.customer?.id)===c.id).length,...(isAdmin?[<div key="actions"><button type="button" onClick={()=>{setEditCustomerId(c.id);setCustomerData({name:c.name,contactEmail:c.contactEmail||'',contactPhone:c.contactPhone||''});setShowCustomerModal(true);}}>Edit</button><button type="button" data-danger="true" onClick={async()=>{if(!confirm(`Hapus customer ${c.name}?`))return;try{const res=await fetch(`/api/assets/customers/${c.id}`,{method:'DELETE'});if(res.ok)setCustomers(prev=>prev.filter(x=>x.id!==c.id));else alert((await res.json()).error);}catch{alert('Customer gagal dihapus. Coba lagi.');}}}>Hapus</button></div>]:[])]}))}/>}

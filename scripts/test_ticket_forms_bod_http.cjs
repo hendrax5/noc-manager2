@@ -1,13 +1,13 @@
 const assert=require('node:assert/strict'),{PrismaClient}=require('@prisma/client'),{encode}=require('next-auth/jwt');const p=new PrismaClient();
 (async()=>{
- const origin=process.env.QA_ORIGIN;if(!origin||!process.env.DATABASE_URL.includes('noc-bod-dbqa'))throw Error('Isolated QA database required');
+ const origin=process.env.QA_ORIGIN;if(!origin||!process.env.DATABASE_URL.includes('noc-capacity-dbqa'))throw Error('Isolated QA database required');
  await p.integrationApp.updateMany({data:{active:false}});await p.appSetting.update({where:{key:'workflow_reporting_flags'},data:{value:JSON.stringify({work_phase_enabled:false,structured_daily_enabled:true,monthly_evaluation_mode:'simulation'})}});
  const admin=await p.user.findFirst({where:{role:{name:'Admin'}},select:{id:true,departmentId:true}}),dept=admin.departmentId||(await p.department.findFirst()).id;
  const token=await encode({token:{id:admin.id,sub:String(admin.id)},secret:process.env.NEXTAUTH_SECRET,maxAge:600});const headers={cookie:'next-auth.session-token='+token+'; __Secure-next-auth.session-token='+token,'Content-Type':'application/json'};
  for(let i=0;i<60;i++){try{if((await fetch(origin+'/login')).status===200)break;}catch{}await new Promise(r=>setTimeout(r,500));}
  async function request(path,method='GET',body){const r=await fetch(origin+path,{method,headers,body:body?JSON.stringify(body):undefined,redirect:'manual'});let b;try{b=await r.json();}catch{b={};}return{status:r.status,body:b};}
  const types=await p.serviceWorkType.findMany({where:{active:true}}),type=op=>types.find(t=>t.operation===op).id;
- const template=await p.serviceTemplate.create({data:{name:'QA ticket forms '+Date.now(),fields:[],active:true}}),customer=await p.customer.create({data:{name:'QA isolated customer '+Date.now()}});
+ const template=await p.serviceTemplate.create({data:{name:'QA ticket forms '+Date.now(),fields:[{name:'Bandwith',type:'number',required:true}],active:true}}),customer=await p.customer.create({data:{name:'QA isolated customer '+Date.now()}});
  const service=await p.service.create({data:{name:'QA BOD link',customerId:customer.id,templateId:template.id,cid:'SAP-C-QA-'+Date.now(),status:'Active',customData:{bandwidthMbps:1000,'Order Origin':'ION'}}});
  const other=await p.service.create({data:{name:'QA other link',customerId:customer.id,templateId:template.id,cid:'SAP-C-QA-OTHER-'+Date.now(),status:'Active',customData:{bandwidthMbps:1000}}});
  const base={formVersion:'work-v2',title:'QA isolated test',description:'QA only',departmentId:dept,assigneeId:admin.id,workType:'ServiceWork'};
