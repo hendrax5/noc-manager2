@@ -1,3 +1,4 @@
+import {openPortUpdatedData,validateOpenPortData} from '@/lib/services/productBandwidth';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
@@ -72,7 +73,7 @@ export async function PATCH(request, { params }) {
       if(body.cid!==undefined||body.customData!==undefined)updateData.cid=serviceCid;
       if(body.name)updateData.name=body.name;
       if(body.status)updateData.status=body.status;
-      if(body.customData)updateData.customData=body.customData;
+      if(body.customData){const template=await tx.serviceTemplate.findUnique({where:{id:fresh.templateId}});const next=openPortUpdatedData(template,fresh.customData,body.customData);validateOpenPortData(template,next);updateData.customData=next;}
       if(Object.keys(updateData).length)await tx.service.update({where:{id:serviceId},data:updateData});
       if(serviceCid)await registerCircuitIdentifier(tx,{serviceId,code:serviceCid,actorId:Number(session.user.id)});
       if(body.hops){

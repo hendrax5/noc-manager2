@@ -1,5 +1,6 @@
 "use client";
 import {isBandwidthField,isCircuitField,isPlaceholderField} from '@/lib/services/fields';
+import {minimumBandwidthGbps} from '@/lib/services/productBandwidth';
 import {useId} from 'react';
 import {TicketServicePicker} from './TicketWorkClassification';
 import {readServiceBandwidthMbps} from '@/lib/services/capacity';
@@ -24,7 +25,8 @@ export default function ServiceWorkFields({value,onChange,services=[],serviceTem
  {operation&&<>
  {!termination&&<>
  {!capacityOnly&&<><label htmlFor={id+'-product'}>Produk/Layanan tujuan</label><select id={id+'-product'} required value={r.targetTemplateId||service?.templateId||''} onChange={e=>update({targetTemplateId:Number(e.target.value),targetCustomData:{}})}><option value="">Pilih produk/layanan</option>{serviceTemplates.filter(t=>t.active!==false).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></>}
- <label htmlFor={id+'-bandwidth'}>{bod?'Bandwidth BOD (Gbps)':operation==='Installation'?'Bandwidth (Gbps)':'Bandwidth baru (Gbps)'}</label><input id={id+'-bandwidth'} type="number" min="0.000001" step="any" required={capacityOnly} value={bandwidth} onChange={e=>onChange({serviceChange:{...r,bandwidthMbps:undefined,bandwidthGbps:e.target.value===''?'':Number(e.target.value)}})}/>
+ <label htmlFor={id+'-bandwidth'}>{bod?'Bandwidth BOD (Gbps)':operation==='Installation'?'Bandwidth (Gbps)':'Bandwidth baru (Gbps)'}</label><input id={id+'-bandwidth'} type="number" min={minimumBandwidthGbps(product)} step="any" required={capacityOnly} value={bandwidth} onChange={e=>onChange({serviceChange:{...r,bandwidthMbps:undefined,bandwidthGbps:e.target.value===''?'':Number(e.target.value)}})}/>
+ {minimumBandwidthGbps(product)===10&&<small>OPEN PORT minimal 10 Gbps.</small>}
  {!capacityOnly&&Array.isArray(extras)&&extras.filter(f=>f.required&&!isPlaceholderField(f.name)&&!isBandwidthField(f.name)&&!isCircuitField(f.name)).map((f,i)=><div key={f.name}><label htmlFor={id+'-extra-'+i}>{f.name}</label>{f.type==='select'?<select id={id+'-extra-'+i} required value={r.targetCustomData?.[f.name]??service?.customData?.[f.name]??''} onChange={e=>update({targetCustomData:{...r.targetCustomData,[f.name]:e.target.value}})}><option value="">Pilih {f.name}</option>{(Array.isArray(f.options)?f.options:String(f.options||'').split(',')).map(o=><option key={o}>{o}</option>)}</select>:<input id={id+'-extra-'+i} required value={r.targetCustomData?.[f.name]??service?.customData?.[f.name]??''} onChange={e=>update({targetCustomData:{...r.targetCustomData,[f.name]:e.target.value}})}/>}</div>)}
  </>}
  {bod?<><label htmlFor={id+'-start'}>Mulai BOD (WIB)</label><input id={id+'-start'} type="datetime-local" required value={local(r.bodStartAt)} onChange={e=>update({bodStartAt:e.target.value?e.target.value+'+07:00':''})}/>

@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict'),{PrismaClient}=require('@prisma/client'),{encode}=require('next-auth/jwt');const p=new PrismaClient();
 (async()=>{
- const origin=process.env.QA_ORIGIN;if(!origin||!process.env.DATABASE_URL.includes('noc-capacity-dbqa'))throw Error('Isolated QA database required');
+ const origin=process.env.QA_ORIGIN;if(!origin||!['noc-capacity-dbqa','noc-openport-dbqa'].includes(new URL(process.env.DATABASE_URL).hostname))throw Error('Isolated QA database required');
  await p.integrationApp.updateMany({data:{active:false}});await p.appSetting.update({where:{key:'workflow_reporting_flags'},data:{value:JSON.stringify({work_phase_enabled:false,structured_daily_enabled:true,monthly_evaluation_mode:'simulation'})}});
  const admin=await p.user.findFirst({where:{role:{name:'Admin'}},select:{id:true,departmentId:true}}),dept=admin.departmentId||(await p.department.findFirst()).id;
  const token=await encode({token:{id:admin.id,sub:String(admin.id)},secret:process.env.NEXTAUTH_SECRET,maxAge:600});const headers={cookie:'next-auth.session-token='+token+'; __Secure-next-auth.session-token='+token,'Content-Type':'application/json'};
@@ -38,7 +38,16 @@ const assert=require('node:assert/strict'),{PrismaClient}=require('@prisma/clien
  const portfolio=await request('/api/assets/portfolio?q='+encodeURIComponent(template.name));assert.equal(portfolio.status,200,JSON.stringify(portfolio));assert.equal(portfolio.body.circuitCount,3);assert.equal(portfolio.body.knownBandwidthGbps,'2.2');assert.equal(portfolio.body.groups.length,1);assert.equal((await fetch(origin+'/api/assets/portfolio')).status,401);
  const allTemplates=await p.serviceTemplate.findMany({where:{active:true}});let checked=0;
  for(const product of allTemplates){let fields=product.fields;try{if(typeof fields==='string')fields=JSON.parse(fields);}catch{throw Error('Invalid template '+product.name);}const extra={};for(const field of fields||[]){const key=String(field.name).toLowerCase().replace(/[^a-z]/g,'');if(/^[\s\-–—.]*$/.test(field.name)||!field.required||/^(bandwidth|bandwith|bandwidht|kapasitas|capacity)(gbps|mbps)?$/.test(key)||/^(cid|sid|idlayanan|serviceid|circuitid)$/.test(key))continue;extra[field.name]=field.type==='number'?1:field.type==='date'?installation.rfsDate:field.type==='select'?(Array.isArray(field.options)?field.options:String(field.options||'').split(/[,\n]/))[0]||'QA':'QA test';}
- r=await request('/api/tickets','POST',{...base,serviceWorkTypeId:type('Installation'),installation:{customerId:customer.id,cid:'SAP-C-TEMPLATE-'+product.id+'-'+Date.now(),name:'QA template '+product.name,templateId:product.id,bandwidthGbps:0.1,rfsDate:installation.rfsDate,targetCustomData:extra}});assert.equal(r.status,201,'Template '+product.name+': '+JSON.stringify(r));checked++;}
+ r=await request('/api/tickets','POST',{...base,serviceWorkTypeId:type('Installation'),installation:{customerId:customer.id,cid:'SAP-C-TEMPLATE-'+product.id+'-'+Date.now(),name:'QA template '+product.name,templateId:product.id,bandwidthGbps:product.name.trim().toUpperCase()==='OPEN PORT'?10:0.1,rfsDate:installation.rfsDate,targetCustomData:extra}});assert.equal(r.status,201,'Template '+product.name+': '+JSON.stringify(r));checked++;}
+ const openPort=await p.serviceTemplate.findFirst({where:{name:'OPEN PORT',active:true}});assert.ok(openPort);
+ const opInstallation={...installation,newCustomerName:'QA OPEN PORT '+Date.now(),cid:'SAP-C-QA-OP-'+Date.now(),templateId:openPort.id,bandwidthGbps:9.999};
+ r=await request('/api/tickets','POST',{...base,serviceWorkTypeId:type('Installation'),installation:opInstallation});assert.equal(r.status,400,JSON.stringify(r));assert.match(r.body.error,/10 Gbps/);
+ assert.equal(await p.customer.count({where:{name:opInstallation.newCustomerName}}),0);
+ r=await request('/api/tickets','POST',{...base,serviceWorkTypeId:type('Installation'),installation:{...opInstallation,bandwidthGbps:10}});assert.equal(r.status,201,JSON.stringify(r));
+ const opService=await p.service.findFirst({where:{cid:opInstallation.cid}});assert.equal(opService.customData.bandwidthMbps,10000);
+ r=await request('/api/assets/services/'+opService.id,'PATCH',{customData:{bandwidthMbps:9999}});assert.equal(r.status,400,JSON.stringify(r));
+ r=await request('/api/assets/services/'+opService.id,'PATCH',{customData:{note:'unrelated edit'}});assert.equal(r.status,200,JSON.stringify(r));assert.equal((await p.service.findUnique({where:{id:opService.id}})).customData.bandwidthMbps,10000);
+ console.log('PASS OPEN PORT HTTP floor, atomic rollback,10G storage and unrelated edit preservation');
  console.log('PASS capacity HTTP: picker max10/frequency/CustomerID/empty/auth, portfolio canonical2.2Gbps/auth, all active template installations: '+checked);
  console.log('PASS isolated HTTP/PG: atomic customer/service rollback, installation Active on Resolve, automatic category, BOD CID immutable, activation/restore idempotent, Resolve/Close/edit guards, dashboard reminder, auth, existing pages.');
 })().catch(e=>{console.error(e.message);process.exitCode=1;}).finally(()=>p.$disconnect());
