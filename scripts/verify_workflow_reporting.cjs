@@ -1,6 +1,11 @@
 const assert=require('node:assert/strict'),{PrismaClient}=require('@prisma/client'),{encode}=require('next-auth/jwt');
 const p=new PrismaClient();
 (async()=>{
+ for(const origin of ['http://127.0.0.1:3000','https://ewo2.hsp.net.id']){
+  let ready=false;
+  for(let i=0;i<30;i++){try{if((await fetch(origin+'/login',{signal:AbortSignal.timeout(1500)})).status===200){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,300));}
+  assert.ok(ready,'Application startup readiness: '+origin);
+ }
  const admin=await p.user.findFirst({where:{role:{name:'Admin'}},select:{id:true}});
  assert.ok(admin);
  const setting=await p.appSetting.findUnique({where:{key:'workflow_reporting_flags'}});
