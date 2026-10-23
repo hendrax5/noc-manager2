@@ -433,8 +433,8 @@ export async function PATCH(req, { params }) {
       },
     });
 
-    if (phasesEnabled && phaseCount && body.assigneeId === null) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:null}});
-    if (phasesEnabled && ticket.assigneeId && !['Resolved','Closed'].includes(nextStatus)) {
+    if (phaseCount && body.assigneeId === null) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:null}});
+    if ((phasesEnabled || phaseCount) && ticket.assigneeId && !['Resolved','Closed'].includes(nextStatus)) {
       if (phaseCount) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:ticket.assigneeId}});
       else if (body.assigneeId !== undefined || body.workType !== undefined || body.serviceWorkTypeId !== undefined) {
         const assigned=await tx.user.findUnique({where:{id:ticket.assigneeId},select:{roleId:true}});

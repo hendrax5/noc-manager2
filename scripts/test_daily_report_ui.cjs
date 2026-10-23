@@ -11,6 +11,8 @@ async function main(){
  try{browser=await chromium.launch({channel:'chrome',headless:true});const p=await browser.newPage();await p.goto('http://127.0.0.1:'+server.address().port);await p.getByRole('link',{name:'Lihat tiket',exact:true}).waitFor();
  await p.getByRole('button',{name:'Tambah pekerjaan di luar tiket'}).click();await p.getByLabel('Pekerjaan 1',{exact:true}).fill('Periksa monitoring');await p.getByLabel('Hasil 1',{exact:true}).fill('Normal');await p.getByRole('button',{name:'Kirim laporan',exact:true}).click();await p.getByRole('status').getByText('Laporan terkirim ke arsip bulanan.').waitFor();assert.equal(posts[0].activityRefs[0].source,'phase');assert.equal(posts[0].manualItems[0].result,'Normal');assert.equal(posts[0].revision,0);
  await p.getByLabel('Pelapor',{exact:false}).selectOption('2');await p.getByRole('link',{name:'Lihat tiket',exact:true}).waitFor();assert.equal(await p.getByRole('button',{name:'Kirim laporan',exact:true}).count(),0);
+ await p.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
+ const axeResult=await p.evaluate(async()=>window.axe.run({runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}));assert.deepEqual(axeResult.violations.map(v=>v.id),[]);
  await p.setViewportSize({width:320,height:900});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));console.log('PASS real DailyReport manual input, source references, submit, readonly team and320px.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}
 }

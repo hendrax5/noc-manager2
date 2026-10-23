@@ -7,6 +7,8 @@ async function main(){
  await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
  try{browser=await chromium.launch({channel:'chrome',headless:true});const p=await browser.newPage();await p.goto('http://127.0.0.1:'+server.address().port);await p.getByRole('row').filter({hasText:'Operator NOC'}).waitFor();assert.ok(await p.getByText('84',{exact:true}).isVisible());assert.ok(await p.getByText('Belum cukup data',{exact:true}).isVisible());assert.equal(await p.getByRole('button',{name:'Setujui evaluasi'}).count(),0);
  await p.getByLabel('Perusahaan',{exact:false}).selectOption('SDC');assert.equal(await p.getByRole('row').filter({hasText:'Operator NOC'}).count(),0);assert.ok(await p.getByRole('row').filter({hasText:'Operator CS'}).isVisible());
+ await p.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
+ const axeResult=await p.evaluate(async()=>window.axe.run({runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}));assert.deepEqual(axeResult.violations.map(v=>v.id),[]);
  await p.setViewportSize({width:320,height:900});assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));console.log('PASS evaluation simulation, transparent84, excluded/insufficient states, company filter, staff cannot review,320px.');
  }finally{if(browser)await browser.close();await new Promise(r=>server.close(r));}
 }

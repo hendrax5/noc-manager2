@@ -19,5 +19,8 @@ const p=new PrismaClient();
  await p.appSetting.update({where:{key:'workflow_reporting_flags'},data:{value:'{}'}});
  assert.equal((await fetch(base+'/api/tickets/'+unfinished.id,{method:'PATCH',headers:{cookie:acookie,'Content-Type':'application/json'},body:JSON.stringify({status:'Resolved'})})).status,409,'phase protection persists flagsOFF');
  assert.equal((await fetch(base+'/api/tickets/'+archive.ticketId+'/take',{method:'POST',headers:{cookie}})).status,403);
+ const reassigned=await fetch(base+'/api/tickets/'+unfinished.id,{method:'PATCH',headers:{cookie:acookie,'Content-Type':'application/json'},body:JSON.stringify({assigneeId:outsider.id})});assert.equal(reassigned.status,200,'existing phase assignment persists flagsOFF');
+ assert.ok((await p.ticketPhaseExecution.findMany({where:{ticketId:unfinished.id}})).every(x=>x.assigneeId===outsider.id));
+ const deniedLegacy=await fetch(base+'/api/reports/performance/'+archive.userId,{headers:{cookie}});assert.equal(deniedLegacy.status,403,'legacy privacy persists flagsOFF');
  console.log('PASS isolated real HTTP: monthly take/notes/watchers/snooze/reply denied, private scope denied, unfinished Resolve denied, ownership/content unchanged, protections persist flagsOFF.');
 })().catch(e=>{console.error(e.message);process.exitCode=1;}).finally(()=>p.$disconnect());
