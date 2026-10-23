@@ -83,6 +83,7 @@ model Ticket {
   ticketType   String     @default("Incident") // Incident | Problem | Change | Request
   purpose String @default("Work")
   monthlyReport MonthlyReportContainer?
+  bodWindow BodWindow?
   workflowPhases TicketPhaseExecution[]
   workType     String     @default("Unclassified") // Independent operational classification
   serviceWorkTypeId Int?
@@ -394,6 +395,7 @@ model Service {
   tickets      Ticket[]   // M:N Relation with Tickets
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  bodWindows BodWindow[]
 }
 
 model CircuitHop {
@@ -745,4 +747,31 @@ model ReportConfigurationAudit {
  recordId Int?
  payload Json
  createdAt DateTime @default(now())
+}
+
+
+model BodWindow {
+ id Int @id @default(autoincrement())
+ ticketId Int @unique
+ ticket Ticket @relation(fields:[ticketId], references:[id], onDelete:Restrict)
+ serviceId Int
+ service Service @relation(fields:[serviceId], references:[id], onDelete:Restrict)
+ startsAt DateTime
+ endsAt DateTime
+ normalBandwidthMbps Float
+ bodBandwidthMbps Float
+ normalSnapshot Json
+ activeSnapshot Json?
+ activatedAt DateTime?
+ activatedBy Int?
+ activationEvidence String?
+ restoredAt DateTime?
+ restoredBy Int?
+ restorationEvidence String?
+ cancelledAt DateTime?
+ cancelledBy Int?
+ cancellationReason String?
+ createdAt DateTime @default(now())
+ @@index([serviceId, endsAt])
+ @@index([restoredAt, cancelledAt, endsAt])
 }

@@ -1,3 +1,4 @@
+import {syncBodWindow} from '@/lib/tickets/bod';
 import {assertTicketDeletionAllowed} from '@/lib/workflows/ticketOwnership';
 import { workflowFlags } from '@/lib/workflows/flags';
 import { resolveWorkflow, workflowContext, WorkflowError } from '@/lib/workflows/policy';
@@ -332,6 +333,11 @@ export async function PATCH(req, { params }) {
       ...(body.slaTimerMins !== undefined && { slaTimerMins: parseInt(body.slaTimerMins) }),
     };
 
+    const previousBod=await tx.bodWindow.findUnique({where:{ticketId:id}});
+    if(previousBod&&(body.serviceWorkTypeId!==undefined&&Number(body.serviceWorkTypeId)!==oldTicket.serviceWorkTypeId||body.workType!==undefined&&body.workType!=='ServiceWork'))throw new ServiceWorkError('Jenis tiket BOD tidak dapat diganti. Batalkan jadwal atau buat tiket baru.',409);
+    if(previousBod&&Object.hasOwn(body,'serviceIds')&&(!Array.isArray(body.serviceIds)||body.serviceIds.length!==1||Number(body.serviceIds[0])!==previousBod.serviceId))throw new ServiceWorkError('CID BOD tidak dapat diganti. Buat tiket baru.',409);
+    if(previousBod?.cancelledAt&&body.status!==undefined&&nextStatus!=='Closed')throw new ServiceWorkError('BOD dibatalkan. Buat tiket baru.',409);
+    if(previousBod&&!previousBod.restoredAt&&nextStatus==='Closed')throw new ServiceWorkError('Konfirmasi pengembalian bandwidth normal sebelum menutup BOD.',409);
     const classification = await prepareTicketClassification(tx, body, oldTicket);
     Object.assign(ticketData, classification.data);
     Object.assign(ticketData, (await prepareServiceWork(tx, body, oldTicket)).data);
@@ -434,6 +440,7 @@ export async function PATCH(req, { params }) {
     });
 
     if (phaseCount && body.assigneeId === null) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:null}});
+    if(effectiveTicket.serviceChange?.operation==='BOD' && (Object.hasOwn(body,'serviceChange')||Object.hasOwn(body,'serviceWorkTypeId')) && !effectiveTicket.serviceChange?.appliedAt) await syncBodWindow(tx,{...ticket,serviceChange:effectiveTicket.serviceChange});
     if ((phasesEnabled || phaseCount) && ticket.assigneeId && !['Resolved','Closed'].includes(nextStatus)) {
       if (phaseCount) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:ticket.assigneeId}});
       else if (body.assigneeId !== undefined || body.workType !== undefined || body.serviceWorkTypeId !== undefined) {

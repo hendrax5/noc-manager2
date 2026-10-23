@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import styles from './masters.module.css';
 
-const operations = { Installation: 'Instalasi Baru', Upgrade: 'Upgrade', Downgrade: 'Downgrade', Change: 'Perubahan Layanan', Terminate: 'Terminasi' };
+const operations = { Installation: 'Instalasi Baru', Upgrade: 'Upgrade', Downgrade: 'Downgrade', Change: 'Perubahan Layanan', Terminate: 'Terminasi', BOD: 'BOD' };
 const blank = { name: '', operation: 'Installation', defaultJobCategoryId: '', active: true, sortOrder: 0 };
 
 export default function ServiceWorkTypesClient({ categories = [] }) {

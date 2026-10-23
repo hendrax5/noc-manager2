@@ -63,6 +63,7 @@ export async function PATCH(request, { params }) {
       const code=getServiceCid(candidate);
       await lockCircuitCodes(tx,[code,getServiceCid(existing)]);
       await tx.$queryRaw`SELECT id FROM "Service" WHERE id = ${serviceId} FOR UPDATE`;
+      if(await tx.bodWindow.findFirst({where:{serviceId,activatedAt:{not:null},restoredAt:null,cancelledAt:null}}))throw new CidValidationError('BOD aktif. Konfirmasi pengembalian bandwidth normal sebelum mengedit Inventory.',409);
       const fresh=await tx.service.findUnique({where:{id:serviceId}});
       if(+new Date(fresh.updatedAt)!==+new Date(existing.updatedAt))throw new CidValidationError('Layanan berubah; muat ulang.',409);
       const serviceCid=await checkServiceCid(tx,candidate,serviceId);

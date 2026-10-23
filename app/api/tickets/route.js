@@ -1,3 +1,8 @@
+import {CidValidationError} from '@/lib/services/cid';
+import {getAppConfig} from '@/lib/config';
+import {automaticWorkMetadata} from '@/lib/tickets/workMetadata';
+import {prepareInstallationTicket} from '@/lib/tickets/installation';
+import {syncBodWindow} from '@/lib/tickets/bod';
 import { workflowFlags } from '@/lib/workflows/flags';
 import { resolveWorkflow, workflowContext, WorkflowError } from '@/lib/workflows/policy';
 import { initializeTicketWorkflow } from '@/lib/workflows/ticketWorkflow';
@@ -47,7 +52,12 @@ export async function POST(req) {
     }
 
     const userId = parseInt(session.user.id);
-    const body = await req.json();
+    let body = await req.json();
+    const config = await getAppConfig();
+    const phasesEnabled = (await workflowFlags()).work_phase_enabled;
+    const ticket = await prisma.$transaction(async tx => {
+    body = await prepareInstallationTicket(tx,body,userId);
+    body = await automaticWorkMetadata(tx,body,config);
     const {
       title,
       description,
@@ -66,22 +76,17 @@ export async function POST(req) {
       approvalRequired,
     } = body;
 
-    const classification = await prepareTicketClassification(prisma, body);
-    Object.assign(classification.data, (await prepareServiceWork(prisma, body)).data);
+    const classification = await prepareTicketClassification(tx, body);
+    Object.assign(classification.data, (await prepareServiceWork(tx, body)).data);
 
     if (priority !== undefined && !TICKET_PRIORITIES.includes(priority)) {
-      return NextResponse.json(
-        {
-          error: `Invalid priority: "${priority}". Allowed values: ${TICKET_PRIORITIES.join(", ")}`,
-        },
-        { status: 400 }
-      );
+      throw new ServiceWorkError('Priority tidak valid.');
     }
 
     let finalAssigneeId = assigneeId ? parseInt(assigneeId) : null;
 
     if (!finalAssigneeId && (departmentId || queueId)) {
-      finalAssigneeId = await pickLeastBusyAssignee(prisma, {
+      finalAssigneeId = await pickLeastBusyAssignee(tx, {
         departmentId,
         queueId,
       });
@@ -96,9 +101,10 @@ export async function POST(req) {
     const type = TICKET_TYPES.includes(ticketType) ? ticketType : "Incident";
     const needsApproval = approvalRequired || type === "Change";
 
-    const downtimeNorm = normalizeDowntimeCustomData(customData || {});
+    const routed=await automaticWorkMetadata(tx,{...body,assigneeId:finalAssigneeId},config);
+    const downtimeNorm = normalizeDowntimeCustomData(routed.customData || customData || {});
     if (!downtimeNorm.ok) {
-      return NextResponse.json({ error: downtimeNorm.error }, { status: 400 });
+      throw new ServiceWorkError(downtimeNorm.error);
     }
 
     let ticketData = {
@@ -152,8 +158,6 @@ export async function POST(req) {
       };
     }
 
-    const phasesEnabled = (await workflowFlags()).work_phase_enabled;
-    const ticket = await prisma.$transaction(async tx => {
       const created = await tx.ticket.create({
       data: ticketData,
       include: {
@@ -162,6 +166,7 @@ export async function POST(req) {
       },
     });
 
+      await syncBodWindow(tx,created);
       if (phasesEnabled && created.assigneeId) {
         const assigned = await tx.user.findUnique({where:{id:created.assigneeId},select:{roleId:true}});
         const policies = await tx.workflowPolicyVersion.findMany({where:{publishedAt:{not:null}},include:{phases:{include:{category:true},orderBy:{ordinal:'asc'}}}});
@@ -169,7 +174,8 @@ export async function POST(req) {
         if (workflow) await initializeTicketWorkflow(tx,{ticketId:created.id,policyVersionId:workflow.policyVersionId,actorId:userId});
       }
       return created;
-    });
+    },{timeout:20000});
+    if (ticket instanceof Response) return ticket;
     try { await linkKnownCircuit(prisma,ticket.id); } catch { console.warn('Circuit CID link deferred; ticket retained for Inventory review.'); }
     const emails = [];
     if (ticket.assignee?.email) emails.push(ticket.assignee.email);
@@ -187,6 +193,7 @@ export async function POST(req) {
 
     return NextResponse.json(ticket, { status: 201 });
   } catch (error) {
+    if (error instanceof CidValidationError) return NextResponse.json({error:error.message},{status:error.status||400});
     if (error instanceof WorkflowError) return NextResponse.json({error:error.message},{status:error.status});
     if (error instanceof ServiceWorkError) return NextResponse.json({ error: error.message }, { status: error.status });
     if (error instanceof TicketClassificationError) return NextResponse.json({ error: error.message }, { status: 400 });

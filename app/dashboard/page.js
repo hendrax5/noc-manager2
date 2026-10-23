@@ -1,3 +1,4 @@
+import BodReminders from '@/components/BodReminders';
 import { workTypeWhere } from "@/lib/tickets/workClassification";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
@@ -124,6 +125,7 @@ export default async function DashboardPage({ searchParams }) {
 
   return (
     <main className="container" style={{ paddingBottom: '3rem' }}>
+      <BodReminders scope={scope}/>
       <DashboardClient 
         session={session}
         hasGlobalAccess={hasGlobalAccess}

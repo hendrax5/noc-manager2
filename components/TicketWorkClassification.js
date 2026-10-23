@@ -113,7 +113,7 @@ export default function TicketWorkClassification({ value, onChange, services = [
     <label htmlFor={id}>Jenis pekerjaan</label>
     <select id={id} style={inputStyle} value={selection} onChange={event => {
       const next = types.find(item => 'service:' + item.id === event.target.value);
-      onChange({ workType: next ? 'ServiceWork' : event.target.value, serviceWorkTypeId: next?.id || '', serviceChange: {} });
+      onChange({ workType: next ? 'ServiceWork' : event.target.value, serviceWorkTypeId: next?.id || '', serviceChange: {}, installation: undefined, serviceIds: [], serviceWorkOperation: next?.operation || null });
       if (next) onServiceWorkTypeChange?.(next);
     }}>
       {['Unclassified', 'Trouble', 'Installation'].map(type => <option key={type} value={type}>{type === 'Installation' ? 'Instalasi (format lama)' : WORK_TYPE_LABELS[type]}</option>)}
@@ -122,13 +122,13 @@ export default function TicketWorkClassification({ value, onChange, services = [
       {types.map(type => <option key={type.id} value={'service:' + type.id}>{type.name}</option>)}
     </select>
     {typesError && <p role="alert">Jenis pekerjaan layanan gagal dimuat. Muat ulang halaman untuk mencoba lagi.</p>}
-    {["Installation", "ServiceWork"].includes(value.workType) && <div>
+    {(value.workType === "Installation" || types.find(t=>String(t.id)===String(value.serviceWorkTypeId))?.operation === "Installation") && <div>
       <label>Referensi SAP (opsional)
         <input style={inputStyle} value={value.sapReference || ""} onChange={event => onChange({ sapReference: event.target.value })} placeholder="Masukkan referensi SAP secara manual" />
       </label>
       <p>{value.workType === "Installation" ? "Field lama dan waktu downtime tetap tersimpan. Installation tidak dihitung dalam downtime SLA." : "Pekerjaan layanan tidak dihitung dalam downtime SLA."}</p>
     </div>}
-    {value.workType === "ServiceWork" && <ServiceWorkFields value={value} onChange={onChange} services={services} serviceTemplates={serviceTemplates} onTypeChange={onServiceWorkTypeChange} hideTypePicker />}
+    {value.workType === "ServiceWork" && <ServiceWorkFields value={value} onChange={onChange} services={services} serviceTemplates={serviceTemplates} workTypes={types} />}
     {value.workType === "Trouble" && <div style={{ display: "grid", gap: "1rem", marginTop: "1rem" }}>
       <p>1. Pilih CID layanan yang terganggu. 2. Pilih gejala yang terlihat. 3. Pilih penyebab; gunakan “Belum diketahui” jika masih investigasi.</p>
       <TicketServicePicker services={services} selectedIds={value.serviceIds || []} onChange={serviceIds=>onChange({serviceIds})} />

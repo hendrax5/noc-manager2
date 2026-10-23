@@ -1,4 +1,5 @@
 "use client";
+import BodPanel from '@/components/BodPanel';
 import WorkPhasePanel from "@/components/tickets/WorkPhasePanel";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -476,12 +477,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.7', color: 'var(--text-color)', fontSize: '0.95rem' }}>
             <p style={{ margin: '0 0 1rem 0' }}>Dear NOC,</p>
             {!editingTicket && <p>Jenis pekerjaan: <strong>{ticket.serviceWorkTypeLabel || WORK_TYPE_LABELS[ticket.workType] || "Belum diklasifikasikan"}</strong>{["Installation", "ServiceWork"].includes(ticket.workType) && ticket.sapReference ? ` / SAP: ${ticket.sapReference}` : ""}{ticket.workType === "Trouble" ? ` / Gejala: ${ticket.symptomLabel || "—"} / Penyebab: ${ticket.causeLabel || "—"}` : ""}</p>}
-            <ServiceWorkSummary ticket={ticket} />
+            {ticket.serviceChange?.operation === 'BOD' ? <BodPanel ticket={ticket}/> : <ServiceWorkSummary ticket={ticket} />}
             <WorkPhasePanel ticketId={ticket.id} categories={jobCategories} canOverride={currentUser?.role === "Admin" || currentUser?.permissions?.includes("override_workflow_category")} />
             {editingTicket ? (
               <div>
                 {!ticket.serviceChange?.appliedAt ? <>
-                  <TicketWorkClassification value={formData} services={services} serviceTemplates={serviceTemplates || []} onChange={patch => setFormData(previous => ({ ...previous, ...patch }))} />
+                  <TicketWorkClassification value={{...formData,editExistingServiceWork:true}} services={services} serviceTemplates={serviceTemplates || []} onChange={patch => setFormData(previous => ({ ...previous, ...patch }))} />
                   {!["Trouble","ServiceWork"].includes(formData.workType) && <TicketServicePicker services={services} selectedIds={formData.serviceIds || []} onChange={serviceIds => setFormData(previous => ({ ...previous, serviceIds }))} />}
                 </> : <p>Perubahan layanan sudah diterapkan. Buat tiket baru dari halaman CID untuk pekerjaan berikutnya.</p>}
                 {/* Edit Customer / Reporter Name */}

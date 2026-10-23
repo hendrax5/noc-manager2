@@ -1,0 +1,7 @@
+.form{display:grid;gap:var(--asset-space-4);min-width:0;padding:var(--asset-space-6);background:var(--card-bg);border:var(--asset-divider-width) solid var(--border-color)}
+.fields{display:grid;gap:var(--asset-space-2);min-width:0;margin-block:var(--asset-space-3)}
+.form label,.fields label{font-weight:600}
+.form input:not([type=checkbox]):not([type=radio]),.form select,.form textarea,.fields input:not([type=checkbox]):not([type=radio]),.fields select,.fields textarea{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:var(--asset-control-min);padding:var(--asset-space-2);color:var(--input-text);background:var(--input-bg);border:var(--asset-divider-width) solid var(--border-color);border-radius:var(--asset-radius)}
+.form textarea{min-height:10rem}.form button,.fields button{min-height:var(--asset-control-min);width:fit-content;max-width:100%;padding:var(--asset-space-2) var(--asset-space-4)}
+.form :focus-visible,.fields :focus-visible{outline:var(--asset-focus-width) solid var(--asset-focus);outline-offset:var(--asset-focus-width)}
+.summary{padding:var(--asset-space-3);background:var(--hover-bg);overflow-wrap:anywhere}.tableWrap{max-width:100%;overflow-x:auto}

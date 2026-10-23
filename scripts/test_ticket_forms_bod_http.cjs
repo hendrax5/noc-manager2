@@ -1,0 +1,36 @@
+const assert=require('node:assert/strict'),{PrismaClient}=require('@prisma/client'),{encode}=require('next-auth/jwt');const p=new PrismaClient();
+(async()=>{
+ const origin=process.env.QA_ORIGIN;if(!origin||!process.env.DATABASE_URL.includes('noc-bod-dbqa'))throw Error('Isolated QA database required');
+ await p.integrationApp.updateMany({data:{active:false}});await p.appSetting.update({where:{key:'workflow_reporting_flags'},data:{value:JSON.stringify({work_phase_enabled:false,structured_daily_enabled:true,monthly_evaluation_mode:'simulation'})}});
+ const admin=await p.user.findFirst({where:{role:{name:'Admin'}},select:{id:true,departmentId:true}}),dept=admin.departmentId||(await p.department.findFirst()).id;
+ const token=await encode({token:{id:admin.id,sub:String(admin.id)},secret:process.env.NEXTAUTH_SECRET,maxAge:600});const headers={cookie:'next-auth.session-token='+token+'; __Secure-next-auth.session-token='+token,'Content-Type':'application/json'};
+ for(let i=0;i<60;i++){try{if((await fetch(origin+'/login')).status===200)break;}catch{}await new Promise(r=>setTimeout(r,500));}
+ async function request(path,method='GET',body){const r=await fetch(origin+path,{method,headers,body:body?JSON.stringify(body):undefined,redirect:'manual'});let b;try{b=await r.json();}catch{b={};}return{status:r.status,body:b};}
+ const types=await p.serviceWorkType.findMany({where:{active:true}}),type=op=>types.find(t=>t.operation===op).id;
+ const template=await p.serviceTemplate.create({data:{name:'QA ticket forms '+Date.now(),fields:[],active:true}}),customer=await p.customer.create({data:{name:'QA isolated customer '+Date.now()}});
+ const service=await p.service.create({data:{name:'QA BOD link',customerId:customer.id,templateId:template.id,cid:'SAP-C-QA-'+Date.now(),status:'Active',customData:{bandwidthMbps:1000,'Order Origin':'ION'}}});
+ const other=await p.service.create({data:{name:'QA other link',customerId:customer.id,templateId:template.id,cid:'SAP-C-QA-OTHER-'+Date.now(),status:'Active',customData:{bandwidthMbps:1000}}});
+ const base={formVersion:'work-v2',title:'QA isolated test',description:'QA only',departmentId:dept,assigneeId:admin.id,workType:'ServiceWork'};
+ const installation={newCustomerName:'QA atomic rollback '+Date.now(),cid:'SAP-C-QA-NEW-'+Date.now(),name:'QA new site',templateId:template.id,bandwidthGbps:0.1,rfsDate:new Date().toISOString().slice(0,10)};
+ let r=await request('/api/tickets','POST',{...base,priority:'INVALID',serviceWorkTypeId:type('Installation'),installation});assert.equal(r.status,400,JSON.stringify(r));assert.equal(await p.customer.count({where:{name:installation.newCustomerName}}),0);assert.equal(await p.service.count({where:{cid:installation.cid}}),0);
+ r=await request('/api/tickets','POST',{...base,serviceWorkTypeId:type('Installation'),installation});assert.equal(r.status,201,JSON.stringify(r));const installTicket=await p.ticket.findUnique({where:{id:r.body.id},include:{services:true}});assert.equal(installTicket.services[0].status,'Pending');assert.equal(installTicket.jobCategoryId,8);
+ r=await request('/api/tickets/'+installTicket.id,'PATCH',{serviceWorkTypeId:type('Installation'),serviceIds:[installTicket.services[0].id],serviceChange:{bandwidthGbps:0.2,effectiveDate:installation.rfsDate}});assert.equal(r.status,200,JSON.stringify(r));assert.equal((await p.ticket.findUnique({where:{id:installTicket.id}})).serviceChange.after.bandwidthMbps,200);
+ r=await request('/api/tickets/'+installTicket.id,'PATCH',{status:'Resolved'});assert.equal(r.status,200,JSON.stringify(r));assert.equal((await p.service.findUnique({where:{id:installTicket.services[0].id}})).status,'Active');
+ const now=Date.now(),change={bandwidthGbps:2,bodStartAt:new Date(now-60000).toISOString(),bodEndAt:new Date(now+3600000).toISOString()};
+ r=await request('/api/tickets','POST',{...base,serviceWorkTypeId:type('BOD'),serviceIds:[service.id],serviceChange:change});assert.equal(r.status,201,JSON.stringify(r));const id=r.body.id;
+ r=await request('/api/tickets','POST',{...base,serviceWorkTypeId:type('BOD'),serviceIds:[service.id],serviceChange:change});assert.equal(r.status,409,JSON.stringify(r));
+ r=await request('/api/tickets/'+id,'PATCH',{serviceIds:[other.id]});assert.equal(r.status,409,JSON.stringify(r));assert.equal((await p.bodWindow.findUnique({where:{ticketId:id}})).serviceId,service.id);
+ r=await request('/api/tickets/'+id,'PATCH',{status:'Resolved'});assert.equal(r.status,409,JSON.stringify(r));
+ r=await request('/api/tickets/'+id+'/bod','POST',{action:'activate',confirmed:false,evidence:'QA'});assert.equal(r.status,400);
+ for(let i=0;i<2;i++){r=await request('/api/tickets/'+id+'/bod','POST',{action:'activate',confirmed:true,evidence:'QA network activated'});assert.equal(r.status,200,JSON.stringify(r));}
+ assert.equal((await p.service.findUnique({where:{id:service.id}})).customData.bandwidthMbps,2000);
+ r=await request('/api/tickets/'+id,'PATCH',{status:'Closed'});assert.equal(r.status,409,JSON.stringify(r));
+ r=await request('/api/assets/services/'+service.id,'PATCH',{customData:{bandwidthMbps:5000}});assert.equal(r.status,409,JSON.stringify(r));
+ const dashboard=await fetch(origin+'/dashboard',{headers});assert.equal(dashboard.status,200);assert.match(await dashboard.text(),/Reminder BOD/);
+ for(let i=0;i<2;i++){r=await request('/api/tickets/'+id+'/bod','POST',{action:'restore',confirmed:true,evidence:'QA normal restored'});assert.equal(r.status,200,JSON.stringify(r));}assert.equal((await p.service.findUnique({where:{id:service.id}})).customData.bandwidthMbps,1000);
+ r=await request('/api/tickets/'+id,'PATCH',{status:'Resolved'});assert.equal(r.status,200,JSON.stringify(r));
+ r=await request('/api/tickets','POST',{...base,serviceWorkTypeId:type('BOD'),serviceIds:[other.id],serviceChange:change});assert.equal(r.status,201,JSON.stringify(r));const cancelled=r.body.id;r=await request('/api/tickets/'+cancelled+'/bod','POST',{action:'cancel',confirmed:true,evidence:'QA cancelled'});assert.equal(r.status,200,JSON.stringify(r));assert.equal((await p.ticket.findUnique({where:{id:cancelled}})).status,'Closed');r=await request('/api/tickets/'+cancelled,'PATCH',{status:'Open'});assert.equal(r.status,409);
+ assert.equal((await fetch(origin+'/api/tickets/'+id+'/bod')).status,401);
+ for(const url of ['/tickets/new','/assets','/dashboard','/reports','/reports/daily','/reports/evaluations']){const response=await fetch(origin+url,{headers});assert.equal(response.status,200,url);assert.doesNotMatch(await response.text(),/"digest"\s*:\s*"[0-9]+"/,url);}
+ console.log('PASS isolated HTTP/PG: atomic customer/service rollback, installation Active on Resolve, automatic category, BOD CID immutable, activation/restore idempotent, Resolve/Close/edit guards, dashboard reminder, auth, existing pages.');
+})().catch(e=>{console.error(e.message);process.exitCode=1;}).finally(()=>p.$disconnect());
