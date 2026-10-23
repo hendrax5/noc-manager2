@@ -57,6 +57,7 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
 
+    if (oldTicket.purpose === "PersonalMonthlyReport") return NextResponse.json({error:"Arsip dikelola melalui Laporan Saya."},{status:403});
     const isCS =
       session.user.department?.includes("CS") ||
       session.user.department?.toLowerCase().includes("customer");
@@ -431,6 +432,7 @@ export async function PATCH(req, { params }) {
       },
     });
 
+    if (phasesEnabled && phaseCount && body.assigneeId === null) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:null}});
     if (phasesEnabled && ticket.assigneeId && !['Resolved','Closed'].includes(nextStatus)) {
       if (phaseCount) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:ticket.assigneeId}});
       else if (body.assigneeId !== undefined) {

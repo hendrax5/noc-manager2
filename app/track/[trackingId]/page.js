@@ -10,6 +10,7 @@ export default async function TrackPage({ params }) {
   const ticket = await prisma.ticket.findUnique({
     where: { trackingId },
     select: {
+      purpose: true,
       trackingId: true,
       title: true,
       status: true,
@@ -32,7 +33,7 @@ export default async function TrackPage({ params }) {
     },
   });
 
-  if (!ticket) {
+  if (!ticket || ticket.purpose === 'PersonalMonthlyReport') {
     return (
       <div className="container" style={{ paddingTop: "3rem" }}>
         <h1>Ticket not found</h1>

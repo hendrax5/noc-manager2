@@ -1,3 +1,4 @@
+import {workflowFlags} from '@/lib/workflows/flags';
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]/route";
@@ -11,6 +12,7 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    session.user.reportScopeEnforced = (await workflowFlags()).structured_daily_enabled;
     const resolvedParams = await params;
     const targetUserId = parseInt(resolvedParams.userId);
     if (isNaN(targetUserId)) {

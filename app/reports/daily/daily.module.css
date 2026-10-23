@@ -1,0 +1,6 @@
+.page{min-width:0}.toolbar,.actions{display:flex;flex-wrap:wrap;gap:var(--asset-space-4);align-items:end;margin-block:var(--asset-space-4)}
+.page label{display:block}.page input,.page select,.page textarea{display:block;max-width:100%;min-height:var(--asset-control-min);background:var(--input-bg);color:var(--input-text);border:var(--asset-divider-width) solid var(--border-color);padding:var(--asset-space-2)}
+.page textarea{width:100%}.page fieldset{min-width:0;border:var(--asset-divider-width) solid var(--border-color);padding:var(--asset-space-4)}
+.page button{min-height:var(--asset-control-min)}.item{margin-bottom:var(--asset-space-4)}
+.page table{width:100%;border-collapse:collapse}.page th,.page td{text-align:left;vertical-align:top;padding:var(--asset-space-2);border-bottom:var(--asset-divider-width) solid var(--border-color)}
+.page pre{white-space:pre-wrap;overflow-wrap:anywhere}.page section{margin-block:var(--asset-space-6)}

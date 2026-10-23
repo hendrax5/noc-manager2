@@ -1,3 +1,4 @@
+import {workflowFlags} from '@/lib/workflows/flags';
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
@@ -31,6 +32,7 @@ export default async function UserReportDetail({ params, searchParams }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
+  session.user.reportScopeEnforced = (await workflowFlags()).structured_daily_enabled;
   const resolvedParams = await params;
   const targetUserId = parseInt(resolvedParams.userId, 10);
   if (!Number.isInteger(targetUserId)) {

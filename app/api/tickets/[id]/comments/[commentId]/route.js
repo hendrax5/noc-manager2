@@ -14,11 +14,13 @@ export async function PATCH(req, { params }) {
     const body = await req.json();
     const { text } = body;
 
-    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    const comment = await prisma.comment.findUnique({ where: { id: commentId }, include:{ticket:{select:{purpose:true}}} });
     if (!comment) {
       return NextResponse.json({ error: "Comment Not Found" }, { status: 404 });
     }
 
+    if (comment.ticketId !== Number(resolvedParams.id)) return NextResponse.json({error:'Not found'},{status:404});
+    if (comment.ticket.purpose === 'PersonalMonthlyReport') return NextResponse.json({error:'Koreksi laporan melalui revisi Laporan Saya.'},{status:403});
     const isCS = session.user.department?.includes('CS') || session.user.department?.toLowerCase().includes('customer');
     const isAuthorized = session.user.role === 'Admin' || isCS || session.user.permissions?.includes('manage_tickets');
     const isAuthor = comment.authorId === parseInt(session.user.id);

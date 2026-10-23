@@ -13,7 +13,7 @@ export async function GET(req, { params }) {
 
   try {
     const { id } = await params;
-    const report = await getDailyReportForIntegration(id);
+    const report = await getDailyReportForIntegration(id, auth.app.id);
     if (!report) {
       await writeIntegrationAudit({
         integrationAppId: auth.app.id,

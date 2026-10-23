@@ -13,7 +13,7 @@ export async function GET(req) {
 
   try {
     const query = Object.fromEntries(new URL(req.url).searchParams.entries());
-    const result = await listDailyReportsForIntegration(query);
+    const result = await listDailyReportsForIntegration(query, auth.app.id);
     await writeIntegrationAudit({
       integrationAppId: auth.app.id,
       method: auth.method,

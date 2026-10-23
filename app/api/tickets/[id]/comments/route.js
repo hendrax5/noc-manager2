@@ -37,6 +37,8 @@ export async function POST(req, { params }) {
       };
     }
 
+    const purposeTicket = await prisma.ticket.findUnique({where:{id:ticketId},select:{purpose:true}});
+    if (purposeTicket?.purpose === 'PersonalMonthlyReport') return NextResponse.json({error:'Gunakan form Laporan Saya untuk mengirim laporan terstruktur.'},{status:403});
     const comment = await prisma.comment.create({ data: commentData });
 
     const ticket = await prisma.ticket.findUnique({
