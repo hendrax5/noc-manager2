@@ -289,8 +289,7 @@ export default function LeaderboardClient({
             ) : (
               <button
                 type="button"
-                className="logout-btn ui-static-f163cd8592"
-                style={{height: 36}}
+                className="secondary-btn"
                 onClick={() => setCompareMode(true)}
               >
                 Bandingkan orang

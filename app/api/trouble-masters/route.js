@@ -12,8 +12,12 @@ export async function GET(req) {
     if (kind && !TROUBLE_MASTER_KINDS.includes(kind)) return NextResponse.json({ error: 'Jenis master tidak valid.' }, { status: 400 });
     const includeInactive = params.get('includeInactive') === 'true';
     if (includeInactive && !canManageTroubleMasters(user)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    const entries = await prisma.troubleMasterEntry.findMany({ where: { ...(kind ? { kind } : {}), ...(includeInactive ? {} : { active: true }) }, orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }, { id: 'asc' }] });
-    return NextResponse.json(entries);
+    const entries = await prisma.troubleMasterEntry.findMany({
+      where: { ...(kind ? { kind } : {}), ...(includeInactive ? {} : { active: true }) },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }, { id: 'asc' }],
+      include: { _count: { select: { symptomTickets: true, causeTickets: true } } },
+    });
+    return NextResponse.json(entries.map(({ _count, ...entry }) => ({ ...entry, usageCount: (_count?.symptomTickets ?? 0) + (_count?.causeTickets ?? 0) })));
   } catch (error) {
     const result = troubleMasterError(error);
     return NextResponse.json({ error: result.error }, { status: result.status });

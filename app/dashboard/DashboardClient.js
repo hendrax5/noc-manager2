@@ -203,7 +203,7 @@ export default function DashboardClient({
             const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
             const canCreate = session?.user?.role === 'Admin' || isCS || session?.user?.permissions?.includes('create_tickets') || session?.user?.permissions?.includes('manage_tickets');
             return canCreate && (
-              <Link href={workType ? `/tickets/new?workType=${workType}` : "/tickets/new"} className="primary-btn ui-static-1eddcbd344" style={{textDecoration: 'none', display: 'flex', alignItems: 'center'}}>
+              <Link href={workType ? `/tickets/new?workType=${workType}` : "/tickets/new"} className="primary-btn btn-fit" style={{textDecoration: 'none', display: 'flex', alignItems: 'center'}}>
                 <span className="ui-static-cb379bd05e" >+</span> Create Ticket
               </Link>
             );
@@ -426,7 +426,7 @@ export default function DashboardClient({
                         Real-time status updates of active operations in this shift.
                       </p>
                     </div>
-                    <Link href={`/tickets?tab=all&date=today${classificationQuery}`} className="primary-btn ui-static-ec0623b335" style={{textDecoration: 'none', display: 'flex', alignItems: 'center'}}>
+                    <Link href={`/tickets?tab=all&date=today${classificationQuery}`} className="primary-btn btn-fit" style={{textDecoration: 'none', display: 'flex', alignItems: 'center'}}>
                       Inspect Log Matrix →
                     </Link>
                   </div>

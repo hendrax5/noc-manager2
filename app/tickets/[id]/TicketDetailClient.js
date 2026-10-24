@@ -130,6 +130,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [commentLoading, setCommentLoading] = useState(false);
+  const [commentError, setCommentError] = useState("");
   const [submitAction, setSubmitAction] = useState('reply');
   const [showSubmitDropdown, setShowSubmitDropdown] = useState(false);
   const [slaLoading, setSlaLoading] = useState(false);
@@ -352,6 +353,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
     e.preventDefault();
     if (!commentText.trim() && !file) return;
     setCommentLoading(true);
+    setCommentError("");
     
     let attachmentUrl = null;
     let attachmentName = null;
@@ -378,6 +380,9 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       setVisibleCustomFieldIds([]);
       setFormData({...formData, status: updatedStatus, customData: { ...(formData.customData || {}), ...replyCustomData }});
       router.refresh();
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setCommentError(body.error || "Balasan gagal dikirim. Coba lagi tanpa kehilangan teks.");
     }
     setCommentLoading(false);
   };
@@ -934,6 +939,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               {file && <span className="ui-static-5e6e0287a2" >Added ✓</span>}
             </div>
 
+            {commentError && <p role="alert" style={{margin: '0 0 0.75rem', color: 'var(--danger-text)'}}>{commentError}</p>}
             <div className="ui-static-58450472e8" style={{display: 'flex', justifyContent: 'flex-end', alignItems: 'center'}}>
               <div className="ui-static-791d011e41" style={{position: 'relative', display: 'inline-flex'}}>
                 <button type="button" onClick={(e) => handleCommentSubmit(e, submitAction)} disabled={commentLoading} className="ui-static-48db7c15bb" style={{background: submitAction === 'finish' ? "var(--ui-success)" : "var(--ui-info)", cursor: 'pointer', transition: 'background 0.2s'}}>
@@ -986,7 +992,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
         <div className="no-print ui-static-30f523173e" style={{display: 'flex'}}>
           {showTicketEdit && (
-            <button onClick={() => setEditingTicket(true)} className="ui-static-bffbf1dba5" style={{flex: 1, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+            <button onClick={() => setEditingTicket(true)} className="btn btn-primary btn-fit ui-static-bffbf1dba5" style={{flex: 1, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
               <span className="ui-static-635656024d" ></span> Edit
             </button>
           )}
@@ -994,7 +1000,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             <span className="ui-static-635656024d" ></span> Print
           </button>
           {canDelete && (
-            <button onClick={handleDelete} className="ui-static-9520b8c320" style={{cursor: 'pointer'}}> Delete</button>
+            <button onClick={handleDelete} className="btn btn-danger-ghost btn-fit ui-static-9520b8c320" style={{cursor: 'pointer'}}> Delete</button>
           )}
         </div>
 
@@ -1003,7 +1009,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
              
              <div className="ui-static-0f8796a915" style={{display: 'flex', flexDirection: 'column'}}>
                <label htmlFor="ticket-status" className="ui-static-b55d0546e4" style={{textTransform: 'uppercase'}}>Ticket Status</label>
-               <select id="ticket-status" className="ui-static-af51282eb0 ticket-status-control" style={{width: '100%', ...statusStyle(formData.status), cursor: canChangeStatus ? 'pointer' : 'not-allowed'}} value={formData.status} onChange={e => triggerAutoSave('status', e.target.value)} disabled={!canChangeStatus}>
+               <select id="ticket-status" className="ui-static-af51282eb0 ticket-status-control" style={{width: '100%', ...statusStyle(formData.status), cursor: canChangeStatus ? 'pointer' : 'not-allowed'}} value={formData.status} onChange={e => { const next = e.target.value; if (next === 'Closed' && !window.confirm('Tutup tiket ini? Tiket Closed keluar dari antrean aktif dan hanya dapat dibuka kembali oleh pengguna berizin.')) return; triggerAutoSave('status', next); }} disabled={!canChangeStatus}>
                  <option value="New">New</option>
                  <option value="Open">Open</option>
                  <option value="In Progress">In Progress</option>

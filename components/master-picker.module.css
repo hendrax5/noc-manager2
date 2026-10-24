@@ -1,0 +1,44 @@
+.picker { position: relative; width: 100%; }
+
+/* Scoped to the picker so page-level "button" rules (e.g. .form button) cannot resize it. */
+.picker > .trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--ui-space-2);
+  width: 100%; min-height: var(--ui-control-height); padding: var(--ui-space-2) var(--ui-space-3);
+  border: var(--ui-hairline) solid var(--ui-control-line); border-radius: var(--ui-radius);
+  background: var(--input-bg); color: var(--input-text); font: inherit; text-align: left; cursor: pointer;
+  transition: border-color var(--ui-speed);
+}
+.picker > .trigger:hover { border-color: var(--muted-text); }
+.picker > .trigger[aria-expanded="true"] { border-color: var(--secondary-color); }
+.picker > .trigger:disabled { background: var(--ui-subtle); color: var(--muted-text); cursor: not-allowed; }
+.picker > .trigger[aria-invalid="true"] { border-color: var(--danger-text); }
+
+.value, .placeholder { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.placeholder { color: var(--muted-text); }
+.chevron { flex: none; color: var(--muted-text); transition: transform var(--ui-speed); }
+.picker > .trigger[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+
+.listbox {
+  position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; right: 0;
+  margin: 0; padding: var(--ui-space-1); list-style: none;
+  max-height: min(15rem, 45vh); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--card-bg); border: var(--ui-hairline) solid var(--border-color);
+  border-radius: var(--ui-radius); box-shadow: var(--ui-shadow);
+}
+.listbox[data-placement="top"] { top: auto; bottom: calc(100% + 4px); }
+.option {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--ui-space-2);
+  min-height: var(--ui-control-height); padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--ui-radius); color: var(--text-color); font-size: var(--ui-type-body);
+  cursor: pointer;
+}
+.option[data-highlight="true"] { background: var(--hover-bg); }
+.option[aria-selected="true"] { color: var(--secondary-color); font-weight: 650; }
+.option[aria-disabled="true"] { color: var(--muted-text); cursor: not-allowed; }
+.optionLabel { overflow-wrap: anywhere; }
+.check { flex: none; }
+.empty { padding: var(--ui-space-3); color: var(--muted-text); font-size: var(--ui-type-meta); }
+
+@media (prefers-reduced-motion: reduce) {
+  .picker > .trigger, .chevron { transition: none; }
+}

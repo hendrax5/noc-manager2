@@ -17,7 +17,9 @@ Kapasitas historis hanya dikenali bila satuannya jelas: canonical `customData.ba
 
 ## Master dan scoring
 
-Menu **Administration → Jenis Pekerjaan Layanan** (`/settings/service-work-types`). Admin atau role dengan `manage_service_work` dapat menambah, mengganti nama, mengatur urutan, menonaktifkan/mengaktifkan, dan memetakan saran Job Category. Operasi jenis pekerjaan tidak dapat diganti setelah dibuat. Tidak ada hapus master. Nonaktif berarti tidak tersedia untuk pekerjaan baru; tiket existing mempertahankan snapshot nama dan dapat diselesaikan.
+Menu **Administration → Jenis Pekerjaan Layanan** (`/settings/service-work-types`). Admin atau role dengan `manage_service_work` dapat membuat, mengganti nama, mengatur urutan, menonaktifkan/mengaktifkan, memetakan saran Job Category, serta menghapus jenis pekerjaan yang belum dipakai tiket. Operasi jenis pekerjaan tidak dapat diganti setelah dibuat. Nonaktif berarti tidak tersedia untuk pekerjaan baru; tiket existing mempertahankan snapshot nama dan dapat diselesaikan.
+
+Form tambah/edit tampil sebagai dialog di atas daftar dengan galat per field. Operasi dan Saran Job Category memakai combobox select-only (`components/MasterPicker.js`), bukan select native: tombol pemicu + listbox, navigasi panah/Home/End, Enter/Space memilih, Escape menutup daftar tanpa menutup dialog, dan typeahead berdasarkan awalan nama. Status aktif diubah langsung dari baris; hapus permanen ditolak (409) bila jenis pekerjaan sudah dipakai tiket, dan dialog hapus menampilkan jumlah tiket pemakai serta menawarkan nonaktifkan.
 
 Produk/Layanan tetap memakai katalog ServiceTemplate yang ada. METRO-E, IPT, COMIX, HSPIX, IPLC adalah contoh produk yang dikelola melalui katalog tersebut; tidak dibuat sebagai katalog kedua atau di-seed tanpa memeriksa data yang sudah ada.
 

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import TicketWorkClassification from '@/components/TicketWorkClassification';
 import {getServiceCid} from '@/lib/services/cid';
 import {getDowntimeDuration,nowDatetimeLocal} from '@/lib/tickets/downtime';
+import MasterPicker from '@/components/MasterPicker';
 import styles from '@/components/tickets/work-form.module.css';
 export default function TicketForm({departments=[],users=[],services=[],serviceTemplates=[],defaultTargetDeptId,defaultWorkType='Unclassified',initialServiceId=null,initialServiceWorkType=null}){
  const router=useRouter(),edited=useRef(false),initial=services.find(s=>s.id===initialServiceId);
@@ -24,14 +25,15 @@ export default function TicketForm({departments=[],users=[],services=[],serviceT
  const r=await fetch('/api/tickets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json();if(!r.ok)throw new Error(data.error||'Tiket gagal dibuat.');toast.success('Tiket berhasil dibuat.');router.push('/tickets/'+data.id);router.refresh();
  }catch(e){setError(e.message);toast.error(e.message);}finally{setBusy(false);}}
  return <form className={styles.form} onSubmit={submit}>
+ {error&&<p role="alert">{error}</p>}
  <TicketWorkClassification value={value} onChange={update} services={services} serviceTemplates={serviceTemplates} onServiceWorkTypeChange={type=>{update({...(!edited.current?{title:type.name}:{}),...(type.operation==='DataCenter'&&dataCenterDepartment?{departmentId:dataCenterDepartment.id,assigneeId:''}:{})});}}/>
  <p>Kategori dan perhitungan skor mengikuti jenis pekerjaan. Perusahaan mengikuti data customer/CID dan penugasan.</p>
  <section className={styles.details} aria-label="Detail pekerjaan"><h2>Detail pekerjaan</h2><div><label htmlFor="ticket-subject">Subject</label><input id="ticket-subject" required maxLength={500} value={value.title} onChange={e=>{edited.current=true;update({title:e.target.value});}}/></div>
  <div><label htmlFor="ticket-message">Message Content</label><textarea id="ticket-message" required value={value.description} onChange={e=>update({description:e.target.value})}/></div>
- <div className={styles.assignment}><div><label htmlFor="ticket-department">Department</label><select id="ticket-department" required disabled={value.serviceWorkOperation==='DataCenter'} value={value.departmentId} onChange={e=>update({departmentId:Number(e.target.value),assigneeId:''})}>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select>{value.serviceWorkOperation==='DataCenter'&&<small>Pelaksana otomatis: NocDatacenter / SDC.</small>}</div>
- <div><label htmlFor="ticket-pic">PIC</label><select id="ticket-pic" value={value.assigneeId} onChange={e=>update({assigneeId:e.target.value})}><option value="">Otomatis sesuai departemen</option>{users.filter(u=>!u.departmentId||Number(u.departmentId)===Number(value.departmentId)).map(u=><option key={u.id} value={u.id}>{u.name||u.username}</option>)}</select></div></div></section>
+ <div className={styles.assignment}><div><label htmlFor="ticket-department">Department</label><MasterPicker id="ticket-department" value={value.departmentId} disabled={value.serviceWorkOperation==='DataCenter'} options={departments.map(d=>({value:String(d.id),label:d.name}))} onChange={next=>update({departmentId:Number(next),assigneeId:''})}/>{value.serviceWorkOperation==='DataCenter'&&<small>Pelaksana otomatis: NocDatacenter / SDC.</small>}</div>
+ <div><label htmlFor="ticket-pic">PIC</label><MasterPicker id="ticket-pic" value={value.assigneeId} options={[{value:'',label:'Otomatis sesuai departemen'},...users.filter(u=>!u.departmentId||Number(u.departmentId)===Number(value.departmentId)).map(u=>({value:String(u.id),label:u.name||u.username}))]} onChange={assigneeId=>update({assigneeId})}/></div></div></section>
  {value.workType==='Trouble'&&<fieldset><legend>Waktu gangguan</legend><label><input type="checkbox" checked={outage} onChange={e=>setOutage(e.target.checked)}/> Catat downtime</label>{outage&&<div className={styles.fields}><label htmlFor="outage-start">Mulai downtime (WIB)</label><input id="outage-start" type="datetime-local" required value={start} onChange={e=>setStart(e.target.value)}/><label htmlFor="outage-end">Selesai downtime (WIB)</label><input id="outage-end" type="datetime-local" value={end} onChange={e=>setEnd(e.target.value)}/><button type="button" onClick={()=>setEnd(nowDatetimeLocal())} disabled={!start}>Pulih sekarang</button>{start&&<p role="status">{getDowntimeDuration(start,end||null,{live:!end})?.text}</p>}</div>}</fieldset>}
  <label htmlFor="ticket-attachment">Lampiran (opsional)</label><input id="ticket-attachment" type="file" onChange={e=>setFile(e.target.files?.[0]||null)}/>
- {error&&<p role="alert">{error}</p>}<button type="submit" className="btn btn-primary" disabled={busy}>{busy?'Menyimpan…':'Create Support Ticket'}</button>
+ <button type="submit" className="btn btn-primary" disabled={busy}>{busy?'Menyimpan…':'Create Support Ticket'}</button>
  </form>;
 }

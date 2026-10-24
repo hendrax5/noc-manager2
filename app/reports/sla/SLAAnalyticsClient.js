@@ -167,13 +167,13 @@ export default function SLAAnalyticsClient() {
           <button type="button" className="secondary-btn" style={{ width: "auto" }} onClick={handleExportCSV}>
             Export CSV
           </button>
-          <button type="button" className="primary-btn" style={{ width: "auto" }} onClick={() => window.print()}>
+          <button type="button" className="secondary-btn" style={{ width: "auto" }} onClick={() => window.print()}>
             Cetak / PDF
           </button>
         </div>
       </form>
 
-      {error && <div className="card ui-static-df2affce2c" >{error}</div>}
+      {error && <div className="card ui-static-df2affce2c" role="alert">{error}</div>}
 
       {data && !loading && (
         <div id="printable-report">

@@ -34,6 +34,9 @@ export default function SettingsClient({ initialFields, initialCategories, initi
   const [editingFieldId, setEditingFieldId] = useState(null);
   const [editFieldData, setEditFieldData] = useState({ name: "", type: "text", options: "", position: "bottom", required: false, active: true });
 
+  const [masterError, setMasterError] = useState("");
+  const [masterNotice, setMasterNotice] = useState("");
+
   const handleUpdateDashboardConfig = (deptName, key, value) => {
     setDashboardConfig(prev => ({
       ...prev,
@@ -72,28 +75,34 @@ export default function SettingsClient({ initialFields, initialCategories, initi
       body: JSON.stringify(dashboardConfig)
     });
     if (res.ok) {
-      alert("Dashboard department configurations updated successfully!");
+      setMasterNotice("Konfigurasi dashboard per departemen tersimpan.");
       router.refresh();
     } else {
-      alert("Failed to save dashboard settings.");
+      setMasterError("Konfigurasi dashboard gagal disimpan.");
     }
   };
 
   const handleAddField = async (e) => {
     e.preventDefault();
+    setMasterError(""); setMasterNotice("");
     const res = await fetch("/api/settings/fields", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newField)
     });
-    const saved = await res.json();
+    const saved = await res.json().catch(() => ({}));
+    if (!res.ok) { setMasterError(saved.error || "Field gagal disimpan."); return; }
     setFields([...fields, saved]);
     setNewField({ name: "", type: "text", options: "", position: "bottom", required: false });
+    setMasterNotice(`Field "${saved.name}" ditambahkan.`);
     router.refresh();
   };
 
   const handleDeleteField = async (id) => {
     if(confirm("Delete this custom field? Existing ticket data will NOT be deleted, but the field will no longer appear.")){
-      await fetch(`/api/settings/fields/${id}`, { method: "DELETE" });
+      setMasterError(""); setMasterNotice("");
+      const res = await fetch(`/api/settings/fields/${id}`, { method: "DELETE" });
+      if (!res.ok) { const body = await res.json().catch(() => ({})); setMasterError(body.error || "Field gagal dihapus."); return; }
       setFields(fields.filter(f => f.id !== id));
+      setMasterNotice("Field dihapus.");
       router.refresh();
     }
   };
@@ -104,6 +113,7 @@ export default function SettingsClient({ initialFields, initialCategories, initi
   };
 
   const handleSaveField = async (id) => {
+    setMasterError("");
     const res = await fetch(`/api/settings/fields/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -114,24 +124,37 @@ export default function SettingsClient({ initialFields, initialCategories, initi
       setFields(fields.map(f => f.id === id ? updated : f));
       setEditingFieldId(null);
       router.refresh();
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setMasterError(body.error || "Field gagal diperbarui.");
     }
   };
 
   const handleAddCategory = async (e) => {
     e.preventDefault();
+    setMasterError(""); setMasterNotice("");
     const res = await fetch("/api/settings/job-categories", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newCat)
     });
-    const saved = await res.json();
+    const saved = await res.json().catch(() => ({}));
+    if (!res.ok) { setMasterError(saved.error || "Job Category gagal disimpan."); return; }
     setCategories([...categories, saved]);
     setNewCat({ name: "", score: "" });
+    setMasterNotice(`Job Category "${saved.name}" ditambahkan.`);
     router.refresh();
   };
 
   const handleDeleteCategory = async (id) => {
     if(confirm("Delete this Job Category? It might orphan previously resolved tickets missing native historical scores if unresolved.")){
-      await fetch(`/api/settings/job-categories/${id}`, { method: "DELETE" });
+      setMasterError(""); setMasterNotice("");
+      const res = await fetch(`/api/settings/job-categories/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setMasterError(body.error ? `${body.error} Nonaktifkan kategori ini bila masih dipakai tiket.` : "Job Category gagal dihapus. Nonaktifkan kategori ini bila masih dipakai tiket.");
+        return;
+      }
       setCategories(categories.filter(c => c.id !== id));
+      setMasterNotice("Job Category dihapus.");
       router.refresh();
     }
   };
@@ -142,6 +165,7 @@ export default function SettingsClient({ initialFields, initialCategories, initi
   };
 
   const handleSaveCategory = async (id) => {
+    setMasterError("");
     const res = await fetch(`/api/settings/job-categories/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -152,6 +176,9 @@ export default function SettingsClient({ initialFields, initialCategories, initi
       setCategories(categories.map(c => c.id === id ? updated : c));
       setEditingCategoryId(null);
       router.refresh();
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setMasterError(body.error || "Job Category gagal diperbarui.");
     }
   };
 
@@ -161,8 +188,10 @@ export default function SettingsClient({ initialFields, initialCategories, initi
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(branding)
     });
     if (res.ok) {
-      alert("Branding configuration updated successfully!");
+      setMasterNotice("Konfigurasi branding tersimpan.");
       router.refresh();
+    } else {
+      setMasterError("Konfigurasi branding gagal disimpan.");
     }
   };
 
@@ -243,6 +272,8 @@ export default function SettingsClient({ initialFields, initialCategories, initi
       </div>
 
       <div className="ui-static-39c1d6c828" >
+        {masterError && <p role="alert" className="error-text">{masterError}</p>}
+        {masterNotice && <p role="status">{masterNotice}</p>}
         {activeTab === 'integrations' && <IntegrationsPanel departments={departments} />}
 
         {activeTab === 'custom_fields' && (
@@ -252,14 +283,14 @@ export default function SettingsClient({ initialFields, initialCategories, initi
               <p className="ui-static-31a03a7301" >Define extra variables for users to fill out when creating a new ticket.</p>
             </div>
             
-            <form onSubmit={handleAddField} className="ui-static-2d649ec674" style={{display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 150px minmax(200px, 1fr) 180px 100px auto', alignItems: 'end'}}>
+            <form onSubmit={handleAddField} className="ui-static-2d649ec674" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 13rem), 1fr))', alignItems: 'end'}}>
               <div>
-                <label className="ui-static-628a93e017" style={{display: 'block'}}>Field Name</label>
-                <input type="text" required value={newField.name} onChange={e => setNewField({...newField, name: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}} placeholder="e.g. Server Node ID" />
+                <label htmlFor="field-name" className="ui-static-628a93e017" style={{display: 'block'}}>Field Name</label>
+                <input id="field-name" type="text" required value={newField.name} onChange={e => setNewField({...newField, name: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}} placeholder="e.g. Server Node ID" />
               </div>
               <div>
-                <label className="ui-static-628a93e017" style={{display: 'block'}}>Input Type</label>
-                <select value={newField.type} onChange={e => setNewField({...newField, type: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}}>
+                <label htmlFor="field-type" className="ui-static-628a93e017" style={{display: 'block'}}>Input Type</label>
+                <select id="field-type" value={newField.type} onChange={e => setNewField({...newField, type: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}}>
                   <option value="text">Text Box</option>
                   <option value="textarea">Text Area</option>
                   <option value="date">Date Picker</option>
@@ -267,12 +298,12 @@ export default function SettingsClient({ initialFields, initialCategories, initi
                 </select>
               </div>
               <div>
-                <label className="ui-static-628a93e017" style={{display: 'block'}}>Dropdown Params</label>
-                <input type="text" value={newField.options} onChange={e => setNewField({...newField, options: e.target.value})} disabled={newField.type !== 'select'} className="ui-static-2bf089dea9" style={{width: '100%', opacity: newField.type === 'select' ? 1 : 0.5}} placeholder="Linux, Windows, MacOS" />
+                <label htmlFor="field-options" className="ui-static-628a93e017" style={{display: 'block'}}>Dropdown Params</label>
+                <input id="field-options" type="text" value={newField.options} onChange={e => setNewField({...newField, options: e.target.value})} disabled={newField.type !== 'select'} className="ui-static-2bf089dea9" style={{width: '100%', opacity: newField.type === 'select' ? 1 : 0.5}} placeholder="Linux, Windows, MacOS" />
               </div>
               <div>
-                <label className="ui-static-628a93e017" style={{display: 'block'}}>Positioning</label>
-                <select value={newField.position} onChange={e => setNewField({...newField, position: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}}>
+                <label htmlFor="field-position" className="ui-static-628a93e017" style={{display: 'block'}}>Positioning</label>
+                <select id="field-position" value={newField.position} onChange={e => setNewField({...newField, position: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}}>
                   <option value="bottom">Default (Below Attachments)</option>
                   <option value="below_subject">Below Subject</option>
                   <option value="below_description">Below Message Content</option>
@@ -301,7 +332,7 @@ export default function SettingsClient({ initialFields, initialCategories, initi
                 </tr>
               </thead>
               <tbody>
-                {fields.length === 0 && <tr><td colSpan="5" className="ui-static-bd68909f2e" style={{textAlign: 'center'}}>No custom fields added.</td></tr>}
+                {fields.length === 0 && <tr><td colSpan="6" className="ui-static-bd68909f2e" style={{textAlign: 'center'}}>Belum ada custom field.</td></tr>}
                 {fields.map(f => {
                   if (editingFieldId === f.id) {
                     return (
@@ -368,14 +399,14 @@ export default function SettingsClient({ initialFields, initialCategories, initi
               <p className="ui-static-31a03a7301" >Assign specific scores to various task domains. Score rewards are processed automatically upon resolution. Nama kategori yang mengandung &quot;Daily Report&quot; atau &quot;Laporan Harian&quot; hanya tampil di dashboard PIC-nya (Manager/Admin tetap melihat semua) dan disembunyikan dari Live Operations Board.</p>
             </div>
             
-            <form onSubmit={handleAddCategory} className="ui-static-2d649ec674" style={{display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 150px auto', alignItems: 'end'}}>
+            <form onSubmit={handleAddCategory} className="ui-static-2d649ec674" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 14rem), 1fr))', alignItems: 'end'}}>
               <div>
-                <label className="ui-static-628a93e017" style={{display: 'block'}}>Job Descriptor</label>
-                <input type="text" required value={newCat.name} onChange={e => setNewCat({...newCat, name: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}} placeholder="e.g. Metro Diagnostics" />
+                <label htmlFor="cat-name" className="ui-static-628a93e017" style={{display: 'block'}}>Job Descriptor</label>
+                <input id="cat-name" type="text" required value={newCat.name} onChange={e => setNewCat({...newCat, name: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}} placeholder="e.g. Metro Diagnostics" />
               </div>
               <div>
-                <label className="ui-static-628a93e017" style={{display: 'block'}}>Score Value</label>
-                <input type="number" required value={newCat.score} onChange={e => setNewCat({...newCat, score: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}} placeholder="e.g. 10" />
+                <label htmlFor="cat-score" className="ui-static-628a93e017" style={{display: 'block'}}>Score Value</label>
+                <input id="cat-score" type="number" required value={newCat.score} onChange={e => setNewCat({...newCat, score: e.target.value})} className="ui-static-2bf089dea9" style={{width: '100%'}} placeholder="e.g. 10" />
               </div>
               <button type="submit" className="primary-btn ui-static-644c48fe70" style={{height: '38px'}}>+ Register Category</button>
             </form>
@@ -418,7 +449,7 @@ export default function SettingsClient({ initialFields, initialCategories, initi
                     <tr key={c.id}>
                       <td className="ui-static-5c05f4afaf" >{c.name}</td>
                       <td><span className="badge ui-static-4ad8c23727" >+ {c.score} Pts</span></td>
-                      <td className="ui-static-b9010af219" >{c.active ? '🟢 Operational' : '🔴 Frozen'}</td>
+                      <td className="ui-static-b9010af219" ><span className="badge" style={c.active ? {background:'var(--ui-success-bg)',color:'var(--ui-success)'} : {background:'var(--ui-warning-bg)',color:'var(--ui-warning)'}}>{c.active ? 'Operational' : 'Frozen'}</span></td>
                       <td>
                         <select defaultValue="" onChange={(e) => {
                           if (e.target.value === 'edit') handleEditCategory(c);
@@ -465,12 +496,12 @@ export default function SettingsClient({ initialFields, initialCategories, initi
                   </div>
                   <div className="ui-static-f708b23f21" >
                     <label className="ui-static-628a93e017" style={{display: 'block'}}>External API Key (Incidents Integrations)</label>
-                    <input type="text" value={branding.externalApiKey || ""} onChange={e => setBranding({...branding, externalApiKey: e.target.value})} className="ui-static-3d0c9aaeb0" style={{width: '100%'}} placeholder="Enter secret API key for other applications to create tickets..." />
+                    <input type="password" autoComplete="new-password" value={branding.externalApiKey || ""} onChange={e => setBranding({...branding, externalApiKey: e.target.value})} className="ui-static-3d0c9aaeb0" style={{width: '100%'}} placeholder="Enter secret API key for other applications to create tickets..." />
                     <p className="ui-static-24def7178d" >This key will be validated against the 'X-API-Key' request header. If the environment variable 'EXTERNAL_API_KEY' is set, it will take precedence over this setting.</p>
                   </div>
                   <div className="ui-static-f708b23f21" >
                     <label className="ui-static-628a93e017" style={{display: 'block'}}>Gemini AI API Key (Performance Analysis)</label>
-                    <input type="text" value={branding.geminiApiKey || ""} onChange={e => setBranding({...branding, geminiApiKey: e.target.value})} className="ui-static-3d0c9aaeb0" style={{width: '100%'}} placeholder="Enter Google Gemini API Key..." />
+                    <input type="password" autoComplete="new-password" value={branding.geminiApiKey || ""} onChange={e => setBranding({...branding, geminiApiKey: e.target.value})} className="ui-static-3d0c9aaeb0" style={{width: '100%'}} placeholder="Enter Google Gemini API Key..." />
                     <p className="ui-static-24def7178d" >Used for AI-based performance narrative analysis in the NOC Member Comparison Leaderboard.</p>
                   </div>
                   <div className="ui-static-f708b23f21" >

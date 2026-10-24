@@ -516,6 +516,40 @@ body {
   transform: translateY(1px) scale(0.98);
 }
 
+/* Opt out of the legacy full-width primary inside toolbars and card actions. */
+.primary-btn.btn-fit,
+.btn.btn-fit {
+  width: auto;
+}
+
+.secondary-btn {
+  width: auto;
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.secondary-btn:hover {
+  background: var(--hover-bg);
+}
+
+.secondary-btn:active {
+  transform: translateY(1px);
+}
+
+.secondary-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .error-text {
   color: var(--danger-text);
   font-size: 0.875rem;
@@ -994,7 +1028,7 @@ body {
   border-bottom: 1px solid var(--border-color);
 }
 
-.report-tabs button {
+.report-tabs button:not(:where(.primary-btn, .secondary-btn, .btn)) {
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -1100,7 +1134,7 @@ body {
   color: var(--muted-text);
 }
 
-.report-pager button {
+.report-pager button:not(:where(.primary-btn, .secondary-btn, .btn)) {
   padding: 0.35rem 0.75rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
@@ -1275,7 +1309,7 @@ body {
   flex-wrap: wrap;
 }
 
-.report-filter-presets button {
+.report-filter-presets button:not(:where(.primary-btn, .secondary-btn, .btn)) {
   padding: 0.4rem 0.75rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
@@ -1440,7 +1474,7 @@ body {
   width: 100%;
 }
 
-.sla-filter-presets button {
+.sla-filter-presets button:not(:where(.primary-btn, .secondary-btn, .btn)) {
   padding: 0.4rem 0.75rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
@@ -1567,6 +1601,7 @@ body {
 
 .sla-letter-table {
   width: 100%;
+  min-width: 40rem;
   border-collapse: collapse;
   font-size: 0.78rem;
 }

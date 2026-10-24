@@ -30,16 +30,27 @@ yang sudah ada pada customData perlu diselesaikan operator inventory sebelum dip
 ## Master data dan hak akses
 
 Menu **Administration → Master Data Trouble** (`/settings/trouble-masters`).
-Admin atau role dengan `manage_trouble_master` dapat menambah, mengganti nama/deskripsi,
-mengatur urutan, serta mengaktifkan/nonaktifkan pilihan.
+Admin atau role dengan `manage_trouble_master` dapat membuat, mengganti nama/deskripsi,
+mengatur urutan, mengaktifkan/menonaktifkan, serta menghapus pilihan yang belum dipakai tiket.
+
+Form tambah/edit tampil sebagai dialog di atas daftar, bukan panel di bawah tabel: galat
+validasi dan tombol Simpan berada pada pandangan yang sama dengan isian, dan daftar tetap
+terlihat di belakangnya. Status aktif dikendalikan langsung dari baris daftar (switch), tanpa
+membuka form. Setiap baris menampilkan jumlah tiket yang memakai master (`usageCount`) agar
+konsekuensi edit atau hapus terlihat sebelum diklik. Di layar sempit tabel berubah menjadi
+daftar kartu dengan label per nilai, bukan tabel yang dipaksa menyempit.
+
+`DELETE /api/trouble-masters/:id` menolak dengan 409 bila master sudah dipakai tiket
+(`onDelete: Restrict` pada `Ticket.symptomId`/`Ticket.causeId`). Respons memuat jumlah tiket
+dan saran menonaktifkan agar riwayat tetap utuh; penghapusan permanen hanya untuk master yang
+belum pernah dipakai. `GET /api/trouble-masters?includeInactive=true` menyertakan `usageCount`
+dari relasi tiket. Nama duplikat ditolak per jenis master melalui normalisasi Unicode, spasi,
+dan kapitalisasi. Jenis master tidak dapat dipindahkan dari Gejala ke Penyebab atau sebaliknya.
+Snapshot label pada tiket lama tetap dipertahankan setelah rename/deaktivasi.
 
 Permission dapat diberikan melalui Team Access Manager. Role tersebut tidak memerlukan
 `manage_settings` untuk mengelola master. Operator terautentikasi membaca pilihan aktif
 melalui API, sementara pilihan nonaktif hanya tersedia bagi pengelola.
-
-Nama duplikat ditolak per jenis master melalui normalisasi Unicode, spasi, dan kapitalisasi.
-Jenis master tidak dapat dipindahkan dari Gejala ke Penyebab atau sebaliknya. Tidak ada
-endpoint hapus. Snapshot label pada tiket lama tetap dipertahankan setelah rename/deaktivasi.
 
 ## Upgrade database sebelum menjalankan versi baru
 
@@ -68,6 +79,8 @@ Perubahan ini belum diterapkan pada database atau container produksi dalam tahap
 ```sh
 node --test lib/tickets/workClassification.test.mjs lib/tickets/troubleMasters.test.mjs lib/services/cidLookup.test.mjs lib/reports/dashboard.test.mjs lib/reports/outageReport.test.mjs
 node scripts/test_ticket_classification_api.cjs
+node scripts/test_trouble_master_ui.cjs
+node scripts/_design-review/audit-master-ui.cjs
 node scripts/test_outage_report_api.cjs
 node scripts/test_ticket_classification_ui.cjs
 node scripts/test_outage_report_ui.cjs

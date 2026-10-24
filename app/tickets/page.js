@@ -237,22 +237,23 @@ export default async function TicketsPage({ searchParams }) {
         <Link href="/tickets?workType=Installation">Instalasi (format lama)</Link>
         {serviceWorkTypes.map(type => <Link key={type.id} href={`/tickets?workType=ServiceWork&serviceWorkTypeId=${type.id}`} aria-current={serviceWorkTypeId === type.id ? 'page' : undefined} className="ui-static-3d6ac67643" >{type.name}{type.active ? '' : ' (nonaktif)'}</Link>)}
       </nav>}
-      <div className={styles.tableScroll}><table className="data-table">
+      <div className={styles.tableScroll} role="region" aria-label="Daftar tiket" tabIndex={0}><table className="data-table">
+        <caption className="sr-only">Daftar tiket: tracking ID, detail, kategori, status, prioritas, umur, departemen, dan penanggung jawab</caption>
         <thead>
           <tr>
-            <th>Tracking ID</th>
-            <th>Tiket / Detail</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Priority</th>
-            <th>Age</th>
-            <th>Department</th>
-            <th>Assignee</th>
+            <th scope="col">Tracking ID</th>
+            <th scope="col">Tiket / Detail</th>
+            <th scope="col">Category</th>
+            <th scope="col">Status</th>
+            <th scope="col">Priority</th>
+            <th scope="col">Age</th>
+            <th scope="col">Department</th>
+            <th scope="col">Assignee</th>
           </tr>
         </thead>
         <tbody>
           {tickets.length === 0 && (
-            <tr><td colSpan="8" className="ui-static-39c1d6c828" style={{textAlign: 'center'}}>No tickets found matching your filters.</td></tr>
+            <tr><td colSpan="8" className="ui-static-39c1d6c828" style={{textAlign: 'center'}}>Tidak ada tiket yang cocok dengan filter ini. <Link href="/tickets">Reset filter</Link></td></tr>
           )}
           {tickets.map(t => {
             const isCritical = t.priority === 'Critical';

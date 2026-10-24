@@ -60,18 +60,19 @@ export default function SlaLetterView({ letter, monthSections = [] }) {
             </div>
           </dl>
 
-          <div className="sla-letter-table-wrap">
+          <div className="sla-letter-table-wrap table-region" role="region" aria-label="Rincian gangguan per customer" tabIndex={0}>
             <table className="sla-letter-table">
+              <caption className="sr-only">Rincian gangguan: nomor, customer, waktu down dan up, durasi, penyebab, dan tindakan perbaikan</caption>
               <thead>
                 <tr>
-                  <th>No</th>
-                  <th>Customer</th>
-                  <th>Incident date</th>
-                  <th>Down</th>
-                  <th>Up</th>
-                  <th>Duration</th>
-                  <th>Problem cause</th>
-                  <th>Corrective actions</th>
+                  <th scope="col">No</th>
+                  <th scope="col">Customer</th>
+                  <th scope="col">Incident date</th>
+                  <th scope="col">Down</th>
+                  <th scope="col">Up</th>
+                  <th scope="col">Duration</th>
+                  <th scope="col">Problem cause</th>
+                  <th scope="col">Corrective actions</th>
                 </tr>
               </thead>
               <tbody>

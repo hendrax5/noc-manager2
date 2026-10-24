@@ -172,7 +172,7 @@ export default function ShiftFairnessClient({ departments = [] }) {
 
       {data && !loading && (
         <>
-          <div className="card" style={{ overflowX: "auto" }}>
+          <div className="card table-region" role="region" aria-label="Tabel pemerataan shift" tabIndex={0} style={{ overflowX: "auto" }}>
             <h2 className="ui-static-fd1312781a" >
               {deptName} — {MONTHS.find((m) => m.value === month)?.label} {year}
               {data.pola ? ` (${data.pola})` : ""}
@@ -182,13 +182,15 @@ export default function ShiftFairnessClient({ departments = [] }) {
                 Belum ada data jadwal untuk departemen dan bulan ini.
               </p>
             ) : (
-              <table className="ui-static-e81f1882ce" style={{width: "100%"}}>
+              <table className="ui-static-e81f1882ce" style={{width: "100%", minWidth: "44rem"}}>
+                <caption className="sr-only">Jumlah shift per anggota pada {deptName}, {MONTHS.find((m) => m.value === month)?.label} {year}</caption>
                 <thead>
                   <tr className="ui-static-6d7b6af7b6" style={{textAlign: "left"}}>
-                    <th className="ui-static-ee6b240f5a" >Nama</th>
+                    <th scope="col" className="ui-static-ee6b240f5a" >Nama</th>
                     {columns.map((col) => (
                       <th
                         key={col.key}
+                        scope="col"
                         className="ui-static-ee6b240f5a" style={{textAlign: "center"}}
                       >
                         {col.label}

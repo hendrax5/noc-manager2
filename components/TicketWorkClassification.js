@@ -2,6 +2,7 @@
 import { formatCustomerId } from '@/lib/customers/identity';
 import { useEffect, useId, useRef, useState } from "react";
 import { WORK_TYPE_LABELS } from "@/lib/tickets/workClassification";
+import MasterPicker from "@/components/MasterPicker";
 import ServiceWorkFields from "./ServiceWorkFields";
 import { getServiceCid, getServiceSearchText } from "@/lib/services/cid";
 
@@ -108,19 +109,21 @@ export default function TicketWorkClassification({ value, onChange, services = [
     return () => { active = false; };
   }, []);
   const selection = value.workType === 'ServiceWork' && value.serviceWorkTypeId ? 'service:' + value.serviceWorkTypeId : value.workType || 'Unclassified';
+  const storedTypeMissing = value.workType === 'ServiceWork' && value.serviceWorkTypeId && !types.some(item => String(item.id) === String(value.serviceWorkTypeId));
+  const workTypeOptions = [
+    ...['Unclassified', 'Trouble', 'Installation'].map(type => ({ value: type, label: type === 'Installation' ? 'Instalasi (format lama)' : WORK_TYPE_LABELS[type] })),
+    ...(value.workType === 'ServiceWork' && !value.serviceWorkTypeId ? [{ value: 'ServiceWork', label: 'Pilih jenis pekerjaan layanan…' }] : []),
+    ...(storedTypeMissing ? [{ value: selection, label: value.serviceWorkTypeLabel || 'Jenis tersimpan', disabled: true }] : []),
+    ...types.map(type => ({ value: 'service:' + type.id, label: type.name })),
+  ];
   return <fieldset className="ui-static-dfb77db8ce" style={{gridColumn: "1 / -1", minWidth: 0}}>
     <legend>Klasifikasi pekerjaan</legend>
     <label htmlFor={id}>Jenis pekerjaan</label>
-    <select id={id} style={inputStyle} value={selection} onChange={event => {
-      const next = types.find(item => 'service:' + item.id === event.target.value);
-      onChange({ workType: next ? 'ServiceWork' : event.target.value, serviceWorkTypeId: next?.id || '', serviceChange: {}, installation: undefined, serviceIds: [], serviceWorkOperation: next?.operation || null });
-      if (next) onServiceWorkTypeChange?.(next);
-    }}>
-      {['Unclassified', 'Trouble', 'Installation'].map(type => <option key={type} value={type}>{type === 'Installation' ? 'Instalasi (format lama)' : WORK_TYPE_LABELS[type]}</option>)}
-      {value.workType === 'ServiceWork' && !value.serviceWorkTypeId && <option value="ServiceWork">Pilih jenis pekerjaan layanan…</option>}
-      {value.workType === 'ServiceWork' && value.serviceWorkTypeId && !types.some(item => String(item.id) === String(value.serviceWorkTypeId)) && <option value={selection} disabled>{value.serviceWorkTypeLabel || 'Jenis tersimpan'} (tidak tersedia)</option>}
-      {types.map(type => <option key={type.id} value={'service:' + type.id}>{type.name}</option>)}
-    </select>
+    <MasterPicker id={id} value={selection} options={workTypeOptions} onChange={next => {
+      const chosen = types.find(item => 'service:' + item.id === next);
+      onChange({ workType: chosen ? 'ServiceWork' : next, serviceWorkTypeId: chosen?.id || '', serviceChange: {}, installation: undefined, serviceIds: [], serviceWorkOperation: chosen?.operation || null });
+      if (chosen) onServiceWorkTypeChange?.(chosen);
+    }} />
     {typesError && <p role="alert">Jenis pekerjaan layanan gagal dimuat. Muat ulang halaman untuk mencoba lagi.</p>}
     {(value.editExistingServiceWork && value.sapReference) && <div>
       <label>Referensi SAP (opsional)

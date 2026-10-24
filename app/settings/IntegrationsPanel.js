@@ -139,23 +139,26 @@ export default function IntegrationsPanel({ departments = [] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rotateKey: true }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { toast.error(data.error || "Gagal merotasi kunci"); return; }
     if (data.apiKey) setCreatedKey(data.apiKey);
     await load();
   };
 
   const toggleActive = async (app) => {
-    await fetch(`/api/integrations/${app.id}`, {
+    const res = await fetch(`/api/integrations/${app.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ active: !app.active }),
     });
+    if (!res.ok) { const body = await res.json().catch(() => ({})); toast.error(body.error || "Gagal mengubah status integrasi"); return; }
     await load();
   };
 
   const remove = async (id) => {
     if (!confirm("Delete this integration app?")) return;
-    await fetch(`/api/integrations/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/integrations/${id}`, { method: "DELETE" });
+    if (!res.ok) { const body = await res.json().catch(() => ({})); toast.error(body.error || "Gagal menghapus integrasi"); return; }
     await load();
   };
 
@@ -188,6 +191,7 @@ export default function IntegrationsPanel({ departments = [] }) {
       <form onSubmit={createApp} className="ui-static-67c42c59ef" style={{display: "grid", maxWidth: 640}}>
         <input
           className="form-control"
+          aria-label="Nama aplikasi integrasi"
           placeholder="App name (e.g. Zabbix, Customer Portal)"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -195,18 +199,21 @@ export default function IntegrationsPanel({ departments = [] }) {
         />
         <input
           className="form-control"
+          aria-label="Deskripsi integrasi"
           placeholder="Description"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
         />
         <input
           className="form-control"
+          aria-label="URL webhook"
           placeholder="Webhook URL (optional)"
           value={form.webhookUrl}
           onChange={(e) => setForm({ ...form, webhookUrl: e.target.value })}
         />
         <select
           className="form-control"
+          aria-label="Departemen default"
           value={form.defaultDepartmentId}
           onChange={(e) => setForm({ ...form, defaultDepartmentId: e.target.value })}
         >
@@ -217,7 +224,7 @@ export default function IntegrationsPanel({ departments = [] }) {
             </option>
           ))}
         </select>
-        <div className="ui-static-30f523173e" style={{display: "flex", flexWrap: "wrap"}}>
+        <div className="ui-static-30f523173e" role="group" aria-label="Scope akses integrasi" style={{display: "flex", flexWrap: "wrap"}}>
           {availableScopes.map((s) => (
             <label key={s} className="ui-static-8af4b6ba2f" style={{display: "flex", alignItems: "center"}}>
               <input type="checkbox" checked={form.scopes.includes(s)} onChange={() => toggleScope(s)} />
@@ -236,14 +243,15 @@ export default function IntegrationsPanel({ departments = [] }) {
         <p className="ui-static-bf4b678785" >No integration apps yet. Legacy EXTERNAL_API_KEY still works for create.</p>
       ) : (
         <table className="table ui-static-6393964ce2" style={{width: "100%"}}>
+          <caption className="sr-only">Aplikasi integrasi, prefix kunci, scope, webhook, dan status</caption>
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Key prefix</th>
-              <th>Scopes</th>
-              <th>Webhook</th>
-              <th>Status</th>
-              <th />
+              <th scope="col">Name</th>
+              <th scope="col">Key prefix</th>
+              <th scope="col">Scopes</th>
+              <th scope="col">Webhook</th>
+              <th scope="col">Status</th>
+              <th scope="col">Tindakan</th>
             </tr>
           </thead>
           <tbody>
@@ -261,7 +269,7 @@ export default function IntegrationsPanel({ departments = [] }) {
                   </td>
                   <td style={{ maxWidth: 240 }}>{(app.scopes || []).join(", ") || "—"}</td>
                   <td>{app.webhookUrl ? "Yes" : "—"}</td>
-                  <td>{app.active ? "Active" : "Disabled"}</td>
+                  <td><span className="badge" style={app.active ? {background: "var(--ui-success-bg)", color: "var(--ui-success)"} : {background: "var(--ui-warning-bg)", color: "var(--ui-warning)"}}>{app.active ? "Active" : "Disabled"}</span></td>
                   <td style={{ whiteSpace: "nowrap" }}>
                     <button type="button" className="btn" onClick={() => startEditScopes(app)}>
                       Edit scopes
@@ -272,7 +280,7 @@ export default function IntegrationsPanel({ departments = [] }) {
                     <button type="button" className="btn" onClick={() => toggleActive(app)}>
                       {app.active ? "Disable" : "Enable"}
                     </button>{" "}
-                    <button type="button" className="btn" onClick={() => remove(app.id)}>
+                    <button type="button" className="btn btn-danger-ghost" onClick={() => remove(app.id)}>
                       Delete
                     </button>
                   </td>

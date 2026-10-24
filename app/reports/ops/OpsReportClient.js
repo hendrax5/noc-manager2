@@ -196,27 +196,28 @@ export default function OpsReportClient() {
             ))}
           </div>
 
-          <div className="card" style={{ overflowX: "auto" }}>
+          <div className="card table-region" role="region" aria-label="Daftar tiket laporan operasional" tabIndex={0} style={{ overflowX: "auto" }}>
             <h2 className="ui-static-fd1312781a" >
               {SECTIONS.find((s) => s.key === activeTab)?.title} ({rows.length})
             </h2>
             {rows.length === 0 ? (
               <p className="ui-static-b9010af219" >Tidak ada tiket di kategori ini untuk periode ini.</p>
             ) : (
-              <table className="ui-static-e81f1882ce" style={{width: "100%"}}>
+              <table className="ui-static-e81f1882ce" style={{width: "100%", minWidth: "46rem"}}>
+                <caption className="sr-only">Tiket pada kategori {SECTIONS.find((s) => s.key === activeTab)?.title}</caption>
                 <thead>
                   <tr className="ui-static-6d7b6af7b6" style={{textAlign: "left"}}>
-                    <th className="ui-static-ee6b240f5a" >Tiket</th>
-                    <th className="ui-static-ee6b240f5a" >Customer</th>
-                    <th className="ui-static-ee6b240f5a" >Category</th>
-                    <th className="ui-static-ee6b240f5a" >Status</th>
+                    <th scope="col" className="ui-static-ee6b240f5a" >Tiket</th>
+                    <th scope="col" className="ui-static-ee6b240f5a" >Customer</th>
+                    <th scope="col" className="ui-static-ee6b240f5a" >Category</th>
+                    <th scope="col" className="ui-static-ee6b240f5a" >Status</th>
                     {activeTab === "downtime" && (
-                      <th className="ui-static-ee6b240f5a" >Downtime</th>
+                      <th scope="col" className="ui-static-ee6b240f5a" >Downtime</th>
                     )}
-                    <th className="ui-static-ee6b240f5a" >
+                    <th scope="col" className="ui-static-ee6b240f5a" >
                       {activeTab === "downtime" ? "Resolved / Outage end" : "Resolved"}
                     </th>
-                    <th className="ui-static-ee6b240f5a" >Assignee</th>
+                    <th scope="col" className="ui-static-ee6b240f5a" >Assignee</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -12,7 +12,7 @@ async function main(){
  const types=[{id:1,name:'Upgrade',operation:'Upgrade',defaultJobCategoryId:4},{id:2,name:'Downgrade',operation:'Downgrade',defaultJobCategoryId:4},{id:3,name:'Perubahan Layanan',operation:'Change',defaultJobCategoryId:5},{id:4,name:'Terminasi',operation:'Terminate',defaultJobCategoryId:5}];
  const props={departments:[{id:1,name:'NOC'}],categories:[{id:4,name:'Upgrade category',score:5},{id:5,name:'Change category',score:6}],users:[],customFields:[],services,serviceTemplates:templates,initialServiceId:7,defaultWorkType:'ServiceWork'};
  const snapshot={workType:'ServiceWork',serviceWorkTypeLabel:'Upgrade',serviceChange:{before:{cid:'ABC-001',templateName:'IPT',bandwidthMbps:100,status:'Active'},after:{templateName:'IPT',bandwidthMbps:200,status:'Active'},effectiveDate:'2026-10-22',reason:'Requested upgrade'}};
- const built=await esbuild.build({stdin:{contents:`import React from 'react';import{createRoot}from'react-dom/client';import Form from './app/tickets/new/TicketForm';import Summary from './components/ServiceWorkSummary';createRoot(document.getElementById('app')).render(location.search.includes('summary')?<Summary ticket={${JSON.stringify(snapshot)}}/>:<Form {...${JSON.stringify(props)}}/>);`,resolveDir:root,loader:'jsx'},bundle:true,write:false,loader:{'.js':'jsx'},jsx:'automatic',alias:{'@':root},plugins:[{name:'fixtures',setup(build){build.onResolve({filter:/^(next\/navigation|react-hot-toast)$/},args=>({path:args.path,namespace:'fixture'}));build.onLoad({filter:/.*/,namespace:'fixture'},args=>({contents:args.path==='next/navigation'?'export const useRouter=()=>({push(){},refresh(){}});':'const report=m=>{window.messages=(window.messages||[]).concat(m)};export default {success:report,error:report};',loader:'js'}));}}]});
+ const built=await esbuild.build({stdin:{contents:`import React from 'react';import{createRoot}from'react-dom/client';import Form from './app/tickets/new/TicketForm';import Summary from './components/ServiceWorkSummary';createRoot(document.getElementById('app')).render(location.search.includes('summary')?<Summary ticket={${JSON.stringify(snapshot)}}/>:<Form {...${JSON.stringify(props)}}/>);`,resolveDir:root,loader:'jsx'},bundle:true,outdir:'out',write:false,loader:{'.js':'jsx'},jsx:'automatic',alias:{'@':root},plugins:[{name:'fixtures',setup(build){build.onResolve({filter:/^(next\/navigation|react-hot-toast|node:crypto)$/},args=>({path:args.path,namespace:'fixture'}));build.onLoad({filter:/.*/,namespace:'fixture'},args=>({contents:args.path==='node:crypto'?'export function createHash(){return {update(){return this},digest(){return "fixture-hash"}}}':args.path==='next/navigation'?'export const useRouter=()=>({push(){},refresh(){}});':'const report=m=>{window.messages=(window.messages||[]).concat(m)};export default {success:report,error:report};',loader:'js'}));}}]});
  const posts=[];
  const server=http.createServer((req,res)=>{
   if(req.url==='/app.js'){res.setHeader('Content-Type','text/javascript');res.end(built.outputFiles[0].text);return;}
@@ -26,33 +26,34 @@ async function main(){
  try{
   browser=await chromium.launch({channel:'chrome',headless:true});const page=await browser.newPage({viewport:{width:1360,height:1000}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
   const base=`http://127.0.0.1:${server.address().port}`;await page.goto(base);
+  const chooseWorkType=async name=>{await page.getByLabel('Jenis pekerjaan',{exact:true}).click();await page.getByRole('option',{name,exact:true}).click();};
+  const capacity=()=>page.getByLabel('Kapasitas',{exact:true});
+  const rfs=()=>page.getByLabel('RFS',{exact:true});
   assert.equal(await page.getByRole('radio',{name:/ABC-001/}).isChecked(),true,'CID prefilled');
-  await page.getByRole('option',{name:'Upgrade',exact:true}).waitFor({state:'attached'});
   assert.equal(await page.getByLabel('Jenis pekerjaan layanan *',{exact:true}).count(),0);
-  await page.getByLabel('Jenis pekerjaan',{exact:true}).selectOption('service:1');
-  assert.equal(await page.getByLabel('Produk/Layanan (tetap)',{exact:true}).inputValue(),'IPT');assert.equal(await page.getByLabel('Produk/Layanan (tetap)',{exact:true}).getAttribute('readonly'),'');assert.equal(await page.getByLabel('Produk/Layanan tujuan *',{exact:true}).count(),0);
-  await page.getByLabel('Kapasitas tujuan (Mbps)',{exact:false}).fill('200');await page.getByLabel('Tanggal efektif *',{exact:true}).fill('2026-10-22');
-  await page.getByPlaceholder('Describe the issue in detail. Please include any relevant steps to reproduce, server names, or error logs...').fill('Upgrade request');
-  assert.equal(await page.getByPlaceholder('Enter a concise summary of the issue...').inputValue(),'Upgrade - ABC-001');
+  await chooseWorkType('Upgrade');
+  await page.getByRole('radio',{name:/ABC-001/}).check();
+  assert.equal(await page.getByLabel('Produk/Layanan tujuan',{exact:true}).count(),0,'Upgrade is capacity-only');
+  await capacity().fill('0.2');await rfs().fill('2026-10-22');
+  await page.getByLabel('Subject',{exact:true}).fill('Upgrade QA');await page.getByLabel('Message Content',{exact:true}).fill('Upgrade request');
   async function submit(){const response=page.waitForResponse(r=>r.url().endsWith('/api/tickets')&&r.request().method()==='POST');await page.getByRole('button',{name:'Create Support Ticket'}).click();await response;return posts.at(-1);}
-  let payload=await submit();assert.equal(payload.workType,'ServiceWork');assert.equal(payload.serviceWorkTypeId,1);assert.equal(payload.jobCategoryId,4);assert.deepEqual(payload.serviceIds,[7]);assert.equal(payload.serviceChange.bandwidthMbps,200);assert.equal(payload.serviceChange.before,undefined);assert.equal(payload.customData.hasDowntime,false);
-  await page.getByPlaceholder('-- Select Category --').click();await page.getByText('Change category (+6 pts)',{exact:true}).click();
-  await page.getByLabel('Jenis pekerjaan',{exact:true}).selectOption('service:2');await page.getByLabel('Kapasitas tujuan (Mbps)',{exact:false}).fill('50');await page.getByLabel('Tanggal efektif *',{exact:true}).fill('2026-10-22');
-  assert.equal(await page.getByLabel('Produk/Layanan (tetap)',{exact:true}).inputValue(),'IPT');
-  payload=await submit();assert.equal(payload.jobCategoryId,5,'Manual category retained');
-  await page.getByRole('radio',{name:/ABC-002/}).check();assert.equal(await page.getByRole('radio',{name:/ABC-001/}).isChecked(),false,'One CID only');
-  await page.getByLabel('Jenis pekerjaan',{exact:true}).selectOption('service:3');await page.getByLabel('Produk/Layanan tujuan *',{exact:true}).selectOption('2');
-  await page.getByLabel('Region *',{exact:true}).selectOption('BDG');await page.getByLabel('Tanggal efektif *',{exact:true}).fill('2026-10-22');
+  let payload=await submit();
+  assert.equal(payload.workType,'ServiceWork');assert.equal(payload.serviceWorkTypeId,1);assert.deepEqual(payload.serviceIds,[7]);assert.equal(payload.serviceChange.bandwidthGbps,0.2);assert.equal(payload.serviceChange.before,undefined);assert.equal(payload.customData.hasDowntime,false);
+  await chooseWorkType('Downgrade');await page.getByRole('radio',{name:/ABC-001/}).check();await capacity().fill('0.05');await rfs().fill('2026-10-22');
+  payload=await submit();assert.equal(payload.serviceWorkTypeId,2);assert.equal(payload.serviceChange.bandwidthGbps,0.05);
+  await chooseWorkType('Perubahan Layanan');await page.getByRole('radio',{name:/ABC-002/}).check();assert.equal(await page.getByRole('radio',{name:/ABC-001/}).isChecked(),false,'One CID only');
+  await page.getByLabel('Produk/Layanan tujuan',{exact:true}).selectOption('2');
+  await page.getByLabel('Region',{exact:true}).selectOption('BDG');await rfs().fill('2026-10-22');
   payload=await submit();assert.deepEqual(payload.serviceIds,[8]);assert.equal(payload.serviceChange.targetTemplateId,2);assert.equal(payload.serviceChange.targetCustomData.Region,'BDG');
-  await page.getByLabel('Jenis pekerjaan',{exact:true}).selectOption('service:4');assert.equal(await page.getByLabel('Kapasitas tujuan (Mbps)',{exact:false}).count(),0);
-  await page.getByLabel('Alasan terminasi *',{exact:true}).fill('Contract ended');await page.getByLabel('Tanggal efektif *',{exact:true}).fill('2026-10-22');
-  payload=await submit();assert.equal(payload.serviceChange.reason,'Contract ended');assert.equal(payload.serviceChange.bandwidthMbps,undefined);
+  await chooseWorkType('Terminasi');await page.getByRole('radio',{name:/ABC-001/}).check();assert.equal(await capacity().count(),0);
+  await page.getByLabel('Alasan terminasi',{exact:true}).fill('Contract ended');await page.getByLabel('Tanggal terminasi',{exact:true}).fill('2026-10-22');
+  payload=await submit();assert.equal(payload.serviceChange.reason,'Contract ended');assert.equal(payload.serviceChange.bandwidthGbps,undefined);
   const artifact=process.env.SERVICE_WORK_QA_DIR || path.join(require('node:os').tmpdir(),'noc-service-work-qa');fs.mkdirSync(artifact,{recursive:true});
   await page.screenshot({path:path.join(artifact,'service-work-desktop.png'),fullPage:true});
   await page.setViewportSize({width:320,height:960});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Form fits 320px');await page.screenshot({path:path.join(artifact,'service-work-mobile.png'),fullPage:true});
   await page.goto(base+'?summary');await page.getByRole('heading',{name:'Upgrade',exact:true}).waitFor();assert.ok((await page.getByRole('table').innerText()).includes('200'));
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Summary fits 320px');assert.deepEqual(errors,[]);
-  console.log('PASS: actual form CID prefill/single selection, Upgrade/Downgrade/product change/Terminate payloads, suggested + manual Job Category, no snapshot leakage, summary and 320px. Screenshots saved in QA output folder. Synthetic API only.');
+  console.log('PASS: form with picker work type, CID single selection, Upgrade/Downgrade/Change/Terminate payloads, summary and 320px. Synthetic API only.');
  }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

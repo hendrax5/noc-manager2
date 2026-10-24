@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { outageCsv, outageDate, outageDuration, parseOutageFilters } from '@/lib/reports/outageReport';
 import styles from './OutageReport.module.css';
@@ -35,8 +35,17 @@ export default function OutageReportClient() {
   const [error, setError] = useState('');
   const [preview, setPreview] = useState(false);
   const [notice, setNotice] = useState('');
+  const previewRef = useRef(null);
   const dirty = JSON.stringify(draft) !== JSON.stringify(applied);
   const update = (key, value) => setDraft((current) => ({ ...current, [key]: value }));
+
+  useEffect(() => {
+    if (!preview) return;
+    const section = previewRef.current;
+    if (!section) return;
+    section.scrollIntoView({ block: 'start' });
+    section.focus();
+  }, [preview]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -122,7 +131,7 @@ export default function OutageReportClient() {
         <p className={styles.footnote}>Waktu WIB. * Gangguan berjalan dihitung sampai {outageDate(report.generatedAt)}. Penyebab dan tindakan dapat diperiksa melalui tautan tiket.</p>
       </section>
       <p className={`no-print ${styles.footnote}`}>Laporan ini menyeleksi gangguan per tiket. Availability dan target SLA periodik tetap tersedia di tab SLA periodik.</p>
-      {preview && <section className={styles.preview} aria-labelledby="outage-preview-title">
+      {preview && <section ref={previewRef} tabIndex={-1} className={styles.preview} aria-labelledby="outage-preview-title">
         <div className={`no-print ${styles.sectionHeading}`}><h2 id="outage-preview-title">Pratinjau laporan cetak</h2><button type="button" className="primary-btn" onClick={() => window.print()}>Cetak / Simpan PDF</button></div>
         <article className={`sla-letter ${styles.letter}`}>
           <header><div className={styles.ionHeader}><img src="/ion-logo.png" alt="Logo ION Network" width="110" height="54" /><div><strong>ION NETWORK</strong><p>PT PARSAORAN GLOBAL DATATRANS</p></div></div><h2>Laporan penanganan gangguan</h2><p><Criteria filters={report.filters} /></p><p className={styles.footnote}>Dibuat {outageDate(report.generatedAt)} WIB</p></header>

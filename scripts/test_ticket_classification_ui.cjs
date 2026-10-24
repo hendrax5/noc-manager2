@@ -1,4 +1,5 @@
 // Real client components, synthetic API fixtures, no authentication bypass or database writes.
+// Covers the current work-v2 form: classification, CID/symptom/cause gating, and inactive master snapshots.
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const http = require('node:http');
@@ -12,105 +13,144 @@ async function main() {
     {id: 42, identifiers:[{code:'I-0275-021-01'}], name: 'Legacy Link', customData: {CID: 'CID-LEGACY'}, customer: {name: 'Customer Legacy'}},
     {id: 43, name: 'Missing Circuit', customer: {name: 'Customer Missing'}},
   ];
-  const fixture = {departments:[{id:1,name:'NOC'}],categories:[{id:7,name:'Legacy category',score:5}],users:[{id:3,name:'Operator'}],customFields:[{id:1,name:'Legacy custom note',type:'text',required:true,position:'bottom'},{id:2,name:'Optional legacy field',type:'text',required:false,position:'below_subject'}],services,serviceTemplates:[]};
-  const built = await esbuild.build({stdin:{contents:`
-    import React, {useState} from 'react'; import {createRoot} from 'react-dom/client';
-    import TicketForm from './app/tickets/new/TicketForm';
-    import TicketWorkClassification from './components/TicketWorkClassification';
-    function Snapshot(){const [value,setValue]=useState({workType:'Trouble',symptomId:91,symptomLabel:'Inactive symptom snapshot',causeId:92,causeLabel:'Inactive cause snapshot'});return <TicketWorkClassification value={value} onChange={patch=>setValue(previous=>({...previous,...patch}))}/>}
-    const query = new URLSearchParams(location.search);
-    createRoot(document.getElementById('app')).render(query.has('snapshot') ? <Snapshot/> : <TicketForm {...${JSON.stringify(fixture)}} defaultWorkType={query.get('workType') || 'Unclassified'}/>);
-  `,resolveDir:root,sourcefile:'classification-ui-fixture.jsx',loader:'jsx'},bundle:true,write:false,loader:{'.js':'jsx'},jsx:'automatic',alias:{'@':root},plugins:[{name:'client-fixture-dependencies',setup(build){
-    build.onResolve({filter:/^(next\/navigation|react-hot-toast)$/},args=>({path:args.path,namespace:'fixture'}));
-    build.onLoad({filter:/.*/,namespace:'fixture'},args=>({contents:args.path==='next/navigation' ? 'export const useRouter=()=>({push(){},refresh(){}});' : 'const report=message=>{window.fixtureToasts=(window.fixtureToasts||[]).concat(message)}; export default {error:report,success:report};',loader:'js'}));
-  }}]});
-  const js=built.outputFiles[0].text;
-  const posts=[],masterRequests=[];
-  const server=http.createServer((req,res)=>{
-    res.setHeader('Content-Type','application/json');
-    if(req.url.startsWith('/api/trouble-masters?')){
-      const kind=new URL(req.url,'http://localhost').searchParams.get('kind');masterRequests.push(kind);
-      res.end(JSON.stringify(kind==='symptom' ? [{id:11,name:'Link down',description:'No connectivity',active:true},{id:12,name:'Packet loss',active:true}] : [{id:21,name:'Belum diketahui',active:true},{id:22,name:'FO CUT',description:'Fiber cable cut',active:true}]));
-    } else if(req.url==='/api/service-work-types')res.end('[]');
-    else if(req.url==='/api/queues')res.end('[]');
-    else if(req.url==='/api/tickets' && req.method==='POST'){
-      let body='';req.on('data',data=>body+=data);req.on('end',()=>{posts.push(JSON.parse(body));res.end('{"id":100}');});
-    } else if(req.url==='/app.js'){res.setHeader('Content-Type','text/javascript');res.end(js);}
-    else {res.setHeader('Content-Type','text/html');res.end('<!doctype html><html lang="id"><body><div id="app"></div><script src="/app.js"></script></body></html>');}
+  const fixture = {departments:[{id:1,name:'NOC'}],categories:[{id:7,name:'Legacy category',score:5}],users:[{id:3,name:'Operator'}],services,serviceTemplates:[]};
+  const built = await esbuild.build({
+    stdin: {
+      contents: `
+        import React, {useState} from 'react'; import {createRoot} from 'react-dom/client';
+        import TicketForm from './app/tickets/new/TicketForm';
+        import TicketWorkClassification from './components/TicketWorkClassification';
+        function Snapshot(){const [value,setValue]=useState({workType:'Trouble',symptomId:91,symptomLabel:'Inactive symptom snapshot',causeId:92,causeLabel:'Inactive cause snapshot'});return <TicketWorkClassification value={value} onChange={patch=>setValue(previous=>({...previous,...patch}))}/>}
+        const query = new URLSearchParams(location.search);
+        createRoot(document.getElementById('app')).render(query.has('snapshot') ? <Snapshot/> : <TicketForm {...${JSON.stringify(fixture)}} defaultWorkType={query.get('workType') || 'Unclassified'}/>);
+      `,
+      resolveDir: root, sourcefile: 'classification-ui-fixture.jsx', loader: 'jsx',
+    },
+    bundle: true, outdir: 'out', write: false, loader: {'.js': 'jsx'}, jsx: 'automatic', alias: {'@': root},
+    plugins: [{
+      name: 'client-fixture-dependencies',
+      setup(build) {
+        build.onResolve({filter: /^(next\/navigation|react-hot-toast|node:crypto)$/}, args => ({path: args.path, namespace: 'fixture'}));
+        build.onLoad({filter: /.*/, namespace: 'fixture'}, args => ({
+          contents: args.path === 'node:crypto'
+            ? 'export function createHash(){return {update(){return this},digest(){return "fixture-hash"}}}'
+            : args.path === 'next/navigation'
+              ? 'export const useRouter=()=>({push(){},refresh(){}});'
+              : 'const report=message=>{window.fixtureToasts=(window.fixtureToasts||[]).concat(message)}; export default {error:report,success:report};',
+          loader: 'js',
+        }));
+      },
+    }],
   });
-  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const js = built.outputFiles.find(file => file.path.endsWith('.js')).text;
+  const css = built.outputFiles.find(file => file.path.endsWith('.css'))?.text || '';
+  const posts = [], masterRequests = [];
+  const server = http.createServer((req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    if (req.url.startsWith('/api/trouble-masters?')) {
+      const kind = new URL(req.url, 'http://localhost').searchParams.get('kind');
+      masterRequests.push(kind);
+      res.end(JSON.stringify(kind === 'symptom'
+        ? [{id:11,name:'Link down',description:'No connectivity',active:true},{id:12,name:'Packet loss',active:true}]
+        : [{id:21,name:'Belum diketahui',active:true},{id:22,name:'FO CUT',description:'Fiber cable cut',active:true}]));
+    } else if (req.url === '/api/service-work-types') res.end('[]');
+    else if (req.url === '/api/queues') res.end('[]');
+    else if (req.url === '/api/tickets' && req.method === 'POST') {
+      let body = ''; req.on('data', data => body += data); req.on('end', () => { posts.push(JSON.parse(body)); res.end('{"id":100}'); });
+    } else if (req.url === '/app.js') { res.setHeader('Content-Type', 'text/javascript'); res.end(js); }
+    else {
+      res.setHeader('Content-Type', 'text/html');
+      res.end(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Ticket classification QA</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body><main id="app"></main><script src="/app.js"></script></body></html>`);
+    }
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   let browser;
   try {
-    browser=await chromium.launch({headless:true,channel:'chrome'});
-    const page=await browser.newPage({viewport:{width:1440,height:1100}});
-    const errors=[];page.on('pageerror',error=>errors.push(error.message));
-    const base=`http://127.0.0.1:${server.address().port}`;
-    const customer=()=>page.getByPlaceholder('Cari dari Telecom Asset Inventory (e.g. Yayasan WFF) atau ketik manual...');
-    async function requiredLegacyFields(){
-      await page.getByPlaceholder('Enter a concise summary of the issue...').fill('Fixture full form');
-      await page.getByPlaceholder('Describe the issue in detail. Please include any relevant steps to reproduce, server names, or error logs...').fill('Retain every original field');
-      await page.locator('div').filter({has:page.locator('label').filter({hasText:'Legacy custom note'})}).last().locator('input').fill('Legacy custom value');
-      await page.getByPlaceholder('-- Select Category --').click();
-      await page.getByText('Legacy category (+5 pts)',{exact:true}).click();
+    browser = await chromium.launch({headless: true, channel: 'chrome'});
+    const page = await browser.newPage({viewport: {width: 1280, height: 1000}});
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const subject = () => page.getByLabel('Subject', {exact: true});
+    const message = () => page.getByLabel('Message Content', {exact: true});
+    const workType = () => page.getByLabel('Jenis pekerjaan', {exact: true});
+    async function submit() {
+      const response = page.waitForResponse(res => res.url().endsWith('/api/tickets') && res.request().method() === 'POST');
+      await page.getByRole('button', {name: 'Create Support Ticket'}).click();
+      await response;
+      return posts.at(-1);
     }
-    async function submit(){const response=page.waitForResponse(response=>response.url().endsWith('/api/tickets') && response.request().method()==='POST');await page.getByRole('button',{name:'Create Support Ticket'}).click();await response;return posts.at(-1);}
+
+    // Unclassified: a plain ticket keeps the classification empty.
     await page.goto(base);
-    assert.equal(await page.getByLabel('Jenis pekerjaan').inputValue(),'Unclassified');
-    await requiredLegacyFields();await customer().fill('Manual legacy customer');
-    let payload=await submit();assert.equal(payload.workType,'Unclassified');assert.equal(payload.jobCategoryId,7);assert.equal(payload.customData['Legacy custom note'],'Legacy custom value');assert.equal(payload.customData['Customer Name'],'Manual legacy customer');
-    assert.ok(await page.getByPlaceholder('-- Select PIC (Leave empty for Auto-Assignment) --').isVisible());
-    assert.ok(await page.getByText('Order Origin (Company)',{exact:false}).isVisible());
-    assert.ok(await page.getByText('Executing Vendor',{exact:false}).isVisible());
-    const optional=page.locator('select').filter({has:page.locator('option[value="2"]')});await optional.selectOption('2');
-    assert.ok(await page.getByText('Optional legacy field',{exact:true}).isVisible());
-    await page.getByLabel('Catat Waktu Outage / Downtime (Trouble Ticket)',{exact:false}).check();
-    await page.locator('input[type="datetime-local"]').nth(0).fill('2026-10-01T08:00');
-    await page.locator('input[type="datetime-local"]').nth(1).fill('2026-10-01T09:00');
-    await page.getByLabel('Jenis pekerjaan').selectOption('Installation');
-    assert.equal(await page.getByLabel('Catat Waktu Outage / Downtime (Trouble Ticket)',{exact:false}).isChecked(),true);
-    assert.equal(await page.locator('input[type="datetime-local"]').nth(0).inputValue(),'2026-10-01T08:00');
-    assert.equal(await page.locator('input[type="datetime-local"]').nth(1).inputValue(),'2026-10-01T09:00');
-    assert.ok(await page.getByText('Installation tidak dihitung dalam downtime SLA.',{exact:false}).isVisible());
-    await page.getByLabel('Referensi SAP (opsional)').fill('SAP-MANUAL-42');
-    await customer().fill('Installation free text');payload=await submit();assert.equal(payload.sapReference,'SAP-MANUAL-42');assert.equal(payload.jobCategoryId,7);assert.equal(payload.customData['Legacy custom note'],'Legacy custom value');assert.equal(payload.customData['Customer Name'],'Installation free text');assert.equal(payload.customData.hasDowntime,true);assert.equal(payload.customData.startDowntime,'2026-10-01T08:00');assert.equal(payload.customData.endDowntime,'2026-10-01T09:00');assert.equal(payload.customData.downtimeMinutes,60);
-    await page.goto(base+'?workType=Trouble');await requiredLegacyFields();
-    assert.ok((await page.getByLabel('Cari & pilih CID layanan',{exact:true}).boundingBox()).y < (await page.getByLabel('Gejala *',{exact:true}).boundingBox()).y,'CID picker must appear before Gejala');
-    await page.getByLabel('Gejala *',{exact:true}).fill('SAP-C-1243-0003');
-    await page.getByRole('alert').filter({hasText:'Teks ini terlihat seperti CID'}).waitFor();
-    await page.getByLabel('Gejala *',{exact:true}).fill('down');
-    await page.getByRole('option',{name:'Link down',exact:true}).click();
-    await page.getByLabel('Penyebab *',{exact:true}).fill('fiber');await page.getByRole('option',{name:'FO CUT',exact:true}).click();
-    assert.equal(await page.getByLabel('Cari gejala',{exact:true}).count(),0);
-    assert.equal(await page.getByLabel('Cari penyebab',{exact:true}).count(),0);
+    assert.equal(await subject().count(), 1);
+    await subject().fill('Fixture full form'); await message().fill('Retain every original field');
+    let payload = await submit();
+    assert.equal(payload.workType, 'Unclassified');
+    assert.deepEqual(payload.serviceIds, []);
+    assert.equal(payload.symptomId, undefined);
+    assert.equal(payload.jobCategoryId, undefined);
+
+    // Trouble: CID picker comes before the master pickers, invalid and missing CID are blocked.
+    await page.goto(base + '?workType=Trouble');
+    assert.match(await workType().innerText(), /Trouble/);
+    await subject().fill('Trouble fixture'); await message().fill('Link down on Metro Alpha');
+    assert.ok((await page.getByLabel('Cari & pilih CID layanan', {exact: true}).boundingBox()).y < (await page.getByLabel('Gejala *', {exact: true}).boundingBox()).y, 'CID picker must appear before Gejala');
+    await page.getByLabel('Gejala *', {exact: true}).fill('SAP-C-1243-0003');
+    await page.getByRole('alert').filter({hasText: 'Teks ini terlihat seperti CID'}).waitFor();
+    await page.getByLabel('Gejala *', {exact: true}).fill('down');
+    await page.getByRole('option', {name: 'Link down', exact: true}).click();
+    await page.getByLabel('Penyebab *', {exact: true}).fill('fiber');
+    await page.getByRole('option', {name: 'FO CUT', exact: true}).click();
+    assert.equal(await page.getByLabel('Cari gejala', {exact: true}).count(), 0);
+    assert.equal(await page.getByLabel('Cari penyebab', {exact: true}).count(), 0);
     assert.ok(masterRequests.includes('symptom') && masterRequests.includes('cause'));
-    await page.getByLabel('Cari & pilih CID layanan',{exact:true}).fill('Missing');await page.getByRole('checkbox',{name:/CID belum tersedia/}).check();
-    const before=posts.length;await page.getByRole('button',{name:'Create Support Ticket'}).click();
-    await page.waitForFunction(()=>window.fixtureToasts?.some(text=>text.includes('Semua layanan terpilih wajib memiliki CID')));
-    assert.equal(posts.length,before,'Missing CID must prevent a create request');
-    await page.getByRole('checkbox',{name:/CID belum tersedia/}).uncheck();
-    await page.getByLabel('Cari & pilih CID layanan',{exact:true}).fill('I-0275-021-01');await page.getByRole('checkbox',{name:/CID-LEGACY/}).check();
-    assert.ok(await page.getByRole('checkbox',{name:/CID-LEGACY/}).isChecked());
-    payload=await submit();assert.deepEqual(payload.serviceIds,[42]);assert.equal(payload.symptomId,11);assert.equal(payload.causeId,22);assert.equal(payload.workType,'Trouble');
-    await page.goto(base+'?snapshot=1');
-    assert.equal(await page.getByLabel('Gejala *',{exact:true}).inputValue(),'Inactive symptom snapshot');
-    assert.equal(await page.getByLabel('Penyebab *',{exact:true}).inputValue(),'Inactive cause snapshot');
-    const symptom=page.getByLabel('Gejala *',{exact:true});
-    await symptom.fill('Packet');await symptom.press('ArrowDown');await symptom.press('Enter');
-    assert.equal(await symptom.inputValue(),'Packet loss');
+
+    await page.getByLabel('Cari & pilih CID layanan', {exact: true}).fill('Missing');
+    await page.getByRole('checkbox', {name: /CID belum tersedia/}).check();
+    const before = posts.length;
+    await page.getByRole('button', {name: 'Create Support Ticket'}).click();
+    await page.getByRole('alert').filter({hasText: 'Pilih CID, gejala, dan penyebab gangguan.'}).waitFor();
+    assert.equal(posts.length, before, 'Missing CID must prevent a create request');
+    await page.getByRole('checkbox', {name: /CID belum tersedia/}).uncheck();
+
+    await page.getByLabel('Cari & pilih CID layanan', {exact: true}).fill('I-0275-021-01');
+    await page.getByRole('checkbox', {name: /CID-LEGACY/}).check();
+    payload = await submit();
+    assert.deepEqual(payload.serviceIds, [42]);
+    assert.equal(payload.symptomId, 11);
+    assert.equal(payload.causeId, 22);
+    assert.equal(payload.workType, 'Trouble');
+
+    // Inactive master snapshots stay visible until the operator replaces them.
+    await page.goto(base + '?snapshot=1');
+    const symptom = page.getByLabel('Gejala *', {exact: true});
+    assert.equal(await symptom.inputValue(), 'Inactive symptom snapshot');
+    assert.equal(await page.getByLabel('Penyebab *', {exact: true}).inputValue(), 'Inactive cause snapshot');
+    await symptom.fill('Packet'); await symptom.press('ArrowDown'); await symptom.press('Enter');
+    assert.equal(await symptom.inputValue(), 'Packet loss');
     await symptom.fill('unknown free text');
-    assert.equal(await symptom.evaluate(input=>input.checkValidity()),false,'Free text must not become a master selection');
+    assert.equal(await symptom.evaluate(input => input.checkValidity()), false, 'Free text must not become a master selection');
     await symptom.press('Escape');
-    assert.equal(await symptom.inputValue(),'');
-    await symptom.fill('down');await symptom.press('ArrowDown');await symptom.press('Enter');
-    assert.equal(await symptom.evaluate(input=>input.checkValidity()),true);
-    await symptom.focus();await symptom.press('Escape');
-    assert.equal(await symptom.getAttribute('aria-expanded'),'false');
-    assert.equal(await symptom.inputValue(),'Link down');
-    await page.setViewportSize({width:320,height:900});
+    assert.equal(await symptom.inputValue(), '');
+    await symptom.fill('down'); await symptom.press('ArrowDown'); await symptom.press('Enter');
+    assert.equal(await symptom.evaluate(input => input.checkValidity()), true);
+    await symptom.focus(); await symptom.press('Escape');
+    assert.equal(await symptom.getAttribute('aria-expanded'), 'false');
+    assert.equal(await symptom.inputValue(), 'Link down');
+
+    await page.setViewportSize({width: 320, height: 900});
     await symptom.click();
-    assert.ok((await page.getByRole('listbox',{name:'Pilihan gejala'}).boundingBox()).width <= 320);
-    assert.deepEqual(errors,[]);
-    console.log('PASS: real full TicketForm retains legacy fields/jobCategory/manual customers; Installation SAP + existing downtime preservation; Trouble active master fetch/search + legacy CID selection; missing CID blocked before POST; inactive edit snapshots + explicit replacement; no browser errors. Synthetic API fixtures, no live database.');
-  } finally {if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
+    assert.ok((await page.getByRole('listbox', {name: 'Pilihan gejala'}).boundingBox()).width <= 320);
+
+    await page.addScriptTag({path: require.resolve('axe-core/axe.min.js')});
+    const axeResult = await page.evaluate(async () => window.axe.run({runOnly: {type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']}}));
+    assert.deepEqual(axeResult.violations.map(violation => violation.id), []);
+    assert.deepEqual(errors, []);
+    console.log('PASS: current work-v2 form classification (Unclassified/Trouble), CID ordering and missing-CID guard, active master fetch/search, inactive snapshots with explicit replacement, 320px listbox, axe and no browser errors. Synthetic API only.');
+  } finally {
+    if (browser) await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
 }
-main().catch(error=>{console.error(error);process.exitCode=1;});
+main().catch(error => { console.error(error); process.exitCode = 1; });

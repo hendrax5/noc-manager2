@@ -205,14 +205,20 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
     URL.revokeObjectURL(url);
   };
 
-  const SortHeader = ({ field, children }) => (
-    <th
-      onClick={() => handleSort(field)}
-      className="ui-static-e17edd45ee" style={{cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap', textAlign: 'left', textTransform: 'uppercase'}}
-    >
-      {children} {sortField === field ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-    </th>
-  );
+  const SortHeader = ({ field, children }) => {
+    const active = sortField === field;
+    return (
+      <th
+        scope="col"
+        aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+        className="ui-static-e17edd45ee" style={{whiteSpace: 'nowrap', textAlign: 'left', textTransform: 'uppercase'}}
+      >
+        <button type="button" onClick={() => handleSort(field)} style={{background: 'none', border: 0, padding: '0.25rem 0', margin: 0, color: 'inherit', font: 'inherit', textTransform: 'inherit', letterSpacing: 'inherit', cursor: 'pointer', minHeight: 'auto'}}>
+          {children} {active ? (sortDir === 'asc' ? '↑' : '↓') : ''}
+        </button>
+      </th>
+    );
+  };
 
   return (
     <div className="ui-static-48c0e01ac7" style={{overflow: 'hidden'}}>
@@ -271,19 +277,20 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
       </div>
 
       {/* Table */}
-      <div className={`live-ops-body${loading ? " is-refreshing" : ""}`} style={{ overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }}>
-        <table className="ui-static-581d169cdc" style={{width: '100%'}}>
+      <div className={`live-ops-body${loading ? " is-refreshing" : ""}`} role="region" aria-label="Papan operasi langsung" tabIndex={0} style={{ overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }}>
+        <table className="ui-static-581d169cdc" style={{width: '100%', minWidth: '64rem'}}>
+          <caption className="sr-only">Tiket aktif: ID, customer, subject, kategori, status, waktu down, durasi, PIC, catatan terakhir, dan SLA</caption>
           <thead className="ui-static-11d9ca5a15" style={{position: 'sticky', top: 0, zIndex: 5}}>
             <tr>
               <SortHeader field="trackingId">ID</SortHeader>
-              <th className="ui-static-e17edd45ee" style={{textAlign: 'left', textTransform: 'uppercase'}}>Customer/Site</th>
-              <th className="ui-static-e17edd45ee" style={{textAlign: 'left', textTransform: 'uppercase'}}>Subject</th>
+              <th scope="col" className="ui-static-e17edd45ee" style={{textAlign: 'left', textTransform: 'uppercase'}}>Customer/Site</th>
+              <th scope="col" className="ui-static-e17edd45ee" style={{textAlign: 'left', textTransform: 'uppercase'}}>Subject</th>
               <SortHeader field="category">Category</SortHeader>
               <SortHeader field="status">Status</SortHeader>
               <SortHeader field="createdAt">Time Down</SortHeader>
               <SortHeader field="duration">Duration</SortHeader>
               <SortHeader field="assignee">PIC</SortHeader>
-              <th className="ui-static-e17edd45ee" style={{textAlign: 'left', textTransform: 'uppercase'}}>Last Note</th>
+              <th scope="col" className="ui-static-e17edd45ee" style={{textAlign: 'left', textTransform: 'uppercase'}}>Last Note</th>
               <SortHeader field="slaBreaches">SLA</SortHeader>
             </tr>
           </thead>
@@ -399,15 +406,15 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
                           onKeyDown={e => e.key === 'Enter' && handleInlineNote(t.id)}
                           className="ui-static-e2caedb32c" style={{flex: 1, minWidth: '80px'}}
                         />
-                        <button onClick={() => handleInlineNote(t.id)} disabled={inlineNoteLoading} className="ui-static-27f9036d0a" style={{cursor: 'pointer'}}>
+                        <button onClick={() => handleInlineNote(t.id)} disabled={inlineNoteLoading} aria-label="Simpan catatan" className="ui-static-27f9036d0a" style={{cursor: 'pointer'}}>
                           {inlineNoteLoading ? '...' : '✓'}
                         </button>
-                        <button onClick={() => { setInlineNoteId(null); setInlineNoteText(''); }} className="ui-static-993e88a533" style={{cursor: 'pointer'}}>
+                        <button onClick={() => { setInlineNoteId(null); setInlineNoteText(''); }} aria-label="Batal menambah catatan" className="ui-static-993e88a533" style={{cursor: 'pointer'}}>
                           ✕
                         </button>
                       </div>
                     ) : (
-                      <div className="ui-static-0f8796a915" style={{display: 'flex', alignItems: 'center', cursor: 'pointer'}} onClick={() => setInlineNoteId(t.id)}>
+                      <div className="ui-static-0f8796a915" role="button" tabIndex={0} aria-label={t.notes && t.notes.length > 0 ? 'Ubah catatan terakhir' : 'Tambah catatan'} style={{display: 'flex', alignItems: 'center', cursor: 'pointer', minHeight: '2.75rem'}} onClick={() => setInlineNoteId(t.id)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setInlineNoteId(t.id); } }}>
                         {t.notes && t.notes.length > 0 ? (
                           <span className="ui-static-6d93d6f90d" style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '130px', display: 'block'}} title={t.notes[0].content}>
                             {t.notes[0].content.substring(0, 40)}{t.notes[0].content.length > 40 ? '...' : ''}
