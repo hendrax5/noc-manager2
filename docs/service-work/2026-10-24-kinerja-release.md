@@ -81,3 +81,7 @@ Data produksi Oktober 2026: 2.867 tiket selesai, 7.599 komentar, 23.361 poin led
 ## Tindak lanjut 3.3.0
 
 Skor aktivitas 0-100 dihitung dari data operasional nyata: 40% poin ledger, 35% tiket selesai, 25% komentar/respons, masing-masing relatif terhadap nilai tertinggi pada filter. Ini memberi penilaian operasional langsung tanpa menunggu kalibrasi evaluasi formal; nilai formal tetap memakai model bukti dengan kebijakan dan target per peran.
+
+## Tindak lanjut 3.4.0
+
+Skor dan peringkat aktivitas sekarang dihitung per departemen/perusahaan, bukan lintas seluruh cakupan. Peringkat pribadi memakai cohort departemen sendiri; staf hanya melihat peringkat dan skornya, bukan daftar rekan. Manager melihat departemen yang granted, Admin melihat semua departemen dengan peringkat terpisah.

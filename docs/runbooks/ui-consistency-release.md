@@ -105,3 +105,14 @@ Commit `c45a9f3`, image `noc-manager2-app:release-3.3.0` (dasar `release-3.2.0`)
 - Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.3.0-20261024T173924Z.dump` (20.5 MB).
 - Verifikasi: container Up, `RestartCount=0`, `/login` 200, API Kinerja 401, log start `@hendrax5/noc-manager2@3.3.0`.
 - Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.3.0/rollback.sh` (kembali ke `release-3.2.0`).
+
+## Tindak lanjut 3.4.0 (peringkat per departemen)
+
+Commit `4a6e346`, image `noc-manager2-app:release-3.4.0` (dasar `release-3.3.0`).
+
+- Skor aktivitas dinormalisasi di dalam cohort **departemen + perusahaan**; peringkat memakai competition rank per cohort. Tabel tim diurutkan per departemen lalu peringkat, sehingga setiap departemen memiliki peringkat 1..n sendiri.
+- Peringkat pribadi dihitung dari departemen anggota sendiri. Staf tetap tidak menerima daftar rekan; hanya peringkat dan skor dirinya. Manager melihat departemen yang granted; Admin melihat semua.
+- Unit test `lib/reports/activityScore.test.mjs` (3 kasus: normalisasi per departemen, pemisahan perusahaan, seri) lulus.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.4.0-20261024T180106Z.dump` (20.5 MB).
+- Verifikasi: container Up, `RestartCount=0`, `/login` 200, API Kinerja 401, log start `@hendrax5/noc-manager2@3.4.0`.
+- Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.4.0/rollback.sh` (kembali ke `release-3.3.0`).
