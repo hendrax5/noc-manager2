@@ -27,6 +27,7 @@ Follow-up bermakna, rework terverifikasi, dan waktu kerja dalam tanggung jawab m
 - QA runtime: nilai dan seri peringkat pribadi, IDOR staf403, manager sesuai grant200, lintas perusahaan403, overview staf hanya diri sendiri, excluded tanpa rank, bulan invalid400, review staf403, anonymous401. Empat render actual 320/1440 light/dark dengan axe; tab aktivitas dan link laporan harian.
 - Database clone: additive migration, rollback transaksi, no-op, idempotency. Tidak menyentuh data produksi untuk fixture.
 - Server regression: target tanpa izin ditolak sebelum query; overview resmi tetap memakai revisi terbit setelah draft baru.
+- Kalibrasi UI: disclosure, enable/disable, validasi required, pilihan peran, empat input kebijakan, submit; axe light/dark dan mobile320 lolos. Overflow pada output JSON fixture diperbaiki pada fixture saja, bukan perubahan CSS produk.
 - Shared UI contract: parser dan semantic token contrast; Linux build. Bukti angka final dan commit rilis disimpan dalam receipt server, bukan klaim audit semua kemungkinan state.
 
 ## Antislop Delivery Gate
@@ -62,3 +63,5 @@ Scope gate: UI Kinerja dan kontrol kalibrasi baru; CSS lama seluruh aplikasi buk
 Gunakan `scripts/apply_performance_migration.cjs` dry-run lalu `--apply` setelah backup valid. Pertahankan default flag aman, aktifkan `unified_performance_ui` dan `performance_activity_capture` dalam mode simulation, biarkan `performance_ranking_publication=false` sampai kebijakan siap.
 
 Rollback menggunakan image sebelumnya dan pemulihan nilai flag sebelumnya. Kolom/tabel additive tetap disimpan agar event dan manifest tidak hilang. Jangan menjalankan destructive down migration, jangan mengganti volume uploads/database. Fixture, sesi QA dan tunnel dibersihkan setelah verifikasi.
+
+Rilis produksi: `777674696327b5e9e7850d5884b09e8561f3f199`, image `noc-manager2-app:release-7776746`. Source integrity383 file PASS, login local/domain200, endpoint Kinerja tanpa sesi401, flags simulasi terverifikasi. Image sebelumnya berhasil membaca schema additive di DB QA. Backup dan rollback berada di `/opt/noc-manager2/releases/unified-performance/`; volume uploads dipertahankan.
