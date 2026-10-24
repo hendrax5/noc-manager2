@@ -84,3 +84,14 @@ Commit `8f11fe3`, image `noc-manager2-app:release-3.1.1` (dasar `release-3.1.0`)
 Bukti tampilan panel kesiapan (fixture QA, bukan data produksi):
 
 ![Panel kesiapan Kinerja](../design/2026-10-24-trouble-master/kinerja-readiness.png)
+
+## Tindak lanjut 3.2.0 (aktivitas tim)
+
+Commit `db3877b`, image `noc-manager2-app:release-3.2.0` (dasar `release-3.1.1`).
+
+- Tab tim Kinerja menampilkan **Peringkat aktivitas bulan ini** dari data operasional nyata: tiket selesai (resolvedAt dalam bulan), komentar/respons (createdAt dalam bulan), dan poin ledger `TicketHistory.awardedScore` + `Ticket.awardedScore`.
+- Ringkasan produksi Oktober saat rilis: 2.867 tiket selesai, 7.599 komentar, 23.361 poin ledger, 84 user aktif (seluruh cakupan; angka per user mengikuti scope akses).
+- Tampilan tetap memisahkan aktivitas operasional dari evaluasi formal berbasis bukti. Panel kesiapan tetap menjelaskan mengapa nilai formal `null`.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.2.0-20261024T173333Z.dump` (20.5 MB).
+- Verifikasi: container Up, `RestartCount=0`, `/login` 200, `/api/reports/kinerja/overview` 401, log start `@hendrax5/noc-manager2@3.2.0`.
+- Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.2.0/rollback.sh` (kembali ke `release-3.1.1`).

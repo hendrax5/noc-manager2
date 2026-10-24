@@ -71,3 +71,9 @@ Rilis produksi: `777674696327b5e9e7850d5884b09e8561f3f199`, image `noc-manager2-
 Tab tim Kinerja kini menampilkan panel kesiapan ketika belum ada nilai formal: jumlah anggota dengan penempatan sebulan penuh, kebijakan published, konteks jadwal, bukti yang direview, dan alasan penghambat teratas, dengan tautan ke pengaturan evaluasi, review bukti, dan laporan harian. API overview menyertakan ringkasan `readiness` dan `reasons` per anggota.
 
 Audit produksi 2026-10: 0 penempatan, 0 kebijakan published, 0 konteks, 0 bukti direview, 0 laporan harian submitted, 0 fase selesai. Nilai tetap `null` sampai penempatan disinkronkan, kebijakan simulasi dipublikasikan per departemen/peran/perusahaan, konteks jadwal divalidasi, dan bukti aktivitas direview. Bulan yang tidak memiliki aktivitas terverifikasi tidak dapat menghasilkan nilai.
+
+## Tindak lanjut 3.2.0
+
+Tab tim Kinerja sekarang menampilkan **Peringkat aktivitas bulan ini** yang dihitung dari data operasional yang sudah ada: tiket selesai, komentar (respons), dan poin ledger. Ringkasan dan tabel per anggota tersedia tanpa menunggu kalibrasi evaluasi formal.
+
+Data produksi Oktober 2026: 2.867 tiket selesai, 7.599 komentar, 23.361 poin ledger, 84 user aktif. Ini menjawab kebutuhan penilaian operasional harian; nilai evaluasi formal tetap memakai model bukti dan memerlukan penempatan, kebijakan, konteks, serta review bukti.
