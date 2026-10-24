@@ -1,6 +1,14 @@
-# NOC Manager v2 (Version 2.1.1)
+# NOC Manager v3
 
 A comprehensive Enterprise Ticketing, Operations, and Analytics suite designed exclusively for internal NOC, Customer Service, and B2B Technical Support Teams.
+
+## Changelog
+
+Notable changes are recorded in [`CHANGELOG.md`](CHANGELOG.md) using
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html). The rules, release checklist and
+examples are in [`docs/CHANGELOG_GUIDE.md`](docs/CHANGELOG_GUIDE.md); run
+`npm run changelog:check` before releasing.
 
 ## 🔌 Integration API v1
 

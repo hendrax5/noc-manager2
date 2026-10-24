@@ -1,9 +1,62 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+where practical. The rules for adding entries live in
+[`docs/CHANGELOG_GUIDE.md`](docs/CHANGELOG_GUIDE.md).
+
+## [Unreleased]
+
+## [3.1.0] - 2026-10-24
+
+### Added
+
+- **Master data CRUD for trouble and service work types.** Add, edit, deactivate and delete entries from a dialog, with row-level status switches, usage counts and search. Entries still referenced by tickets cannot be deleted; the dialog explains why and offers deactivation instead.
+- **Accessible `MasterPicker` combobox.** Replaces native selects in the master forms and in the ticket work type, department and PIC fields. Supports arrow/Home/End navigation, typeahead, Escape without closing the surrounding dialog, `aria-activedescendant` and flip-up placement on short viewports.
+- **Changelog process.** Adds `CHANGELOG.md`, a writing guide and an automated format check (`npm run changelog:check`) so every release records its notable changes.
+
+### Changed
+
+- **Settings.** The workflow rule list loads when the page opens, publishing asks for confirmation, failed writes show an inline error instead of appending the API error body as a table row, API keys are masked in the branding form, and status uses text badges instead of emoji.
+- **Reports, tickets and dashboard.** Primary, secondary and destructive actions are visually distinct; wide report and ticket tables use labelled, keyboard-scrollable regions with captions and column scopes; save and delete errors appear next to the action that produced them; the outage report preview scrolls into view when opened.
+- **Ticket detail.** Closing a ticket asks for confirmation, comment failures are reported inline without losing the text, and Edit is the primary action while Delete is a danger ghost.
+
+### Fixed
+
+- **Button variants overridden by page CSS.** Primary buttons no longer lose their accent fill to page-level descendant selectors such as `.actions button`; report tab, pager and preset rules are guarded with `:where()` so their active states still win.
+- **Mobile readability.** Report tables scroll inside a labelled region with a minimum width instead of collapsing into unreadable columns, and settings forms collapse to one column on narrow screens.
+- **Ticket test harnesses.** The work-v2 form can be bundled in tests again (`node:crypto` stub and CSS output path), and the stale work-type and classification UI tests were rewritten for the current form.
+
+### Security
+
+- **Guarded master deletion.** `DELETE` endpoints return `409` with the ticket usage count for masters that are still referenced, preventing dangling ticket history.
+
+## [3.0.0] - 2026-10-24
+
+### Added
+
+- **CID-linked trouble classification.** Trouble and installation tickets require a service CID, a symptom and a cause; managed master data, inactive snapshots and per-ticket outage reporting feed the SLA and outage reports.
+- **Service work from a CID.** Installation, upgrade, downgrade, change and terminate work update inventory atomically, with a circuit identifier registry, multi-format CID parser, read-only audit and controlled backfill.
+- **Customer-centric Assets.** Grouped customer inventory, compact service rows, searchable CID mapping and contextual ticket actions from a service.
+- **Workflow policies.** Versioned rules with ordered phases, per-phase job categories, audited category overrides and admin workflow settings.
+- **Performance evidence and reports.** Evidence-based monthly evaluation in simulation mode, private department rankings, versioned rules, structured daily reports and scoped monthly archives.
+- **Service capacity reporting.** Canonical Gbps inputs, DARKFIBER pair units, OPEN PORT 10G minimum, circuit capacity totals and a reversible missing-bandwidth backfill.
+
+### Changed
+
+- **Work-v2 ticket forms.** Classification is independent of scoring category, CID is required for service work, temporary BOD has an explicit lifecycle, and legacy fields are removed from the form.
+- **Shared interface foundation.** System typography, compact spacing, flat surfaces, responsive tables, accessible controls and light/dark design tokens applied across pages.
+
+### Removed
+
+- **Legacy ticket fields.** Custom parameters, manual company/vendor, priority, ticket type, queue and manual category were removed from the create form.
+
+### Fixed
+
+- Ticket status contrast and theme colour regressions, asset filter stability, compact customer product lists, and mobile settings tables.
 
 ## [2.5.1] - 2026-09-29
 
@@ -277,3 +330,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
+
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.1.0
+[3.0.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.0.0
+[2.5.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v2.5.1
+[2.5.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v2.5.0

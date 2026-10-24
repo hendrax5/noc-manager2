@@ -1,5 +1,8 @@
 # Version History
 
+> Historical catalog. The authoritative release history, with dates and change details, is
+> [`CHANGELOG.md`](CHANGELOG.md).
+
 Catalog of active, planned, and deprecated versions of the NOC Manager application.
 
 ## Active Versions
