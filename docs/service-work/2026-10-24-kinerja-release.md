@@ -85,3 +85,7 @@ Skor aktivitas 0-100 dihitung dari data operasional nyata: 40% poin ledger, 35% 
 ## Tindak lanjut 3.4.0
 
 Skor dan peringkat aktivitas sekarang dihitung per departemen/perusahaan, bukan lintas seluruh cakupan. Peringkat pribadi memakai cohort departemen sendiri; staf hanya melihat peringkat dan skornya, bukan daftar rekan. Manager melihat departemen yang granted, Admin melihat semua departemen dengan peringkat terpisah.
+
+## Tindak lanjut 3.5.0
+
+Metrik personal sekarang diturunkan dari timeline tiket: respons pertama setelah penugasan (termasuk balasan internal), waktu penanganan dari penugasan sampai selesai, total waktu penyelesaian, ketepatan tenggat, kebersihan SLA, dan follow-up sesuai tenggat respons. Metrik review manual hanya muncul bila review tersedia, sehingga tiket internal tanpa balasan publik tidak lagi dianggap tidak cukup bukti.

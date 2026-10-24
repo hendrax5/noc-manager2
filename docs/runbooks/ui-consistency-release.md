@@ -116,3 +116,15 @@ Commit `4a6e346`, image `noc-manager2-app:release-3.4.0` (dasar `release-3.3.0`)
 - Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.4.0-20261024T180106Z.dump` (20.5 MB).
 - Verifikasi: container Up, `RestartCount=0`, `/login` 200, API Kinerja 401, log start `@hendrax5/noc-manager2@3.4.0`.
 - Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.4.0/rollback.sh` (kembali ke `release-3.3.0`).
+
+## Tindak lanjut 3.5.0 (metrik timeline tiket)
+
+Commit `88c2669`, image `noc-manager2-app:release-3.5.0` (dasar `release-3.4.0`).
+
+- Metrik personal kini memakai timestamp tiket: `firstRespondedAt` (termasuk balasan internal), riwayat penugasan (`TicketHistory` berisi "assign"), `resolvedAt`, `responseDueAt`, `resolutionDueAt`, dan `slaBreaches`.
+- Metrik baru: respons pertama setelah penugasan, waktu penanganan sejak penugasan, total waktu penyelesaian, tiket selesai, tiket dengan balasan internal, tiket selesai sesuai tenggat, tiket tanpa pelanggaran SLA, follow-up sesuai tenggat respons.
+- Metrik review manual (kualitas/ketepatan waktu) hanya ditampilkan jika review tersedia; metrik fase hanya jika ada fase. Dengan demikian tiket internal tanpa balasan publik tetap punya bukti.
+- Audit produksi: 2.858/2.867 tiket resolved memiliki `firstRespondedAt`; sampel user 133 memiliki 87 tiket resolved, 87 dengan riwayat penugasan dan respons; balasan internal bulan ini 0 (semua balasan publik).
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.5.0-20261024T180644Z.dump` (20.5 MB).
+- Verifikasi: container Up, `RestartCount=0`, `/login` 200, API Kinerja 401, log start `@hendrax5/noc-manager2@3.5.0`.
+- Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.5.0/rollback.sh` (kembali ke `release-3.4.0`).
