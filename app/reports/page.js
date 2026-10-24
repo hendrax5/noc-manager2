@@ -4,6 +4,8 @@ import { authOptions } from "../api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import LeaderboardClient from "./LeaderboardClient";
 import ServiceDeskMetrics from "./ServiceDeskMetrics";
+import KinerjaClient from './KinerjaClient';
+import {jakartaMonthKey,jakartaMonthRange} from '@/lib/reports/monthPeriod';
 import { canViewAllPerformance } from "@/lib/reports/performanceAccess";
 import { buildLeaderboard } from "@/lib/reports/leaderboard";
 
@@ -12,6 +14,10 @@ export default async function ReportsPage({ searchParams }) {
   if (!session) redirect('/login');
 
   const params = await searchParams;
+  if((await workflowFlags()).unified_performance_ui){
+    const month=params.month||jakartaMonthKey();jakartaMonthRange(month);
+    return <main className="container"><KinerjaClient initialMonth={month} initialTab={params.tab==='activity'||params.legacy==='1'?'activity':'self'}/></main>;
+  }
   if ((await workflowFlags()).monthly_evaluation_mode !== 'off' && params.legacy !== '1') redirect('/reports/evaluations');
   const { user } = session;
   user.reportScopeEnforced = (await workflowFlags()).privacy_enforced;

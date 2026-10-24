@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
 import { withCustomerCode } from '@/lib/customers/identity';
+import {recordActivity} from '@/lib/activity/recordActivity';
 
 export async function GET(request) {
   try {
@@ -30,8 +31,10 @@ export async function POST(request) {
     }
 
     const { name, contactEmail, contactPhone } = await request.json();
-    const customer = await prisma.customer.create({
-      data: { name, contactEmail, contactPhone }
+    const customer = await prisma.$transaction(async tx=>{
+      const created=await tx.customer.create({data:{name,contactEmail,contactPhone}});
+      await recordActivity(tx,{actorId:Number(session.user.id),source:'human',type:'customer.created',entityType:'customer',entityId:created.id,after:created});
+      return created;
     });
 
     return NextResponse.json(withCustomerCode(customer));

@@ -1,4 +1,5 @@
 import {darkFiberData} from '@/lib/services/productUnits';
+import {recordActivity} from '@/lib/activity/recordActivity';
 import {openPortUpdatedData,validateOpenPortData} from '@/lib/services/productBandwidth';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
@@ -69,14 +70,17 @@ export async function PATCH(request, { params }) {
       const fresh=await tx.service.findUnique({where:{id:serviceId}});
       if(+new Date(fresh.updatedAt)!==+new Date(existing.updatedAt))throw new CidValidationError('Layanan berubah; muat ulang.',409);
       const serviceCid=await checkServiceCid(tx,candidate,serviceId);
-      if(getServiceCid(existing))await registerCircuitIdentifier(tx,{serviceId,code:getServiceCid(existing),actorId:Number(session.user.id)});
+      if(getServiceCid(existing))await registerCircuitIdentifier(tx,{serviceId,code:getServiceCid(existing),actorId:Number(session.user.id),source:'human'});
       const updateData={};
       if(body.cid!==undefined||body.customData!==undefined)updateData.cid=serviceCid;
       if(body.name)updateData.name=body.name;
       if(body.status)updateData.status=body.status;
       if(body.customData){const template=await tx.serviceTemplate.findUnique({where:{id:fresh.templateId}});const next=darkFiberData(template,openPortUpdatedData(template,fresh.customData,body.customData),fresh.customData);validateOpenPortData(template,next);updateData.customData=next;}
-      if(Object.keys(updateData).length)await tx.service.update({where:{id:serviceId},data:updateData});
-      if(serviceCid)await registerCircuitIdentifier(tx,{serviceId,code:serviceCid,actorId:Number(session.user.id)});
+      if(Object.keys(updateData).length){
+        const updated=await tx.service.update({where:{id:serviceId},data:updateData});
+        await recordActivity(tx,{actorId:Number(session.user.id),source:'human',type:'service.updated',entityType:'service',entityId:serviceId,before:fresh,after:updated});
+      }
+      if(serviceCid)await registerCircuitIdentifier(tx,{serviceId,code:serviceCid,actorId:Number(session.user.id),source:'human'});
       if(body.hops){
         await tx.circuitHop.deleteMany({where:{serviceId}});
         if(body.hops.length)await tx.circuitHop.createMany({data:body.hops.map((h,index)=>({serviceId,orderIndex:index,location:h.location,deviceName:h.deviceName,portName:h.portName,description:h.description}))});

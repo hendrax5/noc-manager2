@@ -48,7 +48,7 @@ export async function POST(req, { params }) {
     const phaseCount=await tx.ticketPhaseExecution.count({where:{ticketId}});
     if(phaseCount&&replyCustomData&&['Order Origin','Executing Vendor'].some(k=>Object.hasOwn(replyCustomData,k)&&(replyCustomData[k]||null)!==(purposeTicket.customData?.[k]||null)))throw new WorkflowError('Routing workflow tidak dapat diganti melalui reply.',409);
     if (purposeTicket?.purpose === 'PersonalMonthlyReport') throw new WorkflowError('Gunakan form Laporan Saya.',403);
-    const comment = await tx.comment.create({ data: commentData });
+    const comment = await tx.comment.create({ data: {...commentData,source:'human'} });
 
     const ticket = await tx.ticket.findUnique({
       where: { id: ticketId },

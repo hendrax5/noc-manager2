@@ -99,7 +99,6 @@ function NavbarContent({ appName = "NOC Management", appVersion = "1.0.0" }) {
               <div className="nav-dropdown-content">
                 {canViewReports && (
                   <>
-                    <Link href="/reports" className={pathname === "/reports" ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Daily Reports</Link>
                     <Link href="/reports/sla" className={pathname.startsWith("/reports/sla") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Gangguan &amp; SLA</Link>
                   </>
                 )}
@@ -127,7 +126,7 @@ function NavbarContent({ appName = "NOC Management", appVersion = "1.0.0" }) {
                 {canManageTrouble && (
                   <Link href="/settings/trouble-masters" className={pathname.startsWith("/settings/trouble-masters") ? "active" : ""} onClick={() => setIsMobileMenuOpen(false)}>Master Data Trouble</Link>
                 )}
-                <Link href="/reports/evaluations" onClick={() => setIsMobileMenuOpen(false)}>Evaluasi bulanan</Link>
+                <Link href="/reports" className={pathname === '/reports' ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Kinerja</Link>
                 {session?.user?.role === 'Admin' && <Link href="/settings/evaluation" onClick={() => setIsMobileMenuOpen(false)}>Aturan evaluasi</Link>}
                 <Link href="/reports/daily" onClick={() => setIsMobileMenuOpen(false)}>Laporan Saya</Link>
                 {canManageServiceWork && <Link href="/settings/service-work-types" className={pathname.startsWith('/settings/service-work-types') ? 'active' : ''} onClick={() => setIsMobileMenuOpen(false)}>Jenis Pekerjaan Layanan</Link>}
@@ -175,11 +174,11 @@ function NavbarContent({ appName = "NOC Management", appVersion = "1.0.0" }) {
                 </Link>
                 {session.user?.id && (
                   <Link
-                    href={`/reports/${session.user.id}`}
+                    href="/reports?tab=activity"
                     onClick={() => setShowProfileMenu(false)}
                     className="profile-dropdown-link"
                   >
-                    Poin saya
+                    Aktivitas &amp; Poin
                   </Link>
                 )}
                 <button

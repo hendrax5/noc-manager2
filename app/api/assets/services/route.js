@@ -1,4 +1,5 @@
 import {darkFiberData} from '@/lib/services/productUnits';
+import {recordActivity} from '@/lib/activity/recordActivity';
 import {openPortDefaultData,validateOpenPortData} from '@/lib/services/productBandwidth';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
@@ -73,7 +74,8 @@ export async function POST(request) {
       },
       include: { hops: true }
     });
-    if(serviceCid)await registerCircuitIdentifier(tx,{serviceId:created.id,code:serviceCid,actorId:Number(session.user.id)});
+    if(serviceCid)await registerCircuitIdentifier(tx,{serviceId:created.id,code:serviceCid,actorId:Number(session.user.id),source:'human'});
+    await recordActivity(tx,{actorId:Number(session.user.id),source:'human',type:'service.created',entityType:'service',entityId:created.id,after:created});
     return created;
     });
 

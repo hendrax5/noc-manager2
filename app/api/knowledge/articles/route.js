@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
+import {recordActivity} from '@/lib/activity/recordActivity';
 
 export async function GET(request) {
   try {
@@ -54,7 +55,8 @@ export async function POST(request) {
     const json = await request.json();
     const { title, content, categoryId, isPublished } = json;
 
-    const article = await prisma.knowledgeArticle.create({
+    const article = await prisma.$transaction(async tx=>{
+    const created = await tx.knowledgeArticle.create({
       data: {
         title,
         content,
@@ -64,6 +66,9 @@ export async function POST(request) {
       }
     });
 
+    await recordActivity(tx,{actorId:Number(session.user.id),source:'human',type:'knowledge.created',entityType:'article',entityId:created.id,after:created});
+    return created;
+    });
     return NextResponse.json(article);
   } catch (error) {
     console.error('Create Error:', error);

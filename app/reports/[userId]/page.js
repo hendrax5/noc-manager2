@@ -9,6 +9,8 @@ import { canViewAllPerformance, canViewUserPerformance } from "@/lib/reports/per
 import { isTicketCreatedAction, sumReplyAwardedScore } from "@/lib/tickets/points";
 
 import ReportFilter from "./ReportFilter";
+import KinerjaClient from '../KinerjaClient';
+import {jakartaMonthKey,jakartaMonthRange} from '@/lib/reports/monthPeriod';
 
 function formatDuration(start, end) {
   const diffMs = new Date(end).getTime() - new Date(start).getTime();
@@ -35,6 +37,10 @@ export default async function UserReportDetail({ params, searchParams }) {
   session.user.reportScopeEnforced = (await workflowFlags()).privacy_enforced;
   const resolvedParams = await params;
   const targetUserId = parseInt(resolvedParams.userId, 10);
+  if((await workflowFlags()).unified_performance_ui&&Number.isSafeInteger(targetUserId)){
+    const query=await searchParams,month=query.month||jakartaMonthKey();jakartaMonthRange(month);
+    return <main className="container"><KinerjaClient initialMonth={month} initialUserId={targetUserId===Number(session.user.id)?null:targetUserId}/></main>;
+  }
   if (!Number.isInteger(targetUserId)) {
     return (
       <main className="container">

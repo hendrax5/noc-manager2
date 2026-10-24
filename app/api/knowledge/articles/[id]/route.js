@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import { prisma } from '@/lib/prisma';
+import {recordActivity} from '@/lib/activity/recordActivity';
 
 export async function GET(request, { params }) {
   try {
@@ -45,7 +46,9 @@ export async function PATCH(request, { params }) {
 
     const data = await request.json();
 
-    const updated = await prisma.knowledgeArticle.update({
+    const updated = await prisma.$transaction(async tx=>{
+    const before=await tx.knowledgeArticle.findUnique({where:{id:existing.id}});
+    const changed=await tx.knowledgeArticle.update({
       where: { id: parseInt(resolveParams.id) },
       data: {
         title: data.title !== undefined ? data.title : existing.title,
@@ -55,6 +58,9 @@ export async function PATCH(request, { params }) {
       }
     });
 
+    await recordActivity(tx,{actorId:Number(session.user.id),source:'human',type:'knowledge.updated',entityType:'article',entityId:changed.id,before,after:changed});
+    return changed;
+    });
     return NextResponse.json(updated);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update article' }, { status: 500 });

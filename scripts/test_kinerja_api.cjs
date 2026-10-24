@@ -1,0 +1,10 @@
+const {build}=require('esbuild'),Module=require('module'),assert=require('node:assert/strict'),path=require('path');
+(async()=>{const output=await build({entryPoints:[path.join(__dirname,'../lib/reports/kinerjaServer.js')],bundle:true,platform:'node',format:'cjs',write:false});const mod=new Module('kinerja-tests');mod._compile(output.outputFiles[0].text,'kinerja-tests');
+let touched=false;const db=new Proxy({},{get(){touched=true;throw Error('must not query unauthorized target');}});
+await assert.rejects(()=>mod.exports.loadPersonalKinerja(db,{actor:{id:1},scope:{all:false,userIds:[1]},users:[],userId:2,month:'2026-10',mode:'simulation'}),e=>e.status===403);assert.equal(touched,false);
+console.log('PASS server boundary: unauthorized target rejected before database reads');
+const rangeStart=new Date('2026-01-01'),snapshot={userId:1,departmentId:2,roleId:1,company:'ION',status:'ready',total:80,policyVersionId:1};
+const rows=[{id:2,userId:1,revision:2,snapshot:{...snapshot,total:10},departmentId:2,roleId:1,company:'ION',mode:'official',status:'ready'},{id:1,userId:1,revision:1,snapshot,departmentId:2,roleId:1,company:'ION',mode:'official',status:'locked',lockedAt:new Date(),policyVersionId:1}];
+const frozenDb={monthlyEvaluation:{findMany:async()=>rows},evaluationPolicyVersion:{findMany:async()=>[{id:1}]},employeeAssignmentPeriod:{findMany:async()=>[{userId:1,departmentId:2,roleId:1,company:'ION',effectiveFrom:rangeStart,effectiveTo:null}]},department:{findMany:async()=>[{id:2,name:'NOC'}]},performancePublication:{findMany:async()=>[{departmentId:2,company:'ION',version:1,manifest:{members:[{userId:1,evaluationId:1,revision:1,score:80}]}}]}};
+const result=await mod.exports.cohortRows(frozenDb,{month:'2026-10',users:[{id:1,name:'[QA]',departmentId:2,roleId:1,company:'ION'}],mode:'official'});assert.equal(result[0].total,80);assert.equal(result[0].revision,1);console.log('PASS official overview: published revision stays fixed after draft recalculation');
+})().catch(e=>{console.error(e);process.exitCode=1;});

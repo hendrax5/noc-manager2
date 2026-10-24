@@ -8,6 +8,7 @@ import {jakartaMonthRange} from '@/lib/reports/monthPeriod';
 import {WorkflowError} from '@/lib/workflows/policy';
 import {loadReportScope} from '@/lib/reports/reportScopeServer';
 import {canReadReport} from '@/lib/reports/reportScope';
+import {validatePerformancePolicy} from '@/lib/reports/performancePolicy';
 const admin=u=>u.role==='Admin';
 const reviewer=u=>admin(u)||u.role==='Manager'||u.permissions?.includes('review_evaluations');
 const positive=v=>{const n=Number(v);if(!Number.isSafeInteger(n)||n<1)throw new WorkflowError('ID harus bilangan bulat positif.');return n;};
@@ -42,7 +43,8 @@ export async function POST(req){
  for(const id of Object.keys(b.categoryWeights||{}))if(!await tx.jobCategory.findFirst({where:{id:positive(id),active:true}}))throw new WorkflowError('Kategori kompleksitas harus aktif.');
  await tx.$queryRaw`SELECT pg_advisory_xact_lock(761234003)::text`;
  const existing=await tx.evaluationPolicyVersion.findUnique({where:{departmentId_roleId_company_effectiveMonth:{departmentId,roleId,company:b.company,effectiveMonth:b.effectiveMonth}}});
- const data={departmentId,roleId,company:b.company,effectiveMonth:b.effectiveMonth,weights:p.weights,targetUnits:p.targetUnits,categoryWeights:p.categoryWeights||{},rubric:b.rubric,publishedAt:b.publish?new Date():null,createdBy:actorId};
+ const performanceRules=b.performanceRules?validatePerformancePolicy(b.performanceRules):null;
+ const data={departmentId,roleId,company:b.company,effectiveMonth:b.effectiveMonth,weights:p.weights,targetUnits:p.targetUnits,categoryWeights:p.categoryWeights||{},rubric:b.rubric,...(performanceRules?{performanceRules}:{}),publishedAt:b.publish?new Date():null,createdBy:actorId};
  if(existing?.publishedAt)throw new WorkflowError('Kebijakan published tidak dapat diubah. Buat versi bulan berikutnya.',409);
  record=existing?await tx.evaluationPolicyVersion.update({where:{id:existing.id},data}):await tx.evaluationPolicyVersion.create({data});
  }else if(b.kind==='assignment'||b.kind==='grant'){
@@ -69,11 +71,16 @@ export async function POST(req){
  if(typeof b.note!=='string'||!b.note.trim()||b.note.length>4000)throw new WorkflowError('Catatan sumber jadwal/cuti wajib.');
  record=await tx.evaluationMonthlyContext.upsert({where:{userId_monthKey:{userId,monthKey:b.monthKey}},create:{userId,monthKey:b.monthKey,scheduledMinutes,eligibleMinutes,requiredReportDates:b.requiredReportDates,note:b.note,reviewedBy:actorId},update:{scheduledMinutes,eligibleMinutes,requiredReportDates:b.requiredReportDates,note:b.note,reviewedBy:actorId,reviewedAt:new Date()}});
  }else{
- if(!['phase','manual'].includes(b.source)||typeof b.qualityPassed!=='boolean'||typeof b.onTime!=='boolean'||typeof b.reason!=='string'||!b.reason.trim()||b.reason.length>4000)throw new WorkflowError('Bukti/rubrik review tidak valid.');
+ if(!['phase','manual','report'].includes(b.source)||typeof b.qualityPassed!=='boolean'||typeof b.onTime!=='boolean'||typeof b.reason!=='string'||!b.reason.trim()||b.reason.length>4000)throw new WorkflowError('Bukti/rubrik review tidak valid.');
  const sourceId=positive(b.sourceId),range=jakartaMonthRange(b.monthKey);
  if(b.source==='phase'){
  const phase=await tx.ticketPhaseExecution.findFirst({where:{id:sourceId,completedBy:userId,state:'Completed',completedAt:range}});
  if(!phase)throw new WorkflowError('Fase bukan milik pelaksana/periode.',403);
+ }else if(b.source==='report'){
+ const report=await tx.dailyReport.findUnique({where:{id:sourceId}});
+ if(!report||report.userId!==userId||report.state!=='Submitted'||!report.reportDate?.startsWith(b.monthKey+'-'))throw new WorkflowError('Laporan bukan milik pelapor/periode.',403);
+ const latest=await tx.dailyReport.findFirst({where:{userId,reportDate:report.reportDate},orderBy:{revision:'desc'}});
+ if(latest?.id!==report.id)throw new WorkflowError('Revisi laporan sudah digantikan.',409);
  }else{
  const item=await tx.dailyReportItem.findUnique({where:{id:sourceId},include:{report:true}});
  if(!item||item.source!=='manual'||item.report.userId!==userId||item.report.state!=='Submitted'||!item.report.reportDate?.startsWith(b.monthKey+'-'))throw new WorkflowError('Pekerjaan manual tidak sesuai pelapor/periode.',403);

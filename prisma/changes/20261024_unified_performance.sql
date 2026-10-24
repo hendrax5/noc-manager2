@@ -1,4 +1,5 @@
 ALTER TABLE "EvaluationPolicyVersion" ADD COLUMN IF NOT EXISTS "performanceRules" JSONB;
+ALTER TABLE "Comment" ADD COLUMN IF NOT EXISTS "source" TEXT NOT NULL DEFAULT 'unknown';
 CREATE TABLE IF NOT EXISTS "ActivityEvent" (
  "id" SERIAL PRIMARY KEY, "actorId" INTEGER, "source" TEXT NOT NULL,
  "type" TEXT NOT NULL, "entityType" TEXT NOT NULL, "entityId" INTEGER NOT NULL,

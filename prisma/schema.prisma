@@ -173,6 +173,7 @@ model Comment {
   authorId  Int
   author    User     @relation(fields: [authorId], references: [id])
   isPublic  Boolean  @default(true)
+  source String @default("unknown")
   attachments Attachment[]
   createdAt DateTime @default(now())
 }
