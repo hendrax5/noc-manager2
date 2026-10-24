@@ -57,3 +57,16 @@ sudo /opt/noc-manager2/releases/ui-consistency-7ae7fb8/rollback.sh
 ```
 
 Rollback hanya mengganti image kembali ke `release-v3-theme-6ea74c6`; tidak menyentuh database. Backup database tersedia bila diperlukan pemulihan terpisah.
+
+## Tindak lanjut 3.1.0 (changelog dan versi)
+
+Commit `5a47019` menambahkan `CHANGELOG.md` (Keep a Changelog 1.1.0 + SemVer), panduan
+`docs/CHANGELOG_GUIDE.md`, validator `scripts/changelog-check.cjs` dan gate CI, serta menaikkan
+`package.json` ke `3.1.0`.
+
+- Image: `noc-manager2-app:release-3.1.0` (dasar `release-7ae7fb8`, label revision `5a47019…`).
+- Release dir: `/opt/noc-manager2/releases/ui-consistency-3.1.0` (`Dockerfile`, `release.yml`, `rollback.yml`, `rollback.sh`, `build.log`).
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.1.0-20261024T170835Z.dump` (20.5 MB).
+- Verifikasi: container `noc-manager2-app-1` Up, `RestartCount=0`, `/login` 200, `/api/trouble-masters` 401, log start `@hendrax5/noc-manager2@3.1.0`.
+- Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.1.0/rollback.sh` (kembali ke `release-7ae7fb8`).
+- Perubahan runtime hanya string versi di navbar; tidak ada migrasi database.
