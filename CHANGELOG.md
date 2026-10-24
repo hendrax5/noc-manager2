@@ -10,6 +10,20 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-10-25
+
+### Added
+
+- **Ticket timeline metrics.** Personal Kinerja now derives first response (including internal replies), handling time from assignment, total resolution time, on-time completion, SLA cleanliness and follow-up timeliness from ticket timestamps and assignment history. Resolved tickets therefore have evidence even when there are no public replies or manual reviews.
+
+### Changed
+
+- **Evidence metrics.** The public-response-only metric is replaced by an assignment-based response metric; manual quality/timeliness rows are shown only when reviews exist; the analysis highlights tickets resolved and on-time/SLA outcomes.
+
+### Fixed
+
+- Internal-only tickets no longer report insufficient evidence for first response when `firstRespondedAt` is recorded.
+
 ## [3.4.0] - 2026-10-25
 
 ### Added
@@ -372,7 +386,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.4.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.5.0...HEAD
+[3.5.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.5.0
 [3.4.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.4.0
 [3.3.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.3.0
 [3.2.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.2.0
