@@ -48,7 +48,7 @@ docker compose -p noc-manager2 -f docker-compose.prod.yml \
 
 ## Catatan terbuka
 
-`https://noc.servicex.id` mengembalikan **521** dari reverse proxy publik `103.162.16.165`, sementara host aplikasi tidak membuka listener 443 (hanya 3000 via docker-proxy). Aplikasi sendiri sehat di dalam host. Ini lapisan proxy/TLS di luar host aplikasi dan tidak diubah oleh rilis ini; perlu diperiksa dengan akses ke proxy tersebut bila HTTPS masih gagal.
+`https://noc.servicex.id` mengembalikan **521** dari reverse proxy publik. Bukti: host aplikasi tidak membuka listener 443 (hanya 3000 via docker-proxy); saat `https://noc.servicex.id/login` diminta, tidak ada paket `GET /login` yang sampai ke port 3000 (0 hit), sementara traffic HTTP/1.1 dari `43.225.64.190` ke aplikasi tetap berjalan normal (mis. `PATCH /api/tickets/...`). Artinya kegagalan ada di lapisan TLS/HTTPS proxy, bukan di container aplikasi. Perlu akses ke proxy tersebut (bukan host `ewo`) untuk memperbaikinya.
 
 ## Rollback
 
