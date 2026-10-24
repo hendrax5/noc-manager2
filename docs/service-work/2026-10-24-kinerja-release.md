@@ -77,3 +77,7 @@ Audit produksi 2026-10: 0 penempatan, 0 kebijakan published, 0 konteks, 0 bukti 
 Tab tim Kinerja sekarang menampilkan **Peringkat aktivitas bulan ini** yang dihitung dari data operasional yang sudah ada: tiket selesai, komentar (respons), dan poin ledger. Ringkasan dan tabel per anggota tersedia tanpa menunggu kalibrasi evaluasi formal.
 
 Data produksi Oktober 2026: 2.867 tiket selesai, 7.599 komentar, 23.361 poin ledger, 84 user aktif. Ini menjawab kebutuhan penilaian operasional harian; nilai evaluasi formal tetap memakai model bukti dan memerlukan penempatan, kebijakan, konteks, serta review bukti.
+
+## Tindak lanjut 3.3.0
+
+Skor aktivitas 0-100 dihitung dari data operasional nyata: 40% poin ledger, 35% tiket selesai, 25% komentar/respons, masing-masing relatif terhadap nilai tertinggi pada filter. Ini memberi penilaian operasional langsung tanpa menunggu kalibrasi evaluasi formal; nilai formal tetap memakai model bukti dengan kebijakan dan target per peran.

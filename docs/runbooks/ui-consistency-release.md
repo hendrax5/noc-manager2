@@ -95,3 +95,13 @@ Commit `db3877b`, image `noc-manager2-app:release-3.2.0` (dasar `release-3.1.1`)
 - Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.2.0-20261024T173333Z.dump` (20.5 MB).
 - Verifikasi: container Up, `RestartCount=0`, `/login` 200, `/api/reports/kinerja/overview` 401, log start `@hendrax5/noc-manager2@3.2.0`.
 - Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.2.0/rollback.sh` (kembali ke `release-3.1.1`).
+
+## Tindak lanjut 3.3.0 (skor aktivitas)
+
+Commit `c45a9f3`, image `noc-manager2-app:release-3.3.0` (dasar `release-3.2.0`).
+
+- Skor aktivitas 0-100 per anggota: **40% poin + 35% tiket selesai + 25% respons**, masing-masing dinormalisasi terhadap nilai tertinggi pada filter aktif. Tabel diurutkan berdasarkan skor.
+- Skor ini operasional dan terpisah dari evaluasi formal berbasis bukti. Panel kesiapan tetap menjelaskan mengapa nilai formal masih `null`.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.3.0-20261024T173924Z.dump` (20.5 MB).
+- Verifikasi: container Up, `RestartCount=0`, `/login` 200, API Kinerja 401, log start `@hendrax5/noc-manager2@3.3.0`.
+- Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.3.0/rollback.sh` (kembali ke `release-3.2.0`).
