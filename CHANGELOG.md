@@ -10,6 +10,16 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-10-25
+
+### Added
+
+- **Kinerja readiness panel.** The team view now explains why formal scores are unavailable instead of only showing `0%`, listing how many members have a full-month placement, a published policy, a schedule context and reviewed evidence, with links to the setup and review pages.
+
+### Changed
+
+- **Kinerja overview API.** Each member row now carries its blocking reasons and the response includes a readiness summary (assigned, with policy, with context, reviewed activities, ready and excluded). The team count line now explicitly says “nilai formal”.
+
 ## [3.1.0] - 2026-10-24
 
 ### Added
@@ -331,7 +341,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.1.1...HEAD
+[3.1.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.1.1
 [3.1.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.1.0
 [3.0.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.0.0
 [2.5.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v2.5.1
