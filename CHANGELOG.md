@@ -10,6 +10,17 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-10-25
+
+### Added
+
+- **Department-scoped activity ranking.** Activity scores and ranks are now calculated inside each department/company cohort, and the team table sorts by department before rank. A small department is no longer compared with a large one.
+- **Personal department rank.** In simulation, each member sees their own activity rank and score inside their department. Staff still cannot list or see other members' rankings.
+
+### Changed
+
+- **Kinerja activity ranking.** Volume components are normalised against the department/company maximum instead of the whole accessible scope; competition ranks are assigned per cohort.
+
 ## [3.3.0] - 2026-10-25
 
 ### Added
@@ -361,7 +372,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.3.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.4.0...HEAD
+[3.4.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.4.0
 [3.3.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.3.0
 [3.2.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.2.0
 [3.1.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.1.1
