@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.5.1] - 2026-10-25
+
+### Fixed
+
+- **Kinerja performance.** Ticket-timeline evidence (resolved-ticket comments and assignment history) is loaded only for the personal view; the team overview no longer repeats those queries for every member.
+
 ## [3.5.0] - 2026-10-25
 
 ### Added
@@ -386,7 +392,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.5.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.5.1...HEAD
+[3.5.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.5.1
 [3.5.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.5.0
 [3.4.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.4.0
 [3.3.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.3.0
