@@ -232,7 +232,7 @@
 .ui-static-4b7193c251 { padding: var(--ui-space-2); font-size: var(--ui-type-meta); }
 .ui-static-4c5eed3b4c { padding: var(--ui-space-5) var(--ui-space-6); border-bottom: 1px solid var(--border-color); gap: var(--ui-space-3); }
 .ui-static-4c5f93b5d3 { margin-top: var(--ui-space-1); background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--ui-radius); box-shadow: none; }
-.ui-static-4c69d84c46 { background: rgba(0,0,0,0.6); color: var(--ui-on-accent); font-size: var(--ui-type-sm); padding: var(--ui-space-2) 0; font-weight: bold; }
+.ui-static-4c69d84c46 { background: var(--ui-media-overlay); color: var(--ui-on-media-overlay); font-size: var(--ui-type-sm); padding: var(--ui-space-2) 0; font-weight: bold; }
 .ui-static-4d2206b758 { font-size: var(--ui-type-xs); color: var(--ui-accent); background: var(--ui-surface); padding: var(--ui-space-0) var(--ui-space-2); border-radius: var(--ui-radius); border: 1px solid var(--ui-line); font-weight: bold; margin-top: var(--ui-space-1); }
 .ui-static-4d8a84740d { font-size: var(--ui-type-xs); background: var(--ui-surface); color: var(--ui-accent); padding: var(--ui-space-1) var(--ui-space-2); border-radius: var(--ui-radius); border: 1px solid var(--ui-line); font-weight: bold; }
 .ui-static-4d8d135adf { margin-top: var(--ui-space-4); padding: var(--ui-space-4); background: var(--ui-surface); border-radius: var(--ui-radius); border: 1px solid var(--ui-line); gap: var(--ui-space-4); }
@@ -625,12 +625,12 @@
 .ui-static-c470735159 { margin: 0; font-size: var(--ui-type-section); color: var(--heading-color); }
 .ui-static-c4f6d9efa4 { font-size: var(--ui-type-body); color: var(--ui-warning); }
 .ui-static-c51713bd7c { font-size: var(--ui-type-meta); color: var(--primary-color); font-weight: bold; background: rgba(59,130,246,0.1); padding: var(--ui-space-1) var(--ui-space-2); border-radius: var(--ui-radius); }
-.ui-static-c51c81112a { background: rgba(59, 130, 246, 0.2); color: var(--ui-accent); padding: var(--ui-space-1) var(--ui-space-3); border-radius: var(--ui-radius); font-size: var(--ui-type-meta); font-weight: bold; border: 1px solid rgba(59, 130, 246, 0.3); gap: var(--ui-space-1); }
+.ui-static-c51c81112a { background: var(--ui-info-bg); color: var(--ui-info); padding: var(--ui-space-1) var(--ui-space-3); border-radius: var(--ui-radius); font-size: var(--ui-type-meta); font-weight: bold; border: 1px solid var(--ui-control-line); gap: var(--ui-space-1); }
 .ui-static-c527fed352 { font-size: var(--ui-type-sm); background: var(--ui-surface); color: var(--ui-accent); padding: var(--ui-space-1) var(--ui-space-2); border-radius: var(--ui-radius); border: 1px solid var(--ui-line); font-weight: bold; }
 .ui-static-c5899cfb2e { gap: var(--ui-space-3); border-left: 2px solid var(--border-color); padding-left: var(--ui-space-4); margin-left: var(--ui-space-2); }
 .ui-static-c6f552af93 { gap: var(--ui-space-1); padding: var(--ui-space-1) var(--ui-space-2); border-radius: var(--ui-radius); border: 1px solid var(--ui-line); font-weight: 600; }
 .ui-static-c75c516e5e { color: var(--text-color); font-weight: 500; }
-.ui-static-c7f6937aad { background: rgba(255, 255, 255, 0.1); color: var(--ui-on-accent); padding: var(--ui-space-1) var(--ui-space-3); border-radius: var(--ui-radius); font-size: var(--ui-type-meta); font-weight: bold; border: 1px solid rgba(255, 255, 255, 0.2); gap: var(--ui-space-1); }
+.ui-static-c7f6937aad { background: var(--ui-subtle); color: var(--ui-text); padding: var(--ui-space-1) var(--ui-space-3); border-radius: var(--ui-radius); font-size: var(--ui-type-meta); font-weight: bold; border: 1px solid var(--ui-control-line); gap: var(--ui-space-1); }
 .ui-static-c8def3163d { gap: var(--ui-space-3); margin-bottom: var(--ui-space-2); }
 .ui-static-c8e85162f1 { color: var(--ui-accent); padding: var(--ui-space-6); font-size: var(--ui-type-meta); }
 .ui-static-c946cea1ba { margin: 0 0 var(--ui-space-2) 0; color: var(--ui-accent); }
@@ -730,7 +730,7 @@
 .ui-static-e61ca57d3a { padding: var(--ui-space-2) var(--ui-space-2); border-radius: var(--ui-radius); border: 1px solid var(--border-color); background-color: var(--input-bg); color: var(--input-text); }
 .ui-static-e6b8be0e4b { padding: var(--ui-space-2); border: 1px solid var(--border-color); background: var(--input-bg); color: var(--input-text); border-radius: var(--ui-radius); }
 .ui-static-e6bf236d4c { background: transparent; border: none; color: var(--ui-ink); font-weight: bold; font-size: var(--ui-type-body); }
-.ui-static-e6e8123f1c { margin-left: var(--ui-space-2); padding: 0 var(--ui-space-1); border-radius: var(--ui-radius); background: rgba(139, 92, 246, 0.15); color: var(--ui-accent); font-weight: bold; }
+.ui-static-e6e8123f1c { margin-left: var(--ui-space-2); padding: 0 var(--ui-space-1); border-radius: var(--ui-radius); background: var(--ui-violet-bg); color: var(--ui-violet); font-weight: bold; }
 .ui-static-e7262fd930 { padding: var(--ui-space-1) var(--ui-space-2); border-radius: var(--ui-radius); font-size: var(--ui-type-meta); font-weight: bold; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--heading-color); }
 .ui-static-e76a58ee40 { gap: var(--ui-space-6); background: var(--ui-surface); padding: var(--ui-space-10); border-radius: var(--ui-radius); color: var(--ui-ink); box-shadow: none; }
 .ui-static-e77c1b93ed { font-size: var(--ui-type-title); font-weight: 700; margin: 0; color: var(--heading-color); }
@@ -770,7 +770,7 @@
 .ui-static-f04999b5c0 { padding: var(--ui-space-3) var(--ui-space-4); border-bottom: 1px solid var(--border-color); font-size: var(--ui-type-body); color: var(--heading-color); }
 .ui-static-f06f47c069 { gap: var(--ui-space-0); background: var(--ui-surface); }
 .ui-static-f0b33b9c0d { background: var(--ui-success); color: var(--ui-on-accent); border: none; padding: var(--ui-space-2) var(--ui-space-5); border-radius: var(--ui-radius); font-weight: bold; }
-.ui-static-f0ec965903 { font-size: var(--ui-type-sm); color: var(--ui-accent); }
+.ui-static-f0ec965903 { font-size: var(--ui-type-sm); color: var(--ui-text); }
 .ui-static-f1182528bd { padding: var(--ui-space-2) var(--ui-space-3); border-radius: var(--ui-radius); border: 1px solid var(--ui-line); background: var(--ui-surface); }
 .ui-static-f15c085aca { margin-bottom: var(--ui-space-5); gap: var(--ui-space-4); }
 .ui-static-f163cd8592 { margin: 0; padding: var(--ui-space-2) var(--ui-space-4); font-size: var(--ui-type-body); }

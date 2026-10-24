@@ -1,5 +1,6 @@
 "use client";
 import BodPanel from '@/components/BodPanel';
+import {statusStyle} from '@/lib/tickets/status';
 import WorkPhasePanel from "@/components/tickets/WorkPhasePanel";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -1001,8 +1002,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
           <div className="ui-static-6ef8599ce0" style={{display: 'flex', flexDirection: 'column'}}>
              
              <div className="ui-static-0f8796a915" style={{display: 'flex', flexDirection: 'column'}}>
-               <label className="ui-static-b55d0546e4" style={{textTransform: 'uppercase'}}>Ticket Status</label>
-               <select className="ui-static-af51282eb0" style={{width: '100%', background: formData.status === 'Resolved' ? "var(--ui-success)" : 'var(--input-bg)', color: formData.status === 'Resolved' ? "var(--ui-success)" : 'var(--input-text)', cursor: 'pointer', outline: 'none'}} value={formData.status} onChange={e => triggerAutoSave('status', e.target.value)} disabled={!canChangeStatus}>
+               <label htmlFor="ticket-status" className="ui-static-b55d0546e4" style={{textTransform: 'uppercase'}}>Ticket Status</label>
+               <select id="ticket-status" className="ui-static-af51282eb0 ticket-status-control" style={{width: '100%', ...statusStyle(formData.status), cursor: canChangeStatus ? 'pointer' : 'not-allowed'}} value={formData.status} onChange={e => triggerAutoSave('status', e.target.value)} disabled={!canChangeStatus}>
                  <option value="New">New</option>
                  <option value="Open">Open</option>
                  <option value="In Progress">In Progress</option>

@@ -254,7 +254,7 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                             onClick={() => toggleExpandUser(u.user.id)}
                             className="ui-static-e59a73fd03" style={{display: "flex", alignItems: "center", cursor: "pointer"}}
                           >
-                            <div className="podium-avatar ui-static-d929e0b517" style={{background: u.stats.efficiencyRate >= 60 ? "#10b981" : u.stats.efficiencyRate >= 30 ? "#f59e0b" : "#ef4444", width: "36px", height: "36px", flexShrink: 0}}>
+                            <div className="podium-avatar ui-static-d929e0b517" style={{background: u.stats.efficiencyRate >= 60 ? 'var(--ui-success)' : u.stats.efficiencyRate >= 30 ? 'var(--ui-warning)' : 'var(--ui-danger)', color:'var(--ui-on-accent)', width: "36px", height: "36px", flexShrink: 0}}>
                               {u.user.avatarUrl ? (
                                 <img src={u.user.avatarUrl} alt="Avatar" className="ui-static-30e89704d0" style={{width: "100%", height: "100%", objectFit: "cover"}} />
                               ) : (
@@ -308,13 +308,13 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                                 let bg = "transparent";
                                 let title = "";
                                 if (seg.type === "active") {
-                                  bg = "linear-gradient(135deg, #10b981, #059669)";
+                                  bg = 'var(--ui-success)';
                                   title = `Kerja Efektif: ${new Date(seg.start).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} - ${new Date(seg.end).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} (${formatDuration(seg.durationMins / 60)}), Aktivitas: ${seg.activityCount}`;
                                 } else if (seg.type === "overtime") {
-                                  bg = "linear-gradient(135deg, #f97316, #ea580c)";
+                                  bg = 'var(--ui-orange)';
                                   title = `Lembur/Ekstra: ${new Date(seg.start).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} - ${new Date(seg.end).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} (${formatDuration(seg.durationMins / 60)}), Aktivitas: ${seg.activityCount}`;
                                 } else if (seg.type === "oncall") {
-                                  bg = "linear-gradient(135deg, #8b5cf6, #6d28d9)";
+                                  bg = 'var(--ui-violet)';
                                   title = `On-call (WFH): ${new Date(seg.start).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} - ${new Date(seg.end).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })} (${formatDuration(seg.durationMins / 60)}), Aktivitas: ${seg.activityCount}`;
                                 } else if (seg.type === "idle") {
                                   bg = "rgba(148, 163, 184, 0.15)";
@@ -376,7 +376,7 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
                                   </div>
                                   <div className="ui-static-0664cbeecc" style={{display: "flex", justifyContent: "space-between"}}>
                                     <span className="ui-static-8356576a3b" >Rasio Efisiensi Shift:</span>
-                                    <span className="ui-static-78d7af8b7e" style={{color: u.stats.efficiencyRate >= 60 ? "#10b981" : u.stats.efficiencyRate >= 30 ? "#f59e0b" : "#ef4444"}}>
+                                    <span className="ui-static-78d7af8b7e" style={{color: u.stats.efficiencyRate >= 60 ? 'var(--ui-success)' : u.stats.efficiencyRate >= 30 ? 'var(--ui-warning)' : 'var(--ui-danger)'}}>
                                       {u.stats.efficiencyRate}%
                                     </span>
                                   </div>
@@ -396,13 +396,13 @@ export default function TeamWorkHours({ departments = [], isAdmin = false }) {
 
                               {/* Loyalty/Diligence Analysis Card */}
                               {u.diligence && (
-                                <div className="card ui-static-f64eae4332" style={{display: "flex", flexDirection: "column", background: u.diligence.score >= 75 ? "rgba(16, 185, 129, 0.04)" : u.diligence.score >= 50 ? "rgba(59, 130, 246, 0.04)" : u.diligence.score >= 25 ? "var(--hover-bg)" : "rgba(239, 68, 68, 0.04)", borderLeft: `4px solid ${u.diligence.score >= 75 ? "#10b981" : u.diligence.score >= 50 ? "#3b82f6" : u.diligence.score >= 25 ? "#64748b" : "#ef4444"}`}}>
+                                <div className="card ui-static-f64eae4332" style={{display: "flex", flexDirection: "column", background: u.diligence.score >= 75 ? 'var(--ui-success-bg)' : u.diligence.score >= 50 ? 'var(--ui-info-bg)' : u.diligence.score >= 25 ? 'var(--ui-subtle)' : 'var(--ui-danger-bg)', borderLeft: `4px solid ${u.diligence.score >= 75 ? 'var(--ui-success)' : u.diligence.score >= 50 ? 'var(--ui-info)' : u.diligence.score >= 25 ? 'var(--ui-muted)' : 'var(--ui-danger)'}`}}>
                                   <h4 className="ui-static-2d58ea64ff" style={{display: "flex", alignItems: "center"}}>
                                      Analisis Kualitas Kerja & Loyalitas
                                   </h4>
                                   
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <span className="ui-static-7e5eaaca0d" style={{color: u.diligence.score >= 75 ? "#10b981" : u.diligence.score >= 50 ? "#3b82f6" : u.diligence.score >= 25 ? "var(--heading-color)" : "#ef4444"}}>
+                                    <span className="ui-static-7e5eaaca0d" style={{color: u.diligence.score >= 75 ? 'var(--ui-success)' : u.diligence.score >= 50 ? 'var(--ui-info)' : u.diligence.score >= 25 ? 'var(--heading-color)' : 'var(--ui-danger)'}}>
                                       {u.diligence.level}
                                     </span>
                                     <span className="ui-static-aa1bd4b4bf" >

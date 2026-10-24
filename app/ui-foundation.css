@@ -86,3 +86,5 @@ body { font-family: var(--ui-font); font-size: var(--ui-type-body); line-height:
 .nav-version{opacity:1;font-size:var(--ui-type-xs);color:var(--ui-muted)}.badge{color:var(--ui-on-accent)}.logout-btn{color:var(--ui-text);background:var(--ui-surface);border:var(--ui-hairline) solid var(--ui-line)}
 
 .badge.badge-info{background:var(--ui-tint);color:var(--ui-accent)}
+.ticket-status-control option{background:var(--ui-surface);color:var(--ui-text)}
+.ticket-status-control:disabled{opacity:1;-webkit-text-fill-color:currentColor}

@@ -11,7 +11,7 @@ import TicketQuickActions from "./TicketQuickActions";
 import TicketAdvancedFilter from "./TicketAdvancedFilter";
 import Pagination from "@/components/Pagination";
 import { getAppConfig } from "@/lib/config";
-import { DEFAULT_FILTER_STATUSES, expandStatusesForQuery } from "@/lib/tickets/status";
+import { DEFAULT_FILTER_STATUSES, expandStatusesForQuery, statusStyle } from "@/lib/tickets/status";
 import {
   getPersonalCategoryIds,
   personalTicketGuard,
@@ -325,7 +325,7 @@ export default async function TicketsPage({ searchParams }) {
                   )}
                 </td>
                 <td>
-                  <span className="badge" style={{ backgroundColor: t.status === 'Resolved' ? "var(--ui-success)" : (t.status === 'New' ? "var(--ui-danger)" : "var(--ui-warning)") }}>
+                  <span className="badge" style={statusStyle(t.status)}>
                     {t.status}
                   </span>
                 </td>

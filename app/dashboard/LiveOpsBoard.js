@@ -9,14 +9,14 @@ const STATUS_COLORS = {
 };
 
 const CATEGORY_COLORS = {
-  'Installasi': '#3b82f6',
-  'Trouble Ticket': '#ef4444',
-  'BOD': '#8b5cf6',
-  'Trial': '#10b981',
-  'Upgrade': '#f59e0b',
-  'Downgrade': '#f97316',
-  'Relokasi': '#06b6d4',
-  'Dismantle': '#64748b',
+  'Installasi': {color:'var(--ui-info)',bg:'var(--ui-info-bg)'},
+  'Trouble Ticket': {color:'var(--ui-danger)',bg:'var(--ui-danger-bg)'},
+  'BOD': {color:'var(--ui-violet)',bg:'var(--ui-violet-bg)'},
+  'Trial': {color:'var(--ui-success)',bg:'var(--ui-success-bg)'},
+  'Upgrade': {color:'var(--ui-warning)',bg:'var(--ui-warning-bg)'},
+  'Downgrade': {color:'var(--ui-orange)',bg:'var(--ui-orange-bg)'},
+  'Relokasi': {color:'var(--ui-accent)',bg:'var(--ui-tint)'},
+  'Dismantle': {color:'var(--ui-text)',bg:'var(--ui-subtle)'},
 };
 
 function getTimeAgo(date) {
@@ -294,8 +294,8 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
             {filteredTickets.map(t => {
               const customerName = getCustomerName(t);
               const displayStatus = normalizeStatus(t.status);
-              const stColor = STATUS_COLORS[displayStatus] || STATUS_COLORS[t.status] || { bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0' };
-              const catColor = CATEGORY_COLORS[t.jobCategory?.name] || '#94a3b8';
+              const stColor = STATUS_COLORS[displayStatus] || STATUS_COLORS[t.status] || { bg: 'var(--ui-subtle)', color: 'var(--ui-text)', border: 'var(--ui-control-line)' };
+              const catColor = CATEGORY_COLORS[t.jobCategory?.name] || {color:'var(--ui-text)',bg:'var(--ui-subtle)'};
               const isOverdue = t.slaBreaches > 0 && t.status !== 'Resolved';
               
               const hasDt = t.customData && typeof t.customData === 'object' && t.customData.hasDowntime;
@@ -312,7 +312,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
               }
 
               const rowBg = isOverdue ? 'rgba(239, 68, 68, 0.04)' : (t.status === 'New' && hoursIdle > 2 ? 'rgba(245, 158, 11, 0.04)' : 'transparent');
-              const durationColor = hoursActive > 4 ? '#ef4444' : (hoursActive > 2 ? '#f59e0b' : 'var(--text-color)');
+              const durationColor = hoursActive > 4 ? 'var(--ui-danger)' : (hoursActive > 2 ? 'var(--ui-warning)' : 'var(--text-color)');
 
               return (
                 <tr key={t.id} style={{background: rowBg, transition: 'background 0.15s'}} className="hover-bg ui-static-31df06b618">
@@ -327,7 +327,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
                   </td>
                   <td className="ui-static-ce5f724e09" >
                     {t.jobCategory ? (
-                      <span className="ui-static-5745689772" style={{background: `${catColor}15`, color: catColor, whiteSpace: 'nowrap', border: `1px solid ${catColor}30`}}>
+                      <span className="ui-static-5745689772" style={{background: catColor.bg, color: catColor.color, whiteSpace: 'nowrap', border: '1px solid var(--ui-control-line)'}}>
                         {t.jobCategory.name}
                       </span>
                     ) : (
@@ -339,7 +339,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
                       {displayStatus}
                     </span>
                   </td>
-                  <td className="ui-static-7f9453e354" style={{color: hasDt ? '#f59e0b' : 'var(--text-color)', fontWeight: hasDt ? 'bold' : 'normal', whiteSpace: 'nowrap'}}>
+                  <td className="ui-static-7f9453e354" style={{color: hasDt ? 'var(--ui-warning)' : 'var(--text-color)', fontWeight: hasDt ? 'bold' : 'normal', whiteSpace: 'nowrap'}}>
                     {mounted ? (
                       hasDt && dtStart ? (
                         <div>
@@ -368,7 +368,7 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
                           Real Age: {getDuration(t.createdAt, t.resolvedAt && t.status === 'Resolved' ? t.resolvedAt : null)}
                         </div>
                         {t.status !== 'Resolved' && (
-                          <div className="ui-static-fcc3bd24cb" style={{color: hoursIdle > 2 ? '#ef4444' : '#64748b', fontWeight: hoursIdle > 2 ? 'bold' : 'normal'}}>
+                          <div className="ui-static-fcc3bd24cb" style={{color: hoursIdle > 2 ? 'var(--ui-danger)' : 'var(--ui-muted)', fontWeight: hoursIdle > 2 ? 'bold' : 'normal'}}>
                             Idle: {getTimeAgo(t.updatedAt)}
                           </div>
                         )}
@@ -377,14 +377,14 @@ export default function LiveOpsBoard({ initialData = [], jobCategories = [], def
                       <div>
                         <div>{getDuration(t.customData?.reopenedAt || t.createdAt, t.resolvedAt && t.status === 'Resolved' ? t.resolvedAt : null)}</div>
                         {t.status !== 'Resolved' && (
-                          <div className="ui-static-fcc3bd24cb" style={{color: hoursIdle > 2 ? '#ef4444' : '#64748b', fontWeight: hoursIdle > 2 ? 'bold' : 'normal'}}>
+                          <div className="ui-static-fcc3bd24cb" style={{color: hoursIdle > 2 ? 'var(--ui-danger)' : 'var(--ui-muted)', fontWeight: hoursIdle > 2 ? 'bold' : 'normal'}}>
                             Idle: {getTimeAgo(t.updatedAt)}
                           </div>
                         )}
                       </div>
                     )}
                   </td>
-                  <td className="ui-static-4b7193c251" style={{color: t.assignee ? 'var(--heading-color)' : '#94a3b8', fontWeight: t.assignee ? '600' : 'normal', fontStyle: t.assignee ? 'normal' : 'italic', whiteSpace: 'nowrap'}}>
+                  <td className="ui-static-4b7193c251" style={{color: t.assignee ? 'var(--heading-color)' : 'var(--ui-muted)', fontWeight: t.assignee ? '600' : 'normal', fontStyle: t.assignee ? 'normal' : 'italic', whiteSpace: 'nowrap'}}>
                     {t.assignee?.name || 'Unassigned'}
                   </td>
                   <td className="ui-static-ce5f724e09" style={{maxWidth: '160px'}}>

@@ -15,6 +15,7 @@
   --ui-indigo: #45458e; --ui-indigo-bg: #eeefff;
   --ui-orange: #97420c; --ui-orange-bg: #fff3e8;
   --ui-highlight-ink: #182333;
+  --ui-media-overlay: #182333; --ui-on-media-overlay: #fff;
   --ui-radius: .3125rem; --ui-radius-lg: .5rem;
   --ui-shadow: 0 .375rem 1rem rgb(22 37 55 / .09);
   --ui-overlay: rgb(13 32 43 / .62);
