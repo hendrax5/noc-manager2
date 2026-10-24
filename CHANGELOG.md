@@ -10,6 +10,16 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-10-25
+
+### Added
+
+- **Activity score.** The team activity table now calculates a 0–100 operational score — 40% points, 35% resolved tickets, 25% responses, each relative to the highest value in the current filter — and sorts members by it. It is labelled as operational activity, not the formal evidence-based evaluation.
+
+### Changed
+
+- **Kinerja overview API.** Each member row now includes `score`, and the activity ranking uses it before falling back to points.
+
 ## [3.2.0] - 2026-10-25
 
 ### Added
@@ -351,7 +361,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.2.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.3.0...HEAD
+[3.3.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.3.0
 [3.2.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.2.0
 [3.1.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.1.1
 [3.1.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.1.0

@@ -37,6 +37,12 @@ export async function GET(req) {
     const ledgerMap = new Map(ledgerRows.map(row => [row.actorId, row._sum.awardedScore || 0]));
     const legacyMap = new Map(legacyRows.map(row => [row.assigneeId, row._sum.awardedScore || 0]));
     const payloadRows = rows.map(r => ({userId: r.userId, name: r.name, departmentId: r.departmentId, department: r.department, company: r.company, total: r.total, status: r.status, reviewState: r.reviewState, reasons: reasonsOf(r), resolved: resolvedMap.get(r.userId) || 0, responses: commentMap.get(r.userId) || 0, points: (ledgerMap.get(r.userId) || 0) + (legacyMap.get(r.userId) || 0)}));
+    const maxPoints = Math.max(0, ...payloadRows.map(row => row.points));
+    const maxResolved = Math.max(0, ...payloadRows.map(row => row.resolved));
+    const maxResponses = Math.max(0, ...payloadRows.map(row => row.responses));
+    for (const row of payloadRows) {
+      row.score = Math.round((0.4 * (maxPoints ? row.points / maxPoints : 0) + 0.35 * (maxResolved ? row.resolved / maxResolved : 0) + 0.25 * (maxResponses ? row.responses / maxResponses : 0)) * 1000) / 10;
+    }
     const activitySummary = payloadRows.reduce((sum, row) => ({resolved: sum.resolved + row.resolved, responses: sum.responses + row.responses, points: sum.points + row.points}), {resolved: 0, responses: 0, points: 0});
     const reasonCounts = new Map();
     for (const row of payloadRows) for (const reason of row.reasons) reasonCounts.set(reason, (reasonCounts.get(reason) || 0) + 1);
