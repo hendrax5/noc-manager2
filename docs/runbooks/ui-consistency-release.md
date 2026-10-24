@@ -137,3 +137,14 @@ Commit `2b23d5d`, image `noc-manager2-app:release-3.5.1` (dasar `release-3.5.0`)
 - Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.5.1-20261024T180859Z.dump` (20.5 MB).
 - Verifikasi: container Up, `RestartCount=0`, `/login` 200, API Kinerja 401, log start `@hendrax5/noc-manager2@3.5.1`.
 - Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.5.1/rollback.sh` (kembali ke `release-3.5.0`).
+
+## Tindak lanjut 3.6.0 (tabel terpadu, tiket, perbandingan)
+
+Commit `72d0f5f`, image `noc-manager2-app:release-3.6.0` (dasar `release-3.5.1`).
+
+- Tabel tim kini satu tabel per departemen: skor aktivitas, tiket selesai, respons, poin, dan kolom nilai/status formal bila sudah tersedia; tabel formal terpisah dihapus. Tombol Rincian membuka detail anggota.
+- Detail personal menampilkan **Tiket yang dikerjakan** (PIC atau respons) dengan tautan tiket, status, tanggal selesai, waktu respons, dan poin.
+- Perbandingan bulan berjalan vs bulan sebelumnya per departemen: skor rata-rata, poin/anggota, tiket/anggota, dan selisihnya, diurutkan dari kenaikan skor.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.6.0-20261024T182809Z.dump` (20.5 MB).
+- Verifikasi: container Up, `RestartCount=0`, `/login` 200, API Kinerja 401, log start `@hendrax5/noc-manager2@3.6.0`.
+- Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.6.0/rollback.sh` (kembali ke `release-3.5.1`).

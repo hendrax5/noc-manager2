@@ -89,3 +89,7 @@ Skor dan peringkat aktivitas sekarang dihitung per departemen/perusahaan, bukan 
 ## Tindak lanjut 3.5.0
 
 Metrik personal sekarang diturunkan dari timeline tiket: respons pertama setelah penugasan (termasuk balasan internal), waktu penanganan dari penugasan sampai selesai, total waktu penyelesaian, ketepatan tenggat, kebersihan SLA, dan follow-up sesuai tenggat respons. Metrik review manual hanya muncul bila review tersedia, sehingga tiket internal tanpa balasan publik tidak lagi dianggap tidak cukup bukti.
+
+## Tindak lanjut 3.6.0
+
+Tabel tim disatukan: skor aktivitas dan nilai formal berbagi satu tabel per departemen, dengan tautan rincian anggota. Detail personal memuat daftar tiket yang dikerjakan (PIC/respons) untuk memverifikasi keterlibatan. Perbandingan bulan berjalan vs sebelumnya menampilkan skor, poin/anggota, tiket/anggota, dan selisihnya sebagai bahan penilaian bonus akhir bulan.
