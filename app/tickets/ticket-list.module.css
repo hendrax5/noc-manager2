@@ -1,0 +1,12 @@
+.ticketTitle { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--ui-ink); font-weight: 650; text-decoration: none; overflow-wrap: anywhere; }
+.ticketTitle:hover { color: var(--ui-accent); text-decoration: underline; }
+.ticketDetail { min-width: 16rem; max-width: 35rem; }
+.secondary { color: var(--ui-muted); font-size: var(--ui-type-meta); margin-top: var(--ui-space-1); overflow-wrap: anywhere; }
+.circuit { font-family: var(--ui-mono); }
+.routing { display: flex; flex-wrap: wrap; gap: var(--ui-space-2); font-size: var(--ui-type-sm); color: var(--ui-muted); margin-top: var(--ui-space-2); }
+.original { font-size: var(--ui-type-sm); color: var(--ui-muted); margin-top: var(--ui-space-2); }
+.original summary { cursor: pointer; }
+.original dl { margin: var(--ui-space-2) 0; }
+.original dt { font-weight: 600; }
+.original dd { margin: 0 0 var(--ui-space-2); overflow-wrap: anywhere; }
+.tableScroll { overflow-x: auto; }

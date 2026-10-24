@@ -1,5 +1,6 @@
 import { WORK_TYPE_LABELS, workTypeWhere } from "@/lib/tickets/workClassification";
-import { getServiceCid } from "@/lib/services/cid";
+import { ticketPresentation } from "@/lib/tickets/presentation";
+import styles from "./ticket-list.module.css";
 import { Suspense } from "react";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
@@ -43,7 +44,9 @@ export default async function TicketsPage({ searchParams }) {
   const tab = resolvedParams?.tab || "";
   const jobCategoryParam = resolvedParams?.jobCategory || "";
 
-  const workFilter = workTypeWhere(resolvedParams?.workType);
+  const installationView = resolvedParams?.view === 'installation';
+  const installationTypes = installationView ? await prisma.serviceWorkType.findMany({ where: { operation: 'Installation' }, select: { id: true } }) : [];
+  const workFilter = installationView ? { OR: [{ workType: 'Installation' }, { workType: 'ServiceWork', serviceWorkTypeId: { in: installationTypes.map(type => type.id) } }] } : workTypeWhere(resolvedParams?.workType);
   const workType = workFilter.workType || "";
   const filters = [workFilter];
   const serviceWorkTypeId = /^\d+$/.test(String(resolvedParams?.serviceWorkTypeId || '')) ? Number(resolvedParams.serviceWorkTypeId) : null;
@@ -104,7 +107,8 @@ export default async function TicketsPage({ searchParams }) {
         { title: { contains: q, mode: 'insensitive' } },
         { assignee: { name: { contains: q, mode: 'insensitive' } } },
         { assignee: { email: { contains: q, mode: 'insensitive' } } },
-        { description: { contains: q, mode: 'insensitive' } }
+        { description: { contains: q, mode: 'insensitive' } },
+        { customData: { path: ['Customer Name'], string_contains: q } }
       ]
     });
   }
@@ -197,8 +201,8 @@ export default async function TicketsPage({ searchParams }) {
     <main className="container">
       <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1>{workType ? WORK_TYPE_LABELS[workType] : "Semua Tiket"}</h1>
-          <p>Triage, assign, and resolve NOC technical operations.</p>
+          <h1>{installationView ? 'Instalasi' : workType ? WORK_TYPE_LABELS[workType] : "Semua Tiket"}</h1>
+          <p>Kelola gangguan dan pekerjaan layanan.</p>
         </div>
         <div className="ui-static-af81cc4264" style={{display: 'flex', alignItems: 'center'}}>
           {dateParam === 'today' && (
@@ -207,18 +211,18 @@ export default async function TicketsPage({ searchParams }) {
             </span>
           )}
           {canCreate && (
-            <Link href={workType ? `/tickets/new?workType=${workType}` : "/tickets/new"} className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>+ New Ticket</Link>
+            <Link href={installationView ? '/tickets/new?workType=ServiceWork&operation=Installation' : workType ? `/tickets/new?workType=${workType}` : "/tickets/new"} className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>+ Buat tiket</Link>
           )}
         </div>
       </header>
 
       {/* Dynamic Views / Status Tabs */}
       <div className="ui-static-8f3fb50de8" style={{display: 'flex', overflowX: 'auto'}}>
-         <Link href={workType ? `/tickets?workType=${workType}` : "/tickets"} className="ui-static-be2cd19cf4" style={{textDecoration: 'none', color: !tab ? 'var(--primary-color)' : "var(--ui-info)", fontWeight: !tab ? 'bold' : '500', borderBottom: !tab ? '3px solid var(--primary-color)' : 'none'}}>
+         <Link href={installationView ? '/tickets?view=installation' : workType ? `/tickets?workType=${workType}` : "/tickets"} className="ui-static-be2cd19cf4" style={{textDecoration: 'none', color: !tab ? 'var(--primary-color)' : "var(--ui-info)", fontWeight: !tab ? 'bold' : '500', borderBottom: !tab ? '3px solid var(--primary-color)' : 'none'}}>
             All Active View
          </Link>
          {(isCS || user.role === 'Admin' || user.permissions?.includes('manage_sla') || user.permissions?.includes('view_all_tickets')) && (
-           <Link href={`/tickets?tab=cs_radar${workType ? `&workType=${workType}` : ""}`} className="ui-static-9c11788788" style={{textDecoration: 'none', color: tab === 'cs_radar' ? "var(--ui-danger)" : "var(--ui-info)", fontWeight: tab === 'cs_radar' ? 'bold' : '500', borderBottom: tab === 'cs_radar' ? '3px solid #ef4444' : 'none', display: 'flex', alignItems: 'center'}}>
+           <Link href={`/tickets?tab=cs_radar${installationView ? '&view=installation' : workType ? `&workType=${workType}` : ""}`} className="ui-static-9c11788788" style={{textDecoration: 'none', color: tab === 'cs_radar' ? "var(--ui-danger)" : "var(--ui-info)", fontWeight: tab === 'cs_radar' ? 'bold' : '500', borderBottom: tab === 'cs_radar' ? '3px solid #ef4444' : 'none', display: 'flex', alignItems: 'center'}}>
                CS SLA Radar
            </Link>
          )}
@@ -233,12 +237,11 @@ export default async function TicketsPage({ searchParams }) {
         <Link href="/tickets?workType=Installation">Instalasi (format lama)</Link>
         {serviceWorkTypes.map(type => <Link key={type.id} href={`/tickets?workType=ServiceWork&serviceWorkTypeId=${type.id}`} aria-current={serviceWorkTypeId === type.id ? 'page' : undefined} className="ui-static-3d6ac67643" >{type.name}{type.active ? '' : ' (nonaktif)'}</Link>)}
       </nav>}
-      <table className="data-table">
+      <div className={styles.tableScroll}><table className="data-table">
         <thead>
           <tr>
             <th>Tracking ID</th>
-            <th>Name</th>
-            <th>Subject</th>
+            <th>Tiket / Detail</th>
             <th>Category</th>
             <th>Status</th>
             <th>Priority</th>
@@ -249,7 +252,7 @@ export default async function TicketsPage({ searchParams }) {
         </thead>
         <tbody>
           {tickets.length === 0 && (
-            <tr><td colSpan="9" className="ui-static-39c1d6c828" style={{textAlign: 'center'}}>No tickets found matching your filters.</td></tr>
+            <tr><td colSpan="8" className="ui-static-39c1d6c828" style={{textAlign: 'center'}}>No tickets found matching your filters.</td></tr>
           )}
           {tickets.map(t => {
             const isCritical = t.priority === 'Critical';
@@ -269,41 +272,21 @@ export default async function TicketsPage({ searchParams }) {
             else if (hasPings && t.status !== 'Resolved') rowClass = "ticket-row-warning";
             else if (expiryDateStr && t.status !== 'Resolved' && new Date(expiryDateStr) < new Date()) rowClass = "ticket-row-expired";
             
-            let extractedName = "-";
-            const reporterMatch = t.description?.match(/\[Original Reporter: (.*?) -/);
-            if (reporterMatch) {
-              extractedName = reporterMatch[1];
-            } else if (t.services && t.services.length > 0 && t.services[0].customer) {
-              extractedName = t.services[0].customer.name;
-            } else if (t.customData && typeof t.customData === 'object' && t.customData["Customer Name"]) {
-               extractedName = t.customData["Customer Name"];
-            }
+            const presentation = ticketPresentation(t);
 
             return (
               <tr key={t.id} className={rowClass}>
                 <td className="ui-static-a03c8f3240" >{t.trackingId}</td>
-                <td>
-                  <span className="ui-static-7f653ec309" style={{display: 'block'}}>{extractedName}</span>
-                  {t.customData && t.customData["Order Origin"] && (
-                    <span className="ui-static-7d0b48c22b" style={{display: 'inline-block'}} title="Order Origin">
-                       {t.customData["Order Origin"]}
-                    </span>
-                  )}
-                  {t.customData && t.customData["Executing Vendor"] && (
-                    <span className="ui-static-4d2206b758" style={{display: 'inline-block'}} title="Executing Vendor">
-                       {t.customData["Executing Vendor"]}
-                    </span>
-                  )}
-                </td>
-                <td className="ui-static-5c05f4afaf" >
-                  <Link href={`/tickets/${t.id}`} className="ui-static-7521b95b4f" >
-                    {t.title}
-                  </Link>
-                  <div className="ui-static-cefb247027" >
-                    <span className="badge">{t.serviceWorkTypeLabel || WORK_TYPE_LABELS[t.workType] || WORK_TYPE_LABELS.Unclassified}</span>
-                    {t.sapReference && <span> SAP: {t.sapReference}</span>}
-                    {t.services?.some(service => getServiceCid(service)) && <span> CID: {t.services.map(service => getServiceCid(service)).filter(Boolean).join(', ')}</span>}
+                <td className={styles.ticketDetail}>
+                  <Link href={`/tickets/${t.id}`} className={styles.ticketTitle} title={presentation.title}>{presentation.title}</Link>
+                  {presentation.subtitle && <div className={styles.secondary}>{presentation.subtitle}</div>}
+                  {presentation.cids.length > 0 && <div className={`${styles.secondary} ${styles.circuit}`}>CID: {presentation.cids.join(', ')}</div>}
+                  <div className={styles.secondary}>{t.serviceWorkTypeLabel || WORK_TYPE_LABELS[t.workType] || WORK_TYPE_LABELS.Unclassified}{t.sapReference && ![presentation.title, presentation.subtitle, ...presentation.cids].includes(t.sapReference) && <span> · SAP: {t.sapReference}</span>}</div>
+                  <div className={styles.routing}>
+                    {t.customData?.['Order Origin'] && <span>Penerima order: {t.customData['Order Origin']}</span>}
+                    {t.customData?.['Executing Vendor'] && <span>Pelaksana: {t.customData['Executing Vendor']}</span>}
                   </div>
+                  <details className={styles.original}><summary>Data asal</summary><dl><dt>Name</dt><dd>{presentation.originalName || 'Tidak diisi'}</dd><dt>Subject</dt><dd>{presentation.originalSubject || 'Tidak diisi'}</dd></dl></details>
                   {t.slaBreaches > 0 && t.status !== 'Resolved' && (
                     <span className="ui-static-a7e19d1696" >
                        x{t.slaBreaches} CS Pings!
@@ -342,7 +325,7 @@ export default async function TicketsPage({ searchParams }) {
             );
           })}
         </tbody>
-      </table>
+      </table></div>
 
       <Pagination totalCount={totalTickets} pageSize={pageSize} />
     </main>

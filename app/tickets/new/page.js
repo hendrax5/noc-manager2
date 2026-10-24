@@ -32,7 +32,7 @@ export default async function NewTicketPage({ searchParams }) {
   const targetRouteDeptId = creatorDeptId && deptAutoRouteMap[creatorDeptId] ? parseInt(deptAutoRouteMap[creatorDeptId]) : null;
   const defaultTargetDeptId = targetRouteDeptId || departments[0]?.id;
   const initialService = services.find(service => String(service.id) === query?.serviceId);
-  const initialServiceWorkType = defaultWorkType === 'ServiceWork' && initialService && query?.operation === 'Installation'
+  const initialServiceWorkType = defaultWorkType === 'ServiceWork' && query?.operation === 'Installation'
     ? await prisma.serviceWorkType.findFirst({ where: { active: true, operation: 'Installation' }, orderBy: { sortOrder: 'asc' } }) : null;
 
   return (

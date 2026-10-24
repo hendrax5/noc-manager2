@@ -55,6 +55,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
   const handleSearch = (e) => {
     if (e) e.preventDefault();
     const params = new URLSearchParams();
+    if (searchParams.get('view') === 'installation' && !workType) params.set('view', 'installation');
     if (workType) params.set('workType', workType);
     if (searchParams.get('serviceWorkTypeId')) params.set('serviceWorkTypeId', searchParams.get('serviceWorkTypeId'));
     if (searchParams.get('date')) params.set('date', searchParams.get('date'));
@@ -74,6 +75,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
   const handleCompanyChange = (val) => {
     setCompanyParam(val);
     const params = new URLSearchParams();
+    if (searchParams.get('view') === 'installation' && !workType) params.set('view', 'installation');
     if (workType) params.set('workType', workType);
     if (searchParams.get('date')) params.set('date', searchParams.get('date'));
     if (q) params.set('q', q);
@@ -91,6 +93,7 @@ export default function TicketAdvancedFilter({ companies = ["ION", "SDC", "Siste
   const handleJobCategoryChange = (val) => {
     setJobCategoryParam(val);
     const params = new URLSearchParams();
+    if (searchParams.get('view') === 'installation' && !workType) params.set('view', 'installation');
     if (workType) params.set('workType', workType);
     if (searchParams.get('date')) params.set('date', searchParams.get('date'));
     if (q) params.set('q', q);

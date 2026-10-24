@@ -1,0 +1,13 @@
+.topbar { gap: var(--ui-space-5); flex-wrap: wrap; }
+.topbar .links { display: flex; align-items: center; gap: var(--ui-space-4); flex: 1; flex-wrap: wrap; }
+.topbar .links > a { margin: 0; padding-block: var(--ui-space-2); font-size: var(--ui-type-meta); white-space: nowrap; }
+.context { display: flex; gap: var(--ui-space-6); overflow-x: auto; padding: 0 var(--ui-space-8); border-bottom: var(--ui-hairline) solid var(--ui-line); background: var(--ui-surface); }
+.context a { display: inline-flex; align-items: center; min-height: var(--ui-control-height); padding: var(--ui-space-3) 0; color: var(--ui-muted); font-size: var(--ui-type-meta); text-decoration: none; white-space: nowrap; border-bottom: var(--ui-focus-width) solid transparent; }
+.context a:hover { color: var(--ui-accent); }
+.context a[aria-current=page] { color: var(--ui-accent); font-weight: 650; border-bottom-color: var(--ui-accent); }
+@media (max-width: 768px) {
+ .topbar .links { display: none; }
+ .topbar .links:global(.open) { display: flex; }
+ .topbar .links > a { width: 100%; }
+ .context { padding-inline: var(--ui-space-4); gap: var(--ui-space-5); }
+}
