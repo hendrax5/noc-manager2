@@ -62,7 +62,14 @@ function NavbarContent({ appName = "NOC Management", appVersion = "1.0.0" }) {
               title={theme === "dark" ? "Gunakan tema terang" : "Gunakan tema gelap"}
               aria-label={theme === "dark" ? "Gunakan tema terang" : "Gunakan tema gelap"}
             >
-              <img src="/ion-logo.png" alt="" aria-hidden="true" className={styles.themeLogo}/>
+              <svg
+                className={`${styles.themeLamp} ${theme === "dark" ? styles.themeLampDark : styles.themeLampLight}`}
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M9 18h6M10 21h4M8.2 14.6A6 6 0 1 1 15.8 14.6c-.8.6-1.3 1.4-1.5 2.4h-4.6c-.2-1-.7-1.8-1.5-2.4Z" />
+                <path className={styles.themeLampRays} d="M12 1V0M4.2 4.2l-.8-.8M19.8 4.2l.8-.8M1 12H0M24 12h-1" />
+              </svg>
             </button>
 
             <button

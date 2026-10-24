@@ -8,7 +8,10 @@
 .contextItem { display:inline-flex;align-items:center;gap:var(--ui-space-3);white-space:nowrap; }
 .sectionLabel { color:var(--ui-muted);font-size:var(--ui-type-xs);font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-left:var(--ui-hairline) solid var(--ui-line);padding-left:var(--ui-space-4); }
 .contextItem:first-child .sectionLabel { border-left:0;padding-left:0; }
-.themeLogo { display:block;width:2rem;height:2rem;object-fit:contain; }
+.themeLamp { display:block;width:1.45rem;height:1.45rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:color .16s ease,fill .16s ease,filter .16s ease; }
+.themeLampLight { color:#f5b301;fill:color-mix(in srgb,#f5b301 22%,transparent);filter:drop-shadow(0 0 .22rem color-mix(in srgb,#f5b301 55%,transparent)); }
+.themeLampDark { color:var(--ui-muted);fill:transparent; }
+.themeLampRays { fill:none; }
 @media (max-width: 768px) {
  .topbar .links { display: none; }
  .topbar .links:global(.open) { display: flex; }
