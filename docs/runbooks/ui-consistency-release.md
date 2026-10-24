@@ -70,3 +70,13 @@ Commit `5a47019` menambahkan `CHANGELOG.md` (Keep a Changelog 1.1.0 + SemVer), p
 - Verifikasi: container `noc-manager2-app-1` Up, `RestartCount=0`, `/login` 200, `/api/trouble-masters` 401, log start `@hendrax5/noc-manager2@3.1.0`.
 - Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.1.0/rollback.sh` (kembali ke `release-7ae7fb8`).
 - Perubahan runtime hanya string versi di navbar; tidak ada migrasi database.
+
+## Tindak lanjut 3.1.1 (kesiapan Kinerja)
+
+Commit `8f11fe3`, image `noc-manager2-app:release-3.1.1` (dasar `release-3.1.0`).
+
+- Tab tim Kinerja menampilkan panel kesiapan: jumlah anggota dengan penempatan sebulan penuh, kebijakan published, konteks jadwal, bukti direview, serta alasan penghambat teratas. API overview menyertakan `readiness` dan `reasons` per anggota.
+- Audit produksi 2026-10 saat rilis: 0 penempatan, 0 kebijakan published, 0 konteks bulanan, 0 bukti direview, 0 laporan harian submitted, 0 fase selesai. Karena itu semua nilai tetap `null` sampai konfigurasi dan bukti diisi; ini bukan regresi UI.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.1.1-20261024T172246Z.dump` (20.5 MB).
+- Verifikasi: container `noc-manager2-app-1` Up, `RestartCount=0`, `/login` 200, `/api/reports/kinerja/overview` 401, log start `@hendrax5/noc-manager2@3.1.1`.
+- Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.1.1/rollback.sh` (kembali ke `release-3.1.0`).

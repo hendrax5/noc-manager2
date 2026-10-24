@@ -65,3 +65,9 @@ Gunakan `scripts/apply_performance_migration.cjs` dry-run lalu `--apply` setelah
 Rollback menggunakan image sebelumnya dan pemulihan nilai flag sebelumnya. Kolom/tabel additive tetap disimpan agar event dan manifest tidak hilang. Jangan menjalankan destructive down migration, jangan mengganti volume uploads/database. Fixture, sesi QA dan tunnel dibersihkan setelah verifikasi.
 
 Rilis produksi: `777674696327b5e9e7850d5884b09e8561f3f199`, image `noc-manager2-app:release-7776746`. Source integrity383 file PASS, login local/domain200, endpoint Kinerja tanpa sesi401, flags simulasi terverifikasi. Image sebelumnya berhasil membaca schema additive di DB QA. Backup dan rollback berada di `/opt/noc-manager2/releases/unified-performance/`; volume uploads dipertahankan.
+
+## Tindak lanjut 3.1.1
+
+Tab tim Kinerja kini menampilkan panel kesiapan ketika belum ada nilai formal: jumlah anggota dengan penempatan sebulan penuh, kebijakan published, konteks jadwal, bukti yang direview, dan alasan penghambat teratas, dengan tautan ke pengaturan evaluasi, review bukti, dan laporan harian. API overview menyertakan ringkasan `readiness` dan `reasons` per anggota.
+
+Audit produksi 2026-10: 0 penempatan, 0 kebijakan published, 0 konteks, 0 bukti direview, 0 laporan harian submitted, 0 fase selesai. Nilai tetap `null` sampai penempatan disinkronkan, kebijakan simulasi dipublikasikan per departemen/peran/perusahaan, konteks jadwal divalidasi, dan bukti aktivitas direview. Bulan yang tidak memiliki aktivitas terverifikasi tidak dapat menghasilkan nilai.
