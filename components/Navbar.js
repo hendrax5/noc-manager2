@@ -59,9 +59,10 @@ function NavbarContent({ appName = "NOC Management", appVersion = "1.0.0" }) {
               type="button"
               onClick={toggleTheme}
               className="theme-toggle-btn"
-              title="Toggle theme"
+              title={theme === "dark" ? "Gunakan tema terang" : "Gunakan tema gelap"}
+              aria-label={theme === "dark" ? "Gunakan tema terang" : "Gunakan tema gelap"}
             >
-              {theme === "dark" ? "Light" : "Dark"}
+              <img src="/ion-logo.png" alt="" aria-hidden="true" className={styles.themeLogo}/>
             </button>
 
             <button
@@ -114,7 +115,7 @@ function NavbarContent({ appName = "NOC Management", appVersion = "1.0.0" }) {
         </div>
       )}
     </nav>
-    {session && currentGroup?.items.length > 0 && <nav className={styles.context} aria-label={`Submenu ${currentGroup.label}`}>{currentGroup.items.map(item => <Link key={item.href} href={item.href} aria-current={activeItem(item, pathname, searchParams) ? 'page' : undefined}>{item.label}</Link>)}</nav>}
+    {session && currentGroup?.items.length > 0 && <nav className={styles.context} aria-label={`Submenu ${currentGroup.label}`}>{currentGroup.items.map((item,index) => <span className={styles.contextItem} key={item.href}>{item.section&&(index===0||currentGroup.items[index-1]?.section!==item.section)&&<span className={styles.sectionLabel}>{item.section}</span>}<Link href={item.href} aria-current={activeItem(item, pathname, searchParams) ? 'page' : undefined}>{item.label}</Link></span>)}</nav>}
     </>
   );
 }

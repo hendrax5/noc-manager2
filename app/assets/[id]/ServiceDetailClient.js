@@ -148,6 +148,7 @@ export default function ServiceDetailClient({ service, session }) {
     name: service.name,
     cid: getServiceCid(service),
     status: service.status,
+    company: service.company || '',
     customData: service.customData || {}
   });
 
@@ -707,6 +708,10 @@ export default function ServiceDetailClient({ service, session }) {
                  <input type="text" required className="input-field ui-static-b52e2fe28a" value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} style={{width: '100%'}} />
                </div>
                
+               <div className="ui-static-8bd9dc7312" >
+                 <label htmlFor="edit-service-company" className="ui-static-eea8f0a130" style={{display: 'block'}}>Perusahaan layanan</label>
+                 <select id="edit-service-company" required className="input-field ui-static-b52e2fe28a" value={editData.company} onChange={e=>setEditData({...editData,company:e.target.value})} style={{width:'100%'}}><option value="">Pilih perusahaan</option><option value="ION">ION</option><option value="SDC">SDC</option></select>
+               </div>
                <div className="ui-static-8bd9dc7312" >
                  <label className="ui-static-eea8f0a130" style={{display: 'block'}}>Operational Status</label>
                  <select className="input-field ui-static-b52e2fe28a" value={editData.status} onChange={e => setEditData({...editData, status: e.target.value})} style={{width: '100%'}}>

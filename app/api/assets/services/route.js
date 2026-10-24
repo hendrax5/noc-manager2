@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { checkServiceCid } from '@/lib/services/cidLookup';
 import { CidValidationError, getServiceCid } from '@/lib/services/cid';
 import { lockCircuitCodes, registerCircuitIdentifier } from '@/lib/services/circuitRegistry';
+import {normalizeCompany} from '@/lib/companies/policy';
 
 export async function GET(request) {
   try {
@@ -45,7 +46,7 @@ export async function POST(request) {
        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { customerId, templateId, name, cid, status, customData, monthlyCost, currency, contractEnd, hops } = await request.json();
+    const { customerId, templateId, name, cid, status, company, customData, monthlyCost, currency, contractEnd, hops } = await request.json();
     const template=await prisma.serviceTemplate.findUnique({where:{id:parseInt(templateId)}});
     const bandwidthData=darkFiberData(template,openPortDefaultData(template,customData||{}));validateOpenPortData(template,bandwidthData);
     const service = await prisma.$transaction(async tx=>{
@@ -58,6 +59,7 @@ export async function POST(request) {
         name,
         cid: serviceCid,
         status: status || 'Active',
+        company: normalizeCompany(company),
         customData: bandwidthData,
         monthlyCost: monthlyCost ? parseFloat(monthlyCost) : null,
         currency: currency || 'IDR',

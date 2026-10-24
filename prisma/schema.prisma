@@ -390,6 +390,7 @@ model Service {
   template     ServiceTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
   name         String
   status       String     @default("Active")
+  company      String?
   customData   Json?      // Stores actual field values mapped to Template
   monthlyCost  Decimal?
   currency     String     @default("IDR")

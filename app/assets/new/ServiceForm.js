@@ -18,6 +18,7 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
     name: '',
     cid: '',
     status: ticketSetup ? 'Pending' : 'Active',
+    company: 'ION',
     monthlyCost: '',
     currency: 'IDR',
     contractEnd: ''
@@ -155,6 +156,13 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
                     <option value="">-- Select Framework --</option>
                     {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label htmlFor="service-company" className="ui-static-955921f9b4" style={{display: 'block'}}>Perusahaan layanan</label>
+                  <select id="service-company" className="input-field ui-static-90fb66f0af" required value={formData.company} onChange={e=>setFormData({...formData,company:e.target.value})}>
+                    <option value="ION">ION</option><option value="SDC">SDC</option>
+                  </select>
+                  <small>Satu customer dapat memiliki CID ION dan SDC.</small>
                 </div>
                 
                 <div>

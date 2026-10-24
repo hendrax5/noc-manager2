@@ -14,7 +14,7 @@ export default function ServiceWorkFields({value,onChange,services=[],serviceTem
  const id=useId(),service=services.find(s=>Number(s.id)===Number(value.serviceIds?.[0]));
  const type=workTypes.find(t=>Number(t.id)===Number(value.serviceWorkTypeId)),operation=type?.operation||value.serviceWorkOperation;
  const r=value.serviceChange||{},update=patch=>onChange({serviceChange:{...r,...patch}});
- const termination=operation==='Terminate',bod=operation==='BOD',capacityOnly=['Upgrade','Downgrade','BOD'].includes(operation);
+ const termination=operation==='Terminate',bod=operation==='BOD',dataCenter=operation==='DataCenter',capacityOnly=['Upgrade','Downgrade','BOD'].includes(operation);
  if(operation==='Installation'&&!value.editExistingServiceWork)return <InstallationFields value={value} onChange={onChange} service={service} templates={serviceTemplates}/>;
  const normal=service?readServiceBandwidthMbps(service):null;
  const start=r.bodStartAt?Date.parse(r.bodStartAt):NaN,end=r.bodEndAt?Date.parse(r.bodEndAt):NaN;
@@ -26,6 +26,15 @@ export default function ServiceWorkFields({value,onChange,services=[],serviceTem
  {operation==='Installation'&&value.editExistingServiceWork?<p>Customer/CID instalasi tetap: {service?.customer?.name} / {service?.cid}. Ubah rencana bandwidth dan RFS di bawah.</p>:<TicketServicePicker services={services} selectedIds={value.serviceIds||[]} single onChange={serviceIds=>onChange({serviceIds,serviceChange:{}})}/> }
  {service&&<p className={styles.summary}>Customer: {service.customer?.name||'—'} · {isDarkFiber(service.template)?'Jumlah pair saat ini: '+(readPairCount(service)??'Belum diketahui'):'Bandwidth '+(bod?'normal':'saat ini')+': '+(normal==null?'Belum diketahui':mbpsToGbps(normal)+' Gbps')}</p>}
  {operation&&<>
+ {dataCenter?<>
+ <p className={styles.summary}>Perusahaan layanan: {service?.company||'Belum dipetakan'} · Pelaksana: SDC (NocDatacenter)</p>
+ <label htmlFor={id+'-location'}>Lokasi Data Center</label><input id={id+'-location'} required maxLength={2000} value={r.workDetails?.location||''} onChange={e=>update({workDetails:{...r.workDetails,location:e.target.value}})}/>
+ <label htmlFor={id+'-from'}>Dari rack/perangkat (opsional)</label><input id={id+'-from'} maxLength={2000} value={r.workDetails?.endpointFrom||''} onChange={e=>update({workDetails:{...r.workDetails,endpointFrom:e.target.value}})}/>
+ <label htmlFor={id+'-to'}>Ke rack/perangkat (opsional)</label><input id={id+'-to'} maxLength={2000} value={r.workDetails?.endpointTo||''} onChange={e=>update({workDetails:{...r.workDetails,endpointTo:e.target.value}})}/>
+ <label htmlFor={id+'-detail'}>Detail pekerjaan</label><textarea id={id+'-detail'} required maxLength={2000} value={r.workDetails?.description||''} onChange={e=>update({workDetails:{...r.workDetails,description:e.target.value}})}/>
+ <label htmlFor={id+'-technical'}>Detail teknis (opsional)</label><textarea id={id+'-technical'} maxLength={2000} value={r.workDetails?.technical||''} onChange={e=>update({workDetails:{...r.workDetails,technical:e.target.value}})}/>
+ <label htmlFor={id+'-date'}>RFS</label><input id={id+'-date'} type="date" required value={r.effectiveDate||''} onChange={e=>update({effectiveDate:e.target.value})}/>
+ </>:<>
  {!termination&&<>
  {!capacityOnly&&<><label htmlFor={id+'-product'}>Produk/Layanan tujuan</label><select id={id+'-product'} required value={r.targetTemplateId||service?.templateId||''} onChange={e=>update({targetTemplateId:Number(e.target.value),targetCustomData:{},pairCount:1})}><option value="">Pilih produk/layanan</option>{serviceTemplates.filter(t=>t.active!==false).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></>}
  <CapacityInput id={id+'-capacity'} label={bod?'Kapasitas BOD':'Kapasitas'} unit={fiber?'pair':'Gbps'} min={fiber?1:minimumBandwidthGbps(product)} required={fiber||capacityOnly} value={fiber?r.pairCount??readPairCount(service)??1:bandwidth} onChange={e=>update(fiber?{pairCount:e.target.value===''?'':Number(e.target.value)}:{bandwidthMbps:undefined,bandwidthGbps:e.target.value===''?'':Number(e.target.value)})}/>
@@ -37,6 +46,7 @@ export default function ServiceWorkFields({value,onChange,services=[],serviceTem
  {Number.isFinite(start)&&Number.isFinite(end)&&<p role="status">{end>start?'Durasi BOD: '+Number(((end-start)/3600000).toFixed(2))+' jam':'Selesai BOD harus setelah mulai.'}</p>}
  <small>Aktivasi dan pengembalian bandwidth dikonfirmasi setelah tindakan jaringan. Reminder hanya di dashboard.</small></>:<><label htmlFor={id+'-date'}>{termination?'Tanggal terminasi':'RFS'}</label><input id={id+'-date'} type="date" required value={r.effectiveDate||''} onChange={e=>update({effectiveDate:e.target.value})}/></>}
  {termination&&<><label htmlFor={id+'-reason'}>Alasan terminasi</label><textarea id={id+'-reason'} required maxLength={2000} value={r.reason||''} onChange={e=>update({reason:e.target.value})}/><small>Layanan dinonaktifkan saat Resolve. CID dan riwayat tetap tersimpan.</small></>}
+ </>}
  </>}
  </section>;
 }

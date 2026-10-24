@@ -1,7 +1,7 @@
 'use client';
 import {useState} from 'react';
 import styles from '@/app/reports/daily/daily.module.css';
-const operations=['Installation','Upgrade','Downgrade','Change','Terminate','BOD'];
+const operations=['Installation','Upgrade','Downgrade','Change','Terminate','BOD','DataCenter'];
 export default function WorkflowPolicyClient({categories=[],companies=[],departments=[],roles=[]}){
  const [rows,setRows]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  const [draft,setDraft]=useState({name:'',workType:'Trouble',operation:'Installation',originCompany:'',executorCompany:'',departmentId:'',roleId:'',effectiveFrom:'',phases:[{key:'investigate',label:'Investigasi',jobCategoryId:''}]});

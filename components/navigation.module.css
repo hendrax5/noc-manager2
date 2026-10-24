@@ -5,6 +5,10 @@
 .context a { display: inline-flex; align-items: center; min-height: var(--ui-control-height); padding: var(--ui-space-3) 0; color: var(--ui-muted); font-size: var(--ui-type-meta); text-decoration: none; white-space: nowrap; border-bottom: var(--ui-focus-width) solid transparent; }
 .context a:hover { color: var(--ui-accent); }
 .context a[aria-current=page] { color: var(--ui-accent); font-weight: 650; border-bottom-color: var(--ui-accent); }
+.contextItem { display:inline-flex;align-items:center;gap:var(--ui-space-3);white-space:nowrap; }
+.sectionLabel { color:var(--ui-muted);font-size:var(--ui-type-xs);font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-left:var(--ui-hairline) solid var(--ui-line);padding-left:var(--ui-space-4); }
+.contextItem:first-child .sectionLabel { border-left:0;padding-left:0; }
+.themeLogo { display:block;width:2rem;height:2rem;object-fit:contain; }
 @media (max-width: 768px) {
  .topbar .links { display: none; }
  .topbar .links:global(.open) { display: flex; }
