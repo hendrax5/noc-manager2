@@ -10,6 +10,16 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-10-25
+
+### Added
+
+- **Team activity ranking.** The Kinerja team view now ranks members by the month's operational activity — resolved tickets, comments (responses) and ledger points — with monthly totals. It is labelled as operational activity and kept separate from the formal evaluation.
+
+### Changed
+
+- **Kinerja overview API.** Adds `activitySummary` and per-member `resolved`, `responses` and `points`, aggregated from tickets resolved in the month, comments authored in the month, and `TicketHistory` points.
+
 ## [3.1.1] - 2026-10-25
 
 ### Added
@@ -341,7 +351,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.1.1...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.2.0
 [3.1.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.1.1
 [3.1.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.1.0
 [3.0.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.0.0
