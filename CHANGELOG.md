@@ -10,6 +10,17 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-10-25
+
+### Added
+
+- **Ticket involvement list.** Personal Kinerja now lists the tickets where the member was PIC or responded, with a link to each ticket, status, resolution date, response minutes and points.
+- **Monthly comparison.** The team view compares the current month with the previous month: average activity score, points per member, resolved tickets per member and their deltas, sorted by score growth.
+
+### Changed
+
+- **Unified team table.** The activity ranking now includes formal score/status columns when formal results exist, with a Rincian action; the separate formal member and department tables were removed so each department has one table.
+
 ## [3.5.1] - 2026-10-25
 
 ### Fixed
@@ -392,7 +403,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.5.1...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.6.0...HEAD
+[3.6.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.0
 [3.5.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.5.1
 [3.5.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.5.0
 [3.4.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.4.0
