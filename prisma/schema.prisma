@@ -680,6 +680,7 @@ model EvaluationPolicyVersion {
   targetUnits Float
   categoryWeights Json
   rubric Json
+  performanceRules Json?
   createdBy Int
   createdAt DateTime @default(now())
   @@unique([departmentId, roleId, company, effectiveMonth])
@@ -777,6 +778,49 @@ model BodWindow {
  createdAt DateTime @default(now())
  @@index([serviceId, endsAt])
  @@index([restoredAt, cancelledAt, endsAt])
+}
+
+model ActivityEvent {
+  id Int @id @default(autoincrement())
+  actorId Int?
+  source String
+  type String
+  entityType String
+  entityId Int
+  ticketId Int?
+  occurredAt DateTime @default(now())
+  idempotencyKey String @unique
+  changes Json
+  validationState String @default("pending")
+  reviewedBy Int?
+  reviewedAt DateTime?
+  reviewReason String?
+  @@index([actorId, occurredAt])
+  @@index([entityType, entityId, occurredAt])
+}
+
+model PerformanceWorkInterval {
+  id Int @id @default(autoincrement())
+  ticketId Int
+  userId Int
+  kind String
+  reason String
+  startedAt DateTime
+  endedAt DateTime?
+  reviewedBy Int?
+  @@index([ticketId, userId, startedAt])
+}
+
+model PerformancePublication {
+  id Int @id @default(autoincrement())
+  monthKey String
+  departmentId Int
+  company String
+  version Int
+  manifest Json
+  publishedBy Int
+  publishedAt DateTime @default(now())
+  @@unique([monthKey, departmentId, company, version])
 }
 
 model CustomerPickerUse {
