@@ -128,3 +128,12 @@ Commit `88c2669`, image `noc-manager2-app:release-3.5.0` (dasar `release-3.4.0`)
 - Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.5.0-20261024T180644Z.dump` (20.5 MB).
 - Verifikasi: container Up, `RestartCount=0`, `/login` 200, API Kinerja 401, log start `@hendrax5/noc-manager2@3.5.0`.
 - Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.5.0/rollback.sh` (kembali ke `release-3.4.0`).
+
+## Tindak lanjut 3.5.1 (perbaikan performa)
+
+Commit `2b23d5d`, image `noc-manager2-app:release-3.5.1` (dasar `release-3.5.0`).
+
+- Query timeline tiket (komentar tiket resolved + riwayat penugasan) hanya dijalankan untuk endpoint personal (`includeTicketTimeline:true`); overview tim tidak mengulang query tersebut per anggota.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.5.1-20261024T180859Z.dump` (20.5 MB).
+- Verifikasi: container Up, `RestartCount=0`, `/login` 200, API Kinerja 401, log start `@hendrax5/noc-manager2@3.5.1`.
+- Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.5.1/rollback.sh` (kembali ke `release-3.5.0`).
