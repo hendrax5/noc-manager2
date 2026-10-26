@@ -10,6 +10,7 @@ import {loadReportScope} from '@/lib/reports/reportScopeServer';
 import {canReadReport} from '@/lib/reports/reportScope';
 import {validatePerformancePolicy} from '@/lib/reports/performancePolicy';
 import {assignmentCandidates} from '@/lib/reports/assignmentBootstrap';
+import {companiesFromConfig} from '@/lib/companies/registry';
 const admin=u=>u.role==='Admin';
 const reviewer=u=>admin(u)||u.role==='Manager'||u.permissions?.includes('review_evaluations');
 const positive=v=>{const n=Number(v);if(!Number.isSafeInteger(n)||n<1)throw new WorkflowError('ID harus bilangan bulat positif.');return n;};
@@ -17,14 +18,14 @@ export async function GET(){
  const s=await getServerSession(authOptions);if(!s)return NextResponse.json({error:'Unauthorized'},{status:401});
  if(!admin(s.user))return NextResponse.json({error:'Forbidden'},{status:403});
  const [users,departments,roles,categories,policies,grants,eligibility,assignments,config]=await Promise.all([prisma.user.findMany({select:{id:true,name:true,departmentId:true,roleId:true}}),prisma.department.findMany({select:{id:true,name:true}}),prisma.role.findMany({select:{id:true,name:true}}),prisma.jobCategory.findMany({where:{active:true}}),prisma.evaluationPolicyVersion.findMany({orderBy:{id:'desc'}}),prisma.reportAccessGrant.findMany(),prisma.evaluationDepartmentEligibility.findMany(),prisma.employeeAssignmentPeriod.findMany({where:{effectiveTo:null},select:{userId:true,company:true}}),getAppConfig()]);
- return NextResponse.json({users,departments,roles,categories,policies,grants,eligibility,assignmentSummary:{active:assignments.length,missing:Math.max(0,users.length-assignments.length)},companies:['ION','SDC']});
+ return NextResponse.json({users,departments,roles,categories,policies,grants,eligibility,assignmentSummary:{active:assignments.length,missing:Math.max(0,users.length-assignments.length)},companies:companiesFromConfig(config).filter(c=>c.active).map(c=>c.code)});
 }
 export async function POST(req){
  const s=await getServerSession(authOptions);if(!s)return NextResponse.json({error:'Unauthorized'},{status:401});
  try{
  const b=await req.json();if(b.kind==='evidence'||b.kind==='context'){if(!reviewer(s.user))throw new WorkflowError('Forbidden',403);}else if(!admin(s.user))throw new WorkflowError('Forbidden',403);
  if(!['policy','assignment','grant','context','evidence','bootstrap_assignments'].includes(b.kind))throw new WorkflowError('Jenis pengaturan tidak valid.');
- const config=await getAppConfig(),companies=String(config.companyNames||'').split(',').map(x=>x.trim());
+ const config=await getAppConfig(),companies=companiesFromConfig(config).filter(c=>c.active).map(c=>c.code);
  if(['policy','assignment','grant'].includes(b.kind)&&!companies.includes(b.company))throw new WorkflowError('Pilih perusahaan dari routing existing.');
  const actorId=Number(s.user.id),userId=b.userId?positive(b.userId):null;
  if(userId&&!(await prisma.user.findUnique({where:{id:userId}})))throw new WorkflowError('User tidak ditemukan.');

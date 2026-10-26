@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { checkServiceCid } from '@/lib/services/cidLookup';
 import { CidValidationError, getServiceCid } from '@/lib/services/cid';
 import { lockCircuitCodes, registerCircuitIdentifier } from '@/lib/services/circuitRegistry';
-import {normalizeCompany} from '@/lib/companies/policy';
+import {normalizeCompanyAsync} from '@/lib/companies/server';
 
 export async function GET(request, { params }) {
   try {
@@ -75,7 +75,7 @@ export async function PATCH(request, { params }) {
       if(body.cid!==undefined||body.customData!==undefined)updateData.cid=serviceCid;
       if(body.name)updateData.name=body.name;
       if(body.status)updateData.status=body.status;
-      if(body.company!==undefined)updateData.company=normalizeCompany(body.company);
+      if(body.company!==undefined)updateData.company=await normalizeCompanyAsync(body.company);
       const nextTemplateId = body.templateId===undefined ? fresh.templateId : Number(body.templateId);
       const template = await tx.serviceTemplate.findUnique({where:{id:nextTemplateId}});
       if(body.templateId!==undefined && (!Number.isSafeInteger(nextTemplateId) || !template || template.active===false)) throw new CidValidationError('Produk/layanan tidak ditemukan atau tidak aktif.',400);

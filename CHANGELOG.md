@@ -10,6 +10,18 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-10-26
+
+### Added
+
+- **Unified company master.** One structured company list in **Settings â†’ Branding** now feeds the Asset *Perusahaan layanan* dropdown, ticket/team filters, and evaluation placement. Each entry has a code, display name, operational group, aliases, active flag, and a "selectable in Asset" flag.
+- **`GET /api/companies`** so every dropdown reads the same source; new companies can be added from Settings without a deploy.
+
+### Changed
+
+- Service create/edit company validation now accepts any active company code or alias from the configured master (defaults: ION, SDC, INDOTEL, Alcen, CMD; *Sistercompany* stays ticket-filter only).
+- `companyNames` is derived from the active companies on save, keeping ticket filters and workflow policies compatible.
+
 ## [3.11.1] - 2026-10-26
 
 ### Fixed
@@ -20,7 +32,7 @@ where practical. The rules for adding entries live in
 
 ### Added
 
-- **Change a service product.** The Asset edit form now lets an operator switch the product/template (for example METRO-E â†’ OPEN PORT). Capacity fields follow the new product automatically: OPEN PORT seeds the 10 Gbps minimum, DARKFIBER keeps a pair count, and an invalid switch is rejected with a clear message.
+- **Change a service product.** The Asset edit form now lets an operator switch the product/template (for example METRO-E Ã¢â€ â€™ OPEN PORT). Capacity fields follow the new product automatically: OPEN PORT seeds the 10 Gbps minimum, DARKFIBER keeps a pair count, and an invalid switch is rejected with a clear message.
 
 ## [3.10.2] - 2026-10-26
 
@@ -79,7 +91,7 @@ where practical. The rules for adding entries live in
 
 ### Changed
 
-- **Auto-filled installation subject.** The new-ticket form now builds an installation subject from the work type, the CID and the "Nama layanan/site" value â€” for example `Instalasi Baru - SAP-C-0006-0770 - ERIK CAHYONO â€¦`. It updates as those fields are filled in and stops once the operator edits the subject manually, so the site name no longer has to be typed twice.
+- **Auto-filled installation subject.** The new-ticket form now builds an installation subject from the work type, the CID and the "Nama layanan/site" value Ã¢â‚¬â€ for example `Instalasi Baru - SAP-C-0006-0770 - ERIK CAHYONO Ã¢â‚¬Â¦`. It updates as those fields are filled in and stops once the operator edits the subject manually, so the site name no longer has to be typed twice.
 
 ## [3.6.3] - 2026-10-26
 
@@ -146,7 +158,7 @@ where practical. The rules for adding entries live in
 
 ### Added
 
-- **Activity score.** The team activity table now calculates a 0â€“100 operational score â€” 40% points, 35% resolved tickets, 25% responses, each relative to the highest value in the current filter â€” and sorts members by it. It is labelled as operational activity, not the formal evidence-based evaluation.
+- **Activity score.** The team activity table now calculates a 0Ã¢â‚¬â€œ100 operational score Ã¢â‚¬â€ 40% points, 35% resolved tickets, 25% responses, each relative to the highest value in the current filter Ã¢â‚¬â€ and sorts members by it. It is labelled as operational activity, not the formal evidence-based evaluation.
 
 ### Changed
 
@@ -156,7 +168,7 @@ where practical. The rules for adding entries live in
 
 ### Added
 
-- **Team activity ranking.** The Kinerja team view now ranks members by the month's operational activity â€” resolved tickets, comments (responses) and ledger points â€” with monthly totals. It is labelled as operational activity and kept separate from the formal evaluation.
+- **Team activity ranking.** The Kinerja team view now ranks members by the month's operational activity Ã¢â‚¬â€ resolved tickets, comments (responses) and ledger points Ã¢â‚¬â€ with monthly totals. It is labelled as operational activity and kept separate from the formal evaluation.
 
 ### Changed
 
@@ -170,7 +182,7 @@ where practical. The rules for adding entries live in
 
 ### Changed
 
-- **Kinerja overview API.** Each member row now carries its blocking reasons and the response includes a readiness summary (assigned, with policy, with context, reviewed activities, ready and excluded). The team count line now explicitly says â€œnilai formalâ€.
+- **Kinerja overview API.** Each member row now carries its blocking reasons and the response includes a readiness summary (assigned, with policy, with context, reviewed activities, ready and excluded). The team count line now explicitly says Ã¢â‚¬Å“nilai formalÃ¢â‚¬Â.
 
 ## [3.1.0] - 2026-10-24
 
@@ -223,14 +235,14 @@ where practical. The rules for adding entries live in
 ## [2.5.1] - 2026-09-29
 
 ### Added
-- **Work hours: on-call and WFH**: `S1+OC` now counts the S1 hours (08:00â€“17:00) as the shift and the `S1+OC` window (22:00â€“08:00) as a separate on-call window. Activity there is an `oncall` segment with `stats.onCallHours`, not overtime or idle. Core (POLA_2) weekend working days are flagged `shift.workMode = "wfh"`; on-call is always WFH. The timeline now positions segments by clock time.
+- **Work hours: on-call and WFH**: `S1+OC` now counts the S1 hours (08:00Ã¢â‚¬â€œ17:00) as the shift and the `S1+OC` window (22:00Ã¢â‚¬â€œ08:00) as a separate on-call window. Activity there is an `oncall` segment with `stats.onCallHours`, not overtime or idle. Core (POLA_2) weekend working days are flagged `shift.workMode = "wfh"`; on-call is always WFH. The timeline now positions segments by clock time.
 - **Schedule generate warnings**: when the weekly OFF quota cannot be met in a month-boundary week, generate still succeeds and the toast lists the person and week to fix manually.
 
 ### Changed
-- **Weekly OFF quota per Mondayâ€“Sunday cycle is hard, including month-boundary weeks**: Core 1 weekday + 1 Saturday/Sunday OFF; POLA_4/5/6 exactly 3 OFF. OFF days already in the previous month (history) and the next month (if generated, sent as `future`) are counted. POLA_6 full weeks moved from soft 2â€“4 to hard 3. If the hard version is infeasible, the solver retries with the boundary quota as a heavy penalty and returns `warnings`.
+- **Weekly OFF quota per MondayÃ¢â‚¬â€œSunday cycle is hard, including month-boundary weeks**: Core 1 weekday + 1 Saturday/Sunday OFF; POLA_4/5/6 exactly 3 OFF. OFF days already in the previous month (history) and the next month (if generated, sent as `future`) are counted. POLA_6 full weeks moved from soft 2Ã¢â‚¬â€œ4 to hard 3. If the hard version is infeasible, the solver retries with the boundary quota as a heavy penalty and returns `warnings`.
 - Shift solver CPU is capped by `SOLVER_WORKERS` (default 4 threads).
-- 12-hour polas (POLA_4/5/6) use 08:00â€“20:00 / 20:00â€“08:00 shift windows in work hours; overnight shifts are counted until the next morning.
-- CS engagement score = 1 per ticket created + 1 per reply + 1 per other status action (the Ã—5 on created tickets is removed).
+- 12-hour polas (POLA_4/5/6) use 08:00Ã¢â‚¬â€œ20:00 / 20:00Ã¢â‚¬â€œ08:00 shift windows in work hours; overnight shifts are counted until the next morning.
+- CS engagement score = 1 per ticket created + 1 per reply + 1 per other status action (the Ãƒâ€”5 on created tickets is removed).
 
 ### Fixed
 - Bug report EWO2-API-20260929: `resolvedCount` counts resolved tickets assigned to the user in the period; TTR is measured per resolve cycle (from `reopenedAt` when reopened); SLA `uptimePercentage` is averaged per affected customer with overlapping outages merged (new `affectedCustomers`); open outages on resolved tickets end at `resolvedAt`; service-desk `byStatus` respects the `days` window and `breachRate` has 2 decimals.
@@ -300,7 +312,7 @@ where practical. The rules for adding entries live in
 ### Added
 - **Master Ticket Permission Extensions**: Enhanced `manage_tickets` to allow master administrators and CS to edit `Customer / Reporter Name` and edit *all* comments/replies inside any ticket.
 - **Auto-Grow & Plain-Text Textarea Editor**: Textarea editor for ticket description now automatically adjusts its height according to content length (auto-grow) and automatically cleans legacy HTML tags into clean plain-text line breaks when entering edit mode.
-- **Manual Downtime LiveOps Override**: Integrated manual downtime parameters (`startDowntime` and `endDowntime` / `downtimeMinutes`) to override standard creation time and age durations on the Live Operations Board, main dashboard workload grids, and CSV exports (with orange `â±ï¸` icons).
+- **Manual Downtime LiveOps Override**: Integrated manual downtime parameters (`startDowntime` and `endDowntime` / `downtimeMinutes`) to override standard creation time and age durations on the Live Operations Board, main dashboard workload grids, and CSV exports (with orange `Ã¢ÂÂ±Ã¯Â¸Â` icons).
 
 ### Removed
 - **Impacting Services (Optional Link)**: Removed the deprecated Impacting Services dropdown and badges from the ticket creation form.
@@ -381,7 +393,7 @@ where practical. The rules for adding entries live in
 - **PIC / Assignee Search Reset**: Fixed a bug in `SearchableSelect` where the dropdown options were overly filtered by the currently selected value when re-opening/focusing. The input search text is now cleared on focus to display all options, and reverts to the selected value upon clicking outside without choosing a new one.
 
 ### Added
-- **Searchable Badged Multi-Select for Impacting Services**: Replaced the long, vertically scrollable checkbox checklist of services in the new ticket form with a searchable multi-select tag input. Selected services are rendered as clearable badges (with a `âœ•` button to remove them) and search allows filtering by customer name, service name, or service ID.
+- **Searchable Badged Multi-Select for Impacting Services**: Replaced the long, vertically scrollable checkbox checklist of services in the new ticket form with a searchable multi-select tag input. Selected services are rendered as clearable badges (with a `Ã¢Å“â€¢` button to remove them) and search allows filtering by customer name, service name, or service ID.
 
 ## [1.6.0] - 2026-06-02
 
@@ -493,7 +505,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.11.1...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.12.0...HEAD
+[3.12.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.12.0
 [3.11.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.11.1
 [3.11.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.11.0
 [3.10.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.10.2

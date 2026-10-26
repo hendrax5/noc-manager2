@@ -25,6 +25,15 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
   });
   
   const [customData, setCustomData] = useState({});
+  const [companies, setCompanies] = useState([{ value: 'ION', label: 'ION' }, { value: 'SDC', label: 'SDC' }]);
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/companies?service=1')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => { if (alive && data?.options?.length) setCompanies(data.options); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
   const [hops, setHops] = useState([{ location: '', deviceName: '', portName: '', description: '' }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -160,9 +169,9 @@ export default function ServiceForm({ session, customers, templates, ticketSetup
                 <div>
                   <label htmlFor="service-company" className="ui-static-955921f9b4" style={{display: 'block'}}>Perusahaan layanan</label>
                   <select id="service-company" className="input-field ui-static-90fb66f0af" required value={formData.company} onChange={e=>setFormData({...formData,company:e.target.value})}>
-                    <option value="ION">ION</option><option value="SDC">SDC</option>
+                    {companies.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                   </select>
-                  <small>Satu customer dapat memiliki CID ION dan SDC.</small>
+                  <small>Satu customer dapat memiliki CID dari beberapa perusahaan layanan.</small>
                 </div>
                 
                 <div>

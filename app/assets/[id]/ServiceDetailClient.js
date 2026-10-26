@@ -158,6 +158,7 @@ export default function ServiceDetailClient({ service, session, templates = [] }
   const [mounted, setMounted] = useState(false);
   const [hints, setHints] = useState({ locations: [], devices: [], ports: [] });
   const [logoUploading, setLogoUploading] = useState(false);
+  const [companies, setCompanies] = useState([{ value: 'ION', label: 'ION' }, { value: 'SDC', label: 'SDC' }]);
   
   useEffect(() => { 
     setMounted(true); 
@@ -165,6 +166,10 @@ export default function ServiceDetailClient({ service, session, templates = [] }
       .then(res => res.json())
       .then(data => { if (data.locations) setHints(data); })
       .catch(e => console.error(e));
+    fetch('/api/companies?service=1')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => { if (data?.options?.length) setCompanies(data.options); })
+      .catch(() => {});
   }, []);
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -713,7 +718,7 @@ export default function ServiceDetailClient({ service, session, templates = [] }
                
                <div className="ui-static-8bd9dc7312" >
                  <label htmlFor="edit-service-company" className="ui-static-eea8f0a130" style={{display: 'block'}}>Perusahaan layanan</label>
-                 <select id="edit-service-company" required className="input-field ui-static-b52e2fe28a" value={editData.company} onChange={e=>setEditData({...editData,company:e.target.value})} style={{width:'100%'}}><option value="">Pilih perusahaan</option><option value="ION">ION</option><option value="SDC">SDC</option></select>
+                 <select id="edit-service-company" required className="input-field ui-static-b52e2fe28a" value={editData.company} onChange={e=>setEditData({...editData,company:e.target.value})} style={{width:'100%'}}><option value="">Pilih perusahaan</option>{companies.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
                </div>
                <div className="ui-static-8bd9dc7312" >
                  <label className="ui-static-eea8f0a130" style={{display: 'block'}}>Operational Status</label>

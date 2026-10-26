@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import IntegrationsPanel from "./IntegrationsPanel";
+import { COMPANY_GROUPS, companiesFromConfig } from "@/lib/companies/registry";
 
 export default function SettingsClient({ initialFields, initialCategories, initialConfig, departments = [] }) {
   const router = useRouter();
@@ -10,11 +11,13 @@ export default function SettingsClient({ initialFields, initialCategories, initi
   const [categories, setCategories] = useState(initialCategories || []);
   const [dashboardConfig, setDashboardConfig] = useState(initialConfig.dashboardDeptConfig || {});
   
-  const [branding, setBranding] = useState(initialConfig || {
+  const [branding, setBranding] = useState(() => ({
     appName: "NOC Manager",
     loginTitle: "Welcome",
-    loginSubtitle: "Sign in"
-  });
+    loginSubtitle: "Sign in",
+    ...(initialConfig || {}),
+    companies: companiesFromConfig(initialConfig || {}),
+  }));
   
   const [wipeOpts, setWipeOpts] = useState({
     wipeTransactional: true,
@@ -184,6 +187,8 @@ export default function SettingsClient({ initialFields, initialCategories, initi
 
   const handleSaveBranding = async (e) => {
     e.preventDefault();
+    setMasterError("");
+    setMasterNotice("");
     const res = await fetch("/api/settings/branding", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(branding)
     });
@@ -191,8 +196,35 @@ export default function SettingsClient({ initialFields, initialCategories, initi
       setMasterNotice("Konfigurasi branding tersimpan.");
       router.refresh();
     } else {
-      setMasterError("Konfigurasi branding gagal disimpan.");
+      const body = await res.json().catch(() => ({}));
+      setMasterError(body.error || "Konfigurasi branding gagal disimpan.");
     }
+  };
+
+  const updateCompany = (index, patch) => {
+    setBranding(prev => {
+      const companies = companiesFromConfig(prev).map((item, i) => (i === index ? { ...item, ...patch } : item));
+      return { ...prev, companies };
+    });
+  };
+
+  const addCompany = () => {
+    setBranding(prev => {
+      const companies = companiesFromConfig(prev);
+      let index = companies.length + 1;
+      while (companies.some(item => item.code === `COMPANY_${index}`)) index += 1;
+      return {
+        ...prev,
+        companies: [...companies, { code: `COMPANY_${index}`, name: "", group: "ION", aliases: [], active: true, serviceSelectable: true }],
+      };
+    });
+  };
+
+  const removeCompany = (index) => {
+    setBranding(prev => ({
+      ...prev,
+      companies: companiesFromConfig(prev).filter((_, i) => i !== index),
+    }));
   };
 
   const handleBackup = () => {
@@ -490,9 +522,61 @@ export default function SettingsClient({ initialFields, initialCategories, initi
                     <input type="text" value={branding.loginSubtitle} onChange={e => setBranding({...branding, loginSubtitle: e.target.value})} className="ui-static-3d0c9aaeb0" style={{width: '100%'}} />
                   </div>
                   <div className="ui-static-f708b23f21" >
-                    <label className="ui-static-628a93e017" style={{display: 'block'}}>Multi-Company Routing Identities (Comma-separated)</label>
-                    <input type="text" value={branding.companyNames || "ION, SDC, Sistercompany"} onChange={e => setBranding({...branding, companyNames: e.target.value})} className="ui-static-3d0c9aaeb0" style={{width: '100%'}} placeholder="e.g. ION, SDC, Subsidiary Group" />
-                    <p className="ui-static-24def7178d" >Defines dropdown options for 'Order Origin' and 'Executing Vendor' when creating or filtering tickets.</p>
+                    <label className="ui-static-628a93e017" style={{display: 'block'}}>Daftar Perusahaan</label>
+                    <p className="ui-static-24def7178d" style={{marginTop: 0}}>
+                      Satu sumber untuk dropdown <strong>Order Origin</strong> di Asset, filter tiket, dan penugasan tim.
+                      <em> Grup</em> menentukan pengelompokan operasional; centang <em>Asset</em> agar perusahaan muncul sebagai pilihan perusahaan layanan.
+                    </p>
+                    <div style={{overflowX: 'auto'}}>
+                      <table className="table" style={{width: '100%', minWidth: 720}}>
+                        <thead>
+                          <tr>
+                            <th style={{width: 110}}>Kode</th>
+                            <th>Nama</th>
+                            <th style={{width: 140}}>Grup</th>
+                            <th>Alias (pisah koma)</th>
+                            <th style={{width: 60}}>Aktif</th>
+                            <th style={{width: 70}}>Asset</th>
+                            <th style={{width: 70}}>Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(branding.companies || []).map((company, index) => (
+                            <tr key={`${company.code}-${index}`}>
+                              <td>
+                                <input type="text" value={company.code} onChange={e => updateCompany(index, { code: e.target.value.toUpperCase() })} className="ui-static-3d0c9aaeb0" style={{width: '100%'}} required />
+                              </td>
+                              <td>
+                                <input type="text" value={company.name} onChange={e => updateCompany(index, { name: e.target.value })} className="ui-static-3d0c9aaeb0" style={{width: '100%'}} placeholder={company.code} />
+                              </td>
+                              <td>
+                                <select value={company.group} onChange={e => updateCompany(index, { group: e.target.value })} className="ui-static-3d0c9aaeb0" style={{width: '100%'}}>
+                                  {COMPANY_GROUPS.map(group => <option key={group} value={group}>{group}</option>)}
+                                </select>
+                              </td>
+                              <td>
+                                <input type="text" value={(company.aliases || []).join(', ')} onChange={e => updateCompany(index, { aliases: e.target.value.split(',') })} className="ui-static-3d0c9aaeb0" style={{width: '100%'}} placeholder="PRODC, INDO TELEMEDIA" />
+                              </td>
+                              <td style={{textAlign: 'center'}}>
+                                <input type="checkbox" checked={company.active !== false} onChange={e => updateCompany(index, { active: e.target.checked })} />
+                              </td>
+                              <td style={{textAlign: 'center'}}>
+                                <input type="checkbox" checked={company.serviceSelectable !== false} onChange={e => updateCompany(index, { serviceSelectable: e.target.checked })} />
+                              </td>
+                              <td>
+                                <button type="button" className="ui-static-b52e2fe28a" onClick={() => removeCompany(index)}>Hapus</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div style={{display: 'flex', gap: 12, alignItems: 'center', marginTop: 8}}>
+                      <button type="button" className="ui-static-b52e2fe28a" onClick={addCompany}>Tambah perusahaan</button>
+                      <small className="ui-static-24def7178d">
+                        Filter tiket memakai nama aktif: {(branding.companies || []).filter(item => item.active !== false).map(item => item.name || item.code).join(', ') || '-'}
+                      </small>
+                    </div>
                   </div>
                   <div className="ui-static-f708b23f21" >
                     <label className="ui-static-628a93e017" style={{display: 'block'}}>External API Key (Incidents Integrations)</label>

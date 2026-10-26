@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { checkServiceCid } from '@/lib/services/cidLookup';
 import { CidValidationError, getServiceCid } from '@/lib/services/cid';
 import { lockCircuitCodes, registerCircuitIdentifier } from '@/lib/services/circuitRegistry';
-import {normalizeCompany} from '@/lib/companies/policy';
+import {normalizeCompanyAsync} from '@/lib/companies/server';
 
 export async function GET(request) {
   try {
@@ -59,7 +59,7 @@ export async function POST(request) {
         name,
         cid: serviceCid,
         status: status || 'Active',
-        company: normalizeCompany(company),
+        company: await normalizeCompanyAsync(company),
         customData: bandwidthData,
         monthlyCost: monthlyCost ? parseFloat(monthlyCost) : null,
         currency: currency || 'IDR',
