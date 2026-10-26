@@ -10,6 +10,13 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.6.3] - 2026-10-26
+
+### Fixed
+
+- **Preventive JSON rendering hardening.** All `customData` value rendering now goes through one shared formatter, so a JSON object or array can no longer reach React as a raw child. The service detail parameter tab (same latent pattern) is covered too.
+- **Recoverable page errors.** A route-level error boundary now shows a retry screen with the error digest instead of an unusable page when a render fails.
+
 ## [3.6.2] - 2026-10-26
 
 ### Fixed
@@ -415,7 +422,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.6.2...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.6.3...HEAD
+[3.6.3]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.3
 [3.6.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.2
 [3.6.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.1
 [3.6.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.0

@@ -13,6 +13,7 @@ import { downtimeMinutesInRange, parseDowntimeDate } from '@/lib/tickets/downtim
 import { WORK_TYPES, WORK_TYPE_LABELS } from '@/lib/tickets/workClassification';
 import { getServiceCid } from '@/lib/services/cid';
 import { readServiceBandwidthMbps } from '@/lib/services/capacity';
+import { formatCustomValue } from '@/lib/ui/customDataView';
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -413,7 +414,7 @@ export default function ServiceDetailClient({ service, session }) {
                    {Object.entries(service.customData).filter(([key])=>!isDarkFiber(service.template)||!isBandwidthField(key)).map(([key, val]) => (
                       <div key={key}>
                          <div className="ui-static-ecd350dcb3" style={{textTransform: 'uppercase'}}>{isPairField(key)?'Jumlah pair':key}</div>
-                         <div className="ui-static-1d732f7131" >{isDarkFiber(service.template)&&isPairField(key)?val+' pair':val || '-'}</div>
+                         <div className="ui-static-1d732f7131" >{isDarkFiber(service.template)&&isPairField(key)?`${formatCustomValue(val)} pair`:formatCustomValue(val) || '-'}</div>
                       </div>
                    ))}
                 </div>

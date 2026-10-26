@@ -18,29 +18,7 @@ import {
   nowDatetimeLocal,
   effectiveDowntimeMinutes,
 } from "@/lib/tickets/downtime";
-
-/** Integration metadata stored in customData; not part of the operator-facing parameter list. */
-const INTERNAL_CUSTOM_KEYS = new Set(["serviceRouting"]);
-
-/**
- * customData values are normally strings, but work routing stores objects/arrays.
- * React refuses to render those, so coerce every value to displayable text.
- */
-function formatCustomValue(value) {
-  if (value === null || value === undefined) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
-}
-
-function displayableCustomEntries(customData) {
-  if (!customData || typeof customData !== "object") return [];
-  return Object.entries(customData).filter(([key, value]) => value && !INTERNAL_CUSTOM_KEYS.has(key));
-}
+import { formatCustomValue, displayableCustomEntries } from "@/lib/ui/customDataView";
 
 
 function linkify(text) {
