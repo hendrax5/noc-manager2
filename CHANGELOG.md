@@ -10,6 +10,13 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.10.0] - 2026-10-26
+
+### Added
+
+- **Per-CID recovery checklist.** Tickets that affect several circuits show a "CID pulih" checklist and the per-CID SLA deadlines on the ticket; a multi-CID ticket can only be Resolved/Closed after every circuit is marked recovered.
+- **Per-CID outage report.** The outage/SLA report gains a CID filter; when filtered by customer or CID it lists one row per requested circuit, so the report never shows another customer's circuit or another CID of the same ticket.
+
 ## [3.9.2] - 2026-10-26
 
 ### Fixed
@@ -458,7 +465,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.9.2...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.10.0...HEAD
+[3.10.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.10.0
 [3.9.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.9.2
 [3.9.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.9.1
 [3.9.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.9.0

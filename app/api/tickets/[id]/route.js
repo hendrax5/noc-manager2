@@ -27,6 +27,7 @@ import {
   canAwardResolveJobPoints,
 } from "@/lib/tickets/points";
 import { canAccessPersonalTicket } from "@/lib/tickets/personalCategories";
+import { assertServicesRecovered } from "@/lib/tickets/serviceRecovery";
 import { classificationFieldsChanged, affectedServicesChanged, prepareTicketClassification, TicketClassificationError } from "@/lib/tickets/workClassification";
 
 export async function PATCH(req, { params }) {
@@ -378,6 +379,15 @@ export async function PATCH(req, { params }) {
       ticketData.nextSlaDeadline = new Date(
         Date.now() + parseInt(body.slaTimerMins) * 60000
       );
+    }
+
+    // Multi-CID tickets are closed only after every circuit is marked recovered.
+    if ((nextStatus === "Resolved" || nextStatus === "Closed") && (oldTicket.services?.length || 0) > 1) {
+      const { ok, pending } = assertServicesRecovered(oldTicket.services, finalCustomData);
+      if (!ok) {
+        const labels = pending.map((service) => service.cid || `#${service.id}`).join(", ");
+        throw new ServiceWorkError(`Tandai pemulihan CID berikut sebelum menutup tiket: ${labels}.`, 409);
+      }
     }
 
     if (nextStatus === "Resolved") {

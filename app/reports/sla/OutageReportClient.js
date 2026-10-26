@@ -9,7 +9,7 @@ const operators = [['all', 'Semua durasi'], ['gt', 'Lebih dari (>)'], ['gte', 'M
 const statuses = [['all', 'Semua'], ['ongoing', 'Berjalan'], ['finished', 'Selesai']];
 
 function Criteria({ filters }) {
-  return <>{filters.startDate} s/d {filters.endDate} · {filters.customer || 'Semua customer'} · Penyebab: {filters.cause || 'Semua'} · Gejala: {filters.symptom || 'Semua'} · {filters.durationOperator === 'all' ? 'Semua durasi' : `${operators.find(([value]) => value === filters.durationOperator)?.[1]} ${filters.durationHours} jam per tiket`} · Status gangguan: {statuses.find(([value]) => value === filters.outageStatus)?.[1]}{filters.search && ` · Cari: ${filters.search}`}</>;
+  return <>{filters.startDate} s/d {filters.endDate} · {filters.customer || 'Semua customer'} · {filters.cid ? `CID: ${filters.cid}` : 'Semua CID'} · Penyebab: {filters.cause || 'Semua'} · Gejala: {filters.symptom || 'Semua'} · {filters.durationOperator === 'all' ? 'Semua durasi' : `${operators.find(([value]) => value === filters.durationOperator)?.[1]} ${filters.durationHours} jam per tiket`} · Status gangguan: {statuses.find(([value]) => value === filters.outageStatus)?.[1]}{filters.search && ` · Cari: ${filters.search}`}</>;
 }
 
 function OutageTable({ rows, print = false }) {
@@ -106,6 +106,7 @@ export default function OutageReportClient() {
           <label>Mulai gangguan dari<input required type="date" value={draft.startDate} onChange={(e) => update('startDate', e.target.value)} /></label>
           <label>Sampai tanggal<input required type="date" min={draft.startDate} value={draft.endDate} onChange={(e) => update('endDate', e.target.value)} /></label>
           <label>Customer<input type="search" maxLength={200} value={draft.customer} placeholder="Semua customer / ketik nama" onChange={(e) => update('customer', e.target.value)} /><small>Dicocokkan dengan customer layanan atau field customer tiket lama.</small></label>
+          <label>CID / layanan<input type="search" maxLength={100} value={draft.cid || ''} placeholder="Semua CID / SAP-C-…" onChange={(e) => update('cid', e.target.value)} /><small>Jika diisi, laporan menampilkan satu baris per CID tersebut saja.</small></label>
           <label>Penyebab / jenis masalah<input type="search" maxLength={200} value={draft.cause} placeholder="Semua / FO CUT / listrik" onChange={(e) => update('cause', e.target.value)} /><small>Tiket lama: pencarian juga memakai judul/deskripsi.</small></label>
           <label>Gejala<input type="search" maxLength={200} value={draft.symptom || ''} placeholder="Semua / Down / Packet Loss" onChange={(e) => update('symptom', e.target.value)} /></label>
           <label>Cari tiket / CID / link<input type="search" maxLength={200} value={draft.search} placeholder="Nomor tiket, CID, atau nama link" onChange={(e) => update('search', e.target.value)} /></label>
