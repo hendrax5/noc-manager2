@@ -381,6 +381,8 @@ body {
 .profile-dropdown-logout:hover {
   background: rgba(220, 38, 38, 0.08);
 }
+
+.page-header {
   margin-bottom: 2rem;
 }
 
