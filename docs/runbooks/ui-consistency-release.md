@@ -172,3 +172,18 @@ Commit `270e9a8`, image `noc-manager2-app:release-3.6.2` (dasar `release-3.6.1`)
 - Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.6.2-20261026T072812Z.dump`.
 - Verifikasi: container Up, `RestartCount=0`, image `release-3.6.2`, log start `@hendrax5/noc-manager2@3.6.2`; tiket 45923, 45766, 45696 → 200, 0 error React child baru, blok Attached Parameters tampil, label `serviceRouting` tidak dirender.
 - Rollback: `sudo /opt/noc-manager2/releases/ticket-render-3.6.2/rollback.sh` (kembali ke `release-3.6.1`).
+
+## Tindak lanjut 3.6.3 (hardening preventif render JSON)
+
+Commit `7ffbcba`, image `noc-manager2-app:release-3.6.3` (dasar `release-3.6.2`).
+
+- Helper bersama `lib/ui/customDataView.js`: `formatCustomValue` (semua nilai JSON → teks; objek/array diserialisasi, nilai tak terserialisasi jatuh ke `String()`), `displayableCustomEntries` (buang nilai falsy dan kunci internal), dan `INTERNAL_CUSTOM_KEYS` (`serviceRouting`).
+- Dipakai di **detail tiket** dan **detail layanan** (tab parameter) — titik laten dengan pola render `{val}` yang sama.
+- `app/error.js`: error boundary rute menampilkan layar "Halaman gagal dimuat" dengan tombol Coba lagi dan kode kesalahan (digest), sehingga kegagalan render berikutnya tidak mematikan halaman.
+- Unit test `lib/ui/customDataView.test.mjs` (6 test): tipe skalar, objek/array/bersarang/circular, NaN/Infinity, daftar parameter, input non-objek, plus guard yang memastikan kedua titik render mengimpor dan memakai helper.
+- Bukti uji probe: objek `{"nested":[1,2],"obj":{"k":"v"}}` disuntik sementara ke `customData` tiket 45923 → halaman 200, 0 error React, nilai tampil sebagai teks JSON, label tampil; data dipulihkan persis (`restored_equal=true`).
+- Verifikasi: 18 tiket ber-`serviceRouting` → 0 gagal (200, blok parameter tampil), `/assets/872` 200, 0 error React child sejak deploy, boundary terkompilasi ke `.next`.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.6.3-20261026T073449Z.dump`.
+- Rollback: `sudo /opt/noc-manager2/releases/preventive-json-3.6.3/rollback.sh` (kembali ke `release-3.6.2`).
+
+Aturan untuk perubahan berikutnya: **jangan pernah merender nilai `customData` (atau JSON bebas lainnya) langsung sebagai child React** — selalu lewat `formatCustomValue`/`displayableCustomEntries`.
