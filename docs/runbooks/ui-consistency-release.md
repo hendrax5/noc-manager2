@@ -211,3 +211,15 @@ Commit `6a7dd00`, image `noc-manager2-app:release-3.7.1` (dasar `release-3.7.0`)
 - Verifikasi produksi: service 872 → `Instalasi Baru - CID: SAP-C-0006-0770 - Site ERIK CAHYONO (PERORANGAN) #LINK 2 JEMPUT DI CLOSURE ION -7.732225, 111.951258`; service 868 → `… - Site POP Tulungagun`; service 844 → `… - Site One Satrio Mall`; 0 error.
 - Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.7.1-20261026T075234Z.dump`.
 - Rollback: `sudo /opt/noc-manager2/releases/subject-site-label-3.7.1/rollback.sh` (kembali ke `release-3.7.0`).
+
+## Tindak lanjut 3.8.0 (pencarian CID berdasarkan nomor tiket)
+
+Commit `66b132b`, image `noc-manager2-app:release-3.8.0` (dasar `release-3.7.1`).
+
+- Latar: operator mencari `HSK-…` di Penautan CID dan tidak menemukan baris, karena pencarian hanya mencocokkan CID dan nama sumber. Tiket `HSK-T879-YX6C` (CID `SAP-C-0006-0468`) sebenarnya ada sebagai baris `needs_mapping`.
+- `buildCircuitCandidates` kini menyimpan seluruh tracking id tiket sumber (`trackingIds`), dan helper `matchesCircuitQuery` mencocokkan CID, nama sumber, atau tracking id. Dipakai kedua endpoint (`circuit-candidates` dan alias `sap-circuits`); `trackingIds` tetap tidak dikirim ke klien.
+- UI Penautan CID: label/pencarian menjadi "Cari CID, nomor tiket, atau nama", nomor tiket pertama tampil di kolom Tiket (detail lainnya tetap ada), dan pesan kosong menjelaskan cakupan pencarian.
+- Unit test `lib/services/circuitAssets.test.mjs` +2 (tracking id terkumpul; pencarian CID/nama/tracking, case-insensitive).
+- Verifikasi: `q=HSK-T879-YX6C` → 1 (sebelumnya 0), `q=SAP-C-0006-0468` → 1, `q=KHOIRUL` → 3, query tak dikenal → 0; respons tanpa `trackingIds`; `/assets` 200; string UI baru ada di bundle `.next`.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.8.0-20261026T081951Z.dump`.
+- Rollback: `sudo /opt/noc-manager2/releases/cid-search-tracking-3.8.0/rollback.sh` (kembali ke `release-3.7.1`).
