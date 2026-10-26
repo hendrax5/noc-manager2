@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.9.2] - 2026-10-26
+
+### Fixed
+
+- **New-ticket form feels unresponsive.** Submitting with a missing or invalid field now scrolls the offending field into view and shows the reason next to the button and as a toast; unexpected client errors are surfaced instead of silently doing nothing.
+
 ## [3.9.1] - 2026-10-26
 
 ### Fixed
@@ -452,7 +458,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.9.1...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.9.2...HEAD
+[3.9.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.9.2
 [3.9.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.9.1
 [3.9.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.9.0
 [3.8.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.8.0
