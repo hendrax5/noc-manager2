@@ -160,3 +160,15 @@ Commit `6db13dc`, image `noc-manager2-app:release-3.6.1` (dasar `release-3.6.0`)
 - Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.6.1-20261026T015020Z.dump` (20.6 MB).
 - Verifikasi: container Up, `RestartCount=0`, image `release-3.6.1`, `/login` 200, `/dashboard` 307, log start `@hendrax5/noc-manager2@3.6.1`, aturan CSS terkompilasi memakai token tema.
 - Rollback: `sudo /opt/noc-manager2/releases/ui-contrast-3.6.1/rollback.sh` (kembali ke `release-3.6.0`).
+
+## Tindak lanjut 3.6.2 (halaman tiket error pada tiket ber-routing)
+
+Commit `270e9a8`, image `noc-manager2-app:release-3.6.2` (dasar `release-3.6.1`).
+
+- Gejala: `/tickets/45923` (dan tiket lain hasil alur kerja) menampilkan halaman error. Log server: `Objects are not valid as a React child (found: object with keys {serviceId, customerId, orderCompany})`.
+- Penyebab: blok **Attached Parameters** merender seluruh nilai `customData` apa adanya. Tiket yang dibuat lewat alur kerja menyimpan `serviceRouting` berupa array objek (`lib/tickets/workMetadata.js:20`), sehingga React menolak merendernya dan subtree halaman gagal.
+- Dampak terukur: 18 tiket memuat `serviceRouting`; `serviceRouting` adalah satu-satunya nilai non-skalar di `customData` tiket. Tiket tanpa `serviceRouting` (mis. 45922, 45936) tidak terpengaruh.
+- Perbaikan: nilai `customData` diubah ke teks (`formatCustomValue`) dan kunci internal `serviceRouting` disembunyikan dari daftar parameter; `routingStatus` tetap tampil sebagai informasi.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.6.2-20261026T072812Z.dump`.
+- Verifikasi: container Up, `RestartCount=0`, image `release-3.6.2`, log start `@hendrax5/noc-manager2@3.6.2`; tiket 45923, 45766, 45696 → 200, 0 error React child baru, blok Attached Parameters tampil, label `serviceRouting` tidak dirender.
+- Rollback: `sudo /opt/noc-manager2/releases/ticket-render-3.6.2/rollback.sh` (kembali ke `release-3.6.1`).
