@@ -187,3 +187,14 @@ Commit `7ffbcba`, image `noc-manager2-app:release-3.6.3` (dasar `release-3.6.2`)
 - Rollback: `sudo /opt/noc-manager2/releases/preventive-json-3.6.3/rollback.sh` (kembali ke `release-3.6.2`).
 
 Aturan untuk perubahan berikutnya: **jangan pernah merender nilai `customData` (atau JSON bebas lainnya) langsung sebagai child React** — selalu lewat `formatCustomValue`/`displayableCustomEntries`.
+
+## Tindak lanjut 3.7.0 (subject instalasi otomatis)
+
+Commit `807a62b`, image `noc-manager2-app:release-3.7.0` (dasar `release-3.6.3`).
+
+- Subject tiket instalasi kini dibentuk otomatis dari jenis pekerjaan + CID + **Nama layanan/site**: `Instalasi Baru - <CID> - <Nama layanan/site>`. Nilai diperbarui setiap kali CID atau nama layanan diisi selama operator belum mengedit subject secara manual.
+- Helper `lib/tickets/subject.js`: `installationSubject` (bagian kosong dilewati, duplikat teks dihapus, dipotong 500 karakter sesuai batas input) dan `serviceWorkSubject` untuk pekerjaan layanan non-instalasi.
+- Unit test `lib/tickets/subject.test.mjs` (5 test): lengkap, sebagian terisi, kosong, duplikat, batas 500, dan bentuk subject pekerjaan layanan.
+- Verifikasi: `/tickets/new?workType=ServiceWork&operation=Installation&serviceId=872` → 200 dan subject `Instalasi Baru - SAP-C-0006-0770 - ERIK CAHYONO (PERORANGAN) #LINK 2 JEMPUT DI CLOSURE ION -7.732225, 111.951258`; 0 error di log.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.7.0-20261026T074226Z.dump`.
+- Rollback: `sudo /opt/noc-manager2/releases/installation-subject-3.7.0/rollback.sh` (kembali ke `release-3.6.3`).
