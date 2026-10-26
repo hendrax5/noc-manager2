@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.6.1] - 2026-10-26
+
+### Fixed
+
+- **Light/dark contrast.** The top bar, navigation links, theme and profile buttons, dropdowns, badges and overlays now read from the theme tokens instead of fixed white values, so the dashboard is legible in light mode while dark mode is unchanged.
+
 ## [3.6.0] - 2026-10-25
 
 ### Added
@@ -403,7 +409,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.6.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.6.1...HEAD
+[3.6.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.1
 [3.6.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.0
 [3.5.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.5.1
 [3.5.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.5.0
