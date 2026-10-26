@@ -18,6 +18,14 @@ Hanya token Subject lengkap seperti SAP-C-1243-0003 yang diterima setelah trim/k
 
 Preview/read API tidak menulis data. Mapping membutuhkan role terbaru dari database (Admin/manage_assets), menggunakan advisory lock per CID dan pemeriksaan ulang tiket sumber. Raw join M:N menjaga timestamp Ticket/Service, sehingga usia tiket, scoring dan snapshot pekerjaan layanan tidak berubah hanya karena linking. Audit link tidak memberikan poin. Konflik CID legacy/tautan existing tidak ditimpa; audit failure membatalkan Service baru serta tautannya. Belum ada import massal otomatis.
 
+## Operasi massal 2026-10-26 (PT INDO TELEMEDIA SOLUSI)
+
+- 667 CID SAP milik customer 626 (`PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP)`) tanpa layanan; semua nama sumber berawalan perusahaan (5 di antaranya terpotong `SOLUS-`/`PT INDO TELEMEDIA site…`).
+- 653 CID ditautkan lewat pemanggilan `POST /api/assets/circuit-candidates` berurutan (bukan endpoint baru): customer 626, produk **INTERNET** (template 9) karena tidak ada nama yang menyebut open port, nama layanan = bagian site (prefix perusahaan dibuang), status **Pending**, `confirmReview: true` untuk tiket lama `Unclassified`.
+- 13 CID tersisa berstatus konflik karena kode yang sama muncul dengan nama/site berbeda (lihat `data/audit/ion-cid-conflicts-2026-10-26.csv`); 1 CID (`SAP-C-0006-0724`) dikecualikan karena tiketnya berkategori Monitoring, bukan sumber CID baru.
+- Tidak ada perubahan timestamp tiket maupun nilai poin; 655 tautan tiket terbentuk. Produk/status tiap layanan masih dapat diperbaiki lewat detail Asset.
+- Log operasi berada di server (`/tmp/ion-mapping-result-*.json`) dan daftar rencana di `data/audit/ion-mapping-plan.json`.
+
 Tidak membutuhkan migrasi schema. Rollback aplikasi tidak menghapus Asset atau relasi yang sudah dibuat secara eksplisit; keduanya tetap kompatibel dengan versi sebelumnya. Backup database tetap diperlukan sebelum rollout/backfill operasional.
 
 ## Verifikasi
