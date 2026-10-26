@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-10-26
+
+### Changed
+
+- **Auto-filled installation subject.** The new-ticket form now builds an installation subject from the work type, the CID and the "Nama layanan/site" value — for example `Instalasi Baru - SAP-C-0006-0770 - ERIK CAHYONO …`. It updates as those fields are filled in and stops once the operator edits the subject manually, so the site name no longer has to be typed twice.
+
 ## [3.6.3] - 2026-10-26
 
 ### Fixed
@@ -422,7 +428,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.6.3...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.7.0...HEAD
+[3.7.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.7.0
 [3.6.3]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.3
 [3.6.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.2
 [3.6.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.1

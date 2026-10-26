@@ -6,13 +6,15 @@ import TicketWorkClassification from '@/components/TicketWorkClassification';
 import {getServiceCid} from '@/lib/services/cid';
 import {getDowntimeDuration,nowDatetimeLocal} from '@/lib/tickets/downtime';
 import MasterPicker from '@/components/MasterPicker';
+import {installationSubject, serviceWorkSubject} from '@/lib/tickets/subject';
 import styles from '@/components/tickets/work-form.module.css';
 export default function TicketForm({departments=[],users=[],services=[],serviceTemplates=[],defaultTargetDeptId,defaultWorkType='Unclassified',initialServiceId=null,initialServiceWorkType=null}){
  const router=useRouter(),edited=useRef(false),initial=services.find(s=>s.id===initialServiceId);
  const dataCenterDepartment=departments.find(d=>String(d.name||'').replace(/[^a-z0-9]/gi,'').toLowerCase()==='nocdatacenter');
- const [value,setValue]=useState({workType:initialServiceWorkType?'ServiceWork':defaultWorkType,serviceWorkTypeId:initialServiceWorkType?.id||'',serviceWorkOperation:initialServiceWorkType?.operation,serviceIds:initial?[initial.id]:[],serviceChange:{},title:initialServiceWorkType&&initial?`${initialServiceWorkType.name} - ${getServiceCid(initial)||initial.name}`:'',description:'',departmentId:defaultTargetDeptId||departments[0]?.id||'',assigneeId:''});
+ const initialTitle=initialServiceWorkType&&initial?(initialServiceWorkType.operation==='Installation'?installationSubject({cid:getServiceCid(initial),name:initial.name}):serviceWorkSubject(initialServiceWorkType.name,initial,getServiceCid(initial))):'';
+ const [value,setValue]=useState({workType:initialServiceWorkType?'ServiceWork':defaultWorkType,serviceWorkTypeId:initialServiceWorkType?.id||'',serviceWorkOperation:initialServiceWorkType?.operation,serviceIds:initial?[initial.id]:[],serviceChange:{},title:initialTitle,description:'',departmentId:defaultTargetDeptId||departments[0]?.id||'',assigneeId:''});
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[file,setFile]=useState(null),[outage,setOutage]=useState(false),[start,setStart]=useState(''),[end,setEnd]=useState('');
- const update=patch=>setValue(v=>({...v,...patch,...(!edited.current&&patch.installation&&v.serviceWorkOperation==='Installation'?{title:patch.installation.cid?'Instalasi Baru - '+patch.installation.cid:'Instalasi Baru'}:{})}));
+ const update=patch=>setValue(v=>({...v,...patch,...(!edited.current&&patch.installation&&v.serviceWorkOperation==='Installation'?{title:installationSubject(patch.installation)}:{})}));
  async function submit(event){event.preventDefault();setError('');
  if(value.workType==='Trouble'&&(!value.serviceIds.length||value.serviceIds.some(id=>!getServiceCid(services.find(s=>s.id===id)))||!value.symptomId||!value.causeId)){setError('Pilih CID, gejala, dan penyebab gangguan.');return;}
  if(value.workType==='ServiceWork'&&value.serviceWorkOperation!=='Installation'&&value.serviceIds.length!==1){setError('Pilih satu CID layanan.');return;}
