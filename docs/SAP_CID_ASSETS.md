@@ -20,11 +20,14 @@ Preview/read API tidak menulis data. Mapping membutuhkan role terbaru dari datab
 
 ## Operasi massal 2026-10-26 (PT INDO TELEMEDIA SOLUSI)
 
-- 667 CID SAP milik customer 626 (`PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP)`) tanpa layanan; semua nama sumber berawalan perusahaan (5 di antaranya terpotong `SOLUS-`/`PT INDO TELEMEDIA site…`).
-- 653 CID ditautkan lewat pemanggilan `POST /api/assets/circuit-candidates` berurutan (bukan endpoint baru): customer 626, produk **INTERNET** (template 9) karena tidak ada nama yang menyebut open port, nama layanan = bagian site (prefix perusahaan dibuang), status **Pending**, `confirmReview: true` untuk tiket lama `Unclassified`.
-- 13 CID tersisa berstatus konflik karena kode yang sama muncul dengan nama/site berbeda (lihat `data/audit/ion-cid-conflicts-2026-10-26.csv`); 1 CID (`SAP-C-0006-0724`) dikecualikan karena tiketnya berkategori Monitoring, bukan sumber CID baru.
-- Tidak ada perubahan timestamp tiket maupun nilai poin; 655 tautan tiket terbentuk. Produk/status tiap layanan masih dapat diperbaiki lewat detail Asset.
-- Log operasi berada di server (`/tmp/ion-mapping-result-*.json`) dan daftar rencana di `data/audit/ion-mapping-plan.json`.
+Dua dimensi yang berbeda dipakai di sini: **Customer** adalah pelanggan pemilik layanan (di sini `PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP)`, id 626), sedangkan **Perusahaan layanan** (`Service.company`, pilihan ION/SDC) adalah penerima order/jalur. INDOTEL adalah customer, bukan perusahaan, sehingga memang tidak muncul pada pilihan Perusahaan; nilainya diisi **ION** karena jalur asetnya milik ION.
+
+- 667 CID SAP milik customer 626 tanpa layanan; semua nama sumber berawalan perusahaan (5 di antaranya terpotong `SOLUS-`/`PT INDO TELEMEDIA site…`).
+- 666 CID berhasil ditautkan: 653 lewat pemanggilan `POST /api/assets/circuit-candidates` berurutan, 13 lewat jalur konfirmasi konflik nama/site. Customer 626, produk **INTERNET** (template 9) karena tidak ada nama yang menyebut open port, nama layanan = bagian site, status **Pending**, `confirmReview: true`.
+- Seluruh 668 layanan customer 626 (termasuk 2 layanan lama) memakai `company = ION`.
+- 1 CID (`SAP-C-0006-0724`) dikecualikan karena tiketnya berkategori Monitoring, bukan sumber CID baru.
+- Tidak ada perubahan timestamp tiket maupun poin; 681 tautan tiket terbentuk. Produk/status tiap layanan masih dapat diperbaiki lewat detail Asset.
+- Log operasi di server (`/tmp/ion-mapping-result-*.json`) dan rencana lengkap di `data/audit/ion-mapping-plan.json`.
 
 Tidak membutuhkan migrasi schema. Rollback aplikasi tidak menghapus Asset atau relasi yang sudah dibuat secara eksplisit; keduanya tetap kompatibel dengan versi sebelumnya. Backup database tetap diperlukan sebelum rollout/backfill operasional.
 
