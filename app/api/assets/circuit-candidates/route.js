@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getMasterUser } from '../../trouble-masters/user';
 import { prisma } from '@/lib/prisma';
 import { canManageCircuitAssets, loadCircuitCandidates, mapCircuitCandidate, CircuitAssetError } from '@/lib/services/circuitAssets';
+import { matchesCircuitQuery } from '@/lib/services/circuitCandidates';
 
 function errorResult(error) {
   const status=error instanceof CircuitAssetError ? error.status : error instanceof SyntaxError ? 400 : error?.code==='P2002' ? 409 : 500;
@@ -16,9 +17,9 @@ export async function GET(req) {
     const page=Math.max(1,Math.min(100000,Math.floor(Number(params.get('page')))||1));
     const q=(params.get('q')||'').trim().toLowerCase().slice(0,200),status=params.get('status')||'pending';
     const rows=await loadCircuitCandidates(prisma,{family:params.get('family')||'all'});
-    const visible=rows.filter(row=>(status==='all'||(status==='pending'?row.status!=='linked':row.status===status))&&(!q||`${row.cid} ${row.sourceNames.join(' ')}`.toLowerCase().includes(q)));
+    const visible=rows.filter(row=>(status==='all'||(status==='pending'?row.status!=='linked':row.status===status))&&matchesCircuitQuery(row,q));
     const summary={circuits:rows.length,needsMapping:rows.filter(row=>row.status==='needs_mapping').length,ready:rows.filter(row=>row.status==='ready_to_link').length,linked:rows.filter(row=>row.status==='linked').length,conflicts:rows.filter(row=>row.status==='conflict').length};
-    return NextResponse.json({items:visible.slice((page-1)*25,page*25).map(({ticketIds,...item})=>item),total:visible.length,page,pageSize:25,summary},{headers:{'Cache-Control':'no-store'}});
+    return NextResponse.json({items:visible.slice((page-1)*25,page*25).map(({ticketIds,trackingIds,...item})=>item),total:visible.length,page,pageSize:25,summary},{headers:{'Cache-Control':'no-store'}});
   } catch(error) {return errorResult(error);}
 }
 export async function POST(req) {

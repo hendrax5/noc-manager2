@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-10-26
+
+### Added
+
+- **Search by ticket number on CID mapping.** The Penautan CID search now matches source ticket tracking IDs as well as the CID and source names, the source ticket number is visible on each row, and the empty state explains what the search covers.
+
 ## [3.7.1] - 2026-10-26
 
 ### Changed
@@ -434,7 +440,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.7.1...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.8.0...HEAD
+[3.8.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.8.0
 [3.7.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.7.1
 [3.7.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.7.0
 [3.6.3]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.3
