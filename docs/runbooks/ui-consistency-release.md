@@ -198,3 +198,16 @@ Commit `807a62b`, image `noc-manager2-app:release-3.7.0` (dasar `release-3.6.3`)
 - Verifikasi: `/tickets/new?workType=ServiceWork&operation=Installation&serviceId=872` → 200 dan subject `Instalasi Baru - SAP-C-0006-0770 - ERIK CAHYONO (PERORANGAN) #LINK 2 JEMPUT DI CLOSURE ION -7.732225, 111.951258`; 0 error di log.
 - Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.7.0-20261026T074226Z.dump`.
 - Rollback: `sudo /opt/noc-manager2/releases/installation-subject-3.7.0/rollback.sh` (kembali ke `release-3.6.3`).
+
+## Tindak lanjut 3.7.1 (label CID/Site, nama perusahaan tidak diulang)
+
+Commit `6a7dd00`, image `noc-manager2-app:release-3.7.1` (dasar `release-3.7.0`).
+
+- Format subject menjadi `Instalasi Baru - CID: <CID> - Site <site>`. Nama customer/perusahaan tidak lagi masuk subject karena sudah punya field sendiri.
+- `siteLabel()` membersihkan nama layanan dari prefix customer sebelum dipakai: bentuk legal di depan (`PT Vissie Cyber Data Site …`) maupun di belakang (`GASTRO BERKAT USAHA, PT Site …`), nama dengan catatan merek dalam kurung (`MEDIA AKSES DATA (MMD)` vs `MEDIA AKSES DATA, PT (AKSES NET) Site …`), sisa kurung penutup, dan penanda `Site :` yang berulang. Prefix hanya dipotong bila memang cocok dengan nama customer; selain itu nama hanya dirapikan.
+- Nama yang sudah memuat kata “Site” tidak diberi label `Site` dua kali.
+- Uji data produksi: 22 nama layanan terpanjang/ber-`site` dipreview; prefix perusahaan terpotong benar (mis. `PT TELKOM SATELIT INDONESIA (TELKOMSAT) Site …` → `Site PUSAT PENGENDALI SATELIT KLAPANUNGGAL`).
+- Unit test `lib/tickets/subject.test.mjs` menjadi 11 test (tambah kasus legal terbalik, catatan merek, sisa kurung, dan kurung yang bukan bagian nama customer).
+- Verifikasi produksi: service 872 → `Instalasi Baru - CID: SAP-C-0006-0770 - Site ERIK CAHYONO (PERORANGAN) #LINK 2 JEMPUT DI CLOSURE ION -7.732225, 111.951258`; service 868 → `… - Site POP Tulungagun`; service 844 → `… - Site One Satrio Mall`; 0 error.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.7.1-20261026T075234Z.dump`.
+- Rollback: `sudo /opt/noc-manager2/releases/subject-site-label-3.7.1/rollback.sh` (kembali ke `release-3.7.0`).
