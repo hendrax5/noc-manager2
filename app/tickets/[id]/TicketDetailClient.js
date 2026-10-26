@@ -20,6 +20,7 @@ import {
 } from "@/lib/tickets/downtime";
 import { formatCustomValue, displayableCustomEntries } from "@/lib/ui/customDataView";
 import { recoveryMap, markServiceRecovery, recoveredServiceCount } from "@/lib/tickets/serviceRecovery";
+import { canEditDowntime } from "@/lib/tickets/downtimeEdit";
 
 
 function linkify(text) {
@@ -137,6 +138,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   const [showSubmitDropdown, setShowSubmitDropdown] = useState(false);
   const [slaLoading, setSlaLoading] = useState(false);
   const [recoveryBusyId, setRecoveryBusyId] = useState(null);
+  const [downtimeEdit, setDowntimeEdit] = useState(null);
+  const [savingDowntime, setSavingDowntime] = useState(false);
   
   const [mounted, setMounted] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -291,6 +294,26 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
   const serviceRecovery = recoveryMap(ticket.customData);
   const recoveredCidCount = recoveredServiceCount(ticket.services, ticket.customData);
+  const ticketCreatorId = ticket.historyLogs?.length ? ticket.historyLogs[ticket.historyLogs.length - 1]?.actorId : null;
+  const canEditDowntimeClient = canEditDowntime(currentUserObj, { assigneeId: ticket.assigneeId, creatorId: ticketCreatorId });
+  const saveDowntime = async () => {
+    setSavingDowntime(true);
+    try {
+      const res = await fetch(`/api/tickets/${ticket.id}/downtime`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ start: downtimeEdit?.start || null, end: downtimeEdit?.end || null }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan downtime.');
+      toast.success('Waktu downtime tersimpan.');
+      setDowntimeEdit(null);
+      router.refresh();
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setSavingDowntime(false);
+    }
+  };
   const setServiceRecovered = async (serviceId, recovered) => {
     const next = markServiceRecovery(ticket.customData, serviceId, { recovered, by: currentUserObj?.id ?? null });
     setRecoveryBusyId(serviceId);
@@ -488,6 +511,22 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                      Downtime Outage: {formatDate(ticket.customData.startDowntime)} s/d {ticket.customData.endDowntime ? formatDate(ticket.customData.endDowntime) : 'Belum Selesai'} ({effectiveDowntimeMinutes(ticket.customData)} menit{ticket.customData.endDowntime ? '' : ' — live'})
                   </span>
                 )}
+                {canEditDowntimeClient && (downtimeEdit ? (
+                  <span className="ui-static-5f4bae914d" style={{display: 'inline-flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', background: 'var(--ui-surface)', border: '1px solid var(--ui-line)', borderRadius: 'var(--ui-radius)', padding: '0.35rem 0.5rem'}}>
+                    <label style={{fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem'}}>Mulai
+                      <input type="datetime-local" value={downtimeEdit.start || ''} onChange={event => setDowntimeEdit({ ...downtimeEdit, start: event.target.value })} />
+                    </label>
+                    <label style={{fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem'}}>Selesai
+                      <input type="datetime-local" value={downtimeEdit.end || ''} onChange={event => setDowntimeEdit({ ...downtimeEdit, end: event.target.value })} />
+                    </label>
+                    <button type="button" className="primary-btn btn-fit" disabled={savingDowntime} onClick={saveDowntime}>{savingDowntime ? 'Menyimpan…' : 'Simpan'}</button>
+                    <button type="button" className="secondary-btn" disabled={savingDowntime} onClick={() => setDowntimeEdit(null)}>Batal</button>
+                  </span>
+                ) : (
+                  <button type="button" className="secondary-btn" onClick={() => setDowntimeEdit({ start: toDatetimeLocalValue(ticket.customData?.startDowntime), end: toDatetimeLocalValue(ticket.customData?.endDowntime) })}>
+                    {ticket.customData?.hasDowntime ? 'Ubah waktu downtime' : 'Catat downtime'}
+                  </button>
+                ))}
                 {ticket.customData && ticket.customData["Order Origin"] && (
                    <span className="ui-static-ad0950c73e" style={{display: 'flex', alignItems: 'center'}} title="Order Origin (Selling Company)">
                       {ticket.customData["Order Origin"]}

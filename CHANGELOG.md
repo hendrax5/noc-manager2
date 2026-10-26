@@ -10,6 +10,16 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.10.1] - 2026-10-26
+
+### Added
+
+- **Downtime editing for the CS desk and the ticket PIC.** The outage badge now has an "Ubah waktu downtime" / "Catat downtime" action that edits only the downtime fields, without granting the broad ticket-edit permission. Admin, Manager, CS department, permission holders (`manage_sla`, `manage_tickets`, edit permissions), the assignee and the ticket creator may use it.
+
+### Fixed
+
+- The internal `serviceRecovery` value no longer appears in the ticket's "Attached Parameters" list.
+
 ## [3.10.0] - 2026-10-26
 
 ### Added
@@ -465,7 +475,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.10.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.10.1...HEAD
+[3.10.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.10.1
 [3.10.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.10.0
 [3.9.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.9.2
 [3.9.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.9.1
