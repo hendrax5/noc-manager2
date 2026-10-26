@@ -131,7 +131,7 @@ function companyFooterLines() {
 
 const SLA_TARGET_PCT = 99.9;
 
-export default function ServiceDetailClient({ service, session }) {
+export default function ServiceDetailClient({ service, session, templates = [] }) {
   const router = useRouter();
   const isAdmin = session?.user?.role === 'Admin' || session?.user?.permissions?.includes('manage_assets');
   const isCS = session?.user?.department?.includes('CS') || session?.user?.department?.toLowerCase().includes('customer');
@@ -149,9 +149,11 @@ export default function ServiceDetailClient({ service, session }) {
     name: service.name,
     cid: getServiceCid(service),
     status: service.status,
+    templateId: service.templateId,
     company: service.company || '',
     customData: service.customData || {}
   });
+  const editTemplate = templates.find(template => Number(template.id) === Number(editData.templateId)) || service.template;
 
   const [mounted, setMounted] = useState(false);
   const [hints, setHints] = useState({ locations: [], devices: [], ports: [] });
@@ -288,7 +290,7 @@ export default function ServiceDetailClient({ service, session }) {
     }
   };
 
-  const templateFields = service.template?.fields ? (typeof service.template.fields === 'string' ? JSON.parse(service.template.fields) : service.template.fields) : [];
+  const templateFields = editTemplate?.fields ? (typeof editTemplate.fields === 'string' ? JSON.parse(editTemplate.fields) : editTemplate.fields) : [];
 
   const handleDelete = async () => {
     if (!confirm('Are you absolutely sure you want to delete this service and clear all topology records?')) return;
@@ -725,9 +727,27 @@ export default function ServiceDetailClient({ service, session }) {
                </div>
 
                <div className="ui-static-3e8220669e" >
-                 <CapacityInput id="edit-service-capacity" unit={isDarkFiber(service.template)?'pair':'Gbps'} value={isDarkFiber(service.template)?editData.customData.pairCount??readPairCount(service)??1:(Object.hasOwn(editData.customData,'bandwidthMbps')?editData.customData.bandwidthMbps:readServiceBandwidthMbps(service))==null?'':(Object.hasOwn(editData.customData,'bandwidthMbps')?editData.customData.bandwidthMbps:readServiceBandwidthMbps(service))/1000} onChange={e=>setEditData({...editData,customData:{...editData.customData,...(isDarkFiber(service.template)?{pairCount:e.target.value===''?'':Number(e.target.value)}:{bandwidthMbps:e.target.value===''?null:Number(e.target.value)*1000})}})}/>
+                 <label htmlFor="edit-service-product" className="ui-static-eea8f0a130" style={{display: 'block'}}>Produk/Layanan</label>
+                 <select id="edit-service-product" className="input-field ui-static-b52e2fe28a" value={editData.templateId || ''} onChange={e => {
+                   const id = Number(e.target.value);
+                   const next = templates.find(template => Number(template.id) === id);
+                   const openPort = String(next?.name || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === 'OPENPORT';
+                   const bandwidth = Number(editData.customData?.bandwidthMbps);
+                   const customData = openPort && !(bandwidth >= 10000) ? { ...editData.customData, bandwidthMbps: 10000 } : editData.customData;
+                   setEditData({ ...editData, templateId: id, customData });
+                 }} style={{width: '100%'}}>
+                   {templates.map(template => <option key={template.id} value={template.id}>{template.name}</option>)}
+                 </select>
+                 {Number(editData.templateId) !== Number(service.templateId) && (
+                   <small>Produk berubah dari {service.template?.name || '—'} ke {editTemplate?.name || '—'}. Kapasitas menyesuaikan; periksa nilainya setelah disimpan.</small>
+                 )}
+               </div>
+
+               <div className="ui-static-3e8220669e" >
+                 <CapacityInput id="edit-service-capacity" unit={isDarkFiber(editTemplate)?'pair':'Gbps'} value={isDarkFiber(editTemplate)?editData.customData.pairCount??readPairCount(service)??1:(Object.hasOwn(editData.customData,'bandwidthMbps')?editData.customData.bandwidthMbps:readServiceBandwidthMbps(service))==null?'':(Object.hasOwn(editData.customData,'bandwidthMbps')?editData.customData.bandwidthMbps:readServiceBandwidthMbps(service))/1000} onChange={e=>setEditData({...editData,customData:{...editData.customData,...(isDarkFiber(editTemplate)?{pairCount:e.target.value===''?'':Number(e.target.value)}:{bandwidthMbps:e.target.value===''?null:Number(e.target.value)*1000})}})}/>
 
                  <small>Isi kapasitas saat ini sebelum membuat tiket Upgrade/Downgrade jika data lama belum memiliki satuan yang jelas.</small>
+                 {String(editTemplate?.name || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === 'OPENPORT' && <small>OPEN PORT minimal 10 Gbps.</small>}
                </div>
                {templateFields.length > 0 && (
                  <div className="ui-static-d6cf051c1a" >

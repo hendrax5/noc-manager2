@@ -1,6 +1,5 @@
-import {darkFiberData} from '@/lib/services/productUnits';
 import {recordActivity} from '@/lib/activity/recordActivity';
-import {openPortUpdatedData,validateOpenPortData} from '@/lib/services/productBandwidth';
+import {planProductChange} from '@/lib/services/productChange';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
@@ -77,7 +76,16 @@ export async function PATCH(request, { params }) {
       if(body.name)updateData.name=body.name;
       if(body.status)updateData.status=body.status;
       if(body.company!==undefined)updateData.company=normalizeCompany(body.company);
-      if(body.customData){const template=await tx.serviceTemplate.findUnique({where:{id:fresh.templateId}});const next=darkFiberData(template,openPortUpdatedData(template,fresh.customData,body.customData),fresh.customData);validateOpenPortData(template,next);updateData.customData=next;}
+      const nextTemplateId = body.templateId===undefined ? fresh.templateId : Number(body.templateId);
+      const template = await tx.serviceTemplate.findUnique({where:{id:nextTemplateId}});
+      if(body.templateId!==undefined && (!Number.isSafeInteger(nextTemplateId) || !template || template.active===false)) throw new CidValidationError('Produk/layanan tidak ditemukan atau tidak aktif.',400);
+      const productChanged = Number(nextTemplateId)!==Number(fresh.templateId);
+      if(productChanged) updateData.templateId = nextTemplateId;
+      if(body.customData!==undefined || productChanged){
+        const plan = planProductChange({nextTemplate:template,currentTemplateId:fresh.templateId,currentCustomData:fresh.customData,incomingCustomData:body.customData});
+        if(!plan.ok) throw new CidValidationError(plan.error,400);
+        updateData.customData = plan.customData;
+      }
       if(Object.keys(updateData).length){
         const updated=await tx.service.update({where:{id:serviceId},data:updateData});
         await recordActivity(tx,{actorId:Number(session.user.id),source:'human',type:'service.updated',entityType:'service',entityId:serviceId,before:fresh,after:updated});

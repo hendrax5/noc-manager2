@@ -26,5 +26,11 @@ export default async function ServiceDetailPage({ params }) {
 
   if (!service) redirect('/assets');
 
-  return <ServiceDetailClient service={service} session={session} />;
+  const templates = await prisma.serviceTemplate.findMany({
+    where: { active: true },
+    orderBy: { name: 'asc' },
+    select: { id: true, name: true, fields: true },
+  });
+
+  return <ServiceDetailClient service={service} session={session} templates={templates} />;
 }

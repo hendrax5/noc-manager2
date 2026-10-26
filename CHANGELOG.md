@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-10-26
+
+### Added
+
+- **Change a service product.** The Asset edit form now lets an operator switch the product/template (for example METRO-E → OPEN PORT). Capacity fields follow the new product automatically: OPEN PORT seeds the 10 Gbps minimum, DARKFIBER keeps a pair count, and an invalid switch is rejected with a clear message.
+
 ## [3.10.2] - 2026-10-26
 
 ### Fixed
@@ -481,7 +487,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.10.2...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.11.0...HEAD
+[3.11.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.11.0
 [3.10.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.10.2
 [3.10.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.10.1
 [3.10.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.10.0
