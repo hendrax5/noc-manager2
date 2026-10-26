@@ -52,6 +52,9 @@ export async function POST(request) {
     const service = await prisma.$transaction(async tx=>{
     await lockCircuitCodes(tx,[getServiceCid({cid,customData})]);
     const serviceCid=await checkServiceCid(tx,{cid,customData});
+    let normalizedCompany;
+    try { normalizedCompany = await normalizeCompanyAsync(company); }
+    catch (companyError) { throw new CidValidationError(companyError.message, 400); }
     const created=await tx.service.create({
       data: {
         customerId: parseInt(customerId),
@@ -59,7 +62,7 @@ export async function POST(request) {
         name,
         cid: serviceCid,
         status: status || 'Active',
-        company: await normalizeCompanyAsync(company),
+        company: normalizedCompany,
         customData: bandwidthData,
         monthlyCost: monthlyCost ? parseFloat(monthlyCost) : null,
         currency: currency || 'IDR',

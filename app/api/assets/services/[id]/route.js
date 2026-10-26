@@ -75,7 +75,10 @@ export async function PATCH(request, { params }) {
       if(body.cid!==undefined||body.customData!==undefined)updateData.cid=serviceCid;
       if(body.name)updateData.name=body.name;
       if(body.status)updateData.status=body.status;
-      if(body.company!==undefined)updateData.company=await normalizeCompanyAsync(body.company);
+      if(body.company!==undefined){
+        try{updateData.company=await normalizeCompanyAsync(body.company);}
+        catch(companyError){throw new CidValidationError(companyError.message,400);}
+      }
       const nextTemplateId = body.templateId===undefined ? fresh.templateId : Number(body.templateId);
       const template = await tx.serviceTemplate.findUnique({where:{id:nextTemplateId}});
       if(body.templateId!==undefined && (!Number.isSafeInteger(nextTemplateId) || !template || template.active===false)) throw new CidValidationError('Produk/layanan tidak ditemukan atau tidak aktif.',400);
