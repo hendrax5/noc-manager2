@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.10.2] - 2026-10-26
+
+### Fixed
+
+- **Downtime permission scope.** `edit_own_tickets` no longer allows editing downtime on someone else's ticket; broad rights (`edit_other_tickets`, `modify_tickets`, `manage_tickets`, `manage_sla`), the CS/Manager/Admin roles, and the ticket's PIC or creator still may edit it.
+
 ## [3.10.1] - 2026-10-26
 
 ### Added
@@ -475,7 +481,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.10.1...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.10.2...HEAD
+[3.10.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.10.2
 [3.10.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.10.1
 [3.10.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.10.0
 [3.9.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.9.2
