@@ -121,7 +121,7 @@ export default function TicketWorkClassification({ value, onChange, services = [
     <label htmlFor={id}>Jenis pekerjaan</label>
     <MasterPicker id={id} value={selection} options={workTypeOptions} onChange={next => {
       const chosen = types.find(item => 'service:' + item.id === next);
-      onChange({ workType: chosen ? 'ServiceWork' : next, serviceWorkTypeId: chosen?.id || '', serviceChange: {}, installation: undefined, serviceIds: [], serviceWorkOperation: chosen?.operation || null });
+      onChange({ workType: chosen ? 'ServiceWork' : next, serviceWorkTypeId: chosen?.id || '', serviceWorkTypeLabel: chosen?.name || '', serviceChange: {}, installation: undefined, serviceIds: [], serviceWorkOperation: chosen?.operation || null });
       if (chosen) onServiceWorkTypeChange?.(chosen);
     }} />
     {typesError && <p role="alert">Jenis pekerjaan layanan gagal dimuat. Muat ulang halaman untuk mencoba lagi.</p>}

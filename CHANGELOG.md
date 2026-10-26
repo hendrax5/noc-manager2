@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.7.1] - 2026-10-26
+
+### Changed
+
+- **Installation subject without the company name.** The subject now reads `Instalasi Baru - CID: <CID> - Site <site>`, and a service name that starts with the customer/company name (including legal forms written before or after the name, and brand notes in parentheses) is reduced to the site part. The customer already has its own field, so it is no longer repeated in the subject.
+
 ## [3.7.0] - 2026-10-26
 
 ### Changed
@@ -428,7 +434,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.7.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.7.1...HEAD
+[3.7.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.7.1
 [3.7.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.7.0
 [3.6.3]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.3
 [3.6.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.2
