@@ -148,3 +148,15 @@ Commit `72d0f5f`, image `noc-manager2-app:release-3.6.0` (dasar `release-3.5.1`)
 - Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.6.0-20261024T182809Z.dump` (20.5 MB).
 - Verifikasi: container Up, `RestartCount=0`, `/login` 200, API Kinerja 401, log start `@hendrax5/noc-manager2@3.6.0`.
 - Rollback: `sudo /opt/noc-manager2/releases/ui-consistency-3.6.0/rollback.sh` (kembali ke `release-3.5.1`).
+
+## Tindak lanjut 3.6.1 (kontras tema terang/gelap)
+
+Commit `6db13dc`, image `noc-manager2-app:release-3.6.1` (dasar `release-3.6.0`).
+
+- Top bar, tautan navigasi, tombol tema dan profil, menu dropdown, badge, serta overlay kini membaca token tema (`--heading-color`, `--text-color`, `--ui-subtle`, `--ui-line`, `--ui-on-accent`, `--ui-overlay`) dan tidak lagi memakai nilai putih tetap, sehingga dashboard terbaca di tema terang tanpa mengubah tampilan tema gelap.
+- Switcher My Workspace/Sky View memakai `--ui-subtle`/`--ui-line`, bukan putih transparan.
+- Kontras teks tema terang: heading 15.82:1, tautan nav 10.00:1, teks muted 6.05:1, label tombol aksen 5.12:1 (semua di atas WCAG AA 4.5:1).
+- Perbaikan build: selector `.page-header` yang hilang pada commit `d449573` dipulihkan di commit `6db13dc`; `npm run build` lulus.
+- Backup sebelum switch: `/opt/noc-manager2/backups/pre-3.6.1-20261026T015020Z.dump` (20.6 MB).
+- Verifikasi: container Up, `RestartCount=0`, image `release-3.6.1`, `/login` 200, `/dashboard` 307, log start `@hendrax5/noc-manager2@3.6.1`, aturan CSS terkompilasi memakai token tema.
+- Rollback: `sudo /opt/noc-manager2/releases/ui-contrast-3.6.1/rollback.sh` (kembali ke `release-3.6.0`).
