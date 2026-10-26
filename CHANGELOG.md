@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.9.1] - 2026-10-26
+
+### Fixed
+
+- **Confirmed mapping also works when the source ticket also needs classification confirmation.** The site-name conflict check no longer rejects rows that carry the expected "review" reason, since that confirmation is already required separately.
+
 ## [3.9.0] - 2026-10-26
 
 ### Added
@@ -446,7 +452,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.9.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.9.1...HEAD
+[3.9.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.9.1
 [3.9.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.9.0
 [3.8.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.8.0
 [3.7.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.7.1
