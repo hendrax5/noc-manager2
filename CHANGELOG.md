@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.6.2] - 2026-10-26
+
+### Fixed
+
+- **Ticket detail crash on work-routed tickets.** The "Attached Parameters" list rendered raw `customData` values, so tickets created through the work flow (which store a `serviceRouting` array) failed with "Objects are not valid as a React child" and the page showed an application error. Values are now formatted to text and internal routing metadata is excluded from the list.
+
 ## [3.6.1] - 2026-10-26
 
 ### Fixed
@@ -409,7 +415,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.6.1...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.6.2...HEAD
+[3.6.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.2
 [3.6.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.1
 [3.6.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.6.0
 [3.5.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.5.1

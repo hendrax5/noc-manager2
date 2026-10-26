@@ -19,6 +19,29 @@ import {
   effectiveDowntimeMinutes,
 } from "@/lib/tickets/downtime";
 
+/** Integration metadata stored in customData; not part of the operator-facing parameter list. */
+const INTERNAL_CUSTOM_KEYS = new Set(["serviceRouting"]);
+
+/**
+ * customData values are normally strings, but work routing stores objects/arrays.
+ * React refuses to render those, so coerce every value to displayable text.
+ */
+function formatCustomValue(value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function displayableCustomEntries(customData) {
+  if (!customData || typeof customData !== "object") return [];
+  return Object.entries(customData).filter(([key, value]) => value && !INTERNAL_CUSTOM_KEYS.has(key));
+}
+
 
 function linkify(text) {
   if (!text) return "";
@@ -756,14 +779,14 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               <div>
                 <div dangerouslySetInnerHTML={{ __html: linkify(ticket.description) }} />
                 
-                {formData.customData && Object.keys(formData.customData).filter(k => formData.customData[k]).length > 0 && (
+                {displayableCustomEntries(formData.customData).length > 0 && (
                   <div className="ui-static-fe041a7734" >
                     <h4 className="ui-static-10dbdcd9e9" >Attached Parameters</h4>
                     <div className="ui-static-e305c8eb6b" style={{display: 'grid'}}>
-                      {Object.entries(formData.customData).filter(([k, v]) => v).map(([k, v]) => (
+                      {displayableCustomEntries(formData.customData).map(([k, v]) => (
                         <div key={k} className="ui-static-af81cc4264" style={{display: 'grid', gridTemplateColumns: 'minmax(150px, 1fr) 4fr'}}>
                           <span className="ui-static-b9b52aa8d4" >{k}</span>
-                          <span className="ui-static-bffd53f399" >{v}</span>
+                          <span className="ui-static-bffd53f399" >{formatCustomValue(v)}</span>
                         </div>
                       ))}
                     </div>
