@@ -604,7 +604,7 @@
 .ui-static-be2cd19cf4 { padding: var(--ui-space-2) var(--ui-space-4); margin-bottom: calc(-1 * var(--ui-space-2)); }
 .ui-static-be5b2f6887 { margin-bottom: var(--ui-space-6); gap: var(--ui-space-3); }
 .ui-static-bee680cf02 { color: var(--ui-accent); padding: var(--ui-space-8); }
-.ui-static-bef1a418ac { background: rgba(255,255,255,0.08); padding: var(--ui-space-1); border-radius: var(--ui-radius); border: 1px solid rgba(255,255,255,0.15); margin-left: var(--ui-space-4); }
+.ui-static-bef1a418ac { background: var(--ui-subtle); padding: var(--ui-space-1); border-radius: var(--ui-radius); border: 1px solid var(--ui-line); margin-left: var(--ui-space-4); }
 .ui-static-bf2977b962 { padding: var(--ui-space-2) var(--ui-space-4); border: 1px solid var(--ui-line); border-radius: var(--ui-radius); font-weight: bold; }
 .ui-static-bf4b678785 { color: var(--muted-text); }
 .ui-static-bfa4405942 { font-size: var(--ui-type-sm); color: var(--text-color); margin-top: var(--ui-space-1); }
