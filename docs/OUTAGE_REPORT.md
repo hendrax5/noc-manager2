@@ -21,6 +21,9 @@ dan laporan cetak selalu menggunakan kriteria hasil pencarian terakhir.
 
 - Satu baris adalah satu tiket. Tiket 4 jam dan 7 jam tidak digabung menjadi
   11 jam untuk filter >10 jam. `>10` mengecualikan tepat 10 jam; `≥10` memasukkannya.
+- **Filter Customer atau CID memecah tiket multi-CID menjadi satu baris per CID yang cocok.** Baris hanya menampilkan layanan/CID tersebut, sehingga laporan per customer/CID tidak pernah menampilkan circuit pelanggan lain atau CID lain pada tiket yang sama. Tanpa filter, tiket tetap satu baris dengan semua CID-nya.
+- Filter **CID / layanan** mencocokkan kode CID atau nama layanan; hasilnya satu baris untuk CID itu saja.
+- Laporan tidak menampilkan kolom pengguna/PIC; isinya hanya tiket, customer, layanan/CID, waktu, penyebab, tindakan, dan status.
 - Durasi memakai helper downtime tiket yang sama, dari `customData.startDowntime`
   sampai `endDowntime`. Durasi penuh tetap dipakai jika kejadian selesai di luar
   periode terpilih. Tiket tanpa waktu mulai/selesai valid dilewati dengan catatan.
