@@ -60,18 +60,49 @@ docker compose -p noc-manager2 -f docker-compose.prod.yml exec -T db \
 
 ## Aktivasi & verifikasi
 
+### Satu perintah (disarankan)
+
+Skrip ini menulis env (dengan backup), membuat ulang container, menjalankan preflight
+**read-only** (token + baca metadata folder tujuan), lalu otomatis mengembalikan `.env`
+dan container jika preflight gagal:
+
+```sh
+cd /home/nochspnet/noc-manager2
+sudo scripts/_deploy/_activate-gdrive.sh --sa-file /root/gdrive-sa.json \
+  --folder-id <FOLDER_ID> [--shared-drive-id <ID>] [--impersonate user@domain] \
+  [--test-attachment 2644]
+
+# mode OAuth:
+sudo scripts/_deploy/_activate-gdrive.sh --mode oauth --folder-id <FOLDER_ID> \
+  --oauth-client-id <ID> --oauth-client-secret <SECRET> --oauth-refresh-token <TOKEN>
+
+# coba dulu tanpa mengubah apa pun:
+sudo scripts/_deploy/_activate-gdrive.sh --dry-run --sa-file /root/gdrive-sa.json --folder-id <FOLDER_ID>
+```
+
+Cek status kapan saja (read-only):
+
+```sh
+sudo scripts/_deploy/_check-gdrive.sh
+```
+
+### Manual (fallback)
+
 ```sh
 # 1. isi env, lalu buat ulang container agar env terbaca
 docker compose -p noc-manager2 -f docker-compose.prod.yml -f <release.yml> up -d --no-deps --no-build app
 
-# 2. cek konfigurasi + hitungan status
-docker exec noc-manager2-app-1 sh -c \
-  'curl -s -H "x-cron-secret: $SCHEDULE_CRON_SECRET" http://127.0.0.1:3000/api/internal/drive-sync/run'
+# 2. preflight read-only: token + metadata folder tujuan
+docker exec noc-manager2-app-1 node -e \
+  "fetch('http://127.0.0.1:3000/api/internal/drive-sync/check',{headers:{'x-cron-secret':process.env.SCHEDULE_CRON_SECRET}}).then(async r=>console.log(await r.text()))"
 
-# 3. uji satu lampiran (contoh lampiran laporan Rajasa di tiket 45976)
-docker exec noc-manager2-app-1 sh -c \
-  'curl -s -X POST -H "x-cron-secret: $SCHEDULE_CRON_SECRET" -H "Content-Type: application/json" \
-   -d "{\"id\":2644}" http://127.0.0.1:3000/api/internal/drive-sync/backfill'
+# 3. cek konfigurasi + hitungan status
+docker exec noc-manager2-app-1 node -e \
+  "fetch('http://127.0.0.1:3000/api/internal/drive-sync/run',{headers:{'x-cron-secret':process.env.SCHEDULE_CRON_SECRET}}).then(async r=>console.log(await r.text()))"
+
+# 4. uji satu lampiran (contoh lampiran laporan Rajasa di tiket 45976)
+docker exec noc-manager2-app-1 node -e \
+  "fetch('http://127.0.0.1:3000/api/internal/drive-sync/backfill',{method:'POST',headers:{'x-cron-secret':process.env.SCHEDULE_CRON_SECRET,'Content-Type':'application/json'},body:JSON.stringify({id:2644})}).then(async r=>console.log(await r.text()))"
 ```
 
 Setelah sukses, buka tiket 45976: di samping `Laporan Aktivasi IPT RAJASA.pdf` muncul
@@ -81,12 +112,12 @@ link **Drive**.
 
 ```sh
 # proses 25 lampiran lama per panggilan (status skipped), ulangi sampai habis
-docker exec noc-manager2-app-1 sh -c \
-  'curl -s -X POST -H "x-cron-secret: $SCHEDULE_CRON_SECRET" -H "Content-Type: application/json" \
-   -d "{\"limit\":25}" http://127.0.0.1:3000/api/internal/drive-sync/backfill'
+docker exec noc-manager2-app-1 node -e \
+  "fetch('http://127.0.0.1:3000/api/internal/drive-sync/backfill',{method:'POST',headers:{'x-cron-secret':process.env.SCHEDULE_CRON_SECRET,'Content-Type':'application/json'},body:JSON.stringify({limit:25})}).then(async r=>console.log(await r.text()))"
 
 # ulangi lampiran yang gagal (setelah memperbaiki izin/kuota)
-... -d '{"limit":25,"status":"failed"}'
+docker exec noc-manager2-app-1 node -e \
+  "fetch('http://127.0.0.1:3000/api/internal/drive-sync/backfill',{method:'POST',headers:{'x-cron-secret':process.env.SCHEDULE_CRON_SECRET,'Content-Type':'application/json'},body:JSON.stringify({limit:25,status:'failed'})}).then(async r=>console.log(await r.text()))"
 ```
 
 Status tersimpan di tabel `Attachment`: `driveStatus` (`pending`/`synced`/`failed`/

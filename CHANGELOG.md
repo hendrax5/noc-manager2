@@ -10,6 +10,13 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.13.1] - 2026-10-27
+
+### Added
+
+- **Preflight Google Drive read-only.** `GET /api/internal/drive-sync/check` menukar kredensial menjadi token lalu membaca metadata folder tujuan (tanpa menulis ke Drive), sehingga aktivasi bisa divalidasi sebelum lampiran pertama diunggah.
+- **Skrip operasi Drive.** `scripts/_deploy/_check-gdrive.sh` (status read-only: env, counter, preflight, error terakhir) dan `scripts/_deploy/_activate-gdrive.sh` (aktivasi satu perintah, idempotent, `--dry-run`, dan otomatis mengembalikan `.env` + container bila preflight gagal).
+
 ## [3.13.0] - 2026-10-27
 
 ### Added
@@ -525,7 +532,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.13.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.13.1...HEAD
+[3.13.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.13.1
 [3.13.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.13.0
 [3.12.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.12.2
 [3.12.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.12.1
