@@ -250,6 +250,18 @@ model Attachment {
   uploadedBy Int
   uploader   User     @relation(fields: [uploadedBy], references: [id])
   createdAt  DateTime @default(now())
+
+  // Google Drive archive (see docs/GOOGLE_DRIVE.md).
+  // driveStatus: pending | synced | failed | skipped (legacy rows are skipped).
+  driveStatus   String    @default("pending")
+  driveFileId   String?
+  driveUrl      String?
+  driveFolderId String?
+  driveSyncedAt DateTime?
+  driveAttempts Int       @default(0)
+  driveError    String?
+
+  @@index([driveStatus, driveAttempts])
 }
 
 model JobCategory {

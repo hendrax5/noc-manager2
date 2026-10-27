@@ -843,9 +843,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               <strong className="ui-static-d216f19693" style={{display: 'block'}}>Attachments ({ticket.attachments.length})</strong>
               <div className="ui-static-30f523173e" style={{display: 'flex', flexWrap: 'wrap'}}>
                 {ticket.attachments.map(att => (
-                   <a key={att.id} href={att.url} target="_blank" rel="noreferrer" className="ui-static-dfe620dfda" style={{textDecoration: 'none', display: 'flex', alignItems: 'center'}}>
-                      {att.filename}
-                   </a>
+                   <span key={att.id} style={{display: 'inline-flex', alignItems: 'center', gap: '0.35rem'}}>
+                     <a href={att.url} target="_blank" rel="noreferrer" className="ui-static-dfe620dfda" style={{textDecoration: 'none', display: 'flex', alignItems: 'center'}}>
+                        {att.filename}
+                     </a>
+                     {att.driveUrl && <a href={att.driveUrl} target="_blank" rel="noreferrer" className="ui-static-2748f1debd" style={{textDecoration: 'underline'}} title="Buka di Google Drive">Drive</a>}
+                   </span>
                 ))}
               </div>
             </div>
@@ -882,9 +885,12 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
               <div className="ui-static-d23a01b6ad" >
                  <div className="ui-static-30f523173e" style={{display: 'flex', flexWrap: 'wrap'}}>
                   {c.attachments.map(att => (
-                     <a key={att.id} href={att.url} target="_blank" rel="noreferrer" className="ui-static-a79306a496" style={{textDecoration: 'none', display: 'flex', alignItems: 'center'}}>
-                        {att.filename}
-                     </a>
+                     <span key={att.id} style={{display: 'inline-flex', alignItems: 'center', gap: '0.35rem'}}>
+                       <a href={att.url} target="_blank" rel="noreferrer" className="ui-static-a79306a496" style={{textDecoration: 'none', display: 'flex', alignItems: 'center'}}>
+                          {att.filename}
+                       </a>
+                       {att.driveUrl && <a href={att.driveUrl} target="_blank" rel="noreferrer" className="ui-static-2748f1debd" style={{textDecoration: 'underline'}} title="Buka di Google Drive">Drive</a>}
+                     </span>
                   ))}
                 </div>
               </div>

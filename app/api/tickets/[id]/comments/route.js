@@ -1,7 +1,7 @@
 import {workflowFlags} from '@/lib/workflows/flags';
 import {WorkflowError} from '@/lib/workflows/policy';
 import {syncWorkflowAssignee} from '@/lib/workflows/ticketOwnership';
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../auth/[...nextauth]/route";
@@ -10,6 +10,7 @@ import { refreshFollowUpDeadline } from "@/lib/tickets/sla";
 import { pickLeastBusyAssignee } from "@/lib/tickets/routing";
 import { notifyTicketEvent, collectTicketNotifyEmails } from "@/lib/notify";
 import { dispatchIntegrationWebhook } from "@/lib/integration/webhooks";
+import { archiveAttachments } from "@/lib/integration/driveBackground";
 import { replyPointsLog } from "@/lib/tickets/points";
 
 export async function POST(req, { params }) {
@@ -48,7 +49,7 @@ export async function POST(req, { params }) {
     const phaseCount=await tx.ticketPhaseExecution.count({where:{ticketId}});
     if(phaseCount&&replyCustomData&&['Order Origin','Executing Vendor'].some(k=>Object.hasOwn(replyCustomData,k)&&(replyCustomData[k]||null)!==(purposeTicket.customData?.[k]||null)))throw new WorkflowError('Routing workflow tidak dapat diganti melalui reply.',409);
     if (purposeTicket?.purpose === 'PersonalMonthlyReport') throw new WorkflowError('Gunakan form Laporan Saya.',403);
-    const comment = await tx.comment.create({ data: {...commentData,source:'human'} });
+    const comment = await tx.comment.create({ data: {...commentData,source:'human'}, include: { attachments: { select: { id: true } } } });
 
     const ticket = await tx.ticket.findUnique({
       where: { id: ticketId },
@@ -207,6 +208,10 @@ export async function POST(req, { params }) {
 
     return {comment,ticket};
     },{timeout:20000});
+    if (comment.attachments?.length) {
+      const attachmentIds = comment.attachments.map((attachment) => attachment.id);
+      after(async () => { await archiveAttachments(attachmentIds); });
+    }
     if (commentData.isPublic) {
       const { emails, ticket: full } = await collectTicketNotifyEmails(prisma, ticketId);
       await notifyTicketEvent({

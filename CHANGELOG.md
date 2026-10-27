@@ -10,6 +10,13 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.13.0] - 2026-10-27
+
+### Added
+
+- **Arsip lampiran tiket ke Google Drive.** Lampiran tiket dan lampiran balasan diarsipkan otomatis ke Google Drive dalam satu folder per tiket, dengan link **Drive** di samping nama file pada halaman tiket. Mendukung service account (Shared Drive atau domain-wide delegation) dan OAuth refresh token; percobaan ulang otomatis lewat sweep 5 menit, plus endpoint backfill untuk arsip lama. Fitur dorman sampai env `GDRIVE_*` diisi — panduan lengkap di `docs/GOOGLE_DRIVE.md`.
+- **Migrasi aditif tabel `Attachment`** (`driveStatus`, `driveFileId`, `driveUrl`, `driveFolderId`, `driveSyncedAt`, `driveAttempts`, `driveError`). Jalankan `prisma/changes/20261027_drive_attachments.sql` sebelum mengganti image; lampiran lama ditandai `skipped` sehingga tidak ada backfill otomatis.
+
 ## [3.12.2] - 2026-10-27
 
 ### Fixed
@@ -518,7 +525,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.12.2...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.13.0...HEAD
+[3.13.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.13.0
 [3.12.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.12.2
 [3.12.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.12.1
 [3.12.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.12.0

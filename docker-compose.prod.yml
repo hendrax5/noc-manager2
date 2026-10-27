@@ -48,6 +48,16 @@ services:
       - SHIFT_SOLVER_URL=http://shift-solver:8000
       - SCHEDULE_CRON_SECRET=${SCHEDULE_CRON_SECRET:-noc-schedule-cron}
       - APP_INTERNAL_URL=http://127.0.0.1:3000
+      - DRIVE_SYNC_INTERVAL_MS=${DRIVE_SYNC_INTERVAL_MS:-300000}
+      - GDRIVE_MODE=${GDRIVE_MODE:-}
+      - GDRIVE_FOLDER_ID=${GDRIVE_FOLDER_ID:-}
+      - GDRIVE_SHARED_DRIVE_ID=${GDRIVE_SHARED_DRIVE_ID:-}
+      - GDRIVE_SERVICE_ACCOUNT_B64=${GDRIVE_SERVICE_ACCOUNT_B64:-}
+      - GDRIVE_SERVICE_ACCOUNT_JSON=${GDRIVE_SERVICE_ACCOUNT_JSON:-}
+      - GDRIVE_IMPERSONATE=${GDRIVE_IMPERSONATE:-}
+      - GDRIVE_CLIENT_ID=${GDRIVE_CLIENT_ID:-}
+      - GDRIVE_CLIENT_SECRET=${GDRIVE_CLIENT_SECRET:-}
+      - GDRIVE_REFRESH_TOKEN=${GDRIVE_REFRESH_TOKEN:-}
     command: sh -c "sleep 5 && npx prisma db push --accept-data-loss && (node scripts/normalize_ticket_statuses.js || true) && npm run build && (node scripts/schedule_cron.js & npm start)"
     depends_on:
       db:

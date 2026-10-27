@@ -7,7 +7,7 @@ import { workflowFlags } from '@/lib/workflows/flags';
 import { resolveWorkflow, workflowContext, WorkflowError } from '@/lib/workflows/policy';
 import { initializeTicketWorkflow } from '@/lib/workflows/ticketWorkflow';
 import { prepareServiceWork, ServiceWorkError } from '@/lib/tickets/serviceWork';
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
@@ -19,6 +19,7 @@ import { normalizeDowntimeCustomData } from "@/lib/tickets/downtime";
 import { prepareTicketClassification, TicketClassificationError } from "@/lib/tickets/workClassification";
 import { createTicketPointsLog } from "@/lib/tickets/points";
 import { linkKnownCircuit } from '@/lib/services/circuitAssets';
+import { archiveAttachments } from '@/lib/integration/driveBackground';
 
 function generateTrackingId() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -163,6 +164,7 @@ export async function POST(req) {
       include: {
         assignee: { select: { email: true, name: true } },
         watchers: { include: { user: { select: { email: true } } } },
+        attachments: { select: { id: true } },
       },
     });
 
@@ -177,6 +179,10 @@ export async function POST(req) {
       return created;
     },{timeout:20000});
     if (ticket instanceof Response) return ticket;
+    const ticketAttachmentIds = (ticket.attachments || []).map((attachment) => attachment.id);
+    if (ticketAttachmentIds.length) {
+      after(async () => { await archiveAttachments(ticketAttachmentIds); });
+    }
     try { await linkKnownCircuit(prisma,ticket.id); } catch { console.warn('Circuit CID link deferred; ticket retained for Inventory review.'); }
     const emails = [];
     if (ticket.assignee?.email) emails.push(ticket.assignee.email);
