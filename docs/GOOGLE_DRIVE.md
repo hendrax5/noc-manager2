@@ -103,6 +103,18 @@ Status tersimpan di tabel `Attachment`: `driveStatus` (`pending`/`synced`/`faile
 | `Google Drive 401` | Service account JSON/refresh token salah atau Drive API belum aktif |
 | Lampiran `failed` | Lihat `driveError`; perbaiki penyebab lalu backfill `status=failed` |
 
+## Verifikasi
+
+- Unit test tanpa kredensial Google:
+  `node lib/integration/gdrive.test.mjs` (7 tes: config, JWT RS256, query folder, multipart,
+  upload ke mock HTTP) dan `node lib/integration/driveSync.test.mjs` (URL/path lokal).
+- End-to-end staging 27/10/2026 (image `release-3.13.0` + Postgres terisolasi + mock Drive API):
+  balasan dengan lampiran → baris `synced` (`driveFileId=file-staging`), halaman tiket menampilkan
+  link Drive, `POST /api/internal/drive-sync/run` memproses lampiran `pending`, dan endpoint
+  backfill memproses lampiran `skipped`. Kontainer/volume staging dihapus setelah pengujian.
+- Produksi v3.13.0 terpasang dengan fitur dorman:
+  `GET /api/internal/drive-sync/run` → `{"configured":false,"counts":{}}`.
+
 ## Catatan keamanan
 
 - Link Drive mengikuti permission folder Drive. Batasi sharing folder (bukan
