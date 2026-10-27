@@ -10,6 +10,13 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.12.2] - 2026-10-27
+
+### Fixed
+
+- **Impacted topology only for trouble tickets.** The “Network Topology (Impacted)” heading and the per-CID “pemulihan CID” checklist no longer appear on new-installation/service-work tickets. “(Impacted)” now applies to trouble tickets only, and the recovery count/checklist appears only on tickets that link more than one CID — the case that actually gates Resolve/Closed.
+- **Resolve guard names the RFS date.** Resolving a service-work ticket before its RFS/effective date now reports that date, for example “RFS 2026-11-01 belum tiba; tiket belum dapat di-Resolve.”, instead of the generic “tanggal efektif di masa depan”.
+
 ## [3.12.1] - 2026-10-26
 
 ### Fixed
@@ -511,7 +518,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.12.1...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.12.2...HEAD
+[3.12.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.12.2
 [3.12.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.12.1
 [3.12.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.12.0
 [3.11.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.11.1

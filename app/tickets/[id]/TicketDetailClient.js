@@ -19,7 +19,7 @@ import {
   effectiveDowntimeMinutes,
 } from "@/lib/tickets/downtime";
 import { formatCustomValue, displayableCustomEntries } from "@/lib/ui/customDataView";
-import { recoveryMap, markServiceRecovery, recoveredServiceCount } from "@/lib/tickets/serviceRecovery";
+import { recoveryMap, markServiceRecovery, recoveredServiceCount, shouldShowRecoveryChecklist } from "@/lib/tickets/serviceRecovery";
 import { canEditDowntime } from "@/lib/tickets/downtimeEdit";
 
 
@@ -294,6 +294,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
   const serviceRecovery = recoveryMap(ticket.customData);
   const recoveredCidCount = recoveredServiceCount(ticket.services, ticket.customData);
+  const impactTopology = ticket.workType === 'Trouble';
+  const showCidRecovery = shouldShowRecoveryChecklist(ticket.services);
   const ticketCreatorId = ticket.historyLogs?.length ? ticket.historyLogs[ticket.historyLogs.length - 1]?.actorId : null;
   const canEditDowntimeClient = canEditDowntime(currentUserObj, { assigneeId: ticket.assigneeId, creatorId: ticketCreatorId });
   const saveDowntime = async () => {
@@ -1197,8 +1199,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
 
           {ticket.services && ticket.services.length > 0 && (
             <div className="ui-static-5bc6e4fcaa" >
-              <h3 className="ui-static-69e2bff81d" >Network Topology (Impacted) <small style={{fontWeight: 400}}>— pemulihan CID {recoveredCidCount}/{ticket.services.length}</small></h3>
-              {ticket.services.length > 1 && recoveredCidCount < ticket.services.length && (
+              <h3 className="ui-static-69e2bff81d" >Network Topology{impactTopology ? ' (Impacted)' : ''}{showCidRecovery && <small style={{fontWeight: 400}}> — pemulihan CID {recoveredCidCount}/{ticket.services.length}</small>}</h3>
+              {showCidRecovery && recoveredCidCount < ticket.services.length && (
                 <p className="ui-static-2748f1debd" >Tiket multi-CID hanya bisa Resolve/Closed setelah semua CID ditandai pulih. SLA tetap satu timer untuk tiket ini.</p>
               )}
               <div className="ui-static-af81cc4264" style={{display: 'flex', flexDirection: 'column'}}>
@@ -1207,14 +1209,16 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
                     <div className="ui-static-a5e625c9ab" >{srv.customer?.name}</div>
                     <div className="ui-static-925c9f8d18" >{srv.name}</div>
                     <div className="ui-static-2748f1debd" >CID: {getServiceCid(srv) || 'belum tersedia'}</div>
-                    <label style={{display: 'flex', alignItems: 'center', gap: '0.45rem', margin: '0.4rem 0', cursor: ['Resolved','Closed'].includes(ticket.status) ? 'not-allowed' : 'pointer'}}>
-                      <input type="checkbox" checked={Boolean(serviceRecovery[String(srv.id)])}
-                        disabled={['Resolved','Closed'].includes(ticket.status) || recoveryBusyId === srv.id}
-                        onChange={event => setServiceRecovered(srv.id, event.target.checked)} />
-                      <span className="ui-static-2748f1debd" >
-                        CID pulih{serviceRecovery[String(srv.id)]?.at ? ` · ${new Date(serviceRecovery[String(srv.id)].at).toLocaleString('en-CA')}` : ''}
-                      </span>
-                    </label>
+                    {showCidRecovery && (
+                      <label style={{display: 'flex', alignItems: 'center', gap: '0.45rem', margin: '0.4rem 0', cursor: ['Resolved','Closed'].includes(ticket.status) ? 'not-allowed' : 'pointer'}}>
+                        <input type="checkbox" checked={Boolean(serviceRecovery[String(srv.id)])}
+                          disabled={['Resolved','Closed'].includes(ticket.status) || recoveryBusyId === srv.id}
+                          onChange={event => setServiceRecovered(srv.id, event.target.checked)} />
+                        <span className="ui-static-2748f1debd" >
+                          CID pulih{serviceRecovery[String(srv.id)]?.at ? ` · ${new Date(serviceRecovery[String(srv.id)].at).toLocaleString('en-CA')}` : ''}
+                        </span>
+                      </label>
+                    )}
                     {ticket.enableSla && (ticket.responseDueAt || ticket.resolutionDueAt) && (
                       <div className="ui-static-2748f1debd" >
                         SLA respons: {ticket.responseDueAt ? new Date(ticket.responseDueAt).toLocaleString('en-CA') : '—'} · SLA resolusi: {ticket.resolutionDueAt ? new Date(ticket.resolutionDueAt).toLocaleString('en-CA') : '—'}
