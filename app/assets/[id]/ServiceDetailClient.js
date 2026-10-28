@@ -15,6 +15,8 @@ import { getServiceCid } from '@/lib/services/cid';
 import { readServiceBandwidthMbps } from '@/lib/services/capacity';
 import { formatCustomValue } from '@/lib/ui/customDataView';
 
+const INTERNAL_PARAMETER_KEYS = new Set(['cidsource']);
+
 function pad2(n) {
   return String(n).padStart(2, '0');
 }
@@ -154,6 +156,12 @@ export default function ServiceDetailClient({ service, session, templates = [] }
     customData: service.customData || {}
   });
   const editTemplate = templates.find(template => Number(template.id) === Number(editData.templateId)) || service.template;
+  // Internal bookkeeping keys are not product parameters; capacity has its own row below.
+  const serviceBandwidthMbps = isDarkFiber(service.template) ? null : readServiceBandwidthMbps(service);
+  const servicePairCount = isDarkFiber(service.template) ? (readPairCount(service) ?? null) : null;
+  const parameterEntries = Object.entries(service.customData && typeof service.customData === 'object' ? service.customData : {})
+    .filter(([key]) => !INTERNAL_PARAMETER_KEYS.has(String(key).trim().toLowerCase()))
+    .filter(([key]) => !isBandwidthField(key) && !isPairField(key));
 
   const [mounted, setMounted] = useState(false);
   const [hints, setHints] = useState({ locations: [], devices: [], ports: [] });
@@ -296,6 +304,8 @@ export default function ServiceDetailClient({ service, session, templates = [] }
   };
 
   const templateFields = editTemplate?.fields ? (typeof editTemplate.fields === 'string' ? JSON.parse(editTemplate.fields) : editTemplate.fields) : [];
+  // Bandwidth/pair fields are edited through the capacity control, not as duplicate product inputs.
+  const editableTemplateFields = templateFields.filter(f=>!isPlaceholderField(f.name)&&!isBandwidthField(f.name)&&!isPairField(f.name));
 
   const handleDelete = async () => {
     if (!confirm('Are you absolutely sure you want to delete this service and clear all topology records?')) return;
@@ -416,12 +426,24 @@ export default function ServiceDetailClient({ service, session, templates = [] }
 
           {activeTab === 'parameters' && (
             <div className="bg-white-card scale-in ui-static-239a0228f6" >
-              {service.customData && Object.keys(service.customData).length > 0 ? (
+              {serviceBandwidthMbps != null || servicePairCount != null || parameterEntries.length > 0 ? (
                 <div className="ui-static-af81cc4264" style={{display: 'flex', flexDirection: 'column'}}>
-                   {Object.entries(service.customData).filter(([key])=>!isDarkFiber(service.template)||!isBandwidthField(key)).map(([key, val]) => (
+                   {servicePairCount != null && (
+                     <div>
+                        <div className="ui-static-ecd350dcb3" style={{textTransform: 'uppercase'}}>Jumlah pair</div>
+                        <div className="ui-static-1d732f7131">{formatCustomValue(servicePairCount)} pair</div>
+                     </div>
+                   )}
+                   {serviceBandwidthMbps != null && (
+                     <div>
+                        <div className="ui-static-ecd350dcb3" style={{textTransform: 'uppercase'}}>Kapasitas</div>
+                        <div className="ui-static-1d732f7131">{formatCustomValue(Number((Number(serviceBandwidthMbps) / 1000).toFixed(3)))} Gbps</div>
+                     </div>
+                   )}
+                   {parameterEntries.map(([key, val]) => (
                       <div key={key}>
                          <div className="ui-static-ecd350dcb3" style={{textTransform: 'uppercase'}}>{isPairField(key)?'Jumlah pair':key}</div>
-                         <div className="ui-static-1d732f7131" >{isDarkFiber(service.template)&&isPairField(key)?`${formatCustomValue(val)} pair`:formatCustomValue(val) || '-'}</div>
+                         <div className="ui-static-1d732f7131" >{formatCustomValue(val) || '-'}</div>
                       </div>
                    ))}
                 </div>
@@ -754,11 +776,11 @@ export default function ServiceDetailClient({ service, session, templates = [] }
                  <small>Isi kapasitas saat ini sebelum membuat tiket Upgrade/Downgrade jika data lama belum memiliki satuan yang jelas.</small>
                  {String(editTemplate?.name || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === 'OPENPORT' && <small>OPEN PORT minimal 10 Gbps.</small>}
                </div>
-               {templateFields.length > 0 && (
+               {editableTemplateFields.length > 0 && (
                  <div className="ui-static-d6cf051c1a" >
                    <h4 className="ui-static-980d0fe234" >Technical Parameters</h4>
                    <div className="ui-static-af81cc4264" style={{display: 'flex', flexDirection: 'column'}}>
-                     {templateFields.filter(f=>!isPlaceholderField(f.name)&&!isPairField(f.name)&&(!isDarkFiber(service.template)||!isBandwidthField(f.name))).map((f, i) => (
+                     {editableTemplateFields.map((f, i) => (
                        <div key={i}>
                          <label className="ui-static-5828b8b2e5" style={{display: 'block'}}>{f.name}</label>
                          <input 

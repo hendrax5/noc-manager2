@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.14.1] - 2026-10-28
+
+### Fixed
+
+- **Field produk yang tidak perlu di Assets.** Tab **Technical Parameters** pada detail layanan tidak lagi menampilkan field internal (`cidSource`, `bandwidthMbps`); kapasitas tampil sebagai baris **Kapasitas** (Gbps/pair) dan parameter produk asli tetap ditampilkan. **Edit Details** juga tidak lagi meminta input `Bandwidth` duplikat — kapasitas diisi lewat kolom Kapasitas yang sudah ada.
+
 ## [3.14.0] - 2026-10-28
 
 ### Added
@@ -538,7 +544,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.14.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.14.1...HEAD
+[3.14.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.1
 [3.14.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.0
 [3.13.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.13.1
 [3.13.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.13.0
