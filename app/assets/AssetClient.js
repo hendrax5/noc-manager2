@@ -9,9 +9,6 @@ import CustomerServiceInventory from './CustomerServiceInventory';
 import ui from './assets-ui.module.css';
 import AssetMasterList from './AssetMasterList';
 
-function readTemplateFields(value) {
-  try { const parsed=typeof value==='string'?JSON.parse(value):value;return Array.isArray(parsed)?parsed.filter(f=>f&&typeof f.name==='string'):[]; } catch { return []; }
-}
 export default function AssetClient({ session, initialCustomers, initialTemplates, initialServices }) {
   const [activeTab, setActiveTab] = useState('portfolio');
   
@@ -34,7 +31,6 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [editTemplateId, setEditTemplateId] = useState(null);
   const [templateData, setTemplateData] = useState({ name: '' });
-  const [templateFields, setTemplateFields] = useState([{ name: '', type: 'text', required: true }]);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -59,7 +55,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
 
       {activeTab === 'customers' && <AssetMasterList title="Customers Registry" columns={['Customer','Customer ID','Kontak','Layanan',...(isAdmin?['Aksi']:[])]} addLabel="Tambah customer" onAdd={isAdmin?()=>{setEditCustomerId(null);setCustomerData({name:'',contactEmail:'',contactPhone:''});setShowCustomerModal(true);}:undefined} rows={customers.map(c=>({id:c.id,search:[c.name,formatCustomerId(c),c.contactEmail,c.contactPhone].filter(Boolean).join(' '),cells:[<strong key="name">{c.name}</strong>,<span key="id" className="font-mono">{formatCustomerId(c)}</span>,<span key="contact">{c.contactEmail||'Belum diisi'}{c.contactPhone&&<small>{c.contactPhone}</small>}</span>,services.filter(service=>(service.customerId??service.customer?.id)===c.id).length,...(isAdmin?[<div key="actions"><button type="button" onClick={()=>{setEditCustomerId(c.id);setCustomerData({name:c.name,contactEmail:c.contactEmail||'',contactPhone:c.contactPhone||''});setShowCustomerModal(true);}}>Edit</button><button type="button" data-danger="true" onClick={async()=>{if(!confirm(`Hapus customer ${c.name}?`))return;try{const res=await fetch(`/api/assets/customers/${c.id}`,{method:'DELETE'});if(res.ok)setCustomers(prev=>prev.filter(x=>x.id!==c.id));else alert((await res.json()).error);}catch{alert('Customer gagal dihapus. Coba lagi.');}}}>Hapus</button></div>]:[])]}))}/>}
 
-      {activeTab === 'templates' && <AssetMasterList title="Produk layanan" columns={['Produk','Status','Layanan','Field tambahan',...(isAdmin?['Aksi']:[])]} addLabel="Tambah produk" onAdd={isAdmin?()=>{setEditTemplateId(null);setTemplateData({name:''});setTemplateFields([{name:'',type:'text',required:true}]);setShowTemplateModal(true);}:undefined} rows={templates.map(t=>{const fields=readTemplateFields(t.fields);return {id:t.id,search:`${t.name} ${t.active?'Aktif':'Arsip'}`,cells:[<strong key="name">{t.name}</strong>,t.active?'Aktif':'Arsip',services.filter(service=>(service.templateId??service.template?.id)===t.id).length,<details key="fields"><summary>{fields.length} field</summary>{fields.length>0?<ul>{fields.map((field,i)=><li key={i}>{field.name} <small>{String(field.type||'text')}</small></li>)}</ul>:<small>Tidak ada field tambahan.</small>}</details>,...(isAdmin?[<div key="actions"><button type="button" onClick={()=>{setEditTemplateId(t.id);setTemplateData({name:t.name});setTemplateFields(fields.length?fields:[{name:'',type:'text',required:true}]);setShowTemplateModal(true);}}>Edit</button><button type="button" data-danger="true" onClick={async()=>{if(!confirm(`Hapus produk ${t.name}?`))return;try{const res=await fetch(`/api/assets/templates/${t.id}`,{method:'DELETE'});if(res.ok)setTemplates(prev=>prev.filter(x=>x.id!==t.id));else alert((await res.json()).error);}catch{alert('Produk gagal dihapus. Coba lagi.');}}}>Hapus</button></div>]:[])]};})}/>}
+      {activeTab === 'templates' && <AssetMasterList title="Produk layanan" columns={['Produk','Status','Layanan',...(isAdmin?['Aksi']:[])]} addLabel="Tambah produk" onAdd={isAdmin?()=>{setEditTemplateId(null);setTemplateData({name:''});setShowTemplateModal(true);}:undefined} rows={templates.map(t=>({id:t.id,search:`${t.name} ${t.active?'Aktif':'Arsip'}`,cells:[<strong key="name">{t.name}</strong>,t.active?'Aktif':'Arsip',services.filter(service=>(service.templateId??service.template?.id)===t.id).length,...(isAdmin?[<div key="actions"><button type="button" onClick={()=>{setEditTemplateId(t.id);setTemplateData({name:t.name});setShowTemplateModal(true);}}>Edit</button><button type="button" data-danger="true" onClick={async()=>{if(!confirm(`Hapus produk ${t.name}?`))return;try{const res=await fetch(`/api/assets/templates/${t.id}`,{method:'DELETE'});if(res.ok)setTemplates(prev=>prev.filter(x=>x.id!==t.id));else alert((await res.json()).error);}catch{alert('Produk gagal dihapus. Coba lagi.');}}}>Hapus</button></div>]:[])]}))}/>}
       {activeTab === 'blast' && (
         <div>
           <div className="bg-white-card ui-static-34b900d735" >
@@ -184,7 +180,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
                 const isEdit = !!editTemplateId;
                 const url = isEdit ? `/api/assets/templates/${editTemplateId}` : '/api/assets/templates';
                 const method = isEdit ? 'PATCH' : 'POST';
-                const payload = { name: templateData.name, fields: templateFields.filter(f => f.name.trim() !== '') };
+                const payload = { name: templateData.name };
                 
                 const res = await fetch(url, {
                    method,
@@ -207,25 +203,6 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
               <div className="ui-static-8bd9dc7312" >
                 <label className="ui-static-abe0244be5" style={{display: 'block'}}>Template Name</label>
                 <input type="text" required placeholder="e.g. IPLC DWDM" className="input-field ui-static-b52e2fe28a" value={templateData.name} onChange={e => setTemplateData(p => ({...p, name: e.target.value}))} style={{width: '100%'}} />
-              </div>
-              
-              <div className="ui-static-3b9d1b7b96" >
-                <div className="ui-static-3e8220669e" style={{display: 'flex', justifyContent: 'space-between'}}>
-                   <label className="ui-static-f87c59a0c7" >Extended Parameters</label>
-                   <button type="button" onClick={() => setTemplateFields([...templateFields, { name: '', type: 'text', required: false }])} className="ui-static-285cdc9bf0" style={{cursor: 'pointer'}}>+ Add Field</button>
-                </div>
-                {templateFields.map((f, i) => (
-                  <div key={i} className="ui-static-fd3a6e970b" style={{display: 'flex'}}>
-                    <input type="text" placeholder="Field Name (e.g. Bandwidth)" required value={f.name} onChange={e => { const arr = [...templateFields]; arr[i].name = e.target.value; setTemplateFields(arr); }} className="input-field ui-static-ce5f724e09" style={{flexGrow: 1}} />
-                    <select value={f.type} onChange={e => { const arr = [...templateFields]; arr[i].type = e.target.value; setTemplateFields(arr); }} className="input-field ui-static-ce5f724e09" >
-                       <option value="text">Text / String</option>
-                       <option value="number">Number</option>
-                    </select>
-                    {templateFields.length > 1 && (
-                      <button type="button" onClick={() => setTemplateFields(templateFields.filter((_, idx) => idx !== i))} className="ui-static-2733aec263" style={{cursor: 'pointer', width: '30px'}}>×</button>
-                    )}
-                  </div>
-                ))}
               </div>
 
               <div className="ui-static-af81cc4264" style={{display: 'flex', justifyContent: 'flex-end'}}>

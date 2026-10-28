@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.14.2] - 2026-10-28
+
+### Changed
+
+- **Editor produk layanan tanpa Extended Parameters.** Dialog Tambah/Edit produk di **Assets → Produk layanan** tidak lagi menampilkan section **Extended Parameters / + Add Field**; produk cukup memiliki nama. Kolom **Field tambahan** di daftar produk juga dihapus. Definisi field lama tetap tersimpan di database dan tetap tidak diminta di form layanan — kapasitas memakai kolom **Kapasitas** yang sudah ada.
+
 ## [3.14.1] - 2026-10-28
 
 ### Fixed
@@ -544,7 +550,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.14.1...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.14.2...HEAD
+[3.14.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.2
 [3.14.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.1
 [3.14.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.0
 [3.13.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.13.1
