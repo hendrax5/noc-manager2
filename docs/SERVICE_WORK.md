@@ -13,7 +13,7 @@ Satu tiket perubahan menangani satu CID. Trouble tetap bisa memilih beberapa lay
 
 Untuk circuit baru, tautan pendaftaran pada form membuka `/assets/new?ticketSetup=1` melalui hak akses Inventory yang sudah ada. Daftarkan CID yang telah diketahui; layanan dibuat Pending, lalu lanjut ke form tiket Instalasi Baru dengan CID terpilih. Tidak membuat customer/circuit otomatis bagi user tanpa izin `manage_assets`. Jika customer belum terdaftar, gunakan registrasi customer pada Assets & Services terlebih dahulu.
 
-Kapasitas historis hanya dikenali bila satuannya jelas: canonical `customData.bandwidthMbps`, atau alias `Bandwidth Mbps`, `Bandwidth (Mbps)`, `bandwidth_mbps`. Field tanpa satuan tidak ditebak. Pengelola Inventory dapat mengisi **Kapasitas layanan (Mbps)** pada Edit Details sebelum membuat Upgrade/Downgrade. Canonical capacity menjadi sumber utama dan alias eksplisit yang sudah ada diselaraskan ketika perubahan diterapkan.
+Kapasitas historis hanya dikenali bila satuannya jelas: canonical `customData.bandwidthMbps`, atau alias `Bandwidth Mbps`, `Bandwidth (Mbps)`, `bandwidth_mbps`. Field tanpa satuan tidak ditebak. Pengelola Inventory dapat mengisi **Kapasitas layanan (Mbps)** pada Edit Details sebelum membuat Upgrade/Downgrade. Canonical capacity menjadi sumber utama dan alias eksplisit yang sudah ada diselaraskan ketika perubahan diterapkan. **Nilai 0 adalah kapasitas sah** (mis. layanan belum berkapasitas/terukur): tersimpan dan tampil sebagai 0 Gbps, serta Upgrade/BOD dapat dimulai dari 0 (arah Upgrade tetap harus menaikkan). Nilai negatif, teks, atau field tanpa satuan tetap dianggap belum diketahui.
 
 ## Kapasitas otomatis dari riwayat tiket
 

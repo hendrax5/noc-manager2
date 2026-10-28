@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.15.0] - 2026-10-28
+
+### Changed
+
+- **Kapasitas 0 Mbps dianggap nilai sah.** Layanan yang kapasitasnya eksplisit 0 (termasuk hasil pembersihan data `bandwidthMbps: 0`) kini terbaca **0 Gbps**, bukan "belum diketahui": tampil di Portfolio dan halaman layanan, dan tiket **Upgrade/BOD** dapat dimulai dari 0 (arah Upgrade tetap harus menaikkan). Nilai negatif, teks, atau field tanpa satuan tetap dianggap belum diketahui.
+
 ## [3.14.2] - 2026-10-28
 
 ### Changed
@@ -550,7 +556,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.14.2...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.15.0...HEAD
+[3.15.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.15.0
 [3.14.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.2
 [3.14.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.1
 [3.14.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.0
