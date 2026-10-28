@@ -553,7 +553,7 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
             {editingTicket ? (
               <div>
                 {!ticket.serviceChange?.appliedAt ? <>
-                  <TicketWorkClassification value={{...formData,editExistingServiceWork:true}} services={services} serviceTemplates={serviceTemplates || []} onChange={patch => setFormData(previous => ({ ...previous, ...patch }))} />
+                  <TicketWorkClassification value={{...formData,editExistingServiceWork:true}} services={services} serviceTemplates={serviceTemplates || []} canManageAssets={currentUserObj.role === 'Admin' || currentUserObj.permissions?.includes('manage_assets')} onChange={patch => setFormData(previous => ({ ...previous, ...patch }))} />
                   {!["Trouble","ServiceWork"].includes(formData.workType) && <TicketServicePicker services={services} selectedIds={formData.serviceIds || []} onChange={serviceIds => setFormData(previous => ({ ...previous, serviceIds }))} />}
                 </> : <p>Perubahan layanan sudah diterapkan. Buat tiket baru dari halaman CID untuk pekerjaan berikutnya.</p>}
                 {/* Edit Customer / Reporter Name */}

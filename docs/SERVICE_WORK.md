@@ -15,6 +15,16 @@ Untuk circuit baru, tautan pendaftaran pada form membuka `/assets/new?ticketSetu
 
 Kapasitas historis hanya dikenali bila satuannya jelas: canonical `customData.bandwidthMbps`, atau alias `Bandwidth Mbps`, `Bandwidth (Mbps)`, `bandwidth_mbps`. Field tanpa satuan tidak ditebak. Pengelola Inventory dapat mengisi **Kapasitas layanan (Mbps)** pada Edit Details sebelum membuat Upgrade/Downgrade. Canonical capacity menjadi sumber utama dan alias eksplisit yang sudah ada diselaraskan ketika perubahan diterapkan.
 
+## Kapasitas otomatis dari riwayat tiket
+
+Operator biasanya sudah mencatat bandwidth asli di tiket: dump konfigurasi perangkat (`description INDOTEL-SITE-300M-SAP-C-...`, `qos lr ... cir`), nama client/perangkat, baris `Kapasitas Existing : 300 Mbps`, atau komentar EWO (`Upgrade ke 1G`). `lib/services/capacityHints.js` mengekstraknya agar tidak perlu dibaca manual.
+
+- **Saran di form Pekerjaan Layanan.** Saat CID dipilih pada Upgrade/Downgrade/Perubahan/BOD, form memanggil `GET /api/assets/services/{id}/capacity-hints` (read-only). Jika Inventory belum punya kapasitas, form menampilkan kandidat beserta sumber dan tanggalnya, lalu tombol **Isi ke Inventory** (butuh izin `manage_assets`) menulis nilai pilihan dan mencatat audit `service.capacity_from_ticket`. Kapasitas tujuan juga terisi otomatis dari teks EWO terbaru dan tetap bisa diubah operator.
+- **Adopsi otomatis di server.** `prepareServiceWork` mengisi kapasitas Inventory dari riwayat tiket ketika Upgrade/Downgrade/BOD dibuat dan nilainya belum ada. Hanya bukti yang tidak ambigu yang dipakai; jika bukti terbaru berbeda pada waktu yang sama, tiket ditolak (HTTP 400) dengan daftar kandidat untuk ditinjau di Assets & Services.
+- **Aturan bukti.** Konfigurasi perangkat pada baris yang memuat CID layanan (atau aliasnya, termasuk akhiran legacy seperti `C-0006-0060` untuk `SAP-C-0006-0060`) bernilai tinggi; tiket yang hanya menautkan satu layanan boleh tanpa CID di baris. Nama client yang memuat bandwidth di depan CID bernilai sedang. CIR `rate-limit`/`qos lr` hanya pendukung perkiraan, bukan sumber adopsi. Bukti **terbaru** menang atas dump lama (riwayat upgrade). Bukti diturunkan bila baris berisi CID lain (circuit berbeda), bila CIR di blok yang sama bertentangan (mis. `-500G-` dengan `cir 512000`), kecuali interface `SOFTBLOCK`/`TERMINATE`/`shutdown` yang memang di-throttle.
+- **Backfill massal.** `scripts/backfill_capacity_hints.mjs --customer=<id> --dry-run|--apply` mengisi layanan yang buktinya kuat, melewati DARKFIBER (berbasis pair), dan menulis audit `capacity-backfill-<tanggal>-<serviceId>`. Sisanya dilaporkan sebagai CSV review (status, kandidat, tiket sumber) tanpa menulis apa pun.
+- **Verifikasi.** `node --test lib/services/capacityHints.test.mjs lib/tickets/serviceWork.test.mjs`.
+
 ## Master dan scoring
 
 Menu **Administration → Jenis Pekerjaan Layanan** (`/settings/service-work-types`). Admin atau role dengan `manage_service_work` dapat membuat, mengganti nama, mengatur urutan, menonaktifkan/mengaktifkan, memetakan saran Job Category, serta menghapus jenis pekerjaan yang belum dipakai tiket. Operasi jenis pekerjaan tidak dapat diganti setelah dibuat. Nonaktif berarti tidak tersedia untuk pekerjaan baru; tiket existing mempertahankan snapshot nama dan dapat diselesaikan.

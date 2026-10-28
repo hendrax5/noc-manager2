@@ -32,6 +32,7 @@ export default async function NewTicketPage({ searchParams }) {
   const targetRouteDeptId = creatorDeptId && deptAutoRouteMap[creatorDeptId] ? parseInt(deptAutoRouteMap[creatorDeptId]) : null;
   const defaultTargetDeptId = targetRouteDeptId || departments[0]?.id;
   const initialService = services.find(service => String(service.id) === query?.serviceId);
+  const canManageAssets = session.user.role === 'Admin' || session.user.permissions?.includes('manage_assets') || false;
   const initialServiceWorkType = defaultWorkType === 'ServiceWork' && query?.operation === 'Installation'
     ? await prisma.serviceWorkType.findFirst({ where: { active: true, operation: 'Installation' }, orderBy: { sortOrder: 'asc' } }) : null;
 
@@ -42,7 +43,7 @@ export default async function NewTicketPage({ searchParams }) {
         <p>Create a trackable operational ticket for your related sub-department.</p>
       </header>
       
-      <TicketForm defaultWorkType={defaultWorkType} initialServiceId={initialService?.id || null} initialServiceWorkType={initialServiceWorkType} departments={departments} categories={categories} users={users} customFields={customFields} services={services} serviceTemplates={serviceTemplates} companies={companies} defaultTargetDeptId={defaultTargetDeptId} />
+      <TicketForm defaultWorkType={defaultWorkType} initialServiceId={initialService?.id || null} initialServiceWorkType={initialServiceWorkType} departments={departments} categories={categories} users={users} customFields={customFields} services={services} serviceTemplates={serviceTemplates} companies={companies} defaultTargetDeptId={defaultTargetDeptId} canManageAssets={canManageAssets} />
     </main>
   );
 }

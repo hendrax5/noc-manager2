@@ -8,7 +8,7 @@ import {getDowntimeDuration,nowDatetimeLocal} from '@/lib/tickets/downtime';
 import MasterPicker from '@/components/MasterPicker';
 import {installationSubject, serviceWorkSubject} from '@/lib/tickets/subject';
 import styles from '@/components/tickets/work-form.module.css';
-export default function TicketForm({departments=[],users=[],services=[],serviceTemplates=[],defaultTargetDeptId,defaultWorkType='Unclassified',initialServiceId=null,initialServiceWorkType=null}){
+export default function TicketForm({departments=[],users=[],services=[],serviceTemplates=[],defaultTargetDeptId,defaultWorkType='Unclassified',initialServiceId=null,initialServiceWorkType=null,canManageAssets=false}){
  const router=useRouter(),edited=useRef(false),initial=services.find(s=>s.id===initialServiceId);
  const dataCenterDepartment=departments.find(d=>String(d.name||'').replace(/[^a-z0-9]/gi,'').toLowerCase()==='nocdatacenter');
  const customerNames=services.reduce((map,service)=>{const id=Number(service.customerId??service.customer?.id),name=service.customer?.name;if(Number.isFinite(id)&&name&&!map.has(id))map.set(id,name);return map;},new Map());
@@ -45,7 +45,7 @@ export default function TicketForm({departments=[],users=[],services=[],serviceT
  }
  return <form className={styles.form} onSubmit={submit} onInvalidCapture={handleInvalid}>
  {error&&<p role="alert" ref={errorRef} aria-live="assertive">{error}</p>}
- <TicketWorkClassification value={value} onChange={update} services={services} serviceTemplates={serviceTemplates} onServiceWorkTypeChange={type=>{update({...(!edited.current?{title:type.name}:{}),...(type.operation==='DataCenter'&&dataCenterDepartment?{departmentId:dataCenterDepartment.id,assigneeId:''}:{})});}}/>
+ <TicketWorkClassification value={value} onChange={update} services={services} serviceTemplates={serviceTemplates} canManageAssets={canManageAssets} onServiceWorkTypeChange={type=>{update({...(!edited.current?{title:type.name}:{}),...(type.operation==='DataCenter'&&dataCenterDepartment?{departmentId:dataCenterDepartment.id,assigneeId:''}:{})});}}/>
  <p>Kategori dan perhitungan skor mengikuti jenis pekerjaan. Perusahaan mengikuti data customer/CID dan penugasan.</p>
  <section className={styles.details} aria-label="Detail pekerjaan"><h2>Detail pekerjaan</h2><div><label htmlFor="ticket-subject">Subject</label><input id="ticket-subject" required maxLength={500} value={value.title} onChange={e=>{edited.current=true;update({title:e.target.value});}}/></div>
  <div><label htmlFor="ticket-message">Message Content</label><textarea id="ticket-message" required value={value.description} onChange={e=>update({description:e.target.value})}/></div>

@@ -95,7 +95,7 @@ export function TicketServicePicker({ services, selectedIds, onChange, single = 
   </fieldset>;
 }
 
-export default function TicketWorkClassification({ value, onChange, services = [], serviceTemplates = [], onServiceWorkTypeChange }) {
+export default function TicketWorkClassification({ value, onChange, services = [], serviceTemplates = [], onServiceWorkTypeChange, canManageAssets = false }) {
   const id = useId();
   const [types, setTypes] = useState([]);
   const [typesError, setTypesError] = useState(false);
@@ -131,7 +131,7 @@ export default function TicketWorkClassification({ value, onChange, services = [
       </label>
       <p>{value.workType === "Installation" ? "Field lama dan waktu downtime tetap tersimpan. Installation tidak dihitung dalam downtime SLA." : "Pekerjaan layanan tidak dihitung dalam downtime SLA."}</p>
     </div>}
-    {value.workType === "ServiceWork" && <ServiceWorkFields value={value} onChange={onChange} services={services} serviceTemplates={serviceTemplates} workTypes={types} />}
+    {value.workType === "ServiceWork" && <ServiceWorkFields value={value} onChange={onChange} services={services} serviceTemplates={serviceTemplates} workTypes={types} canManageAssets={canManageAssets} />}
     {value.workType === "Trouble" && <div className="ui-static-4b2b7b9e13" style={{display: "grid"}}>
       <p>1. Pilih CID layanan yang terganggu. 2. Pilih gejala yang terlihat. 3. Pilih penyebab; gunakan “Belum diketahui” jika masih investigasi.</p>
       <TicketServicePicker services={services} selectedIds={value.serviceIds || []} onChange={serviceIds=>onChange({serviceIds})} />

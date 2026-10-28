@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.14.0] - 2026-10-28
+
+### Added
+
+- **Saran & adopsi kapasitas dari riwayat tiket.** Form Pekerjaan Layanan menampilkan bandwidth existing hasil pembacaan riwayat tiket CID (konfigurasi perangkat, nama client, `Kapasitas Existing`, EWO) dengan tombol **Isi ke Inventory**, dan kapasitas tujuan Upgrade/Downgrade terisi otomatis dari teks EWO. Server juga mengadopsi kapasitas Inventory otomatis saat Upgrade/Downgrade/BOD dibuat bila bukti terbaru tidak ambigu; bukti yang bertentangan ditolak dengan daftar kandidat. Tersedia `scripts/backfill_capacity_hints.mjs` (dry-run/apply + CSV review) untuk backfill massal per customer, dengan audit `service.capacity_from_ticket` dan cap waktu asal tiket.
+
 ## [3.13.1] - 2026-10-27
 
 ### Added
@@ -532,7 +538,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.13.1...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.14.0...HEAD
+[3.14.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.0
 [3.13.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.13.1
 [3.13.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.13.0
 [3.12.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.12.2
