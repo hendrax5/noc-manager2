@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.20.4] - 2026-10-29
+
+### Fixed
+
+- **Konflik site yang sudah dikonfirmasi tidak lagi menetap sebagai konflik.** Setelah operator mengonfirmasi kode yang sama muncul pada nama/site berbeda dan **semua tiket sumber sudah tertaut** ke satu layanan, baris Penautan CID kembali berstatus **Sudah tertaut** (bukan konflik), sehingga antrean konflik mencerminkan pekerjaan yang benar-benar belum selesai. Konflik dengan sumber yang baru sebagian tertaut atau kode dimiliki lebih dari satu layanan tetap berstatus konflik.
+
 ## [3.20.3] - 2026-10-29
 
 ### Fixed
@@ -618,7 +624,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.20.3...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.20.4...HEAD
+[3.20.4]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.4
 [3.20.3]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.3
 [3.20.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.2
 [3.20.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.1
