@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.20.0] - 2026-10-29
+
+### Added
+
+- **Alias customer untuk nama brand lama.** Customer kini punya daftar **alias** (contoh: `INDOTEL`/`INTELMEDIA` → **PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP)**; `VELO`/`VELO NET` → **PT NetToCyber Indonesia**) yang dipakai lebih dulu saat Penautan CID menyarankan customer, sebelum pencocokan nama. Kolom `Customer.aliases` bersifat additif (`JSONB`, boleh null) sehingga image lama tetap aman. Koreksi data produksi: customer duplikat hasil batch (`PT Indotel`, `PT Indo Telemedia Solusi`, `PT Intelmedia`, `PT Intelmedia - M. SHOFA`, `PT Indotel - PT Naura Mustika Abadi`, `PT Nettocyber Indonesia`) dihapus karena belum punya layanan, `VELO` diganti nama menjadi `PT NetToCyber Indonesia`, dan alias dipasang pada kedua customer target.
+
 ## [3.19.0] - 2026-10-29
 
 ### Added
@@ -594,7 +600,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.19.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.20.0...HEAD
+[3.20.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.0
 [3.19.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.19.0
 [3.18.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.18.0
 [3.17.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.17.1

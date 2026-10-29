@@ -15,7 +15,7 @@ function errorResult(error) {
 async function ownerSuggestions(pageRows) {
   if (!pageRows.length) return new Map();
   const [customers, companies] = await Promise.all([
-    prisma.customer.findMany({ select: { id: true, name: true } }),
+    prisma.customer.findMany({ select: { id: true, name: true, aliases: true } }),
     getCompanies(),
   ]);
   const ticketIds = [...new Set(pageRows.flatMap(row => row.ticketIds || []))];

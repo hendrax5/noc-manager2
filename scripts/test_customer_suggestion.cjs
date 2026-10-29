@@ -35,7 +35,7 @@ async function main() {
   const customers = [
     {id:1,name:'PT JARINGAN TIANG INDONESIA GROUP'},
     {id:2,name:'PT Lazada'},
-    {id:3,name:'VELO'},
+    {id:3,name:'PT NetToCyber Indonesia',aliases:['VELO','VELO NET']},
     {id:4,name:'PT SURABAYA KENCANA ANUGRAH'},
     {id:5,name:'PT RSTNet'},
     {id:6,name:'YAYASAN TARUMANAGARA'},
@@ -45,11 +45,16 @@ async function main() {
     {id:10,name:'PT Mega Data Net'},
     {id:11,name:'PT Cipta Data Global'},
     {id:12,name:'PT Lintas Media Solusindo'},
+    {id:13,name:'PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP)',aliases:JSON.stringify(['INDOTEL','INTELMEDIA'])},
   ];
   const suggest = source => suggestCustomer(source, customers);
   assert.equal(suggest('PT JARINGAN TIANG INDONESIA GROUP-OFFICE KALIGELAN').customerId,1);
   assert.equal(suggest('PT JARINGAN TIANG INDONESIA').customerId,1,'shorter legacy name still resolves to the same PT');
   assert.equal(suggest('PT Velo Net').customerId,3);
+  assert.equal(suggest('PT INDOTEL Site PT JOYO NETWORK SOLUTION').customerId,13,'legacy brand alias resolves to the registered target');
+  assert.equal(suggest('PT Intelmedia site GANDOANG').customerId,13);
+  assert.equal(suggest('PT NETTOCYBER INDONESIA (VELO) Site LAZADA').customerId,3);
+  assert.equal(suggest('PT (Velo Net) site Kerry Express Indonesia').customerId,3);
   assert.equal(suggest('[HUB] LAZADA').customerId,2);
   assert.equal(suggest('PT PGD Xcon MMR IPT to Rack AIR LINTAS KOMUNIKASI').customerId,8);
   assert.equal(suggest('PT RSTNet)').customerId,5);

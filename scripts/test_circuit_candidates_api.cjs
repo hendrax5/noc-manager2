@@ -15,8 +15,12 @@ async function main() {
   const tickets = [
     ticket(1, 'SAP-C-4000-0001', 'PT JARINGAN TIANG INDONESIA GROUP-OFFICE KALIGELAN', 'ION'),
     ticket(2, 'I-4000-0002', 'PT MERDEKA BARU YANG BELUM ADA site GUDANG', 'PRODC'),
+    ticket(3, 'C-4000-0003', 'PT INDOTEL Site PT JOYO NETWORK SOLUTION', 'ION'),
   ];
-  const customers = [{ id: 1, name: 'PT JARINGAN TIANG INDONESIA GROUP' }];
+  const customers = [
+    { id: 1, name: 'PT JARINGAN TIANG INDONESIA GROUP', aliases: null },
+    { id: 2, name: 'PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP)', aliases: ['INDOTEL'] },
+  ];
   const companies = [{ code: 'ION', name: 'ION', aliases: [] }, { code: 'SDC', name: 'SDC', aliases: ['PRODC'] }];
   const state = { user: { id: 1, role: { name: 'Admin', permissions: [] } } };
   const db = {
@@ -67,7 +71,7 @@ async function main() {
   const response = await GET(request());
   assert.equal(response.status,200);
   const body = await response.json();
-  assert.equal(body.total,2);
+  assert.equal(body.total,3);
   assert.equal(body.pageSize,25);
   const matched = body.items.find(item => item.cid === 'SAP-C-4000-0001');
   assert.equal(matched.customerSuggestion.status,'matched');
@@ -78,10 +82,14 @@ async function main() {
   assert.equal(proposed.customerSuggestion.customerId,null,'missing owner is never invented');
   assert.equal(proposed.customerSuggestion.proposedName,'PT Merdeka Baru Yang Belum Ada','extracted PT name is proposed');
   assert.equal(proposed.companySuggestion,'SDC','legacy PRODC alias is normalized');
+  const aliased = body.items.find(item => item.cid === 'C-4000-0003');
+  assert.equal(aliased.customerSuggestion.status,'matched');
+  assert.equal(aliased.customerSuggestion.customerId,2,'registered brand alias resolves to the target customer');
+  assert.equal(aliased.customerSuggestion.customerName,'PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP)');
   assert.equal(matched.ticketIds,undefined,'internal ticket ids stay server-side');
   assert.equal(matched.trackingIds,undefined);
 
   delete globalThis.__circuitCandidatesFixture;
-  console.log('PASS circuit-candidates API: owner suggestion (matched Customer ID vs proposed new PT), normalized ticket company hint, ACL, and hidden internal ids. Synthetic API only.');
+  console.log('PASS circuit-candidates API: owner suggestion (matched Customer ID, registered alias, proposed new PT), normalized ticket company hint, ACL, and hidden internal ids. Synthetic API only.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

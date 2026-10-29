@@ -378,6 +378,8 @@ model Customer {
   pickerUses CustomerPickerUse[]
   id           Int      @id @default(autoincrement())
   name         String   @unique
+  /// Legacy brand names that resolve to this customer (e.g. ["INDOTEL","INTELMEDIA"]).
+  aliases      Json?
   contactEmail String?
   contactPhone String?
   services     Service[]
