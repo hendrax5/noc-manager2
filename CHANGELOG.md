@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.20.1] - 2026-10-29
+
+### Fixed
+
+- **Nama brand dengan catatan customer setelah tanda hubung.** Subject seperti `PT INDOTEL- CV BUY COMP SITE GONILAN` kini dibaca sebagai brand `PT Indotel` saja, sehingga saran customer mengikuti alias **PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP)** dan tidak lagi salah jatuh ke customer catatan (`CV BUY COMP`).
+
 ## [3.20.0] - 2026-10-29
 
 ### Added
@@ -600,7 +606,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.20.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.20.1...HEAD
+[3.20.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.1
 [3.20.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.0
 [3.19.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.19.0
 [3.18.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.18.0

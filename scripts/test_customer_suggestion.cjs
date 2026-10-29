@@ -52,6 +52,7 @@ async function main() {
   assert.equal(suggest('PT JARINGAN TIANG INDONESIA').customerId,1,'shorter legacy name still resolves to the same PT');
   assert.equal(suggest('PT Velo Net').customerId,3);
   assert.equal(suggest('PT INDOTEL Site PT JOYO NETWORK SOLUTION').customerId,13,'legacy brand alias resolves to the registered target');
+  assert.equal(suggest('PT INDOTEL- CV BUY COMP SITE GONILAN').customerId,13,'downstream customer note after a dash is not part of the brand');
   assert.equal(suggest('PT Intelmedia site GANDOANG').customerId,13);
   assert.equal(suggest('PT NETTOCYBER INDONESIA (VELO) Site LAZADA').customerId,3);
   assert.equal(suggest('PT (Velo Net) site Kerry Express Indonesia').customerId,3);
