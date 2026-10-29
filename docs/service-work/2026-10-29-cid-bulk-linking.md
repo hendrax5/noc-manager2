@@ -18,6 +18,15 @@ Masalah: 8.986 CID berstatus belum tertaut dan menautkan satu per satu tidak rea
 - Rencana per customer (customer ID, jumlah CID, kata kunci pencarian, saran perusahaan/produk/kapasitas, contoh CID) ada di `data/audit/cid-batch-plan-2026-10-29.csv`. Contoh teratas: PT Indotel (204 CID, kata kunci `INDOTEL`), PT Lazada (156, `LAZADA`), PT Global Sarana Elektronika (79, `ELEKTRONIKA`), PT SWIFT SHIPMENT SOLUTIONS (78, `SHIPMENT`), VELO (73, `VELO`, saran METRO-E).
 - Alur per batch: buka Penautan CID → cari kata kunci → centang CID (per halaman) → **Tautkan terpilih…** → isi customer/produk/kapasitas/perusahaan (pakai kolom saran di CSV bila ada) → jalankan. Ulangi per halaman bila CID customer lebih dari 25 (batas 50 per batch).
 
+## Batch 1 dieksekusi (2026-10-29, grup Indotel/Intelmedia + Velo)
+
+- Koreksi owner lebih dulu: **INDOTEL/INTELMEDIA → PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP)** (ION-CUST-000626) dan **VELO → PT NetToCyber Indonesia** (ION-CUST-000004; customer `VELO` di-rename, duplikat batch dihapus). Lihat `docs/service-work/2026-10-29-cid-owner-suggestions.md`.
+- Eksekusi memakai bulk create (50 CID/batch, transaksi per CID, `confirmReview=true`):
+  - **343 CID → ION-CUST-000626**: layanan **INTERNET 200 Mbps**, status **Active**, perusahaan **ION**; 344 tiket tertaut (satu CID punya 2 tiket), **0 gagal**.
+  - **126 CID → ION-CUST-000004**: layanan **METRO-E 0 Mbps** (kapasitas existing dominan 0), status **Active**, perusahaan **ION**; 126 tiket tertaut, **0 gagal**.
+- Total **469 layanan dibuat**, **470 tiket tertaut**. Pending turun 8.986 → **8.517**; linked naik 1.667 → **2.136**; konflik tetap 181.
+- Audit: `data/audit/alias-bulk-link-2026-10-29.log`, `data/audit/alias-bulk-verify-2026-10-29.json`, `data/audit/customer-alias-2026-10-29.json` (server: `/opt/noc-manager2/releases/cid-alias-raw-3.20.2/`). Sampel: `C-0581-346-01` (626/INTERNET/200/Active/1 tiket), `I-0022-128-01` (4/METRO-E/0/Active/1 tiket), tidak ada CID duplikat.
+
 ## Verifikasi
 
 - `node scripts/test_bulk_circuit_mapping.cjs` — deduplikasi CID, pembuatan layanan massal dengan owner/produk/kapasitas yang sama, nama layanan dari sumber tiket, tautan tiket, kegagalan sebagian per baris, batas 50, input kosong, dan bulk link tiket ke Asset existing (tanpa layanan duplikat).
