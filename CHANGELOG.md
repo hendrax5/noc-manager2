@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.17.0] - 2026-10-29
+
+### Added
+
+- **Saran customer & perusahaan di Penautan CID.** Tabel **Penautan CID** kini punya kolom **Customer (saran)** dan dialog **Tautkan customer & layanan** otomatis mengisi customer/perusahaan. Nama PT diekstrak dari nama tiket lama (mis. `PT JARINGAN TIANG INDONESIA GROUP-OFFICE KALIGELAN` → **PT Jaringan Tiang Indonesia Group**) lalu dicocokkan secara konservatif ke registry: bila yakin, **Customer ID** ditampilkan dan customer terisi otomatis; bila belum ada, nama PT **diusulkan** dan bisa dibuat satu klik tanpa menutup dialog. **Perusahaan layanan** (ION/SDC) disarankan dari field `company`/`Order Origin` tiket lama. Pencocokan tidak menyatukan dua perusahaan hanya karena kata kota/umum yang sama.
+
 ## [3.16.0] - 2026-10-29
 
 ### Added
@@ -570,7 +576,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.16.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.17.0...HEAD
+[3.17.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.17.0
 [3.16.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.16.0
 [3.15.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.15.0
 [3.14.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.2
