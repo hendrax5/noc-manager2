@@ -17,8 +17,11 @@ Masalah: 8.986 CID di tab **Penautan CID** berstatus belum tertaut. Data tiket l
 ## Cakupan data (snapshot 2026-10-29)
 
 - Awal: 8.986 CID pending; 2.843 cocok ke customer existing, 5.989 usul nama PT baru, 154 pilih manual; 8.977 baris punya saran perusahaan (ION/SDC).
-- Setelah pembatasan pencocokan + pembuatan customer untuk perusahaan dengan ≥2 CID: **328 customer baru** dibuat (audit di `/opt/noc-manager2/releases/cid-owner-suggestions-3.17.0/customer-creation-2026-10-29.json`), 10 nama sudah ada, 5 nama tertutup varian customer yang dibuat pada batch yang sama. Hasil akhir: **4.904 CID punya saran customer cocok**, 3.928 usul nama baru, 154 pilih manual.
-- Berkas review dihasilkan dari data produksi (read-only): `data/audit/cid-customer-suggestions-2026-10-29.csv` (per CID), `data/audit/cid-customer-proposals-2026-10-29.csv` (semua usulan), `data/audit/cid-customer-create-candidates-2026-10-29.csv` (calon PT/CV), dan `data/audit/customer-creation-2026-10-29.json` (audit pembuatan, bisa dipakai untuk rollback).
+- Pembuatan customer dari usulan (perusahaan dengan ≥2 CID), dua batch:
+  - Batch 1: **328 customer baru** dibuat, 10 nama sudah ada, 5 nama tertutup varian yang dibuat pada batch yang sama — audit `/opt/noc-manager2/releases/cid-owner-suggestions-3.17.0/customer-creation-2026-10-29.json`.
+  - Batch 2 (setelah pencocokan diperketat): **21 customer baru** — audit `/opt/noc-manager2/releases/cid-owner-suggestions-3.17.0/customer-creation-batch2-2026-10-29.json`.
+- Hasil akhir saat ini: **5.013 CID punya saran customer cocok** (55,8%), 3.819 usul nama baru, 154 pilih manual; 8.977 baris tetap punya saran perusahaan.
+- Berkas review dihasilkan dari data produksi (read-only): `data/audit/cid-customer-suggestions-2026-10-29.csv` (per CID), `data/audit/cid-customer-proposals-2026-10-29.csv` (semua usulan), `data/audit/cid-customer-create-candidates-2026-10-29.csv` (calon PT/CV batch 1), `data/audit/customer-creation-2026-10-29.json` (audit batch 1), dan `data/audit/customer-creation-batch2-2026-10-29.json` (audit batch 2; keduanya bisa dipakai untuk rollback).
 
 ## Verifikasi
 
