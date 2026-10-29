@@ -27,6 +27,14 @@ Masalah: 8.986 CID berstatus belum tertaut dan menautkan satu per satu tidak rea
 - Total **469 layanan dibuat**, **470 tiket tertaut**. Pending turun 8.986 → **8.517**; linked naik 1.667 → **2.136**; konflik tetap 181.
 - Audit: `data/audit/alias-bulk-link-2026-10-29.log`, `data/audit/alias-bulk-verify-2026-10-29.json`, `data/audit/customer-alias-2026-10-29.json` (server: `/opt/noc-manager2/releases/cid-alias-raw-3.20.2/`). Sampel: `C-0581-346-01` (626/INTERNET/200/Active/1 tiket), `I-0022-128-01` (4/METRO-E/0/Active/1 tiket), tidak ada CID duplikat.
 
+## Konflik (review 2026-10-29)
+
+- Dari **181 konflik**, 162 berkategori *site-name-only* (kode sama, nama/site berbeda, belum ada sumber tertaut) dan 19 kasus lain (kode sudah dimiliki/tertaut, alias belum dikonfirmasi).
+- Yang dieksekusi hanya konflik dengan **semua nama sumber menuju customer yang sama** dan produk/kapasitas bisa diturunkan dari layanan existing: **19 CID / 14 customer** → 19 layanan dibuat, **38 tiket tertaut**, 0 gagal. Rincian: `data/audit/conflict-plan-2026-10-29.csv`, audit: `data/audit/conflict-apply-2026-10-29.json` (server: `/opt/noc-manager2/releases/cid-conflict-partnership-3.20.3/`).
+- 3.20.4 membersihkan antrean: **37 konflik** hilang (19 yang dikonfirmasi + 18 yang seluruh tiketnya sudah tertaut namun masih berstatus konflik). Konflik turun 181 → **144**; linked 2.136 → **2.172**; pending 8.517 → **8.480**.
+- Sisa **144 konflik** untuk review manual: 122 nama sumber mengarah ke customer berbeda, 21 customer belum punya layanan existing (produk/kapasitas harus dipilih), 1 kasus lain. Daftar: `data/audit/conflict-manual-2026-10-29.csv`.
+- 3.20.4: konflik site yang sudah dikonfirmasi dan seluruh tiketnya tertaut kini berstatus **linked**, tidak lagi menetap di antrean konflik.
+
 ## Verifikasi
 
 - `node scripts/test_bulk_circuit_mapping.cjs` — deduplikasi CID, pembuatan layanan massal dengan owner/produk/kapasitas yang sama, nama layanan dari sumber tiket, tautan tiket, kegagalan sebagian per baris, batas 50, input kosong, dan bulk link tiket ke Asset existing (tanpa layanan duplikat).
