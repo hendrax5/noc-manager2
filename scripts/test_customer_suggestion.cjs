@@ -39,7 +39,7 @@ async function main() {
     {id:4,name:'PT SURABAYA KENCANA ANUGRAH'},
     {id:5,name:'PT RSTNet'},
     {id:6,name:'YAYASAN TARUMANAGARA'},
-    {id:7,name:'PT INDO TELEMEDIA'},
+    {id:7,name:'PT INDO MEDIA'},
     {id:8,name:'AIR LINTAS KOMUNIKASI, PT'},
     {id:9,name:'PT NESTA INDO MEDIA'},
     {id:10,name:'PT Mega Data Net'},
@@ -55,6 +55,8 @@ async function main() {
   assert.equal(suggest('PT INDOTEL- CV BUY COMP SITE GONILAN').customerId,13,'downstream customer note after a dash is not part of the brand');
   assert.equal(suggest('PT INDOTEL-MUHAMMAD SAIFUL ANAM').customerId,13,'brand token is still detected when a person note follows the dash');
   assert.equal(suggest('INDO TELEMEDIA SOLUSI, PT (INDOTEL) -LELI HERAWATI').customerId,13,'brand in a parenthetical alias resolves via the raw subject');
+  assert.equal(suggest('PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP) Site ADHI NUGROHO').customerId,13,'generic partnership suffix does not split the registered customer');
+  assert.equal(suggest('PT INDO TELEMEDIA SOLUSI').customerId,13,'ION PARTNERSHIP words are generic while the brand alias overlays the family');
   assert.equal(suggest('PT VELO-PT PAKET EXPRESS NUSANTARA').customerId,3,'VELO brand alias works on raw subjects too');
   assert.equal(suggest('PT Intelmedia site GANDOANG').customerId,13);
   assert.equal(suggest('PT NETTOCYBER INDONESIA (VELO) Site LAZADA').customerId,3);
@@ -67,7 +69,7 @@ async function main() {
   assert.equal(suggest('PT MEGA DATA AKSES site GUDANG').status,'new','partial name overlap must not merge different companies');
   assert.equal(suggest('PT SARANA CIPTA KOMUNIKASI site JAKARTA').status,'new');
   assert.equal(suggest('PT LINTAS TEKNOLOGI SOLUSINDO site BANDUNG').status,'new');
-  assert.equal(suggest('PT INDO TELEMEDIA').customerId,7);
+  assert.equal(suggest('PT INDO MEDIA').customerId,7);
   assert.equal(suggest('PT NESTA INDO MEDIA site Rack').customerId,9);
 
   // 3. Missing companies are proposed with a readable PT name, never silently linked.

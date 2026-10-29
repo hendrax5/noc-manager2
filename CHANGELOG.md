@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.20.3] - 2026-10-29
+
+### Fixed
+
+- **Nama customer dengan akhiran partnership tidak lagi diusulkan sebagai customer baru.** Kata umum `ION`/`PARTNERSHIP` pada nama tiket (mis. `PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP) Site …`) tidak lagi memecah pencocokan, sehingga baris tersebut tetap mengarah ke **PT INDO TELEMEDIA SOLUSI (ION PARTNERSHIP)** dan tidak muncul sebagai usulan customer baru pada baris konflik.
+
 ## [3.20.2] - 2026-10-29
 
 ### Fixed
@@ -612,7 +618,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.20.2...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.20.3...HEAD
+[3.20.3]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.3
 [3.20.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.2
 [3.20.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.1
 [3.20.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.0
