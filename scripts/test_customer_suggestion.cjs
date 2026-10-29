@@ -42,6 +42,9 @@ async function main() {
     {id:7,name:'PT INDO TELEMEDIA SOLUSI'},
     {id:8,name:'AIR LINTAS KOMUNIKASI, PT'},
     {id:9,name:'PT NESTA INDO MEDIA'},
+    {id:10,name:'PT Mega Data Net'},
+    {id:11,name:'PT Cipta Data Global'},
+    {id:12,name:'PT Lintas Media Solusindo'},
   ];
   const suggest = source => suggestCustomer(source, customers);
   assert.equal(suggest('PT JARINGAN TIANG INDONESIA GROUP-OFFICE KALIGELAN').customerId,1);
@@ -52,6 +55,9 @@ async function main() {
   assert.equal(suggest('PT RSTNet)').customerId,5);
   assert.equal(suggest('PT SURABAYA ALUMINIUM INDUSTRY Site CUSTOM OFFICE').status,'new','shared city token alone must not match');
   assert.equal(suggest('YAYASAN BINA INSAN MEDIKA site SEKOLAH TINGGI ILMU KESEHATAN PASAR REBO').status,'new','shared legal word alone must not match');
+  assert.equal(suggest('PT MEGA DATA AKSES site GUDANG').status,'new','partial name overlap must not merge different companies');
+  assert.equal(suggest('PT SARANA CIPTA KOMUNIKASI site JAKARTA').status,'new');
+  assert.equal(suggest('PT LINTAS TEKNOLOGI SOLUSINDO site BANDUNG').status,'new');
   assert.equal(suggest('PT INDO TELEMEDIA').customerId,7);
   assert.equal(suggest('PT NESTA INDO MEDIA site Rack').customerId,9);
 

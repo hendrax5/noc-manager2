@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.17.1] - 2026-10-29
+
+### Fixed
+
+- **Saran customer tidak lagi menyatukan dua perusahaan berbeda.** Pencocokan nama sekarang hanya menganggap sama bila nama perusahaan tercatat **utuh** di nama tiket, atau customer terdaftar hanya menambah kata pemasaran umum (`NUSANTARA`, `SOLUSI`, `MEDIA`, …). Contoh yang tidak lagi salah cocok: `PT Mega Data Akses` vs `PT Mega Data Net`, `PT Lintas Teknologi Solusindo` vs `PT Lintas Media Solusindo`, `PT Sarana Cipta Komunikasi` vs `PT Cipta Data Global` — semuanya kini muncul sebagai usulan customer baru, bukan terisi otomatis ke customer lain.
+
 ## [3.17.0] - 2026-10-29
 
 ### Added
@@ -576,7 +582,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.17.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.17.1...HEAD
+[3.17.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.17.1
 [3.17.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.17.0
 [3.16.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.16.0
 [3.15.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.15.0
