@@ -14,7 +14,7 @@ async function main(){
   if(req.url.startsWith('/api/assets/circuit-candidates/bulk')&&req.method==='POST'){let body='';req.on('data',d=>body+=d);req.on('end',()=>{const parsed=JSON.parse(body);bulkWrites.push(parsed);const cids=parsed.cids||[];res.statusCode=200;res.end(JSON.stringify({total:cids.length,mapped:cids.length,failed:0,created:cids.length,linkedTickets:cids.length,results:cids.map(cid=>({cid,ok:true,serviceId:11,created:true,linkedTickets:1}))}));});return;}
   if(req.url.startsWith('/api/assets/circuit-candidates')){
    if(req.method==='POST'){let body='';req.on('data',d=>body+=d);req.on('end',()=>{writes.push(JSON.parse(body));if(fail){res.statusCode=409;res.end('{"error":"CID sudah terdaftar. Muat ulang daftar."}');}else{row.status='linked';row.serviceId=11;res.statusCode=201;res.end(JSON.stringify({cid:row.cid,serviceId:11,created:true,linkedTickets:2}));}});return;}
-   const query=new URL(req.url,'http://localhost').searchParams;const match=!query.get('q')||`${row.cid} ${row.sourceName}`.toLowerCase().includes(query.get('q').toLowerCase());const shown=match&&(query.get('status')==='all'||row.status!=='linked');return res.end(JSON.stringify({items:shown?Array.from({length:25},(_,i)=>i===0?row:{...row,cid:`SAP-C-9999-${String(i).padStart(4,"0")}`}):[],page:1,pageSize:25,total:shown?1:0,summary:{circuits:1,needsMapping:row.status==='linked'?0:1,linked:row.status==='linked'?1:0,conflicts:0}}));
+   const query=new URL(req.url,'http://localhost').searchParams;const match=!query.get('q')||`${row.cid} ${row.sourceName}`.toLowerCase().includes(query.get('q').toLowerCase());const shown=match&&(query.get('status')==='all'||row.status!=='linked');const items=Array.from({length:25},(_,i)=>i===0?row:i===2?{...row,cid:'SAP-C-7777-0001',status:'ready_to_link',serviceId:77}:{...row,cid:`SAP-C-9999-${String(i).padStart(4,"0")}`});return res.end(JSON.stringify({items:shown?items:[],page:1,pageSize:25,total:shown?1:0,summary:{circuits:1,needsMapping:row.status==='linked'?0:1,linked:row.status==='linked'?1:0,conflicts:0}}));
   }
   res.setHeader('Content-Type','text/html');res.end(`<!doctype html><html lang="id"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;padding:12px;font:14px Arial}${baseCss}${css}</style><div id="app"></div><script src="/app.js"></script></html>`);
  });
@@ -88,6 +88,12 @@ async function main(){
   await page.getByRole('status').filter({hasText:/2 CID ditautkan/}).waitFor();
   assert.deepEqual([...bulkWrites.at(-1).cids].sort(),['SAP-C-1243-0003','SAP-C-9999-0001']);
   assert.equal(bulkWrites.at(-1).customerId,9);assert.equal(bulkWrites.at(-1).templateId,8);assert.equal(bulkWrites.at(-1).company,'ION');assert.equal(bulkWrites.at(-1).bandwidthMbps,100);
+  // Bulk link "asset available" rows to their existing Asset services.
+  row.status='needs_mapping';row.serviceId=null;await page.reload();
+  await page.getByRole('checkbox',{name:'Pilih SAP-C-7777-0001',exact:true}).check();
+  await page.getByRole('button',{name:'Tautkan tiket terpilih ke Asset',exact:true}).click();
+  await page.getByRole('status').filter({hasText:/1 tiket ditautkan ke Asset/}).waitFor();
+  assert.equal(bulkWrites.at(-1).action,'link');assert.deepEqual(bulkWrites.at(-1).cids,['SAP-C-7777-0001']);
   // Untouched capacity/company are never sent, so linking alone does not rewrite Inventory.
   row.status='needs_mapping';row.serviceId=null;await page.reload();await page.getByRole('button',{name:'Tautkan customer & layanan',exact:true}).first().click();await choose('Customer *','ION-CUST-000009 — PT ABC');await choose('Layanan milik customer *','Office existing — METRO-E (SAP-C-1243-0003)');
   await page.getByRole('button',{name:'Simpan CID & tautkan tiket',exact:true}).click();await page.getByRole('link',{name:'Buat Trouble untuk CID ini',exact:true}).waitFor();

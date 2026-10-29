@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.19.0] - 2026-10-29
+
+### Added
+
+- **Bulk tautkan tiket untuk baris “Asset tersedia”.** Baris CID yang sudah memiliki layanan di Inventory tetapi tiket sumbernya belum tertaut kini bisa dicentang dan ditautkan sekaligus lewat tombol **“Tautkan tiket terpilih ke Asset”** (maksimal 50 CID). Tidak membuat layanan baru/duplikat; hanya menautkan tiket ke layanan yang sudah ada. Pilihan campuran (belum tertaut + asset tersedia) ditolak dengan pesan agar memilih satu jenis; tiket lama yang perlu konfirmasi meminta konfirmasi sebelum dijalankan. Endpoint bulk kini menerima `action: "link"` selain mode pembuatan layanan.
+
 ## [3.18.0] - 2026-10-29
 
 ### Added
@@ -588,7 +594,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.18.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.19.0...HEAD
+[3.19.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.19.0
 [3.18.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.18.0
 [3.17.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.17.1
 [3.17.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.17.0

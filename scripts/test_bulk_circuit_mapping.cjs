@@ -91,6 +91,17 @@ async function main() {
   await assert.rejects(() => mapCircuitCandidatesBulk(db,{...shared,cids:Array.from({length:51},(_,i)=>'SAP-C-6000-'+String(i).padStart(4,'0'))},1),/Maksimal 50 CID per batch/);
   await assert.rejects(() => mapCircuitCandidatesBulk(db,{...shared,cids:[]},1),/Pilih minimal satu CID/);
 
-  console.log('PASS bulk-circuit-mapping: deduped batch creation with shared owner/product/capacity, per-row partial failures, and batch limit.');
+  // 3. "Asset available" rows can be bulk-linked to the existing service without owner input.
+  addTicket('SAP-C-5000-0004','PT Empat Site D');
+  state.services.push({id:999,cid:'SAP-C-5000-0004',customerId:9,templateId:8,name:'Existing link',status:'Active',company:'ION',customData:{bandwidthMbps:1000},updatedAt:'2026-10-01T00:00:00.000Z'});
+  const linked = await mapCircuitCandidatesBulk(db,{action:'link',cids:['SAP-C-5000-0004'],confirmReview:true},1);
+  assert.equal(linked.action,'link');
+  assert.equal(linked.mapped,1);
+  assert.equal(linked.created,0);
+  assert.equal(linked.linkedTickets,1);
+  assert.equal(state.tickets.find(ticket=>ticket.title==='SAP-C-5000-0004').services.length,1,'tickets are linked to the existing service');
+  assert.equal(state.services.filter(service=>service.cid==='SAP-C-5000-0004').length,1,'no duplicate service is created');
+
+  console.log('PASS bulk-circuit-mapping: deduped batch creation with shared owner/product/capacity, per-row partial failures, batch limit, and bulk ticket linking for existing assets.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1});
