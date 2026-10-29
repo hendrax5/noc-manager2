@@ -10,6 +10,12 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.18.0] - 2026-10-29
+
+### Added
+
+- **Bulk penautan CID.** Tab **Penautan CID** kini punya checkbox per baris; pilih hingga **50 CID** berstatus belum tertaut lalu isi **customer, produk, kapasitas, perusahaan, dan status sekali** di satu dialog. Satu layanan dibuat per CID (nama layanan mengikuti nama sumber tiket) dan tiket sumber ditautkan tanpa mengubah status atau poin. Hasil per baris ditampilkan (berhasil/gagal) sehingga satu CID bermasalah tidak membatalkan sisanya. Baris **konflik** tetap harus ditangani satu per satu; tiket lama yang perlu konfirmasi wajib dicentang sebelum batch dijalankan. Endpoint: `POST /api/assets/circuit-candidates/bulk` (maksimal 50 CID, transaksi per CID).
+
 ## [3.17.1] - 2026-10-29
 
 ### Fixed
@@ -582,7 +588,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.17.1...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.18.0...HEAD
+[3.18.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.18.0
 [3.17.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.17.1
 [3.17.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.17.0
 [3.16.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.16.0

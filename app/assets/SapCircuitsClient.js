@@ -23,7 +23,8 @@ export default function SapCircuitsClient({customers=[],templates=[],services=[]
   const [mapped,setMapped]=useState(null);
   const [family,setFamily]=useState('all');
   const [companies,setCompanies]=useState([]),[customerSaving,setCustomerSaving]=useState(false);
-  const mappingRef=useRef(null),dialogRef=useRef(null),newCustomerRef=useRef(null),addCustomerRef=useRef(null);
+  const [selectedCids,setSelectedCids]=useState([]),[bulkOpen,setBulkOpen]=useState(false),[bulkDraft,setBulkDraft]=useState({customerId:'',templateId:'',company:'',capacity:'',status:'Pending',confirmReview:false}),[bulkBusy,setBulkBusy]=useState(false),[bulkError,setBulkError]=useState('');
+  const mappingRef=useRef(null),dialogRef=useRef(null),newCustomerRef=useRef(null),addCustomerRef=useRef(null),bulkRef=useRef(null);
   useEffect(()=>{
     let alive=true;
     fetch('/api/companies?service=1').then(response=>response.ok?response.json():null)
@@ -39,6 +40,14 @@ export default function SapCircuitsClient({customers=[],templates=[],services=[]
     mappingRef.current?.focus();
     return ()=>{dialog.close();if(previous?.isConnected)previous.focus();};
   },[selected]);
+  useEffect(()=>{setSelectedCids([]);},[q,page,status,family,reload]);
+  useEffect(()=>{
+    if(!bulkOpen||!bulkRef.current)return;
+    const previous=document.activeElement,dialog=bulkRef.current;
+    dialog.showModal();
+    (dialog.querySelector('[role="combobox"]')||dialog).focus?.();
+    return ()=>{dialog.close();if(previous?.isConnected)previous.focus();};
+  },[bulkOpen]);
   function trapFocus(event){
     if(event.key!=='Tab')return;
     const controls=[...event.currentTarget.querySelectorAll('button:not(:disabled),input:not(:disabled),a[href],[tabindex="0"]')].filter(e=>e.getClientRects().length);
@@ -55,6 +64,40 @@ export default function SapCircuitsClient({customers=[],templates=[],services=[]
   const configuredCompanies=[...fallbackCompany,...companies.map(option=>({value:option.value,label:option.label}))];
   const companyOptions=configuredCompanies.length?configuredCompanies:[{value:'ION',label:'ION'},{value:'SDC',label:'SDC'}];
   const defaultCompany=companies[0]?.value||'ION';
+  const rows=data?.items||[];
+  const selectableRows=rows.filter(row=>row.status==='needs_mapping');
+  const selectedRows=rows.filter(row=>selectedCids.includes(row.cid));
+  const needsReview=selectedRows.some(row=>row.needsConfirmation);
+  const bulkTemplate=templates.find(template=>template.id===Number(bulkDraft.templateId));
+  const bulkFiber=isDarkFiber(bulkTemplate);
+  function toggleCid(cid){setSelectedCids(current=>current.includes(cid)?current.filter(value=>value!==cid):[...current,cid]);}
+  function toggleAllCids(){setSelectedCids(current=>selectableRows.length&&current.length===selectableRows.length?[]:selectableRows.map(row=>row.cid));}
+  function openBulk(){
+    setBulkDraft({customerId:'',templateId:'',company:defaultCompany,capacity:'',status:'Pending',confirmReview:false});
+    setBulkError('');setBulkOpen(true);
+  }
+  function chooseBulkCustomer(value){setBulkDraft(current=>({...current,customerId:value?Number(value):''}));}
+  function chooseBulkTemplate(value){
+    const template=templates.find(item=>String(item.id)===String(value));
+    const capacity=!template?'':isDarkFiber(template)?1:(minimumBandwidthGbps(template)===10?10:'');
+    setBulkDraft(current=>({...current,templateId:value?Number(value):'',capacity}));
+  }
+  async function submitBulk(event){
+    event.preventDefault();
+    if(!selectedCids.length)return;
+    if(!bulkDraft.customerId||!bulkDraft.templateId){setBulkError('Pilih customer dan produk terlebih dahulu.');return;}
+    if(bulkDraft.capacity===''){setBulkError('Isi kapasitas layanan baru.');return;}
+    if(needsReview&&!bulkDraft.confirmReview){setBulkError('Centang konfirmasi pemeriksaan tiket lama terlebih dahulu.');return;}
+    setBulkBusy(true);setBulkError('');
+    try{
+      const response=await fetch('/api/assets/circuit-candidates/bulk',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cids:selectedCids,customerId:Number(bulkDraft.customerId),templateId:Number(bulkDraft.templateId),status:bulkDraft.status,company:bulkDraft.company||undefined,...capabilityPayload(bulkDraft.capacity,bulkFiber),confirmReview:!!bulkDraft.confirmReview})});
+      const result=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(result.error||'Bulk penautan gagal.');
+      setNotice(`${result.mapped} CID ditautkan (${result.created} layanan dibuat, ${result.linkedTickets} tiket); ${result.failed} gagal.`);
+      setMapped(null);setBulkOpen(false);setSelectedCids([]);setReload(value=>value+1);await onMapped?.(result);
+      if(result.failed)setError(result.results.filter(item=>!item.ok).slice(0,3).map(item=>`${item.cid}: ${item.error}`).join(' · '));
+    }catch(e){setBulkError(e.message);}finally{setBulkBusy(false);}
+  }
   function openMapping(row) {
     const suggestion=row.customerSuggestion||{};
     const matchedCustomerId=suggestion.status==='matched'&&suggestion.customerId?Number(suggestion.customerId):'';
@@ -151,9 +194,10 @@ export default function SapCircuitsClient({customers=[],templates=[],services=[]
     {error&&!selected&&<p role="alert">{error} <button type="button" onClick={()=>setReload(value=>value+1)}>Muat ulang</button></p>}
     {notice&&!selected&&<p role="status">{notice}</p>}
     {mapped&&<p><Link href={`/assets/${mapped.serviceId}`}>Buka Asset {mapped.cid}</Link> · <Link href={`/tickets/new?workType=Trouble&serviceId=${mapped.serviceId}`}>Buat Trouble untuk CID ini</Link></p>}
+    {selectedCids.length>0&&<div className={styles.bulkBar} role="status"><span>{selectedCids.length} CID dipilih</span><button type="button" onClick={openBulk}>Tautkan terpilih…</button><button type="button" onClick={()=>setSelectedCids([])}>Bersihkan pilihan</button></div>}
     {loading?<p role="status">Memuat CID…</p>:<>
-      <div className={styles.scroll}><table><thead><tr><th scope="col">CID</th><th scope="col">Customer (saran)</th><th scope="col">Nama pada tiket sumber</th><th scope="col">Tiket</th><th scope="col">Status</th><th scope="col">Aksi</th></tr></thead><tbody>{data?.items.map(row=><tr key={row.cid}><th scope="row">{row.cid}</th><td>{row.customerSuggestion?.status==='matched'?<><strong>{formatCustomerId({id:row.customerSuggestion.customerId})}</strong><small style={{display:'block'}}>{row.customerSuggestion.customerName}</small></>:row.customerSuggestion?.status==='new'?<><span>Belum ada customer</span><small style={{display:'block'}}>Usul nama: {row.customerSuggestion.proposedName}</small></>:<span>Pilih manual</span>}{row.companySuggestion&&<small style={{display:'block'}}>Perusahaan: {row.companySuggestion}</small>}</td><td>{row.sourceName||'Belum tersedia'}{row.sourceNames.length>1&&<details><summary>Nama lain pada tiket</summary>{row.sourceNames.slice(1).map(name=><p key={name}>{name}</p>)}</details>}</td><td>{row.ticketCount}{row.tickets?.[0]&&<> · <Link href={`/tickets/${row.tickets[0].id}`}>{row.tickets[0].trackingId}</Link></>}<details><summary>Lihat sumber</summary>{row.tickets.map(ticket=><p key={ticket.id}><Link href={`/tickets/${ticket.id}`}>{ticket.trackingId}</Link> {ticket.category||"Tanpa kategori"}</p>)}</details></td><td>{labels[row.status]}{row.needsConfirmation&&<small style={{display:'block'}}>Perlu konfirmasi sumber/format</small>}{row.reasons?.map(reason=><small key={reason} style={{display:'block'}}>{reason}</small>)}</td><td>{row.serviceId&&<Link href={`/assets/${row.serviceId}`}>Buka Asset</Link>}{row.status!=='linked'&&<button type="button" disabled={pending} onClick={()=>openMapping(row)}>{row.status==='conflict'?'Tautkan dengan konfirmasi':row.serviceId?'Tautkan tiket':'Tautkan customer & layanan'}</button>}{row.status==='conflict'&&<span>Nama/site pada tiket sumber berbeda. Buka konfirmasi bila kode ini memang milik customer yang sama.</span>}</td></tr>)}</tbody></table></div>
-      {data&&!data.items.length&&<p>Tidak ada kode layanan yang cocok. Pencarian mencakup CID, nomor tiket sumber, dan nama pada tiket. Subject Trouble dan teks bebas tidak menjadi sumber CID baru.</p>}
+      <div className={styles.scroll}><table><thead><tr><th scope="col"><input type="checkbox" aria-label="Pilih semua CID pada halaman" checked={selectableRows.length>0&&selectedCids.length===selectableRows.length} onChange={toggleAllCids}/></th><th scope="col">CID</th><th scope="col">Customer (saran)</th><th scope="col">Nama pada tiket sumber</th><th scope="col">Tiket</th><th scope="col">Status</th><th scope="col">Aksi</th></tr></thead><tbody>{rows.map(row=><tr key={row.cid}><td><input type="checkbox" aria-label={`Pilih ${row.cid}`} disabled={row.status!=='needs_mapping'} checked={selectedCids.includes(row.cid)} onChange={()=>toggleCid(row.cid)}/></td><th scope="row">{row.cid}</th><td>{row.customerSuggestion?.status==='matched'?<><strong>{formatCustomerId({id:row.customerSuggestion.customerId})}</strong><small style={{display:'block'}}>{row.customerSuggestion.customerName}</small></>:row.customerSuggestion?.status==='new'?<><span>Belum ada customer</span><small style={{display:'block'}}>Usul nama: {row.customerSuggestion.proposedName}</small></>:<span>Pilih manual</span>}{row.companySuggestion&&<small style={{display:'block'}}>Perusahaan: {row.companySuggestion}</small>}</td><td>{row.sourceName||'Belum tersedia'}{row.sourceNames.length>1&&<details><summary>Nama lain pada tiket</summary>{row.sourceNames.slice(1).map(name=><p key={name}>{name}</p>)}</details>}</td><td>{row.ticketCount}{row.tickets?.[0]&&<> · <Link href={`/tickets/${row.tickets[0].id}`}>{row.tickets[0].trackingId}</Link></>}<details><summary>Lihat sumber</summary>{row.tickets.map(ticket=><p key={ticket.id}><Link href={`/tickets/${ticket.id}`}>{ticket.trackingId}</Link> {ticket.category||"Tanpa kategori"}</p>)}</details></td><td>{labels[row.status]}{row.needsConfirmation&&<small style={{display:'block'}}>Perlu konfirmasi sumber/format</small>}{row.reasons?.map(reason=><small key={reason} style={{display:'block'}}>{reason}</small>)}</td><td>{row.serviceId&&<Link href={`/assets/${row.serviceId}`}>Buka Asset</Link>}{row.status!=='linked'&&<button type="button" disabled={pending} onClick={()=>openMapping(row)}>{row.status==='conflict'?'Tautkan dengan konfirmasi':row.serviceId?'Tautkan tiket':'Tautkan customer & layanan'}</button>}{row.status==='conflict'&&<span>Nama/site pada tiket sumber berbeda. Buka konfirmasi bila kode ini memang milik customer yang sama.</span>}</td></tr>)}</tbody></table></div>
+      {!rows.length&&<p>Tidak ada kode layanan yang cocok. Pencarian mencakup CID, nomor tiket sumber, dan nama pada tiket. Subject Trouble dan teks bebas tidak menjadi sumber CID baru.</p>}
       {data&&<div className={styles.pagination}><button type="button" disabled={page<=1||pending} onClick={()=>setPage(value=>value-1)}>Sebelumnya</button><span>Halaman {page} · {data.total} hasil</span><button type="button" disabled={page*data.pageSize>=data.total||pending} onClick={()=>setPage(value=>value+1)}>Berikutnya</button></div>}
     </>}
     {selected&&<dialog ref={dialogRef} className={ui.dialog} aria-label={`Tautkan ${selected.cid}`} onKeyDown={trapFocus} onCancel={event=>{event.preventDefault();if(!pending)setSelected(null);}}><div className={ui.dialogHead}><h2>Tautkan customer & layanan</h2><button type="button" disabled={pending} onClick={()=>setSelected(null)}>Tutup</button></div><form ref={mappingRef} tabIndex={-1} className={styles.mapping} onSubmit={save} aria-label={`Tautkan ${selected.cid}`}>
@@ -195,5 +239,23 @@ export default function SapCircuitsClient({customers=[],templates=[],services=[]
         <div className={ui.footer}><button type="submit">{pending?'Menyimpan…':selected.serviceId?'Tautkan tiket ke Asset':'Simpan CID & tautkan tiket'}</button><button type="button" onClick={()=>setSelected(null)}>Batal</button></div>
       </fieldset>
     </form></dialog>}
+    {bulkOpen&&<dialog ref={bulkRef} className={ui.dialog} aria-label="Tautkan beberapa CID" onCancel={event=>{event.preventDefault();if(!bulkBusy)setBulkOpen(false);}}>
+      <div className={ui.dialogHead}><h2>Tautkan {selectedCids.length} CID</h2><button type="button" disabled={bulkBusy} onClick={()=>setBulkOpen(false)}>Tutup</button></div>
+      <form className={styles.mapping} onSubmit={submitBulk} aria-label="Tautkan beberapa CID">
+        {bulkError&&<p role="alert" className={ui.message}>{bulkError}</p>}
+        <p>Satu layanan dibuat per CID; nama layanan mengikuti nama sumber tiket. Tiket sumber ditautkan tanpa mengubah status atau poin.</p>
+        <fieldset disabled={bulkBusy}>
+          <div className={ui.fields}>
+            <AssetCombobox label="Customer *" required value={bulkDraft.customerId} options={customers.map(customer=>({value:customer.id,label:`${formatCustomerId(customer)} — ${customer.name}`}))} placeholder="Cari nama atau Customer ID" onChange={chooseBulkCustomer}/>
+            <AssetCombobox label="Produk/Layanan *" required value={bulkDraft.templateId} options={templates.filter(template=>template.active!==false).map(template=>({value:template.id,label:template.name}))} onChange={chooseBulkTemplate}/>
+            <AssetCombobox label="Perusahaan layanan *" required value={bulkDraft.company} options={companyOptions} placeholder="Pilih perusahaan layanan" onChange={value=>setBulkDraft({...bulkDraft,company:value})}/>
+            <CapacityInput id="bulk-capacity" label="Kapasitas" unit={bulkFiber?'pair':'Gbps'} min={bulkFiber?1:minimumBandwidthGbps(bulkTemplate)} required value={bulkDraft.capacity} onChange={e=>setBulkDraft({...bulkDraft,capacity:e.target.value})}/>
+            <AssetCombobox label="Status layanan" value={bulkDraft.status} options={[{value:'Pending',label:'Perlu diperiksa (Pending)'},{value:'Active',label:'Active'},{value:'Suspended',label:'Suspended'},{value:'Terminated',label:'Terminated'}]} onChange={value=>setBulkDraft({...bulkDraft,status:value})}/>
+          </div>
+          {needsReview&&<label><span><input style={{width:'auto'}} type="checkbox" checked={!!bulkDraft.confirmReview} onChange={e=>setBulkDraft({...bulkDraft,confirmReview:e.target.checked})}/> Saya sudah memeriksa tiket lama yang ditandai perlu konfirmasi klasifikasi/format.</span></label>}
+          <div className={ui.footer}><button type="submit">{bulkBusy?'Menautkan…':`Tautkan ${selectedCids.length} CID`}</button><button type="button" disabled={bulkBusy} onClick={()=>setBulkOpen(false)}>Batal</button></div>
+        </fieldset>
+      </form>
+    </dialog>}
   </section>;
 }
