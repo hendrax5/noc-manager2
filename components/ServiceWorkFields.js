@@ -23,6 +23,10 @@ export default function ServiceWorkFields({value,onChange,services=[],serviceTem
  const type=workTypes.find(t=>Number(t.id)===Number(value.serviceWorkTypeId)),operation=type?.operation||value.serviceWorkOperation;
  const r=value.serviceChange||{},update=patch=>onChange({serviceChange:{...r,...patch}});
  const termination=operation==='Terminate',bod=operation==='BOD',dataCenter=operation==='DataCenter',capacityOnly=['Upgrade','Downgrade','BOD'].includes(operation);
+ // Data Center may register the circuit it works on, so operators are not blocked
+ // when a new rack/cross connect has no CID in Inventory yet.
+ const dataCenterNew=dataCenter&&!value.editExistingServiceWork,registering=dataCenterNew&&!!value.installation;
+ const updateRfs=effectiveDate=>registering?onChange({serviceChange:{...r,effectiveDate},installation:{...value.installation,rfsDate:effectiveDate}}):update({effectiveDate});
  const [hints,setHints]=useState(null),[hintError,setHintError]=useState(''),[hintPick,setHintPick]=useState(''),[applying,setApplying]=useState(false),[autoTarget,setAutoTarget]=useState(null);
  const hintServiceId=service?.id||null;
  useEffect(()=>{
@@ -62,7 +66,15 @@ export default function ServiceWorkFields({value,onChange,services=[],serviceTem
   finally{setApplying(false);}
  }
  return <section className={styles.fields} aria-label="Pekerjaan layanan">
- {operation==='Installation'&&value.editExistingServiceWork?<p>Customer/CID instalasi tetap: {service?.customer?.name} / {service?.cid}. Ubah rencana bandwidth dan RFS di bawah.</p>:<TicketServicePicker services={services} selectedIds={value.serviceIds||[]} single onChange={serviceIds=>onChange({serviceIds,serviceChange:{}})}/> }
+ {operation==='Installation'&&value.editExistingServiceWork?<p>Customer/CID instalasi tetap: {service?.customer?.name} / {service?.cid}. Ubah rencana bandwidth dan RFS di bawah.</p>:dataCenterNew?<>
+  <fieldset style={{border:0,padding:0,margin:0,minWidth:0}}>
+   <legend style={{fontWeight:650,padding:0}}>Sumber CID</legend>
+   <label className="ui-static-ce5f724e09" style={{display:'block',fontWeight:400}}><input type="radio" name={`${id}-cid-source`} checked={!registering} onChange={()=>onChange({installation:undefined,serviceIds:[]})}/> Gunakan CID yang sudah terdaftar di Inventory</label>
+   <label className="ui-static-ce5f724e09" style={{display:'block',fontWeight:400}}><input type="radio" name={`${id}-cid-source`} checked={registering} onChange={()=>onChange({installation:{rfsDate:r.effectiveDate||''},serviceIds:[]})}/> Daftarkan layanan/CID baru (rack atau cross connect baru)</label>
+   <small>Layanan baru dibuat Pending bersama tiket dan diaktifkan otomatis saat Resolve.</small>
+  </fieldset>
+  {registering?<InstallationFields value={value} onChange={onChange} templates={serviceTemplates} showRfs={false}/>:<TicketServicePicker services={services} selectedIds={value.serviceIds||[]} single onChange={serviceIds=>onChange({serviceIds,serviceChange:{}})}/>}
+ </>:<TicketServicePicker services={services} selectedIds={value.serviceIds||[]} single onChange={serviceIds=>onChange({serviceIds,serviceChange:{}})}/> }
  {service&&<p className={styles.summary}>Customer: {service.customer?.name||'—'} · {isDarkFiber(service.template)?'Jumlah pair saat ini: '+(readPairCount(service)??'Belum diketahui'):'Bandwidth '+(bod?'normal':'saat ini')+': '+(normal==null?'Belum diketahui':mbpsToGbps(normal)+' Gbps')}</p>}
  {service&&normal==null&&hintCandidates.length>0&&<div role="group" aria-label="Kapasitas dari riwayat tiket">
   <p>Inventory belum punya kapasitas. Terdeteksi dari riwayat tiket — pilih yang benar lalu isi ke Inventory:</p>
@@ -77,13 +89,13 @@ export default function ServiceWorkFields({value,onChange,services=[],serviceTem
  {hintError&&<p role="alert">{hintError}</p>}
  {operation&&<>
  {dataCenter?<>
- <p className={styles.summary}>Perusahaan layanan: {service?.company||'Belum dipetakan'} · Pelaksana: SDC (NocDatacenter)</p>
+ <p className={styles.summary}>{service?`Perusahaan layanan: ${service.company||'Belum dipetakan'} · `:''}Pelaksana: SDC (NocDatacenter)</p>
  <label htmlFor={id+'-location'}>Lokasi Data Center</label><input id={id+'-location'} required maxLength={2000} value={r.workDetails?.location||''} onChange={e=>update({workDetails:{...r.workDetails,location:e.target.value}})}/>
  <label htmlFor={id+'-from'}>Dari rack/perangkat (opsional)</label><input id={id+'-from'} maxLength={2000} value={r.workDetails?.endpointFrom||''} onChange={e=>update({workDetails:{...r.workDetails,endpointFrom:e.target.value}})}/>
  <label htmlFor={id+'-to'}>Ke rack/perangkat (opsional)</label><input id={id+'-to'} maxLength={2000} value={r.workDetails?.endpointTo||''} onChange={e=>update({workDetails:{...r.workDetails,endpointTo:e.target.value}})}/>
  <label htmlFor={id+'-detail'}>Detail pekerjaan</label><textarea id={id+'-detail'} required maxLength={2000} value={r.workDetails?.description||''} onChange={e=>update({workDetails:{...r.workDetails,description:e.target.value}})}/>
  <label htmlFor={id+'-technical'}>Detail teknis (opsional)</label><textarea id={id+'-technical'} maxLength={2000} value={r.workDetails?.technical||''} onChange={e=>update({workDetails:{...r.workDetails,technical:e.target.value}})}/>
- <label htmlFor={id+'-date'}>RFS</label><input id={id+'-date'} type="date" required value={r.effectiveDate||''} onChange={e=>update({effectiveDate:e.target.value})}/>
+ <label htmlFor={id+'-date'}>RFS</label><input id={id+'-date'} type="date" required value={r.effectiveDate||''} onChange={e=>updateRfs(e.target.value)}/>
  </>:<>
  {!termination&&<>
  {!capacityOnly&&<><label htmlFor={id+'-product'}>Produk/Layanan tujuan</label><select id={id+'-product'} required value={r.targetTemplateId||service?.templateId||''} onChange={e=>update({targetTemplateId:Number(e.target.value),targetCustomData:{},pairCount:1})}><option value="">Pilih produk/layanan</option>{serviceTemplates.filter(t=>t.active!==false).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></>}

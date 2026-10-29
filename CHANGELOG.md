@@ -10,6 +10,20 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.16.0] - 2026-10-29
+
+### Added
+
+- **Cross Connect dan Instalasi Rack dapat mendaftarkan CID baru.** Jenis pekerjaan Data Center kini punya pilihan **Daftarkan layanan/CID baru** — pilih customer terdaftar atau tambah customer baru, lalu isi CID, site, produk, dan kapasitas pada form tiket yang sama. Layanan didaftarkan **Pending** dan diaktifkan otomatis saat tiket Resolve, sehingga instalasi rack atau cross connect baru tidak lagi terblokir karena CID belum ada di Inventory. Pekerjaan Data Center pada CID existing tetap memakai alur satu CID seperti sebelumnya.
+
+### Changed
+
+- **Penautan CID selesai dalam satu dialog.** Dialog **Tautkan customer & layanan** di Assets → Penautan CID kini dapat **menambah customer baru secara inline**, mengisi **perusahaan layanan** dan **kapasitas** saat membuat layanan baru, serta melengkapi/mengubah kapasitas dan perusahaan layanan existing yang dipilih — tanpa berpindah tab ke Customers, Produk, atau detail Asset. Menautkan CID saja tidak menulis ulang kapasitas/perusahaan; validasi produk (OPEN PORT minimal 10 Gbps, DARKFIBER pair), konfirmasi alias, dan guard BOD aktif tetap berlaku.
+
+### Fixed
+
+- **Detail pekerjaan Data Center bertahan saat tiket diedit.** Lokasi, endpoint, detail pekerjaan, dan detail teknis kini dimuat kembali ke form edit, tidak lagi kosong atau hilang ketika tiket Data Center diperbarui.
+
 ## [3.15.0] - 2026-10-28
 
 ### Changed
@@ -556,7 +570,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.15.0...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.16.0...HEAD
+[3.16.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.16.0
 [3.15.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.15.0
 [3.14.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.2
 [3.14.1]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.14.1

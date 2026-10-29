@@ -48,7 +48,7 @@ export default function AssetClient({ session, initialCustomers, initialTemplate
           ...(isAdmin ? [['sap','Penautan CID']] : []),['templates',`Produk layanan (${templates.length})`],['blast','Analisis dampak']
         ].map(([key,label])=><button key={key} type="button" aria-pressed={activeTab===key} onClick={()=>{setActiveTab(key);window.history.replaceState(null,'',key==='sap'?'#sap-circuits':key==='inventory'?'#inventory':window.location.pathname);}}>{label}</button>)}
       </nav>
-      {activeTab === 'sap' && isAdmin && <SapCircuitsClient customers={customers} templates={templates} services={services} onMapped={async()=>{const response=await fetch('/api/assets/services',{cache:'no-store'});if(response.ok)setServices(await response.json());}} onCreateCustomer={()=>{setActiveTab('customers');setEditCustomerId(null);setCustomerData({name:'',contactEmail:'',contactPhone:''});setShowCustomerModal(true);}} onManageProducts={()=>setActiveTab('templates')} />}
+      {activeTab === 'sap' && isAdmin && <SapCircuitsClient customers={customers} templates={templates} services={services} onMapped={async()=>{const response=await fetch('/api/assets/services',{cache:'no-store'});if(response.ok)setServices(await response.json());}} onCustomerCreated={customer=>setCustomers(previous=>[...previous,customer].sort((a,b)=>a.name.localeCompare(b.name)))} onManageProducts={()=>setActiveTab('templates')} />}
 
       {activeTab === 'portfolio' && <ServicePortfolio/>}
       {activeTab === 'inventory' && <CustomerServiceInventory customers={customers} services={services} canManage={isAdmin} />}

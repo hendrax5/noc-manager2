@@ -17,7 +17,16 @@ export default function TicketForm({departments=[],users=[],services=[],serviceT
  const [value,setValue]=useState({workType:initialServiceWorkType?'ServiceWork':defaultWorkType,serviceWorkTypeId:initialServiceWorkType?.id||'',serviceWorkTypeLabel:initialServiceWorkType?.name||'',serviceWorkOperation:initialServiceWorkType?.operation,serviceIds:initial?[initial.id]:[],serviceChange:{},title:initialTitle,description:'',departmentId:defaultTargetDeptId||departments[0]?.id||'',assigneeId:''});
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[file,setFile]=useState(null),[outage,setOutage]=useState(false),[start,setStart]=useState(''),[end,setEnd]=useState('');
  const errorRef=useRef(null),invalidNotified=useRef(false);
- const update=patch=>setValue(v=>({...v,...patch,...(!edited.current&&patch.installation&&v.serviceWorkOperation==='Installation'?{title:installationTitle(patch.installation,v.serviceWorkTypeLabel)}:{})}));
+ const update=patch=>setValue(v=>{
+  const next={...v,...patch};
+  if(!edited.current){
+   if(patch.installation&&(v.serviceWorkOperation==='Installation'||v.serviceWorkOperation==='DataCenter'))next.title=installationTitle(patch.installation,v.serviceWorkTypeLabel);
+   // Leaving the new-registration mode drops the discarded CID/site from the subject.
+   else if(Object.hasOwn(patch,'installation')&&patch.installation===undefined&&v.serviceWorkOperation==='DataCenter')next.title=v.serviceWorkTypeLabel||'';
+  }
+  return next;
+ });
+ const registeringNewService=value.workType==='ServiceWork'&&value.serviceWorkOperation==='DataCenter'&&!!value.installation;
  function showError(message){if(!message)return;setError(message);toast.error(message);setTimeout(()=>errorRef.current?.scrollIntoView({block:'center',behavior:'smooth'}),0);}
  function handleInvalid(event){
    const field=event.target;
@@ -32,13 +41,13 @@ export default function TicketForm({departments=[],users=[],services=[],serviceT
   event.preventDefault();setError('');
   try{
   if(value.workType==='Trouble'&&(!value.serviceIds.length||value.serviceIds.some(id=>!getServiceCid(services.find(s=>s.id===id)))||!value.symptomId||!value.causeId)){showError('Pilih CID, gejala, dan penyebab gangguan.');return;}
-  if(value.workType==='ServiceWork'&&value.serviceWorkOperation!=='Installation'&&value.serviceIds.length!==1){showError('Pilih satu CID layanan.');return;}
+  if(value.workType==='ServiceWork'&&value.serviceWorkOperation!=='Installation'&&!registeringNewService&&value.serviceIds.length!==1){showError('Pilih satu CID layanan.');return;}
   const track=value.workType==='Trouble'&&outage,duration=track?getDowntimeDuration(start,end||null,{live:!end}):null;
   if(track&&(!start||duration?.error)){showError(duration?.error||'Mulai downtime wajib diisi.');return;}
   setBusy(true);try{let attachment={};if(file){const fd=new FormData();fd.append('file',file);const r=await fetch('/api/upload',{method:'POST',body:fd});const data=await r.json();if(!r.ok)throw new Error(data.error||'Unggah lampiran gagal.');attachment={attachmentUrl:data.url,attachmentName:data.filename};}
   const payload={...value,formVersion:'work-v2',...attachment,customData:{hasDowntime:track,startDowntime:track?start:null,endDowntime:track&&end?end:null,downtimeMinutes:track&&!duration?.ongoing?duration?.minutes||0:0}};
   delete payload.serviceWorkOperation;
-  if(value.workType!=='ServiceWork'){delete payload.installation;delete payload.serviceChange;delete payload.serviceWorkTypeId;}else if(value.serviceWorkOperation!=='Installation')delete payload.installation;
+  if(value.workType!=='ServiceWork'){delete payload.installation;delete payload.serviceChange;delete payload.serviceWorkTypeId;}else if(value.serviceWorkOperation!=='Installation'&&!registeringNewService)delete payload.installation;
   const r=await fetch('/api/tickets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||`Tiket gagal dibuat (HTTP ${r.status}).`);toast.success('Tiket berhasil dibuat.');router.push('/tickets/'+data.id);router.refresh();
   }catch(e){showError(e.message||'Tiket gagal dibuat.');}finally{setBusy(false);}
   }catch(e){setBusy(false);showError(e.message||'Form gagal diproses. Muat ulang halaman lalu coba lagi.');}

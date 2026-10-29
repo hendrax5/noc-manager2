@@ -13,6 +13,12 @@ export default function ServiceWorkSummary({ ticket }) {
     !['bandwidthMbps','pairCount'].includes(key) && JSON.stringify(change.before?.customData?.[key]) !== JSON.stringify(change.after.customData[key]));
   for (const key of changedKeys) rows.push([key, change.before?.customData?.[key], change.after.customData[key]]);
   const display = value => value == null || value === '' ? '—' : typeof value === 'object' ? JSON.stringify(value) : String(value);
+  const applied = change.appliedAt;
+  const inventoryNote = change.operation === 'DataCenter'
+    ? (change.registration === 'new'
+        ? (applied ? `Layanan/CID baru sudah diaktifkan di Inventory pada ${applied}. Membuka kembali tiket tidak membatalkan aktivasi ini.` : 'Belum diaktifkan. Layanan/CID baru diaktifkan otomatis saat Resolve setelah RFS terlewati.')
+        : (applied ? `Pekerjaan Data Center sudah dicatat pada ${applied} tanpa mengubah Inventory.` : 'Belum dicatat. Pekerjaan Data Center tidak mengubah produk, kapasitas, atau status layanan.'))
+    : (applied ? `Sudah diterapkan ke Inventory pada ${applied}. Membuka kembali tiket tidak membatalkan perubahan ini.` : 'Belum diterapkan. Inventory diperbarui otomatis saat Resolve setelah validasi.');
   return <section aria-label="Ringkasan pekerjaan layanan" className="ui-static-90ddf9dc1e" style={{minWidth: 0, overflowWrap: 'anywhere'}}>
     <h2 className="ui-static-66f3578e31" >{ticket.serviceWorkTypeLabel || 'Pekerjaan Layanan'}</h2>
     <p>CID: <strong>{change.before?.cid || '—'}</strong> · Tanggal efektif: {change.effectiveDate || '—'}</p>
@@ -24,7 +30,7 @@ export default function ServiceWorkSummary({ ticket }) {
       </table>
     </div>
     {change.reason && <p>Alasan: {change.reason}</p>}
-    <p role="status">{change.appliedAt ? `Sudah diterapkan ke Inventory pada ${change.appliedAt}. Membuka kembali tiket tidak membatalkan perubahan ini.` : 'Belum diterapkan. Inventory diperbarui otomatis saat Resolve setelah validasi.'}</p>
+    <p role="status">{inventoryNote}</p>
     {!change.appliedAt && <details><summary>Ringkasan saat Resolve</summary><p style={{ whiteSpace: 'pre-line' }}>{serviceWorkResolveMessage(ticket)}</p></details>}
   </section>;
 }

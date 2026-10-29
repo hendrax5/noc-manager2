@@ -3,6 +3,7 @@ node_modules/
 out/
 build/
 .env
+creden.env
 .env*.local
 .DS_Store
 *.log

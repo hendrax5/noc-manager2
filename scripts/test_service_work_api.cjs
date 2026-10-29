@@ -12,6 +12,7 @@ async function main() {
   let queue = Promise.resolve();
   const master={id:1,name:'Upgrade',operation:'Upgrade',active:true,defaultJobCategoryId:4};
   const db = {
+    appSetting:{findUnique:async()=>null},
     user:{findUnique:async()=>state.user},
     serviceWorkType:{findUnique:async()=>master,findMany:async()=>[master],create:async({data})=>({...data,id:2}),update:async({data})=>({...master,...data})},
     serviceTemplate:{findUnique:async()=>template},
@@ -20,6 +21,8 @@ async function main() {
       state.applies++; state.service={...state.service,...structuredClone(data),updatedAt:new Date(+state.service.updatedAt+1)};return {count:1};
     }},
     jobCategory:{findUnique:async()=>({id:4,name:'Work',score:5,active:true})},
+    bodWindow:{findUnique:async()=>null,findFirst:async()=>null,create:async({data})=>data,update:async({data})=>data},
+    ticketPhaseExecution:{count:async()=>0,updateMany:async()=>({count:0})},
     comment:{findFirst:async()=>({authorId:8})},
     ticketHistory:{findFirst:async({where})=>where?.awardedScore ? state.logs.find(row=>row.jobCategoryId&&row.awardedScore>0)||null : {actorId:1}},
     actionItem:{findUnique:async()=>null},
@@ -41,9 +44,10 @@ async function main() {
   };
   globalThis.__serviceWorkApiFixture={state,db};
   const mocks={
-    'next/server':'export const NextResponse={json:(body,init)=>new Response(JSON.stringify(body),init)};',
+    'next/server':'export const NextResponse={json:(body,init)=>new Response(JSON.stringify(body),init)};export const after=()=>{};',
     'next-auth':'export const getServerSession=async()=>globalThis.__serviceWorkApiFixture.state.session;',
     '@/lib/prisma':'export const prisma=globalThis.__serviceWorkApiFixture.db;',
+    '@/lib/config':'export const getAppConfig=async()=>({});',
     '@/lib/notify':'export async function notifyTicketEvent(){};export async function collectTicketNotifyEmails(){return {emails:[]}};',
     '@/lib/integration/webhooks':'export async function dispatchIntegrationWebhook(){};',
     '@/lib/tickets/routing':'export const pickLeastBusyAssignee=async()=>null;',
