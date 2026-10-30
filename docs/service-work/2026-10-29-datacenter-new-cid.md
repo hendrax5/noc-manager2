@@ -1,5 +1,7 @@
 # Cross Connect dan Instalasi Rack dapat mendaftarkan CID baru
 
+> Catatan: perilaku aktivasi diubah pada 3.21.0 — RFS menjadi tanggal target dan aktivasi Pending dijalankan sweep RFS, bukan Resolve. Lihat `2026-10-30-rfs-target-aktivasi-terjadwal.md`.
+
 Masalah: jenis pekerjaan Data Center (Cross Connect, Instalasi Rack, dan jenis Data Center lain) hanya menerima CID yang sudah ada di Inventory. Form hanya menampilkan daftar CID existing, sehingga instalasi rack atau cross connect baru untuk customer/CID yang belum terdaftar tidak dapat dibuatkan tiket.
 
 ## Perubahan

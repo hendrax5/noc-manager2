@@ -39,13 +39,22 @@ Jenis pekerjaan adalah klasifikasi operasional. Job Category tetap sumber nilai 
 
 - Kondisi sebelum/sesudah dibuat server, tidak diterima dari browser. CID tidak dapat diganti melalui payload pekerjaan layanan.
 - Upgrade menaikkan kapasitas, Downgrade menurunkannya. Perubahan Layanan dapat mengganti produk dan field produk yang secara eksplisit diisi, sambil mempertahankan data lama pada histori.
-- Tanggal efektif adalah tanggal pelaksanaan aktual. Tanggal masa depan boleh dicatat, tetapi tidak dapat di-Resolve sebelum waktunya (WIB).
+- Tanggal efektif (RFS) adalah **tanggal target**, bukan penghalang Resolve. Tanggal masa depan boleh dicatat; tiket tetap dapat di-Resolve sekarang dengan bukti penyelesaian. Keterlambatan terhadap RFS tetap dilaporkan lewat metrik RFS.
 - Resolve mengunci tiket dan circuit, memeriksa kondisi Inventory terhadap snapshot, memperbarui Inventory, status tiket, dan audit/poin dalam transaksi yang sama.
+- Resolve pekerjaan layanan (selain BOD) wajib menyertakan **konfirmasi pekerjaan telah dilaksanakan**, **tanggal selesai aktual** (tidak boleh di masa depan, WIB), dan **bukti penyelesaian** (link BA/EWO, foto, atau catatan; maksimal 4000 karakter). Bukti dan aktor disimpan pada snapshot `serviceChange.completion` dan riwayat tiket.
 - Perubahan Inventory oleh tiket/operator lain menyebabkan HTTP 409; buka Edit, tinjau kondisi terbaru dan simpan ulang permintaan sebelum Resolve.
 - Resolve berulang tidak menerapkan perubahan atau poin kategori kembali. Reopen tidak mengembalikan Inventory otomatis. Setelah diterapkan, payload perubahan serta relasi CID tidak dapat diganti.
 - Terminasi mengubah status menjadi Terminated tanpa menghapus layanan atau tiket. Membatalkan hasil pekerjaan memerlukan pekerjaan koreksi tersendiri; tidak ada rollback layanan diam-diam.
 - Integrasi API existing tidak boleh Resolve/Close ServiceWork melalui jalur lama; HTTP 409 meminta penyelesaian melalui aplikasi agar transaksi Inventory tidak dilewati. Integrasi legacy lainnya tetap berjalan.
 - ServiceWork serta Installation legacy dikecualikan dari laporan downtime/SLA gangguan; Trouble dan tiket historis tetap mengikuti aturan durasi per tiket.
+
+## RFS sebagai target dan aktivasi terjadwal
+
+- Layanan hasil registrasi (Instalasi Baru dan CID baru pada pekerjaan Data Center) tetap dibuat `Pending` dan menyimpan `Service.plannedActiveAt` = RFS pukul 00:00 WIB. Tanggal RFS yang diubah pada tiket ikut memindahkan `plannedActiveAt` selama tiket belum Resolve.
+- **Resolve tidak mengaktifkan layanan.** Aktivasi `Pending → Active` dilakukan sweep RFS: `POST /api/internal/rfs-activation/run` (header `x-cron-secret`, idempoten, audit `service.activated_at_rfs` dengan sumber `system`) yang dijalankan `scripts/schedule_cron.js` tiap jam. Sweep juga dijalankan sesaat setelah tiket registrasi dibuat/diubah atau di-Resolve, sehingga RFS yang sudah tiba langsung aktif tanpa menunggu tick.
+- Sweep tidak pernah mengubah status tiket. Tiket yang RFS-nya lewat tetapi belum ditutup hanya tampil di panel **RFS terlewat, tiket belum ditutup** pada dashboard. Menghapus tiket sebelum Resolve mengosongkan `plannedActiveAt` layanan Pending agar tidak aktif sendiri; aktivasi manual tetap bisa dilakukan lewat Assets.
+- Jika layanan Pending sudah diaktifkan sweep sebelum tiket di-Resolve, Resolve toleran terhadap perbedaan status itu (dibandingkan tanpa status/updatedAt) dan tidak menurunkan status kembali.
+- Konfigurasi cron: `RFS_START_DELAY_MS` (default 120000), `RFS_INTERVAL_MS` (default 3600000). Monitoring jumlah yang jatuh tempo: `GET /api/internal/rfs-activation/run`.
 
 ## Upgrade database dan rollout
 
@@ -55,15 +64,19 @@ Belum diterapkan ke produksi oleh pekerjaan implementasi ini. Siapkan backup lal
 docker compose -f docker-compose.prod.yml exec -T db \
   psql -U postgres -d nocticketing -v ON_ERROR_STOP=1 \
   < prisma/changes/20261022_service_work.sql
+docker compose -f docker-compose.prod.yml exec -T db \
+  psql -U postgres -d nocticketing -v ON_ERROR_STOP=1 \
+  < prisma/changes/20261030_rfs_activation.sql
 ```
 
-SQL transaksional dan idempoten; menambahkan tabel master serta tiga kolom Ticket dan lima jenis pekerjaan awal. Tidak mengklasifikasikan ulang data lama. Generate Prisma Client dan build aplikasi sesudahnya. Jangan menjalankan seed-permissions: registrasi permission hanya menambah pilihan yang dapat diberikan melalui Team Access Manager; seed lama dapat mengganti role yang sudah ada.
+SQL transaksional dan idempoten; menambahkan tabel master serta tiga kolom Ticket dan lima jenis pekerjaan awal, lalu `Service.plannedActiveAt`/`Service.activatedAt` beserta indeks `(status, plannedActiveAt)` untuk sweep RFS. Tidak mengklasifikasikan ulang data lama dan tidak mengubah layanan Pending yang sudah ada (kolom baru nullable, jadi layanan tanpa rencana tidak pernah aktif sendiri). Generate Prisma Client dan build aplikasi sesudahnya. Jangan menjalankan seed-permissions: registrasi permission hanya menambah pilihan yang dapat diberikan melalui Team Access Manager; seed lama dapat mengganti role yang sudah ada.
 
 ## Verifikasi
 
 ```sh
-node --test lib/services/cidLookup.test.mjs lib/tickets/workClassification.test.mjs lib/tickets/troubleMasters.test.mjs lib/tickets/serviceWork.test.mjs lib/tickets/serviceWorkView.test.mjs lib/reports/dashboard.test.mjs lib/reports/outageReport.test.mjs
+node --test lib/services/cidLookup.test.mjs lib/tickets/workClassification.test.mjs lib/tickets/troubleMasters.test.mjs lib/tickets/serviceWork.test.mjs lib/tickets/serviceWorkView.test.mjs lib/tickets/installation.test.mjs lib/services/rfsActivation.test.mjs lib/reports/dashboard.test.mjs lib/reports/outageReport.test.mjs
 node scripts/test_service_work_api.cjs
+node scripts/test_datacenter_registration.cjs
 node scripts/test_service_work_ui.cjs
 node scripts/test_service_work_detail_ui.cjs
 node scripts/test_service_work_master_ui.cjs

@@ -415,6 +415,11 @@ model Service {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   bodWindows BodWindow[]
+  // RFS target for a Pending circuit registered by a ticket. A cron sweep flips
+  // Pending -> Active when this instant passes; the ticket itself never changes by itself.
+  plannedActiveAt DateTime?
+  activatedAt     DateTime? // set when the RFS sweep (or an operator) activated it
+  @@index([status, plannedActiveAt])
 }
 
 model CircuitHop {

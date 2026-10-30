@@ -14,14 +14,19 @@ export default function ServiceWorkSummary({ ticket }) {
   for (const key of changedKeys) rows.push([key, change.before?.customData?.[key], change.after.customData[key]]);
   const display = value => value == null || value === '' ? '—' : typeof value === 'object' ? JSON.stringify(value) : String(value);
   const applied = change.appliedAt;
+  const rfsTarget = change.effectiveDate || '—';
+  const registration = change.registration === 'new' || change.operation === 'Installation';
+  const activationNote = registration
+    ? `Aktivasi layanan Pending mengikuti jadwal RFS ${rfsTarget} (WIB) melalui pemindai RFS, bukan Resolve.`
+    : '';
   const inventoryNote = change.operation === 'DataCenter'
-    ? (change.registration === 'new'
-        ? (applied ? `Layanan/CID baru sudah diaktifkan di Inventory pada ${applied}. Membuka kembali tiket tidak membatalkan aktivasi ini.` : 'Belum diaktifkan. Layanan/CID baru diaktifkan otomatis saat Resolve setelah RFS terlewati.')
+    ? (registration
+        ? `${applied ? `Pekerjaan selesai dicatat pada ${applied}. ` : 'Belum dicatat. '}${activationNote}`
         : (applied ? `Pekerjaan Data Center sudah dicatat pada ${applied} tanpa mengubah Inventory.` : 'Belum dicatat. Pekerjaan Data Center tidak mengubah produk, kapasitas, atau status layanan.'))
-    : (applied ? `Sudah diterapkan ke Inventory pada ${applied}. Membuka kembali tiket tidak membatalkan perubahan ini.` : 'Belum diterapkan. Inventory diperbarui otomatis saat Resolve setelah validasi.');
+    : (applied ? `Sudah diterapkan ke Inventory pada ${applied}. Membuka kembali tiket tidak membatalkan perubahan ini.` : `Belum diterapkan. Inventory diperbarui otomatis saat Resolve setelah konfirmasi selesai dan bukti penyelesaian. RFS ${rfsTarget} hanya tanggal target.`);
   return <section aria-label="Ringkasan pekerjaan layanan" className="ui-static-90ddf9dc1e" style={{minWidth: 0, overflowWrap: 'anywhere'}}>
     <h2 className="ui-static-66f3578e31" >{ticket.serviceWorkTypeLabel || 'Pekerjaan Layanan'}</h2>
-    <p>CID: <strong>{change.before?.cid || '—'}</strong> · Tanggal efektif: {change.effectiveDate || '—'}</p>
+    <p>CID: <strong>{change.before?.cid || '—'}</strong> · RFS (target): {rfsTarget}</p>
     <div style={{ overflowX: 'auto' }}>
       <table className="ui-static-57b942e79e" style={{width: '100%', textAlign: 'left'}}>
         <caption className="ui-static-fc11fc4f62" style={{textAlign: 'left'}}>Kondisi sebelum dan sesudah pekerjaan</caption>
@@ -30,6 +35,7 @@ export default function ServiceWorkSummary({ ticket }) {
       </table>
     </div>
     {change.reason && <p>Alasan: {change.reason}</p>}
+    {change.completion && <p>Penyelesaian: {change.completion.finishedAt} — {change.completion.evidence}{change.completion.confirmedAt ? ` (dikonfirmasi ${change.completion.confirmedAt})` : ''}</p>}
     <p role="status">{inventoryNote}</p>
     {!change.appliedAt && <details><summary>Ringkasan saat Resolve</summary><p style={{ whiteSpace: 'pre-line' }}>{serviceWorkResolveMessage(ticket)}</p></details>}
   </section>;

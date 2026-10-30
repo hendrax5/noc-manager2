@@ -53,6 +53,10 @@ function htmlToPlainText(html) {
   return text;
 }
 
+function jakartaToday() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+}
+
 export default function TicketDetailClient({ ticket, departments, users, jobCategories, customFields, canModifyTicket, currentUser, serviceTemplates, services = [] }) {
   const router = useRouter();
   
@@ -143,6 +147,8 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
   
   const [mounted, setMounted] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [resolveDialog, setResolveDialog] = useState(null);
+  const [resolveBusy, setResolveBusy] = useState(false);
 
   const [customerSearchTerm, setCustomerSearchTerm] = useState(formData.customData?.["Customer Name"] || '');
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
@@ -267,6 +273,13 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
         toast.error("Pilih Job Phase Category dulu sebelum resolve, supaya poin teknisi (orang last reply) ikut masuk.");
         return;
       }
+      const change = ticket.serviceChange;
+      // RFS no longer gates Resolve; every applied ServiceWork needs completion evidence.
+      const needsEvidence = ticket.workType === 'ServiceWork' && change && change.operation !== 'BOD' && !change.appliedAt;
+      if (needsEvidence) {
+        setResolveDialog({ finishedAt: jakartaToday(), evidence: '', confirmed: false });
+        return;
+      }
       const summary = serviceWorkResolveMessage(ticket);
       if (summary && !window.confirm(summary)) return;
     }
@@ -289,6 +302,36 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
       setFormData(prev => ({ ...prev, [key]: previousValue }));
       const data = await res.json().catch(() => ({}));
       toast.error(data.error || "Failed to auto-update ticket property.");
+    }
+  };
+
+  const submitResolve = async () => {
+    if (!resolveDialog || resolveBusy) return;
+    if (!resolveDialog.finishedAt) { toast.error("Isi tanggal selesai pekerjaan."); return; }
+    if (!resolveDialog.evidence.trim()) { toast.error("Isi bukti penyelesaian (link BA/EWO, foto, atau catatan)."); return; }
+    if (!resolveDialog.confirmed) { toast.error("Centang konfirmasi pekerjaan telah dilaksanakan."); return; }
+    setResolveBusy(true);
+    const updatedPayload = {
+      status: "Resolved",
+      completion: { confirmed: true, finishedAt: resolveDialog.finishedAt, evidence: resolveDialog.evidence.trim() }
+    };
+    if (!ticket.jobCategoryId && formData.jobCategoryId) updatedPayload.jobCategoryId = Number(formData.jobCategoryId);
+    try {
+      const res = await fetch(`/api/tickets/${ticket.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedPayload)
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to resolve ticket.");
+      }
+      setResolveDialog(null);
+      router.refresh();
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setResolveBusy(false);
     }
   };
 
@@ -1382,6 +1425,36 @@ export default function TicketDetailClient({ ticket, departments, users, jobCate
         </div>
 
       </div>
+
+      {resolveDialog && (
+        <div className="modal-overlay" onClick={() => { if (!resolveBusy) setResolveDialog(null); }} role="presentation">
+          <div className="modal-panel ui-static-39c1d6c828" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="resolve-evidence-title">
+            <div className="ui-static-377c070215" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+              <h2 id="resolve-evidence-title" className="ui-static-c470735159">Konfirmasi penyelesaian pekerjaan</h2>
+              <button type="button" onClick={() => { if (!resolveBusy) setResolveDialog(null); }} className="ui-static-6a560df0e4" style={{width: '32px', height: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer'}} aria-label="Tutup">✕</button>
+            </div>
+            <div className="ui-static-b7a907b44e" style={{overflowY: 'auto', flex: 1}}>
+              <p style={{ whiteSpace: 'pre-line' }}>{serviceWorkResolveMessage(ticket)}</p>
+              <div style={{marginBottom: '0.75rem'}}>
+                <label htmlFor="resolve-finished-at" style={{display: 'block', fontWeight: 600}}>Tanggal selesai pekerjaan (WIB)</label>
+                <input id="resolve-finished-at" type="date" required max={jakartaToday()} value={resolveDialog.finishedAt} onChange={e => setResolveDialog(prev => ({ ...prev, finishedAt: e.target.value }))} style={{width: '100%'}}/>
+              </div>
+              <div style={{marginBottom: '0.75rem'}}>
+                <label htmlFor="resolve-evidence" style={{display: 'block', fontWeight: 600}}>Bukti penyelesaian (link BA/EWO, foto, atau catatan)</label>
+                <textarea id="resolve-evidence" required maxLength={4000} rows={3} value={resolveDialog.evidence} onChange={e => setResolveDialog(prev => ({ ...prev, evidence: e.target.value }))} style={{width: '100%'}}/>
+              </div>
+              <label style={{display: 'flex', gap: '0.45rem', alignItems: 'flex-start', marginBottom: '0.75rem'}}>
+                <input type="checkbox" checked={resolveDialog.confirmed} onChange={e => setResolveDialog(prev => ({ ...prev, confirmed: e.target.checked }))}/>
+                <span>Saya mengonfirmasi pekerjaan telah dilaksanakan dan bukti ini benar. Resolve tidak mengubah status aktivasi layanan Pending; aktivasi mengikuti RFS.</span>
+              </label>
+              <div style={{display: 'flex', justifyContent: 'flex-end', gap: '0.5rem'}}>
+                <button type="button" className="btn btn-secondary" onClick={() => setResolveDialog(null)} disabled={resolveBusy}>Batal</button>
+                <button type="button" className="btn btn-primary" onClick={submitResolve} disabled={resolveBusy || !resolveDialog.confirmed || !resolveDialog.finishedAt || !resolveDialog.evidence.trim()}>{resolveBusy ? 'Menyimpan…' : 'Konfirmasi & Resolve'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showHistoryModal && (
         <div className="modal-overlay" onClick={() => setShowHistoryModal(false)} role="presentation">

@@ -1,4 +1,5 @@
 import BodReminders from '@/components/BodReminders';
+import RfsOverduePanel from '@/components/RfsOverduePanel';
 import { workTypeWhere } from "@/lib/tickets/workClassification";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../api/auth/[...nextauth]/route";
@@ -126,6 +127,7 @@ export default async function DashboardPage({ searchParams }) {
   return (
     <main className="container ui-static-ce99c5c81b" >
       <BodReminders scope={scope}/>
+      <RfsOverduePanel scope={scope}/>
       <DashboardClient 
         session={session}
         hasGlobalAccess={hasGlobalAccess}

@@ -20,6 +20,7 @@ import { prepareTicketClassification, TicketClassificationError } from "@/lib/ti
 import { createTicketPointsLog } from "@/lib/tickets/points";
 import { linkKnownCircuit } from '@/lib/services/circuitAssets';
 import { archiveAttachments } from '@/lib/integration/driveBackground';
+import { activateDueServices, syncPlannedActivation } from '@/lib/services/rfsActivation';
 
 function generateTrackingId() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -56,6 +57,8 @@ export async function POST(req) {
     let body = await req.json();
     const config = await getAppConfig();
     const phasesEnabled = (await workflowFlags()).work_phase_enabled;
+    let registeredServiceIds = [];
+    let createdChange = null;
     const ticket = await prisma.$transaction(async tx => {
     body = await prepareInstallationTicket(tx,body,userId);
     body = await automaticWorkMetadata(tx,body,config);
@@ -176,6 +179,8 @@ export async function POST(req) {
         const workflow = resolveWorkflow({...workflowContext(created),roleId:assigned?.roleId,policies});
         if (workflow) await initializeTicketWorkflow(tx,{ticketId:created.id,policyVersionId:workflow.policyVersionId,actorId:userId});
       }
+      createdChange = created.serviceChange || null;
+      registeredServiceIds = classification.serviceIds || [];
       return created;
     },{timeout:20000});
     if (ticket instanceof Response) return ticket;
@@ -184,6 +189,19 @@ export async function POST(req) {
       after(async () => { await archiveAttachments(ticketAttachmentIds); });
     }
     try { await linkKnownCircuit(prisma,ticket.id); } catch { console.warn('Circuit CID link deferred; ticket retained for Inventory review.'); }
+    // An Installation ticket always defines the RFS target for its Pending circuit, even when
+    // the circuit was registered earlier through Assets. Then the sweep can activate it.
+    if (createdChange?.before?.serviceId && (createdChange.operation === 'Installation' || createdChange.registration === 'new')) {
+      try { await syncPlannedActivation(prisma, {serviceId: createdChange.before.serviceId, rfsDate: createdChange.effectiveDate}); }
+      catch (error) { console.warn('RFS activation plan deferred:', error.message); }
+    }
+    // A registration whose RFS is already reached (today or a past date) activates right
+    // away instead of waiting for the hourly sweep. Ticket status is untouched.
+    const registrationServiceIds = createdChange?.operation === 'Installation' || createdChange?.registration === 'new' ? registeredServiceIds : [];
+    if (registrationServiceIds.length) {
+      try { await activateDueServices(prisma, {serviceIds: registrationServiceIds}); }
+      catch (error) { console.warn('RFS activation sweep deferred:', error.message); }
+    }
     const emails = [];
     if (ticket.assignee?.email) emails.push(ticket.assignee.email);
     for (const w of ticket.watchers || []) {

@@ -10,6 +10,20 @@ where practical. The rules for adding entries live in
 
 ## [Unreleased]
 
+## [3.21.0] - 2026-10-31
+
+### Added
+
+- **Aktivasi CID Pending mengikuti RFS, bukan Resolve.** Registrasi Instalasi Baru/CID baru Data Center menyimpan target aktivasi (`Service.plannedActiveAt` = RFS pukul 00:00 WIB). Sweep baru `POST /api/internal/rfs-activation/run` (header `x-cron-secret`, idempoten, audit `service.activated_at_rfs`) dijalankan `scripts/schedule_cron.js` tiap jam dan sesaat setelah tiket registrasi dibuat/diubah/di-Resolve, sehingga layanan menjadi `Active` tanpa ada tiket yang berubah status sendiri. Layanan Pending lama tanpa target tidak ikut aktif.
+- **Panel "RFS terlewat, tiket belum ditutup" di dashboard.** Menampilkan tiket ServiceWork yang RFS-nya lewat tetapi belum di-Resolve beserta keterlambatan dan PIC; hanya laporan, tidak mengubah status.
+- **Dialog bukti penyelesaian saat Resolve.** Detail tiket meminta tanggal selesai aktual, bukti penyelesaian (link BA/EWO, foto, atau catatan), dan konfirmasi eksplisit sebelum mengirim `completion`.
+
+### Changed
+
+- **RFS menjadi tanggal target, bukan penghalang Resolve.** Guard "RFS belum tiba" dihapus; pekerjaan dapat ditutup kapan pun dengan bukti, dan ketepatan terhadap RFS tetap diukur laporan.
+- **Resolve ServiceWork (selain BOD) wajib bukti penyelesaian.** Server memvalidasi konfirmasi, tanggal selesai (tidak di masa depan, WIB), dan bukti 1–4000 karakter; snapshot menyimpan `serviceChange.completion` (aktor + waktu) dan riwayat tiket mencatatnya. Resolve berulang/reopen tidak meminta bukti lagi.
+- **Perubahan RFS pada tiket menyinkronkan target aktivasi**, dan menghapus tiket sebelum Resolve mengosongkan target agar layanan Pending tidak aktif sendiri. Bila sweep sudah mengaktifkan sebelum Resolve, Resolve tidak menganggapnya konflik dan tidak menurunkan status.
+
 ## [3.20.4] - 2026-10-29
 
 ### Fixed
@@ -624,7 +638,8 @@ where practical. The rules for adding entries live in
 - **Next.js Build Process**
   - Added `getServerSession` security verification on `/meetings/new` page to force dynamic rendering and resolve local build connection issues caused by database queries on static paths.
 
-[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.20.4...HEAD
+[Unreleased]: https://github.com/hendrax5/noc-manager2/compare/v3.21.0...HEAD
+[3.21.0]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.21.0
 [3.20.4]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.4
 [3.20.3]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.3
 [3.20.2]: https://github.com/hendrax5/noc-manager2/releases/tag/v3.20.2

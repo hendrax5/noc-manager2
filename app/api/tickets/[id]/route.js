@@ -29,6 +29,7 @@ import {
 import { canAccessPersonalTicket } from "@/lib/tickets/personalCategories";
 import { assertServicesRecovered } from "@/lib/tickets/serviceRecovery";
 import { classificationFieldsChanged, affectedServicesChanged, prepareTicketClassification, TicketClassificationError } from "@/lib/tickets/workClassification";
+import { activateDueServices, syncPlannedActivation, clearPlannedActivation } from "@/lib/services/rfsActivation";
 
 export async function PATCH(req, { params }) {
   try {
@@ -352,9 +353,13 @@ export async function PATCH(req, { params }) {
     if (phaseCount && body.customData && ['Order Origin','Executing Vendor'].some(key => (body.customData[key]||null)!==(oldTicket.customData?.[key]||null))) throw new WorkflowError('Routing workflow aktif tidak dapat diganti.',409);
     if (effectiveTicket.workType === "ServiceWork" && nextStatus === "Closed" && !effectiveTicket.serviceChange?.appliedAt) throw new ServiceWorkError("Resolve pekerjaan layanan sebelum menutup tiket.");
     if (effectiveTicket.workType === "ServiceWork" && nextStatus === "Resolved") {
-      const application = await applyServiceWork(tx, effectiveTicket, userId);
+      const application = await applyServiceWork(tx, effectiveTicket, userId, new Date(), body.completion);
       ticketData.serviceChange = application.serviceChange;
       if (application.applied) logs.push({ action: "Service Inventory applied from ticket", actorId: userId });
+      if (application.applied && application.serviceChange?.completion) {
+        const completion = application.serviceChange.completion;
+        logs.push({ action: `Work completion confirmed (${completion.finishedAt}): ${completion.evidence.slice(0, 180)}`, actorId: userId });
+      }
     }
     if (classification.serviceIds !== null) ticketData.services = { set: classification.serviceIds.map((id) => ({ id })) };
     const changedClassification = Object.entries(classification.data).some(([key, value]) => oldTicket[key] !== value);
@@ -450,6 +455,12 @@ export async function PATCH(req, { params }) {
     });
 
     if (phaseCount && body.assigneeId === null) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:null}});
+    const resolvedChange = ticketData.serviceChange || effectiveTicket.serviceChange;
+    // The RFS target may be corrected while the ticket is open; keep the registration's
+    // activation instant in step so the sweep fires on the agreed date.
+    if (ticket.workType === 'ServiceWork' && resolvedChange && !resolvedChange.appliedAt && resolvedChange.before?.serviceId && (resolvedChange.operation === 'Installation' || resolvedChange.registration === 'new')) {
+      await syncPlannedActivation(tx, {serviceId: resolvedChange.before.serviceId, rfsDate: resolvedChange.effectiveDate});
+    }
     if(effectiveTicket.serviceChange?.operation==='BOD' && (Object.hasOwn(body,'serviceChange')||Object.hasOwn(body,'serviceWorkTypeId')) && !effectiveTicket.serviceChange?.appliedAt) await syncBodWindow(tx,{...ticket,serviceChange:effectiveTicket.serviceChange});
     if ((phasesEnabled || phaseCount) && ticket.assigneeId && !['Resolved','Closed'].includes(nextStatus)) {
       if (phaseCount) await tx.ticketPhaseExecution.updateMany({where:{ticketId:id,state:{not:'Completed'}},data:{assigneeId:ticket.assigneeId}});
@@ -464,6 +475,13 @@ export async function PATCH(req, { params }) {
     }, { timeout: 20000 });
     if (result instanceof Response) return result;
     const { ticket, oldTicket, nextStatus } = result;
+
+    // RFS sweep opportunity: a registration whose RFS already passed activates now instead
+    // of waiting for the next hourly tick. This never touches ticket status.
+    if (ticket.workType === 'ServiceWork' && (oldTicket.services || []).length) {
+      try { await activateDueServices(prisma, {serviceIds: oldTicket.services.map(service => service.id)}); }
+      catch (error) { console.warn('RFS activation sweep deferred:', error.message); }
+    }
 
     if (body.status != null && oldTicket.status !== nextStatus) {
       const { emails } = await collectTicketNotifyEmails(prisma, id);
@@ -515,7 +533,7 @@ export async function DELETE(req, { params }) {
     const id = parseInt(resolvedParams.id);
     const existing = await prisma.ticket.findUnique({
       where: { id },
-      include: { jobCategory: { select: { name: true } } },
+      include: { jobCategory: { select: { name: true } }, services: { select: { id: true } } },
     });
     if (!existing || !canAccessPersonalTicket(session.user, existing)) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
@@ -524,6 +542,10 @@ export async function DELETE(req, { params }) {
     await prisma.$transaction(async tx=>{
     await tx.$queryRaw`SELECT id FROM "Ticket" WHERE id = ${id} FOR UPDATE`;
     await assertTicketDeletionAllowed(tx,existing);
+    // A registration whose work never completed must not self-activate after its ticket is gone.
+    if (existing.serviceChange && !existing.serviceChange.appliedAt && ['Installation','DataCenter'].includes(existing.serviceChange.operation)) {
+      await clearPlannedActivation(tx, (existing.services || []).map(service => service.id));
+    }
     await tx.ticketWatcher.deleteMany({ where: { ticketId: id } });
     await tx.ticketNote.deleteMany({ where: { ticketId: id } });
     await tx.comment.deleteMany({ where: { ticketId: id } });

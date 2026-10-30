@@ -71,7 +71,7 @@ export default function ServiceWorkFields({value,onChange,services=[],serviceTem
    <legend style={{fontWeight:650,padding:0}}>Sumber CID</legend>
    <label className="ui-static-ce5f724e09" style={{display:'block',fontWeight:400}}><input type="radio" name={`${id}-cid-source`} checked={!registering} onChange={()=>onChange({installation:undefined,serviceIds:[]})}/> Gunakan CID yang sudah terdaftar di Inventory</label>
    <label className="ui-static-ce5f724e09" style={{display:'block',fontWeight:400}}><input type="radio" name={`${id}-cid-source`} checked={registering} onChange={()=>onChange({installation:{rfsDate:r.effectiveDate||''},serviceIds:[]})}/> Daftarkan layanan/CID baru (rack atau cross connect baru)</label>
-   <small>Layanan baru dibuat Pending bersama tiket dan diaktifkan otomatis saat Resolve.</small>
+   <small>Layanan baru dibuat Pending bersama tiket dan diaktifkan otomatis saat RFS tiba, bukan oleh Resolve.</small>
   </fieldset>
   {registering?<InstallationFields value={value} onChange={onChange} templates={serviceTemplates} showRfs={false}/>:<TicketServicePicker services={services} selectedIds={value.serviceIds||[]} single onChange={serviceIds=>onChange({serviceIds,serviceChange:{}})}/>}
  </>:<TicketServicePicker services={services} selectedIds={value.serviceIds||[]} single onChange={serviceIds=>onChange({serviceIds,serviceChange:{}})}/> }
@@ -107,7 +107,7 @@ export default function ServiceWorkFields({value,onChange,services=[],serviceTem
  {bod?<><label htmlFor={id+'-start'}>Mulai BOD (WIB)</label><input id={id+'-start'} type="datetime-local" required value={local(r.bodStartAt)} onChange={e=>update({bodStartAt:e.target.value?e.target.value+'+07:00':''})}/>
  <label htmlFor={id+'-end'}>Selesai BOD (WIB)</label><input id={id+'-end'} type="datetime-local" required value={local(r.bodEndAt)} onChange={e=>update({bodEndAt:e.target.value?e.target.value+'+07:00':''})}/>
  {Number.isFinite(start)&&Number.isFinite(end)&&<p role="status">{end>start?'Durasi BOD: '+Number(((end-start)/3600000).toFixed(2))+' jam':'Selesai BOD harus setelah mulai.'}</p>}
- <small>Aktivasi dan pengembalian bandwidth dikonfirmasi setelah tindakan jaringan. Reminder hanya di dashboard.</small></>:<><label htmlFor={id+'-date'}>{termination?'Tanggal terminasi':'RFS'}</label><input id={id+'-date'} type="date" required value={r.effectiveDate||''} onChange={e=>update({effectiveDate:e.target.value})}/></>}
+ <small>Aktivasi dan pengembalian bandwidth dikonfirmasi setelah tindakan jaringan. Reminder hanya di dashboard.</small></>:<><label htmlFor={id+'-date'}>{termination?'Tanggal terminasi':'RFS (target aktivasi)'}</label><input id={id+'-date'} type="date" required value={r.effectiveDate||''} onChange={e=>update({effectiveDate:e.target.value})}/>{!termination&&<small>RFS bukan penghalang Resolve. Resolve tetap meminta konfirmasi selesai dan bukti penyelesaian.</small>}</>}
  {termination&&<><label htmlFor={id+'-reason'}>Alasan terminasi</label><textarea id={id+'-reason'} required maxLength={2000} value={r.reason||''} onChange={e=>update({reason:e.target.value})}/><small>Layanan dinonaktifkan saat Resolve. CID dan riwayat tetap tersimpan.</small></>}
  </>}
  </>}

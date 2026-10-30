@@ -22,13 +22,24 @@ async function main(){
   browser=await chromium.launch({channel:'chrome',headless:true});const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));const base=`http://127.0.0.1:${server.address().port}`;
   await page.goto(base);await page.getByRole('region',{name:'Ringkasan pekerjaan layanan'}).waitFor();
   const status=()=>page.locator('select').filter({has:page.locator('option[value="Resolved"]')});
-  let summary='';page.once('dialog',async dialog=>{summary=dialog.message();await dialog.dismiss();});await status().selectOption('Resolved');assert.equal(posts.length,0);assert.ok(summary.includes('100 → 200 Mbps'));
-  page.once('dialog',dialog=>dialog.accept());let response=page.waitForResponse(r=>r.request().method()==='PATCH');await status().selectOption('Resolved');await response;assert.deepEqual(posts.at(-1),{status:'Resolved'},'Status uses minimal payload without snapshot');
-  await page.goto(base);reject=true;page.once('dialog',dialog=>dialog.accept());response=page.waitForResponse(r=>r.request().method()==='PATCH');await status().selectOption('Resolved');await response;await page.waitForFunction(()=>window.messages?.includes('Inventory telah berubah'));assert.equal(await status().inputValue(),'New','Failed status is restored');
+  await status().selectOption('Resolved');
+  const resolveDialog=page.getByRole('dialog',{name:'Konfirmasi penyelesaian pekerjaan'});
+  await resolveDialog.waitFor();assert.equal(posts.length,0,'Resolve waits for completion evidence');
+  assert.ok((await resolveDialog.innerText()).includes('100 → 200 Mbps'));
+  await page.locator('#resolve-finished-at').fill('2026-10-22');
+  await page.locator('#resolve-evidence').fill('BA 2026-10-22 https://drive.example/ba');
+  await page.getByRole('checkbox').check();
+  let response=page.waitForResponse(r=>r.request().method()==='PATCH');
+  await page.getByRole('button',{name:'Konfirmasi & Resolve'}).click();await response;
+  assert.deepEqual(posts.at(-1),{status:'Resolved',completion:{confirmed:true,finishedAt:'2026-10-22',evidence:'BA 2026-10-22 https://drive.example/ba'}},'Resolve sends completion evidence, not the snapshot');
+  await page.goto(base);reject=true;await status().selectOption('Resolved');await resolveDialog.waitFor();
+  await page.locator('#resolve-finished-at').fill('2026-10-22');await page.locator('#resolve-evidence').fill('BA https://drive.example/ba');await page.getByRole('checkbox').check();
+  response=page.waitForResponse(r=>r.request().method()==='PATCH');
+  await page.getByRole('button',{name:'Konfirmasi & Resolve'}).click();await response;await page.waitForFunction(()=>window.messages?.includes('Inventory telah berubah'));assert.equal(await status().inputValue(),'New','Failed status is restored');
   reject=false;await page.goto(base+'?applied');await page.getByRole('button',{name:/Edit$/}).click();assert.equal(await page.getByLabel('Jenis pekerjaan',{exact:true}).count(),0,'Applied request cannot be reclassified in edit');
   response=page.waitForResponse(r=>r.request().method()==='PATCH');await page.getByRole('button',{name:'Save Changes',exact:true}).click();await response;
   for(const key of ['workType','serviceIds','serviceWorkTypeId','serviceChange']) assert.equal(posts.at(-1)[key],undefined,`Applied edit omits ${key}`);
-  assert.deepEqual(errors,[]);console.log('PASS: real detail summary, Resolve confirm/cancel, minimal status payload, conflict feedback + restored status, and applied payload excluded from ordinary edits. Synthetic API only.');
+  assert.deepEqual(errors,[]);console.log('PASS: real detail summary, Resolve evidence dialog (date/evidence/confirmation), evidence-only payload, conflict feedback + restored status, and applied payload excluded from ordinary edits. Synthetic API only.');
  }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 }
 main().catch(error=>{console.error(error);process.exitCode=1});
