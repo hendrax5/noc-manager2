@@ -35,3 +35,14 @@ Menambah `Service.plannedActiveAt`, `Service.activatedAt`, dan indeks `(status, 
 - `node scripts/test_datacenter_registration.cjs` — registrasi Pending + `plannedActiveAt`, Resolve tidak mengaktifkan, sweep mengaktifkan sekali dengan audit, RFS masa depan tidak menghalangi Resolve, guard completion, hapus rencana mengosongkan aktivasi.
 - `node scripts/test_service_work_detail_ui.cjs` — dialog bukti di browser: payload hanya `completion`, konflik mengembalikan status, edit tiket applied tidak mengirim snapshot.
 - `node scripts/test_service_capacity_http.cjs`, `node scripts/test_ticket_forms_bod_http.cjs` — QA terisolasi: aktivasi RFS saat registrasi (RFS hari ini), Resolve wajib bukti, BOD tetap memakai konfirmasi pengembalian.
+
+## Deploy produksi (2026-10-31)
+
+- Revisi: `b10b56e` (tag `v3.21.0`), image `noc-manager2-app:release-3.21.0` dibangun dari image dasar `release-3.20.4`.
+- Backup DB sebelum migrasi: `/opt/noc-manager2/backups/pre-3.21.0-20261030T234711Z.dump` (21 MB).
+- Migrasi `prisma/changes/20261030_rfs_activation.sql` dijalankan (`ALTER TABLE` ×2 + `CREATE INDEX`); kolom `plannedActiveAt`/`activatedAt` terverifikasi lewat `information_schema`.
+- Health check: `/login` HTTP 200, `app_version 3.21.0`, container berjalan dengan `node scripts/schedule_cron.js & npm start`, log cron `[schedule-cron] started` terlihat.
+- Tanpa aktivasi retroaktif: 837 layanan Pending tetap Pending, `plannedActiveAt` dan `activatedAt` masih kosong. Endpoint sweep dengan secret mengembalikan `{"due":0}`; tanpa secret HTTP 403.
+- Rollback: `/opt/noc-manager2/releases/rfs-target-3.21.0/rollback.sh` mengembalikan image `release-3.20.4`; recipe `release.yml`/`rollback.yml` tersimpan di folder rilis.
+- Catatan kapasitas: disk host 92% terpakai (sisa ±4 GB) setelah image baru; pertimbangkan prune image lama setelah periode stabil.
+
