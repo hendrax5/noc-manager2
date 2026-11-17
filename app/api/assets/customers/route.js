@@ -10,10 +10,16 @@ export async function GET(request) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    const { searchParams } = new URL(request.url);
+    const includeArchived = searchParams.get('includeArchived') === 'true';
+
     const customers = await prisma.customer.findMany({
+      where: includeArchived ? {} : { active: true },
       orderBy: { name: 'asc' },
       include: {
-        _count: { select: { services: true } }
+        _count: { select: { services: true } },
+        mergedAliases: { select: { id: true, name: true, archivedAt: true } },
+        mergedInto: { select: { id: true, name: true } },
       }
     });
 
@@ -30,9 +36,33 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { name, contactEmail, contactPhone } = await request.json();
+    const body = await request.json();
+    const name = typeof body?.name === 'string' ? body.name.trim() : '';
+    const contactEmail = typeof body?.contactEmail === 'string' ? body.contactEmail.trim() || null : null;
+    const contactPhone = typeof body?.contactPhone === 'string' ? body.contactPhone.trim() || null : null;
+    if (!name) return NextResponse.json({ error: 'Nama customer wajib diisi.' }, { status: 400 });
+
+    const existing = await prisma.customer.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' } },
+      include: { mergedInto: { select: { id: true, name: true } } },
+    });
+    if (existing) {
+      if (existing.active === false && existing.mergedInto) {
+        return NextResponse.json({
+          error: `Nama customer "${existing.name}" sudah diarsipkan dan digabung ke ${existing.mergedInto.name}.`,
+        }, { status: 409 });
+      }
+      return NextResponse.json({ error: 'Customer already exists' }, { status: 400 });
+    }
+
     const customer = await prisma.$transaction(async tx=>{
-      const created=await tx.customer.create({data:{name,contactEmail,contactPhone}});
+      const created=await tx.customer.create({
+        data:{name,contactEmail,contactPhone},
+        include: {
+          _count: { select: { services: true } },
+          mergedAliases: { select: { id: true, name: true, archivedAt: true } },
+        },
+      });
       await recordActivity(tx,{actorId:Number(session.user.id),source:'human',type:'customer.created',entityType:'customer',entityId:created.id,after:created});
       return created;
     });

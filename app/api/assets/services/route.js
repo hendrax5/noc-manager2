@@ -47,7 +47,13 @@ export async function POST(request) {
     }
 
     const { customerId, templateId, name, cid, status, company, customData, monthlyCost, currency, contractEnd, hops } = await request.json();
-    const template=await prisma.serviceTemplate.findUnique({where:{id:parseInt(templateId)}});
+    const [customer, template] = await Promise.all([
+      prisma.customer.findUnique({ where: { id: parseInt(customerId) } }),
+      prisma.serviceTemplate.findUnique({ where: { id: parseInt(templateId) } }),
+    ]);
+    if (!customer || customer.active === false) {
+      return NextResponse.json({ error: 'Customer tidak ditemukan atau sudah diarsipkan.' }, { status: 400 });
+    }
     const bandwidthData=darkFiberData(template,openPortDefaultData(template,customData||{}));validateOpenPortData(template,bandwidthData);
     const service = await prisma.$transaction(async tx=>{
     await lockCircuitCodes(tx,[getServiceCid({cid,customData})]);

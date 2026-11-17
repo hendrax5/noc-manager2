@@ -13,15 +13,24 @@ export async function PATCH(request, { params }) {
     const body = await request.json();
     const id = parseInt(resolveParams.id);
 
+    const existing = await prisma.customer.findUnique({ where: { id } });
+    if (!existing) return NextResponse.json({ error: 'Customer tidak ditemukan.' }, { status: 404 });
+    if (existing.active === false) {
+      return NextResponse.json({ error: 'Customer berstatus arsip tidak dapat diedit.' }, { status: 409 });
+    }
+
     const updateData = {};
-    if (body.name !== undefined) updateData.name = body.name;
-    if (body.contactEmail !== undefined) updateData.contactEmail = body.contactEmail;
-    if (body.contactPhone !== undefined) updateData.contactPhone = body.contactPhone;
+    if (body.name !== undefined) updateData.name = String(body.name).trim();
+    if (body.contactEmail !== undefined) updateData.contactEmail = body.contactEmail ? String(body.contactEmail).trim() : null;
+    if (body.contactPhone !== undefined) updateData.contactPhone = body.contactPhone ? String(body.contactPhone).trim() : null;
 
     const customer = await prisma.customer.update({
       where: { id },
       data: updateData,
-      include: { _count: { select: { services: true } } }
+      include: {
+        _count: { select: { services: true } },
+        mergedAliases: { select: { id: true, name: true, archivedAt: true } },
+      }
     });
 
     return NextResponse.json(withCustomerCode(customer));

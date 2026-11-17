@@ -1,0 +1,552 @@
+.hygienePanel {
+  border: var(--ui-hairline) solid var(--ui-line);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  padding: var(--ui-space-4);
+  margin-bottom: var(--ui-space-4);
+}
+
+.hygieneHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  margin-bottom: var(--ui-space-3);
+}
+
+.hygieneHead h2 {
+  margin: 0;
+  font-size: var(--ui-type-section);
+  color: var(--ui-ink);
+}
+
+.hygieneGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.5rem), 1fr));
+  gap: var(--ui-space-3);
+}
+
+.hygieneCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ui-space-1);
+  padding: var(--ui-space-3);
+  border: var(--ui-hairline) solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-subtle);
+  color: var(--ui-ink);
+  text-align: left;
+  cursor: pointer;
+  min-height: var(--ui-control-height);
+}
+
+.hygieneCard:hover {
+  border-color: var(--ui-accent);
+  background: var(--ui-tint);
+}
+
+.hygieneWarn {
+  border-color: var(--ui-warning);
+  background: var(--ui-warning-bg);
+  color: var(--ui-warning);
+}
+
+.hygieneInfo {
+  border-color: var(--ui-info);
+  background: var(--ui-info-bg);
+  color: var(--ui-info);
+}
+
+.hygieneValue {
+  font-size: var(--ui-type-subtitle);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.hygieneLabel {
+  font-size: var(--ui-type-meta);
+  color: var(--ui-text);
+}
+
+.hygieneHint {
+  font-size: var(--ui-type-sm);
+  color: var(--ui-muted);
+}
+
+.hygieneClean {
+  margin: 0;
+  padding: var(--ui-space-3);
+  border-radius: var(--ui-radius);
+  background: var(--ui-success-bg);
+  color: var(--ui-success);
+  font-size: var(--ui-type-body);
+}
+
+.dupBanner {
+  border: var(--ui-hairline) solid var(--ui-warning);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-warning-bg);
+  color: var(--ui-warning);
+  padding: var(--ui-space-4);
+  margin-bottom: var(--ui-space-4);
+}
+
+.dupBannerHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ui-space-3);
+}
+
+.dupBannerHead strong {
+  color: var(--ui-ink);
+}
+
+.dupList {
+  display: grid;
+  gap: var(--ui-space-2);
+  margin-top: var(--ui-space-3);
+}
+
+.dupItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  border: var(--ui-hairline) solid var(--ui-line);
+  color: var(--ui-ink);
+}
+
+.dupMeta {
+  font-size: var(--ui-type-meta);
+  color: var(--ui-muted);
+}
+
+.inventoryActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+  align-items: center;
+  margin-bottom: var(--ui-space-3);
+}
+
+.custBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  padding: var(--ui-space-3);
+  margin-bottom: var(--ui-space-3);
+  border: var(--ui-hairline) solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-subtle);
+}
+
+.custMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2) var(--ui-space-4);
+  align-items: center;
+  font-size: var(--ui-type-meta);
+  color: var(--ui-text);
+}
+
+.aliasBadge {
+  display: inline-block;
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border-radius: var(--ui-radius);
+  background: var(--ui-info-bg);
+  color: var(--ui-info);
+  font-size: var(--ui-type-sm);
+}
+
+.custBtnGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+}
+
+.primaryAction {
+  min-height: var(--ui-control-height);
+  padding: var(--ui-space-2) var(--ui-space-4);
+  border: var(--ui-hairline) solid var(--ui-accent);
+  border-radius: var(--ui-radius);
+  background: var(--ui-accent);
+  color: var(--ui-on-accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primaryAction:hover:not(:disabled) {
+  background: var(--ui-accent-hover);
+}
+
+.secondaryAction {
+  min-height: var(--ui-control-height);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: var(--ui-hairline) solid var(--ui-control-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  color: var(--ui-ink);
+  cursor: pointer;
+}
+
+.secondaryAction:hover:not(:disabled) {
+  background: var(--ui-subtle);
+}
+
+.secondaryAction[aria-pressed="true"] {
+  border-color: var(--ui-accent);
+  background: var(--ui-tint);
+  color: var(--ui-accent);
+  font-weight: 600;
+}
+
+.compactAction {
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border: var(--ui-hairline) solid var(--ui-control-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  color: var(--ui-ink);
+  font-size: var(--ui-type-meta);
+  cursor: pointer;
+}
+
+.compactAction:hover {
+  border-color: var(--ui-accent);
+  background: var(--ui-tint);
+}
+
+.archiveCard {
+  margin-top: var(--ui-space-4);
+  padding: var(--ui-space-4);
+  border: var(--ui-hairline) solid var(--ui-line);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+}
+
+.archiveCard h3 {
+  margin-top: 0;
+  font-size: var(--ui-type-section);
+}
+
+.archiveList {
+  display: grid;
+  gap: var(--ui-space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.archiveList li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--ui-radius);
+  background: var(--ui-subtle);
+  font-size: var(--ui-type-body);
+}
+
+.splitLayout {
+  display: grid;
+  gap: var(--ui-space-4);
+  align-items: start;
+}
+
+@media (min-width: 64rem) {
+  .splitLayout {
+    grid-template-columns: minmax(0, 1.35fr) minmax(22rem, 1fr);
+  }
+}
+
+.splitMain {
+  min-width: 0;
+}
+
+.splitInspector {
+  min-width: 0;
+  border: var(--ui-hairline) solid var(--ui-line);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  padding: var(--ui-space-4);
+}
+
+@media (min-width: 64rem) {
+  .splitInspector {
+    position: sticky;
+    top: var(--ui-space-4);
+  }
+}
+
+.inspectorHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ui-space-2);
+  padding-bottom: var(--ui-space-3);
+  border-bottom: var(--ui-hairline) solid var(--ui-line);
+  margin-bottom: var(--ui-space-3);
+}
+
+.inspectorHead h3 {
+  margin: 0;
+  font-size: var(--ui-type-section);
+}
+
+.suggestBox {
+  padding: var(--ui-space-3);
+  border-radius: var(--ui-radius);
+  background: var(--ui-info-bg);
+  border: var(--ui-hairline) solid var(--ui-line);
+  margin: var(--ui-space-3) 0;
+}
+
+.suggestBox small {
+  display: block;
+  color: var(--ui-info);
+  font-weight: 600;
+  margin-bottom: var(--ui-space-2);
+}
+
+.suggestChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+}
+
+.suggestChip {
+  padding: var(--ui-space-1) var(--ui-space-3);
+  border: var(--ui-hairline) solid var(--ui-info);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  color: var(--ui-info);
+  font-size: var(--ui-type-meta);
+  cursor: pointer;
+}
+
+.suggestChip:hover {
+  background: var(--ui-tint);
+  border-color: var(--ui-accent);
+  color: var(--ui-accent);
+}
+
+.inlineCreateBox {
+  margin: var(--ui-space-3) 0;
+  padding: var(--ui-space-3);
+  border: var(--ui-hairline) dashed var(--ui-accent);
+  border-radius: var(--ui-radius);
+  background: var(--ui-subtle);
+  display: grid;
+  gap: var(--ui-space-3);
+}
+
+.batchChipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+  margin: var(--ui-space-2) 0 var(--ui-space-3);
+}
+
+.batchChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border-radius: var(--ui-radius);
+  background: var(--ui-subtle);
+  border: var(--ui-hairline) solid var(--ui-line);
+  font-family: var(--ui-mono);
+  font-size: var(--ui-type-meta);
+}
+
+.batchChip button {
+  border: 0;
+  background: transparent;
+  color: var(--ui-danger);
+  cursor: pointer;
+  padding: 0 var(--ui-space-1);
+  min-height: auto;
+}
+
+.batchNames {
+  display: grid;
+  gap: var(--ui-space-2);
+  max-height: 15rem;
+  overflow-y: auto;
+  padding: var(--ui-space-2);
+  border: var(--ui-hairline) solid var(--ui-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-subtle);
+  margin: var(--ui-space-2) 0;
+}
+
+.batchNameRow {
+  display: grid;
+  gap: var(--ui-space-1);
+}
+
+.batchNameRow span {
+  font-family: var(--ui-mono);
+  font-size: var(--ui-type-sm);
+  color: var(--ui-muted);
+}
+
+.rowSelected {
+  background: var(--ui-tint);
+}
+
+.subTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+  margin-bottom: var(--ui-space-4);
+}
+
+.blastPanel {
+  border: var(--ui-hairline) solid var(--ui-line);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  padding: var(--ui-space-4);
+  margin-bottom: var(--ui-space-4);
+}
+
+.blastPanel h2 {
+  margin-top: 0;
+  font-size: var(--ui-type-subtitle);
+}
+
+.blastPanel p {
+  color: var(--ui-muted);
+  max-width: 48rem;
+}
+
+.blastInput {
+  width: 100%;
+  max-width: 36rem;
+  min-height: var(--ui-control-height);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: var(--ui-hairline) solid var(--ui-control-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  color: var(--ui-ink);
+}
+
+.blastGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--ui-space-3);
+}
+
+.blastCard {
+  border: var(--ui-hairline) solid var(--ui-line);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-surface);
+  padding: var(--ui-space-4);
+  display: grid;
+  gap: var(--ui-space-3);
+}
+
+.blastCard h3 {
+  margin: var(--ui-space-1) 0;
+  font-size: var(--ui-type-section);
+}
+
+.blastNodes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--ui-space-1);
+  font-size: var(--ui-type-meta);
+}
+
+.blastNodes li {
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border-radius: var(--ui-radius);
+  background: var(--ui-subtle);
+}
+
+.dialogStack {
+  display: grid;
+  gap: var(--ui-space-3);
+  margin-top: var(--ui-space-3);
+}
+
+.dialogStack label {
+  display: grid;
+  gap: var(--ui-space-1);
+  margin-bottom: 0;
+}
+
+.dialogStack select {
+  min-height: var(--ui-control-height);
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: var(--ui-hairline) solid var(--ui-control-line);
+  border-radius: var(--ui-radius);
+  background: var(--ui-surface);
+  color: var(--ui-ink);
+}
+
+.dialogStack .checkboxRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-space-2);
+  font-weight: 400;
+}
+
+.dialogStack .checkboxRow input[type="checkbox"] {
+  width: auto;
+  min-height: auto;
+  margin-top: var(--ui-space-1);
+}
+
+.alertError {
+  padding: var(--ui-space-3);
+  border-radius: var(--ui-radius);
+  border: var(--ui-hairline) solid var(--ui-danger);
+  background: var(--ui-danger-bg);
+  color: var(--ui-danger);
+  margin: var(--ui-space-2) 0;
+}
+
+.alertSuccess {
+  padding: var(--ui-space-3);
+  border-radius: var(--ui-radius);
+  border: var(--ui-hairline) solid var(--ui-success);
+  background: var(--ui-success-bg);
+  color: var(--ui-success);
+  margin: var(--ui-space-2) 0;
+}
+
+.previewBox {
+  padding: var(--ui-space-3);
+  border-radius: var(--ui-radius);
+  border: var(--ui-hairline) solid var(--ui-line);
+  background: var(--ui-subtle);
+  font-size: var(--ui-type-meta);
+}
+
+.fieldRow {
+  display: flex;
+  gap: var(--ui-space-2);
+  align-items: center;
+}
+
+.fieldRow input {
+  flex: 1 1 auto;
+}
+
+.fieldRow select {
+  flex: 0 0 9rem;
+}

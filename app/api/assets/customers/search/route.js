@@ -17,6 +17,7 @@ export async function GET(request) {
 
     const customers = await prisma.customer.findMany({
       where: {
+        active: true,
         OR: [
           { name: { contains: q, mode: 'insensitive' } },
           { contactEmail: { contains: q, mode: 'insensitive' } },

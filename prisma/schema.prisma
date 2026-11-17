@@ -363,14 +363,22 @@ model KnowledgeArticle {
 // ==========================================
 
 model Customer {
-  pickerUses CustomerPickerUse[]
-  id           Int      @id @default(autoincrement())
-  name         String   @unique
-  contactEmail String?
-  contactPhone String?
-  services     Service[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  pickerUses    CustomerPickerUse[]
+  id            Int        @id @default(autoincrement())
+  name          String     @unique
+  contactEmail  String?
+  contactPhone  String?
+  active        Boolean    @default(true)
+  archivedAt    DateTime?
+  mergedIntoId  Int?
+  mergedInto    Customer?  @relation("CustomerMergeHistory", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedAliases Customer[] @relation("CustomerMergeHistory")
+  services      Service[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([active, name])
+  @@index([mergedIntoId])
 }
 
 model ServiceTemplate {
