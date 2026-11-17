@@ -1,53 +1,313 @@
 'use client';
-import {useEffect,useState} from 'react';
+import {useEffect,useMemo,useState} from 'react';
 import styles from './kinerja.module.css';
-const number=value=>value==null?'Belum tersedia':new Intl.NumberFormat('id-ID',{maximumFractionDigits:2}).format(value);
-const signed=value=>value>0?`+${number(value)}`:number(value);
-const status=value=>({excluded:'Dikecualikan',insufficient_data:'Belum cukup bukti',ready:'Siap direview',locked:'Terkunci',reviewed:'Sudah direview'}[value]||value);
+import {buildCompareMonthOptions, fmtNumber} from './kinerjaFormat';
+import TeamPerformanceView from './TeamPerformanceView';
+import MemberDetailView from './MemberDetailView';
 
-export default function KinerjaClient({initialMonth,initialTab='self',initialUserId=null}) {
- const [month,setMonth]=useState(initialMonth),[tab,setTab]=useState(initialTab),[userId,setUserId]=useState(initialUserId),[department,setDepartment]=useState(''),[company,setCompany]=useState('');
- const [overview,setOverview]=useState(null),[detail,setDetail]=useState(null),[error,setError]=useState(''),[loading,setLoading]=useState(true),[reload,setReload]=useState(0);
- useEffect(()=>{const controller=new AbortController();setLoading(true);setError('');setDetail(null);
- const fetchJson=async url=>{const r=await fetch(url,{signal:controller.signal,cache:'no-store'}),b=await r.json();if(!r.ok)throw new Error(b.error||'Kinerja gagal dimuat.');return b;};
- Promise.all([fetchJson(`/api/reports/kinerja/overview?month=${month}`),fetchJson(`/api/reports/kinerja/${userId?'users/'+userId:'me'}?month=${month}`)]).then(([o,d])=>{setOverview(o);setDetail(d);}).catch(e=>{if(e.name!=='AbortError')setError(e.message);}).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
- return()=>controller.abort();},[month,userId,reload]);
- const rows=overview?.rows.filter(r=>(!department||String(r.departmentId)===department)&&(!company||r.company===company))||[];
- return <div className={styles.page}>
-  <header className={styles.header}><div><h1>Kinerja</h1><p>Hasil kerja, kualitas, dan kontribusi yang dapat ditelusuri.</p></div><a href="/reports/daily">Isi laporan harian</a></header>
-  <div className={styles.toolbar}><label>Bulan<input aria-label="Bulan" type="month" value={month} onChange={e=>{if(e.target.value)setMonth(e.target.value);}}/></label><button type="button" className="secondary-btn" onClick={()=>setReload(r=>r+1)} disabled={loading}>Aktualkan data</button></div>
-  <nav className={styles.tabs} aria-label="Tampilan kinerja"><button aria-pressed={tab==='self'} onClick={()=>{setTab('self');setUserId(null);}}>Kinerja saya</button>{overview?.canViewTeam&&<button aria-pressed={tab==='team'} onClick={()=>setTab('team')}>Keseluruhan & Departemen</button>}<button aria-pressed={tab==='activity'} onClick={()=>setTab('activity')}>Aktivitas & Poin</button></nav>
-  {loading&&<p role="status">Memuat kinerja dan bukti kegiatan...</p>}
-  {error&&<div role="alert"><p>{error}</p><button onClick={()=>setReload(r=>r+1)}>Coba lagi</button></div>}
-  {!loading&&!error&&detail&&<>
-   <p className={styles.mode}>{detail.mode==='official'?'Periode resmi. Peringkat mengikuti publikasi hasil yang terkunci.':'Simulasi. Angka belum menjadi penilaian resmi.'}</p>
-   {tab==='team'&&overview?.canViewTeam?<section><h2>Kinerja tim</h2><div className={styles.toolbar}><label>Departemen<select aria-label="Departemen" value={department} onChange={e=>setDepartment(e.target.value)}><option value="">Semua dalam akses saya</option>{overview.departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label><label>Perusahaan penempatan<select aria-label="Perusahaan penempatan" value={company} onChange={e=>setCompany(e.target.value)}><option value="">Semua dalam akses saya</option>{overview.companies.map(c=><option key={c}>{c}</option>)}</select></label></div>
-{overview.readiness?.ready===0&&<section className={styles.setup} aria-labelledby="kinerja-setup-title"><h3 id="kinerja-setup-title">Nilai formal belum dapat dihitung</h3><p>Evaluasi bulan ini membutuhkan penempatan sebulan penuh, kebijakan yang dipublikasikan, konteks jadwal, dan bukti yang direview. Data yang belum tersedia:</p><dl className={styles.setupCounts}><div><dt>Penempatan</dt><dd>{overview.readiness.assigned}/{overview.readiness.users}</dd></div><div><dt>Kebijakan</dt><dd>{overview.readiness.withPolicy}/{overview.readiness.users}</dd></div><div><dt>Konteks jadwal</dt><dd>{overview.readiness.withContext}/{overview.readiness.users}</dd></div><div><dt>Bukti direview</dt><dd>{overview.readiness.reviewedActivities}</dd></div></dl>{overview.readiness.topReasons?.length>0&&<ul>{overview.readiness.topReasons.map(reason=><li key={reason.text}>{reason.text} <small>({reason.count} anggota)</small></li>)}</ul>}<p className={styles.setupActions}><a href="/settings/evaluation">Atur aturan evaluasi</a><a href={`/reports/evaluations?month=${month}`}>Review bukti</a><a href="/reports/daily">Isi laporan harian</a></p></section>}
-{overview.activitySummary&&<section aria-labelledby="kinerja-activity-title"><h3 id="kinerja-activity-title">Aktivitas tim bulan ini</h3><p>Skor aktivitas = 40% poin + 35% tiket selesai + 25% respons, dinormalisasi di dalam departemen dan perusahaan yang sama. Bukan nilai evaluasi formal.</p><p>{number(overview.activitySummary.resolved)} tiket selesai · {number(overview.activitySummary.responses)} respons · {number(overview.activitySummary.points)} poin</p><div className={styles.tableWrap} role="region" aria-label="Peringkat aktivitas per departemen" tabIndex={0}><table><thead><tr><th scope="col">#</th><th scope="col">Anggota</th><th scope="col">Departemen / Perusahaan</th><th scope="col">Skor</th><th scope="col">Selesai</th><th scope="col">Respons</th><th scope="col">Poin</th>{overview.readiness?.ready>0&&<><th scope="col">Nilai formal</th><th scope="col">Status</th></>}<th scope="col">Rincian</th></tr></thead><tbody>{[...rows].sort((left,right)=>(left.department||'').localeCompare(right.department||'')||(left.company||'').localeCompare(right.company||'')||(left.rank||0)-(right.rank||0)).map((row,index)=><tr key={row.userId}><td>{row.rank??index+1}</td><th scope="row">{row.name}</th><td>{row.department||'—'}<small>{row.company||'Belum dipetakan'}</small></td><td><strong>{number(row.score??0)}</strong></td><td>{number(row.resolved??0)}</td><td>{number(row.responses??0)}</td><td>{number(row.points??0)}</td>{overview.readiness?.ready>0&&<><td>{number(row.total)}</td><td>{status(row.reviewState||row.status)}</td></>}<td><button onClick={()=>{setUserId(row.userId===overview.currentUserId?null:row.userId);setTab('self');}}>Lihat kinerja {row.name}</button></td></tr>)}</tbody></table></div></section>}
-{overview.comparison?.length>0&&<section aria-labelledby="kinerja-comparison-title"><h3 id="kinerja-comparison-title">Perbandingan dengan bulan lalu</h3><p>Skor relatif dihitung ulang tiap bulan; gunakan selisih skor, poin per anggota, dan konsistensi untuk menilai kenaikan kerja keras. Penilaian bonus dilakukan di akhir bulan.</p><div className={styles.tableWrap} role="region" aria-label="Perbandingan aktivitas dengan bulan lalu" tabIndex={0}><table><thead><tr><th>Tim</th><th>Anggota</th><th>Skor {overview.previousMonth}</th><th>Skor {overview.month}</th><th>Δ skor</th><th>Poin/anggota {overview.previousMonth}</th><th>Poin/anggota {overview.month}</th><th>Δ poin</th></tr></thead><tbody>{overview.comparison.map(row=><tr key={row.departmentId+':'+(row.company||'')}><th scope="row">{row.department}<small>{row.company||'Belum dipetakan'}</small></th><td>{row.members}</td><td>{row.previousActive?number(row.previousScore):'Belum ada data'}</td><td>{number(row.currentScore)}</td><td>{row.previousActive?signed(row.scoreDelta):'—'}</td><td>{row.previousActive?number(row.previousPoints):'—'}</td><td>{number(row.currentPoints)}</td><td>{row.previousActive?signed(row.pointsDelta):'—'}</td></tr>)}</tbody></table></div></section>}
-   {overview.readiness?.ready>0&&<p>{rows.filter(r=>r.total!=null).length} dari {rows.filter(r=>r.status!=='excluded').length} anggota memiliki nilai formal.</p>}
-   {overview.canPublish&&department&&company&&<PublishCohort month={month} departmentId={Number(department)} company={company} expectedVersion={overview.groups.find(g=>String(g.departmentId)===department&&g.company===company)?.publicationVersion||0} onSaved={()=>setReload(r=>r+1)}/>}
-   {!rows.length&&<p>Belum ada anggota dalam filter ini.</p>}</section>:
-   <><header className={styles.person}><h2>{detail.user.name}</h2><p>{detail.user.department} · {detail.user.company||'Perusahaan penempatan belum tervalidasi'}</p></header>
-   {tab==='activity'?<ActivityPanel detail={detail}/>:<>
-    <dl className={styles.summary}><div><dt>Nilai evaluasi</dt><dd>{number(detail.evaluation.total)}<small>{status(detail.evaluation.status)}</small></dd></div><div><dt>Peringkat dalam departemen</dt><dd>{detail.ranking.rank?`${detail.ranking.rank} dari ${detail.ranking.rankedCount}`:'Belum tersedia'}<small>{detail.ranking.score!=null?`Skor aktivitas ${number(detail.ranking.score)} Â· `:''}{detail.ranking.reason||`${detail.ranking.tied?'Nilai seri. ':''}${detail.ranking.unratedCount||0} anggota belum dinilai.`}</small></dd></div><div><dt>Poin kegiatan</dt><dd>{number(detail.points.ledger+detail.points.legacy)}<small>Bukti kontribusi, bukan nilai akhir</small></dd></div></dl>
-    {detail.evaluation.explanations?.length>0&&<details><summary>Dasar dan kelengkapan penilaian</summary>{detail.evaluation.explanations.map((x,i)=><p key={i}>{typeof x==='string'?x:JSON.stringify(x)}</p>)}</details>}
-    <section><h2>Analisis bulanan</h2><p>Ringkasan berdasarkan fakta tercatat, tetap memerlukan pemeriksaan konteks oleh manager.</p>{[['strengths','Kontribusi tercatat'],['improvements','Perlu tindak lanjut'],['context','Konteks'],['coverage','Bukti yang belum cukup']].map(([key,label])=><div className={styles.analysis} key={key}><h3>{label}</h3>{detail.analysis[key]?.length?<ul>{detail.analysis[key].map((a,i)=><li key={i}>{a.text}</li>)}</ul>:<p>Belum ada kesimpulan dari bukti yang tersedia.</p>}</div>)}</section>
-    <section><h2>Rincian ukuran kinerja</h2><div className={styles.tableWrap} role="region" aria-label="Metrik dan bukti kinerja" tabIndex={0}><table><thead><tr><th>Ukuran</th><th>Hasil</th><th>Cakupan / konteks</th><th>Bukti</th></tr></thead><tbody>{detail.metrics.map(m=><tr key={m.key}><th scope="row">{m.label}</th><td>{number(m.value)}{m.value!=null&&m.unit?' '+m.unit:''}{m.p90!=null&&<small>P90: {number(m.p90)} {m.unit}</small>}</td><td>{m.denominator!=null&&<p>{m.denominator} sampel</p>}{m.note}</td><td>{m.evidenceRefs?.length?<details><summary>Lihat {m.evidenceRefs.length} bukti</summary><ul>{m.evidenceRefs.slice(0,50).map((r,i)=><li key={i}>{r.ticketId?<a href={'/tickets/'+r.ticketId}>Tiket #{r.ticketId}</a>:<span>{r.source} #{r.sourceId}</span>}</li>)}</ul>{m.evidenceRefs.length>50&&<p>Menampilkan 50 bukti pertama.</p>}</details>:'Belum tersedia'}</td></tr>)}</tbody></table></div></section>
-    {detail.tickets?.length>0&&<section><h2>Tiket yang dikerjakan</h2><p>Daftar tiket tempat anggota ini menjadi PIC atau memberi respons pada bulan ini.</p><div className={styles.tableWrap} role="region" aria-label="Tiket yang dikerjakan" tabIndex={0}><table><thead><tr><th>ID</th><th>Judul</th><th>Peran</th><th>Status</th><th>Selesai</th><th>Respons</th><th>Poin</th></tr></thead><tbody>{detail.tickets.slice(0,100).map(ticket=><tr key={ticket.id}><td><a href={'/tickets/'+ticket.id}>{ticket.trackingId||'#'+ticket.id}</a></td><td>{ticket.title}</td><td>{ticket.role}</td><td>{ticket.status}</td><td>{ticket.resolvedAt?new Date(ticket.resolvedAt).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}):'—'}</td><td>{ticket.responseMinutes!=null?`${ticket.responseMinutes} mnt`:'—'}</td><td>{number(ticket.points)}</td></tr>)}</tbody></table></div>{detail.tickets.length>100&&<p>Menampilkan 100 tiket pertama.</p>}</section>}
-    <section><h2>Peninjauan</h2><p>Nilai akhir mengikuti rubrik dan review yang tercatat, bukan jumlah klik atau balasan.</p>{detail.canReview&&<a href={'/reports/evaluations?review=1&month='+month}>Buka review evaluasi periode ini</a>}{detail.canReview&&<DataReview rows={detail.dataChanges} month={month} onSaved={()=>setReload(r=>r+1)}/>}</section>
-   </> }</>}
-  </>}
- </div>;
+const prevMonthOf = monthKey => {
+  if (!monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) return '';
+  const [y, m] = monthKey.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 7);
+};
+
+export default function KinerjaClient({
+  initialMonth,
+  initialCompareMonth = null,
+  initialTab = 'self',
+  initialUserId = null,
+  hasTeamAccess = false,
+}) {
+  const [month, setMonth] = useState(initialMonth);
+  const [compareMonth, setCompareMonth] = useState(initialCompareMonth || prevMonthOf(initialMonth));
+  const [trendMonths, setTrendMonths] = useState(6);
+  const [tab, setTab] = useState(initialTab);
+  const [userId, setUserId] = useState(initialUserId);
+  const [department, setDepartment] = useState('');
+  const [company, setCompany] = useState('');
+  const [overview, setOverview] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const [error, setError] = useState('');
+  const [detailError, setDetailError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [reload, setReload] = useState(0);
+
+  const compareOptions = useMemo(() => buildCompareMonthOptions(month, 6), [month]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    setDetailError('');
+    setDetail(null);
+
+    const fetchJson = async url => {
+      const r = await fetch(url, {signal: controller.signal, cache: 'no-store'});
+      const b = await r.json();
+      if (!r.ok) throw new Error(b.error || 'Kinerja gagal dimuat.');
+      return b;
+    };
+
+    const qs = `month=${encodeURIComponent(month)}&compareMonth=${encodeURIComponent(compareMonth)}&trendMonths=${trendMonths}`;
+    const deptFilter = department ? `&departmentId=${encodeURIComponent(department)}` : '';
+    const compFilter = company ? `&company=${encodeURIComponent(company)}` : '';
+
+    Promise.allSettled([
+      fetchJson(`/api/reports/kinerja/overview?${qs}${deptFilter}${compFilter}`),
+      fetchJson(`/api/reports/kinerja/${userId ? 'users/' + userId : 'me'}?${qs}`),
+    ])
+      .then(([overviewRes, detailRes]) => {
+        if (controller.signal.aborted) return;
+        if (overviewRes.status === 'fulfilled') {
+          setOverview(overviewRes.value);
+        } else if (overviewRes.reason?.name !== 'AbortError') {
+          setError(overviewRes.reason?.message || 'Kinerja gagal dimuat.');
+          return;
+        }
+
+        if (detailRes.status === 'fulfilled') {
+          setDetail(detailRes.value);
+        } else if (detailRes.reason?.name !== 'AbortError') {
+          setDetailError(detailRes.reason?.message || 'Rincian anggota gagal dimuat.');
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [month, compareMonth, trendMonths, userId, department, company, reload]);
+
+  const canShowTeam = Boolean(overview ? overview.canViewTeam : hasTeamAccess);
+  const effectiveTab = tab === 'team' && !canShowTeam ? 'self' : tab;
+  const activeMode = detail?.mode || overview?.mode || 'simulation';
+
+  return (
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <div>
+          <h1>Kinerja</h1>
+          <p>Performa operasional, perbandingan periode, dan kontribusi yang dapat ditelusuri.</p>
+        </div>
+        <a href="/reports/daily">Isi laporan harian</a>
+      </header>
+
+      <div className={styles.toolbar}>
+        <label>
+          Bulan
+          <input
+            aria-label="Bulan"
+            type="month"
+            value={month}
+            onChange={e => {
+              if (e.target.value) {
+                const next = e.target.value;
+                setMonth(next);
+                setCompareMonth(prevMonthOf(next));
+              }
+            }}
+          />
+        </label>
+
+        <label>
+          Bandingkan dengan
+          <select
+            aria-label="Bandingkan dengan"
+            value={compareMonth}
+            onChange={e => setCompareMonth(e.target.value)}
+          >
+            {compareOptions.map(opt => (
+              <option key={opt.key} value={opt.key}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          Jendela tren
+          <select
+            aria-label="Jendela tren"
+            value={trendMonths}
+            onChange={e => setTrendMonths(Number(e.target.value))}
+          >
+            <option value={3}>3 bulan terakhir</option>
+            <option value={6}>6 bulan terakhir</option>
+          </select>
+        </label>
+
+        <button
+          type="button"
+          className="secondary-btn"
+          onClick={() => setReload(r => r + 1)}
+          disabled={loading}
+        >
+          Aktualkan data
+        </button>
+      </div>
+
+      <nav className={styles.tabs} aria-label="Tampilan kinerja">
+        {canShowTeam && (
+          <button
+            type="button"
+            aria-pressed={effectiveTab === 'team'}
+            onClick={() => setTab('team')}
+          >
+            Performa Tim
+          </button>
+        )}
+        <button
+          type="button"
+          aria-pressed={effectiveTab === 'self'}
+          onClick={() => {
+            setTab('self');
+            setUserId(null);
+          }}
+        >
+          Kinerja saya
+        </button>
+        <button
+          type="button"
+          aria-pressed={effectiveTab === 'activity'}
+          onClick={() => setTab('activity')}
+        >
+          Aktivitas & Poin
+        </button>
+      </nav>
+
+      {loading && <p role="status">Memuat kinerja dan bukti kegiatan...</p>}
+
+      {!loading && error && (
+        <div role="alert" className={styles.inlineAlert}>
+          <p>{error}</p>
+          <button type="button" className="secondary-btn" onClick={() => setReload(r => r + 1)}>
+            Coba lagi
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && (overview || detail) && (
+        <>
+          <div className={styles.modeBar}>
+            <span className={styles.modePill}>
+              {activeMode === 'official' ? 'Periode resmi' : 'Mode simulasi'}
+            </span>
+            <span>
+              {activeMode === 'official'
+                ? 'Peringkat formal mengikuti publikasi hasil yang terkunci.'
+                : 'KPI operasional dihitung dari data nyata; nilai formal masih dalam simulasi.'}
+            </span>
+          </div>
+
+          {effectiveTab === 'team' && canShowTeam && overview && (
+            <TeamPerformanceView
+              overview={overview}
+              month={month}
+              compareMonth={compareMonth}
+              trendMonths={trendMonths}
+              department={department}
+              company={company}
+              onDepartmentChange={setDepartment}
+              onCompanyChange={setCompany}
+              onSelectMember={selectedId => {
+                setUserId(selectedId === overview.currentUserId ? null : selectedId);
+                setTab('self');
+              }}
+              onReload={() => setReload(r => r + 1)}
+            />
+          )}
+
+          {effectiveTab !== 'team' && detailError && !detail && (
+            <div role="alert" className={styles.inlineAlert}>
+              <p>{detailError}</p>
+              <div className={styles.pillGroup}>
+                <button type="button" className="secondary-btn" onClick={() => setReload(r => r + 1)}>
+                  Coba lagi
+                </button>
+                {userId != null && (
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => {
+                      setUserId(null);
+                      if (canShowTeam) setTab('team');
+                    }}
+                  >
+                    {canShowTeam ? 'Kembali ke Performa Tim' : 'Kembali ke Kinerja saya'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {effectiveTab === 'activity' && detail && <ActivityPanel detail={detail} />}
+
+          {effectiveTab === 'self' && detail && (
+            <MemberDetailView
+              detail={detail}
+              month={month}
+              compareMonth={compareMonth}
+              trendMonths={trendMonths}
+              canBackToTeam={canShowTeam && userId != null}
+              onBackToTeam={() => {
+                setUserId(null);
+                setTab('team');
+              }}
+              onReload={() => setReload(r => r + 1)}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
 }
-function ActivityPanel({detail}){return <section><h2>Aktivitas & Poin</h2><p>Ledger: {number(detail.points.ledger)} poin. Poin tiket lama: {number(detail.points.legacy)}. Tidak mengubah histori perolehan poin.</p>{!detail.activities.length&&<p>Belum ada aktivitas pada periode ini.</p>}<ol>{detail.activities.map(a=><li key={a.id}><a href={'/tickets/'+a.ticketId}>Tiket #{a.ticketId}</a>: {a.action} ({a.awardedScore||0} poin)</li>)}</ol><h3>Kontribusi data</h3>{!detail.dataChanges.length?<p>Belum ada perubahan data tercatat. Pencatatan tidak berlaku surut.</p>:<ul>{detail.dataChanges.map(e=><li key={e.id}>{e.entityType} #{e.entityId}: {e.type}. {e.validationState==='accepted'?'Tervalidasi':e.validationState==='rejected'?'Perlu koreksi':'Menunggu review'}<details><summary>Field yang berubah</summary><ul>{e.changes.map((c,i)=><li key={i}>{c.field}: {String(c.before??'Kosong')} menjadi {String(c.after??'Kosong')}</li>)}</ul></details></li>)}</ul>}<h3>Pengetahuan dan tugas rapat</h3><p>{detail.articles.length} artikel tercatat dan {detail.actions.length} tugas rapat diperbarui. Jumlah ini belum menjadi ukuran kualitas.</p></section>;}
-function PublishCohort({month,departmentId,company,expectedVersion,onSaved}){const [confirm,setConfirm]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');return <form className={styles.review} onSubmit={async e=>{e.preventDefault();setBusy(true);setError('');try{const r=await fetch('/api/reports/kinerja/publications?month='+month,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({departmentId,company,expectedVersion})});const b=await r.json();if(!r.ok)throw Error(b.error);onSaved();}catch(e){setError(e.message);}finally{setBusy(false);}}}><label><input type="checkbox" required checked={confirm} onChange={e=>setConfirm(e.target.checked)}/> Seluruh anggota dalam kelompok ini telah direview dan hasilnya siap dipublikasikan.</label>{error&&<p role="alert">{error}</p>}<button type="submit" className="btn btn-primary" disabled={busy}>{busy?'Mempublikasikan…':'Publikasikan peringkat resmi'}</button></form>;}
-function DataReview({rows,month,onSaved}){
- const [id,setId]=useState(''),[decision,setDecision]=useState('accepted'),[reason,setReason]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const pending=rows.filter(r=>r.validationState==='pending');if(!pending.length)return null;
- async function submit(e){e.preventDefault();setBusy(true);setError('');try{const r=await fetch('/api/reports/kinerja/activity-review?month='+month,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:Number(id),decision,reason})});const b=await r.json();if(!r.ok)throw Error(b.error);onSaved();}catch(e){setError(e.message);}finally{setBusy(false);}}
- return <form className={styles.review} onSubmit={submit}><fieldset disabled={busy}><legend>Validasi kontribusi data</legend>
- <label>Perubahan<select aria-label="Perubahan" required value={id} onChange={e=>setId(e.target.value)}><option value="">Pilih bukti</option>{pending.map(r=><option key={r.id} value={r.id}>{r.type} #{r.entityId}</option>)}</select></label>
- <label>Hasil<select aria-label="Hasil validasi" value={decision} onChange={e=>setDecision(e.target.value)}><option value="accepted">Valid</option><option value="rejected">Perlu koreksi</option></select></label>
- <label>Bukti dan alasan<textarea required maxLength={2000} value={reason} onChange={e=>setReason(e.target.value)}/></label>{error&&<p role="alert">{error}</p>}<button>Simpan validasi</button></fieldset></form>;
+
+function ActivityPanel({detail}) {
+  return (
+    <section className={styles.sectionBlock}>
+      <h2>Aktivitas & Poin</h2>
+      <p className={styles.sectionNote}>
+        Ledger: {fmtNumber(detail.points.ledger, 0)} poin. Poin tiket lama: {fmtNumber(detail.points.legacy, 0)}. Tidak mengubah histori perolehan poin.
+      </p>
+      {!detail.activities.length && <p>Belum ada aktivitas pada periode ini.</p>}
+      <ol>
+        {detail.activities.map(a => (
+          <li key={a.id}>
+            <a href={'/tickets/' + a.ticketId}>Tiket #{a.ticketId}</a>: {a.action} ({a.awardedScore || 0} poin)
+          </li>
+        ))}
+      </ol>
+      <h3>Kontribusi data</h3>
+      {!detail.dataChanges.length ? (
+        <p>Belum ada perubahan data tercatat. Pencatatan tidak berlaku surut.</p>
+      ) : (
+        <ul>
+          {detail.dataChanges.map(e => (
+            <li key={e.id}>
+              {e.entityType} #{e.entityId}: {e.type}.{' '}
+              {e.validationState === 'accepted'
+                ? 'Tervalidasi'
+                : e.validationState === 'rejected'
+                  ? 'Perlu koreksi'
+                  : 'Menunggu review'}
+              <details>
+                <summary>Field yang berubah</summary>
+                <ul>
+                  {e.changes.map((c, i) => (
+                    <li key={i}>
+                      {c.field}: {String(c.before ?? 'Kosong')} menjadi {String(c.after ?? 'Kosong')}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            </li>
+          ))}
+        </ul>
+      )}
+      <h3>Pengetahuan dan tugas rapat</h3>
+      <p>
+        {detail.articles.length} artikel tercatat dan {detail.actions.length} tugas rapat diperbarui. Jumlah ini belum menjadi ukuran kualitas.
+      </p>
+    </section>
+  );
 }
