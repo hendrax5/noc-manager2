@@ -2,15 +2,38 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
-import { dateOnlyToUtcDate, toDateOnlyString } from "@/lib/schedules/dates";
+import {
+  buildMonthDateRangeStrings,
+  dateOnlyToUtcDate,
+  toDateOnlyString,
+} from "@/lib/schedules/dates";
 import { canEditSchedules } from "@/lib/schedules/access";
 import { computeIsLembur } from "@/lib/schedules/fairness";
 
 const scheduleInclude = {
   shiftType: true,
   generatedShiftType: { select: { id: true, name: true } },
-  user: { select: { id: true, name: true, email: true } },
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      active: true,
+      resignedAt: true,
+      scheduleEligible: true,
+    },
+  },
 };
+
+function parseQueryDate(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return dateOnlyToUtcDate(s);
+  }
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
 
 export async function GET(req) {
   try {
@@ -18,16 +41,29 @@ export async function GET(req) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { searchParams } = new URL(req.url);
+    const monthParam = searchParams.get("month"); // YYYY-MM (preferred, TZ-safe)
     const start = searchParams.get("start");
     const end = searchParams.get("end");
     const locationId = searchParams.get("locationId");
 
     const whereClause = {};
-    if (start && end) {
-      whereClause.date = { gte: new Date(start), lte: new Date(end) };
+    if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
+      const [yStr, mStr] = monthParam.split("-");
+      const bounds = buildMonthDateRangeStrings(parseInt(yStr, 10), parseInt(mStr, 10));
+      whereClause.date = {
+        gte: dateOnlyToUtcDate(bounds.startStr),
+        lt: dateOnlyToUtcDate(bounds.nextStartStr),
+      };
+    } else if (start && end) {
+      const startDate = parseQueryDate(start);
+      const endDate = parseQueryDate(end);
+      if (!startDate || !endDate) {
+        return NextResponse.json({ error: "Invalid start/end date" }, { status: 400 });
+      }
+      whereClause.date = { gte: startDate, lte: endDate };
     }
     if (locationId) {
-      whereClause.user = { locationId: parseInt(locationId) };
+      whereClause.user = { locationId: parseInt(locationId, 10) };
     }
 
     const schedules = await prisma.shiftSchedule.findMany({
@@ -38,6 +74,10 @@ export async function GET(req) {
             id: true,
             name: true,
             email: true,
+            active: true,
+            resignedAt: true,
+            scheduleEligible: true,
+            role: { select: { name: true } },
             location: true,
             departmentId: true,
             department: { select: { id: true, name: true } },
@@ -57,6 +97,7 @@ export async function GET(req) {
 
 /**
  * PATCH — edit cell (shift / highlight / note / isLembur) or swap two cells.
+ * Marks `manualEdited = true` so safe schedule generation preserves edits.
  * Editors: Admin, Manager, manage_schedules
  */
 export async function PATCH(req) {
@@ -147,6 +188,8 @@ export async function PATCH(req) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });
     }
 
+    data.manualEdited = true;
+
     const row = await prisma.shiftSchedule.upsert({
       where: { userId_date: { userId, date } },
       update: data,
@@ -159,6 +202,7 @@ export async function PATCH(req) {
         noteUpdatedBy: data.noteUpdatedBy ?? null,
         noteUpdatedAt: data.noteUpdatedAt ?? null,
         isLembur: data.isLembur !== undefined ? data.isLembur : false,
+        manualEdited: true,
         generatedShiftTypeId: null,
       },
       include: scheduleInclude,
@@ -195,25 +239,25 @@ async function swapCells(body) {
   const aGenerated = aRow?.generatedShiftTypeId ?? null;
   const bGenerated = bRow?.generatedShiftTypeId ?? null;
 
-  // Cell A gets B's shift/highlight/note; keeps A's generatedShiftTypeId
   const aPayload = {
     shiftTypeId: bShift,
     highlightColor: bRow?.highlightColor ?? null,
     note: bRow?.note ?? null,
     noteUpdatedBy: bRow?.noteUpdatedBy ?? null,
     noteUpdatedAt: bRow?.noteUpdatedAt ?? null,
+    manualEdited: true,
     isLembur: computeIsLembur({
       shiftTypeId: bShift,
       generatedShiftTypeId: aGenerated,
     }),
   };
-  // Cell B gets A's shift/highlight/note; keeps B's generatedShiftTypeId
   const bPayload = {
     shiftTypeId: aShift,
     highlightColor: aRow?.highlightColor ?? null,
     note: aRow?.note ?? null,
     noteUpdatedBy: aRow?.noteUpdatedBy ?? null,
     noteUpdatedAt: aRow?.noteUpdatedAt ?? null,
+    manualEdited: true,
     isLembur: computeIsLembur({
       shiftTypeId: aShift,
       generatedShiftTypeId: bGenerated,

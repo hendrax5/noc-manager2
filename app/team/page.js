@@ -4,57 +4,80 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import TeamAccessManager from "./TeamAccessManager";
-
 import { getAppConfig } from "@/lib/config";
+import styles from "./team.module.css";
 
 export default async function TeamPage() {
   const session = await getServerSession(authOptions);
-  
+
   if (!session) {
-    redirect('/login');
+    redirect("/login");
   }
 
+  const currentUserId = parseInt(session.user.id, 10);
   const dbUser = await prisma.user.findUnique({
-    where: { id: parseInt(session.user.id) },
-    include: { role: true }
+    where: { id: currentUserId },
+    include: { role: true },
   });
 
-  const canManageUsers = dbUser?.role?.permissions?.includes('manage_users') || dbUser?.role?.name === 'Admin';
-  const canManageRoles = dbUser?.role?.permissions?.includes('manage_roles') || dbUser?.role?.name === 'Admin';
-  const canManageDepartments = dbUser?.role?.permissions?.includes('manage_departments') || dbUser?.role?.name === 'Admin';
+  const canManageUsers =
+    dbUser?.role?.permissions?.includes("manage_users") || dbUser?.role?.name === "Admin";
+  const canManageRoles =
+    dbUser?.role?.permissions?.includes("manage_roles") || dbUser?.role?.name === "Admin";
+  const canManageDepartments =
+    dbUser?.role?.permissions?.includes("manage_departments") ||
+    dbUser?.role?.name === "Admin";
 
   if (!canManageUsers && !canManageRoles && !canManageDepartments) {
-    redirect('/dashboard');
+    redirect("/dashboard");
   }
 
-  const users = await prisma.user.findMany({ include: { role: true, department: true }, orderBy: { id: 'asc' } });
-  const departments = await prisma.department.findMany({ orderBy: { id: 'asc' } });
-  const roles = await prisma.role.findMany();
+  const [users, departments, roles, locations, config] = await Promise.all([
+    prisma.user.findMany({
+      include: { role: true, department: true, location: true },
+      orderBy: [{ active: "desc" }, { name: "asc" }, { id: "asc" }],
+    }),
+    prisma.department.findMany({ orderBy: { id: "asc" } }),
+    prisma.role.findMany({ orderBy: { id: "asc" } }),
+    prisma.location.findMany({ orderBy: { city: "asc" } }),
+    getAppConfig(),
+  ]);
 
-  const config = await getAppConfig();
-  const companies = config.companyNames ? config.companyNames.split(',').map(s => s.trim()) : ["ION", "SDC", "Sistercompany"];
+  const companies = config.companyNames
+    ? config.companyNames.split(",").map((s) => s.trim())
+    : ["ION", "SDC", "Sistercompany"];
   const initialDeptMap = config.deptCompanyMap || {};
   const initialAutoRouteMap = config.deptAutoRouteMap || {};
 
   return (
-    <main className="container">
-      <header className="page-header ui-static-3e8220669e" >
-        <h1>Team & Access Management</h1>
-        <p>Complete control over NOC staff assignments, sub-departments, and global security roles.</p>
+    <main className={`container ${styles.page}`}>
+      <header className={styles.header}>
+        <div>
+          <h1 className={styles.headerTitle}>Tim & Akses</h1>
+          <p className={styles.headerSubtitle}>
+            Kelola status anggota (Aktif, Non-Shift, Resign), role akses, serta departemen & routing tiket.
+          </p>
+        </div>
+
+        <nav className={styles.subNav} aria-label="Navigasi Tim">
+          <Link href="/team" className={`${styles.subNavLink} ${styles.subNavLinkActive}`}>
+            Anggota & Akses
+          </Link>
+          <Link href="/team/schedules" className={styles.subNavLink}>
+            Jadwal Shift
+          </Link>
+        </nav>
       </header>
 
-      <div className="ui-static-4a8d184217" style={{display: 'flex'}}>
-        <Link href="/team" className="ui-static-f18cac270c" style={{textDecoration: 'none'}}>Members & Access</Link>
-        <Link href="/team/schedules" className="ui-static-d465603229" style={{textDecoration: 'none'}}>Shift Schedules</Link>
-      </div>
-
-      <TeamAccessManager 
-        users={users} 
-        roles={roles} 
-        departments={departments} 
-        companies={companies} 
-        initialDeptMap={initialDeptMap} 
+      <TeamAccessManager
+        users={users}
+        roles={roles}
+        departments={departments}
+        locations={locations}
+        companies={companies}
+        initialDeptMap={initialDeptMap}
         initialAutoRouteMap={initialAutoRouteMap}
+        currentUserId={currentUserId}
         canManageUsers={canManageUsers}
         canManageRoles={canManageRoles}
         canManageDepartments={canManageDepartments}

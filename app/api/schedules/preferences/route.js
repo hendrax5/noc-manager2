@@ -24,16 +24,23 @@ export async function PATCH(req) {
     if (!hasPermission) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const body = await req.json();
-    const { userId, scheduleMode, fixedShiftId, fixedOffDays, scheduleFlag } = body;
+    const { userId, scheduleMode, fixedShiftId, fixedOffDays, scheduleFlag, scheduleEligible } = body;
 
+    const userUpdate = {};
     if (scheduleFlag) {
       const allowed = ["Umum", "Kristen", "Kuliah"];
       if (!allowed.includes(scheduleFlag)) {
         return NextResponse.json({ error: "Invalid scheduleFlag" }, { status: 400 });
       }
+      userUpdate.scheduleFlag = scheduleFlag;
+    }
+    if (typeof scheduleEligible === "boolean") {
+      userUpdate.scheduleEligible = scheduleEligible;
+    }
+    if (Object.keys(userUpdate).length > 0) {
       await prisma.user.update({
-        where: { id: parseInt(userId) },
-        data: { scheduleFlag },
+        where: { id: parseInt(userId, 10) },
+        data: userUpdate,
       });
     }
     
@@ -50,7 +57,7 @@ export async function PATCH(req) {
         fixedShiftId: fixedShiftId ? parseInt(fixedShiftId) : null,
         fixedOffDays: JSON.stringify(fixedOffDays || [])
       },
-      include: { user: { select: { id: true, name: true, email: true, location: true, scheduleFlag: true } }, fixedShift: true }
+      include: { user: { select: { id: true, name: true, email: true, location: true, scheduleFlag: true, active: true, scheduleEligible: true } }, fixedShift: true }
     });
     
     return NextResponse.json(updated);

@@ -27,7 +27,7 @@ export default async function MeetingDetailPage({ params }) {
   if (!meeting) redirect('/meetings');
 
   // Fetch users and departments for the Action Items dropdown
-  const users = await prisma.user.findMany({ select: { id: true, name: true, email: true } });
+  const users = await prisma.user.findMany({ where: { active: true }, select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } });
   const departments = await prisma.department.findMany({ select: { id: true, name: true } });
 
   return (

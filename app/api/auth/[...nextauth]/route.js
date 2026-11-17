@@ -23,7 +23,7 @@ export const authOptions = {
           omit: { password: false },
         });
 
-        if (!user) return null;
+        if (!user || user.active === false) return null;
         
         const { valid: isValid, needsRehash } = await verifyPassword(credentials.password, user.password);
 
@@ -81,6 +81,9 @@ export const authOptions = {
           });
           
           if (dbUser) {
+            if (dbUser.active === false) {
+              return null;
+            }
             session.user.roleId = dbUser.roleId;
             session.user.departmentId = dbUser.departmentId;
             session.user.role = dbUser.role.name;

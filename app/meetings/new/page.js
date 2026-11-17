@@ -12,6 +12,7 @@ export default async function NewMeetingPage() {
   if (!hasPermission) redirect('/meetings');
 
   const users = await prisma.user.findMany({
+    where: { active: true },
     include: { department: true },
     orderBy: { name: 'asc' }
   });

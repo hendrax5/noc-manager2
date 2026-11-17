@@ -49,6 +49,10 @@ model User {
   department   Department  @relation(fields: [departmentId], references: [id])
   locationId   Int?
   location     Location?   @relation(fields: [locationId], references: [id])
+  active       Boolean     @default(true)
+  resignedAt   DateTime?
+  inactiveReason String?
+  scheduleEligible Boolean @default(true) // false = staff aktif non-shift (tidak ikut generator POLA)
   skillTags    String      @default("[]")
   scheduleFlag String      @default("Umum") // Umum | Kristen | Kuliah — bias untuk generator pola
   tickets      Ticket[]    @relation("AssignedUser")
@@ -325,6 +329,7 @@ model ShiftSchedule {
   generatedShiftTypeId Int?
   generatedShiftType   ShiftType? @relation("GeneratedShiftBaseline", fields: [generatedShiftTypeId], references: [id])
   isLembur             Boolean   @default(false)
+  manualEdited         Boolean   @default(false)
   highlightColor String?   // e.g. #fef08a — manager/staff marker (stabilo)
   note           String?   @db.Text
   noteUpdatedBy  Int?

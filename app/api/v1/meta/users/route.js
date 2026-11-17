@@ -5,12 +5,18 @@ export const GET = integrationGet(
   { anyOf: ["tickets:read", "tickets:read:full", "reports:performance:read", "dashboard:read"] },
   async ({ query }) => {
     const departmentId = parseIntParam(query.departmentId, "departmentId");
+    const includeInactive = query.includeInactive === "true" || query.includeInactive === "1";
+    const where = {
+      ...(includeInactive ? {} : { active: true }),
+      ...(departmentId ? { departmentId } : {}),
+    };
     const users = await prisma.user.findMany({
-      where: departmentId ? { departmentId } : {},
+      where,
       select: {
         id: true,
         name: true,
         email: true,
+        active: true,
         role: { select: { name: true } },
         department: { select: { id: true, name: true } },
         location: { select: { id: true, city: true } },
@@ -23,6 +29,7 @@ export const GET = integrationGet(
           id: u.id,
           name: u.name,
           email: u.email,
+          active: u.active,
           role: u.role?.name || null,
           department: u.department,
           location: u.location,

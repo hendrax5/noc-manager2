@@ -40,7 +40,7 @@ export default async function TicketDetailsPage({ params }) {
 
   // Pre-fetch departments and users for re-assignment
   const departments = await prisma.department.findMany();
-  const users = await prisma.user.findMany({ select: { id: true, name: true, email: true } });
+  const users = await prisma.user.findMany({ where: { active: true }, select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } });
   const jobCategories = await prisma.jobCategory.findMany({ where: { active: true } });
   const customFields = await prisma.customField.findMany({ where: { active: true }, orderBy: { id: 'asc' } });
   const serviceTemplates = await prisma.serviceTemplate.findMany({ orderBy: { name: 'asc' } });

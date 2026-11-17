@@ -1,26 +1,82 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import UserTableClient from "./UserTableClient";
+import { isRosterEligibleUser } from "@/lib/schedules/protection";
+import { SCHEDULE_FLAGS } from "@/lib/schedules/pola";
+import styles from "./team.module.css";
 
-export default function TeamAccessManager({ users, roles, departments, companies = ["ION", "SDC", "Sistercompany"], initialDeptMap = {}, initialAutoRouteMap = {}, canManageUsers = false, canManageRoles = false, canManageDepartments = false }) {
+const ROLE_PERMISSIONS = [
+  { key: "view_all_tickets", label: "View All Tickets (Global Scope)" },
+  { key: "manage_tickets", label: "Manage Tickets (Master Permission)" },
+  { key: "create_tickets", label: "Create Tickets" },
+  { key: "modify_tickets", label: "Modify Tickets (Status/Assign/Category)" },
+  { key: "change_ticket_status", label: "Change Ticket Status (Open/Resolve)" },
+  { key: "assign_tickets", label: "Assign Tickets (Staff/Tim/Priority)" },
+  { key: "change_job_category", label: "Change Job Category & Score" },
+  { key: "delete_tickets", label: "Delete Tickets" },
+  { key: "edit_own_tickets", label: "Edit Tickets Created by Self" },
+  { key: "edit_other_tickets", label: "Edit Tickets Created by Others" },
+  { key: "manage_sla", label: "Manage SLA Configuration" },
+  { key: "view_internal_notes", label: "View Internal Notes" },
+  { key: "manage_ticket_notes", label: "Write Internal Notes" },
+  { key: "view_live_ops", label: "View Live Operations Dashboard" },
+  { key: "manage_users", label: "Manage Team & NOC Staff" },
+  { key: "manage_roles", label: "Manage Security Roles & Permissions" },
+  { key: "manage_departments", label: "Manage Sub-Departments & Routing" },
+  { key: "manage_settings", label: "Manage Settings, Fields & Routing" },
+  { key: "manage_trouble_master", label: "Manage Master Data Trouble" },
+  { key: "manage_service_work", label: "Kelola Jenis Pekerjaan Layanan" },
+  { key: "view_reports", label: "View Performance Analytics" },
+  { key: "manage_schedules", label: "Manage Shift Schedules & Types" },
+  { key: "manage_knowledge", label: "Manage Knowledge Base Articles" },
+  { key: "manage_assets", label: "Manage Customer Assets & Services" },
+  { key: "manage_meetings", label: "Manage Meetings & Attendance" },
+];
+
+export default function TeamAccessManager({
+  users,
+  roles,
+  departments,
+  locations = [],
+  companies = ["ION", "SDC", "Sistercompany"],
+  initialDeptMap = {},
+  initialAutoRouteMap = {},
+  currentUserId,
+  canManageUsers = false,
+  canManageRoles = false,
+  canManageDepartments = false,
+}) {
   const router = useRouter();
   const availableTabs = [
-    canManageUsers && 'users',
-    canManageRoles && 'roles',
-    canManageDepartments && 'departments'
+    canManageUsers && { id: "users", label: "Anggota Tim" },
+    canManageRoles && { id: "roles", label: "Role & Hak Akses" },
+    canManageDepartments && { id: "departments", label: "Departemen & Routing" },
   ].filter(Boolean);
-  const [activeTab, setActiveTab] = useState(availableTabs[0] || 'users');
+
+  const [activeTab, setActiveTab] = useState(availableTabs[0]?.id || "users");
   const [newRole, setNewRole] = useState("");
   const [newDept, setNewDept] = useState("");
-  const [userPage, setUserPage] = useState(1);
-  const [userSearchQuery, setUserSearchQuery] = useState("");
-  const [deptFilter, setDeptFilter] = useState("");
-  const [userSort, setUserSort] = useState("name"); // name | department
-  const userPageSize = 10;
 
+  const [userPage, setUserPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("active"); // active | eligible | resigned | all
+  const [deptFilter, setDeptFilter] = useState("");
+  const [userSort, setUserSort] = useState("name");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const userPageSize = 12;
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creatingUser, setCreatingUser] = useState(false);
   const [newUser, setNewUser] = useState({
-    name: "", email: "", password: "", roleId: roles[0]?.id || "", departmentId: departments[0]?.id || ""
+    name: "",
+    email: "",
+    password: "",
+    roleId: String(roles[0]?.id || ""),
+    departmentId: String(departments[0]?.id || ""),
+    locationId: "",
+    scheduleFlag: "Umum",
+    scheduleEligible: true,
   });
 
   const [editingRoleId, setEditingRoleId] = useState(null);
@@ -34,38 +90,97 @@ export default function TeamAccessManager({ users, roles, departments, companies
   const [deptCompanyMap, setDeptCompanyMap] = useState(initialDeptMap);
   const [deptAutoRouteMap, setDeptAutoRouteMap] = useState(initialAutoRouteMap);
 
+  const activeUsersCount = users.filter((u) => u.active !== false).length;
+  const shiftEligibleCount = users.filter(isRosterEligibleUser).length;
+  const nonShiftCount = Math.max(0, activeUsersCount - shiftEligibleCount);
+  const resignedCount = users.filter((u) => u.active === false).length;
+
   const handleAddRole = async (e) => {
     e.preventDefault();
-    await fetch("/api/roles", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newRole }) });
-    setNewRole(""); router.refresh();
+    if (!newRole.trim()) return;
+    const res = await fetch("/api/roles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newRole.trim() }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.error || "Gagal menambah role");
+      return;
+    }
+    toast.success("Role ditambahkan");
+    setNewRole("");
+    router.refresh();
   };
 
   const handleDeleteRole = async (id) => {
-    if (confirm("Are you sure? Note: Deletion fails if users are still assigned to this role (Prisma constraint).")) {
-      await fetch(`/api/roles/${id}`, { method: "DELETE" });
-      router.refresh();
+    if (!confirm("Hapus role ini? Role tidak bisa dihapus jika masih dipakai user.")) return;
+    const res = await fetch(`/api/roles/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.error || "Gagal menghapus role");
+      return;
     }
+    toast.success("Role dihapus");
+    router.refresh();
   };
 
   const handleAddDept = async (e) => {
     e.preventDefault();
-    await fetch("/api/departments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newDept }) });
-    setNewDept(""); router.refresh();
+    if (!newDept.trim()) return;
+    const res = await fetch("/api/departments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newDept.trim() }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.error || "Gagal menambah departemen");
+      return;
+    }
+    toast.success("Departemen ditambahkan");
+    setNewDept("");
+    router.refresh();
   };
 
   const handleDeleteDept = async (id) => {
-    if (confirm("Are you sure? Note: Deletion fails if users/tickets are attached to it.")) {
-      await fetch(`/api/departments/${id}`, { method: "DELETE" });
-      router.refresh();
+    if (!confirm("Hapus departemen ini? Gagal jika masih ada user atau tiket terkait.")) return;
+    const res = await fetch(`/api/departments/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.error || "Gagal menghapus departemen");
+      return;
     }
+    toast.success("Departemen dihapus");
+    router.refresh();
   };
 
   const handleAddUser = async (e) => {
     e.preventDefault();
-    await fetch("/api/users", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newUser)
-    });
-    setNewUser({ ...newUser, name: "", email: "" }); router.refresh();
+    setCreatingUser(true);
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...newUser,
+          roleId: parseInt(newUser.roleId, 10),
+          departmentId: parseInt(newUser.departmentId, 10),
+          locationId: newUser.locationId ? parseInt(newUser.locationId, 10) : null,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Gagal membuat user");
+        return;
+      }
+      toast.success("Anggota baru berhasil dibuat");
+      setNewUser((prev) => ({ ...prev, name: "", email: "", password: "" }));
+      setShowCreateModal(false);
+      router.refresh();
+    } finally {
+      setCreatingUser(false);
+    }
   };
 
   const handleEditRole = (role) => {
@@ -73,18 +188,26 @@ export default function TeamAccessManager({ users, roles, departments, companies
     setEditRoleName(role.name);
     setEditRolePermissions(role.permissions || []);
   };
+
   const handleToggleRolePermission = (perm) => {
-    setEditRolePermissions(prev => 
-      prev.includes(perm) ? prev.filter(p => p !== perm) : [...prev, perm]
+    setEditRolePermissions((prev) =>
+      prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm]
     );
   };
+
   const handleSaveRole = async (id) => {
     if (!editRoleName.trim()) return;
-    await fetch(`/api/roles/${id}`, { 
-      method: "PATCH", 
-      headers: {"Content-Type": "application/json"}, 
-      body: JSON.stringify({ name: editRoleName, permissions: editRolePermissions }) 
+    const res = await fetch(`/api/roles/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editRoleName, permissions: editRolePermissions }),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      toast.error(err.error || "Gagal menyimpan role");
+      return;
+    }
+    toast.success("Role diperbarui");
     setEditingRoleId(null);
     router.refresh();
   };
@@ -95,24 +218,44 @@ export default function TeamAccessManager({ users, roles, departments, companies
     setEditDeptCompany(deptCompanyMap[dept.id] || "");
     setEditDeptAutoRoute(deptAutoRouteMap[dept.id] || "");
   };
+
   const handleSaveDept = async (id) => {
     if (!editDeptName.trim()) return;
-    await fetch(`/api/departments/${id}`, { method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ name: editDeptName }) });
-    
-    // Save Routing Map
-    const resMap = await fetch(`/api/settings/dept-routing`, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ departmentId: String(id), companyName: editDeptCompany, targetSupportDeptId: editDeptAutoRoute }) });
-    if(resMap.ok) {
-       const mappedData = await resMap.json();
-       setDeptCompanyMap(mappedData.deptCompanyMap);
-       setDeptAutoRouteMap(mappedData.deptAutoRouteMap || {});
+    const resDept = await fetch(`/api/departments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: editDeptName.trim() }),
+    });
+    if (!resDept.ok) {
+      const err = await resDept.json().catch(() => ({}));
+      toast.error(err.error || "Gagal menyimpan departemen");
+      return;
     }
-
+    const resMap = await fetch("/api/settings/dept-routing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        departmentId: String(id),
+        companyName: editDeptCompany,
+        targetSupportDeptId: editDeptAutoRoute,
+      }),
+    });
+    if (resMap.ok) {
+      const mappedData = await resMap.json();
+      setDeptCompanyMap(mappedData.deptCompanyMap);
+      setDeptAutoRouteMap(mappedData.deptAutoRouteMap || {});
+    }
+    toast.success("Departemen diperbarui");
     setEditingDeptId(null);
     router.refresh();
   };
 
   const filteredUsers = users
     .filter((u) => {
+      if (statusFilter === "active" && u.active === false) return false;
+      if (statusFilter === "eligible" && !isRosterEligibleUser(u)) return false;
+      if (statusFilter === "resigned" && u.active !== false) return false;
+
       const q = userSearchQuery.toLowerCase().trim();
       const matchSearch =
         !q ||
@@ -128,207 +271,314 @@ export default function TeamAccessManager({ users, roles, departments, companies
         const db = departments.find((d) => d.id === b.departmentId)?.name || "";
         const cmp = da.localeCompare(db, "id", { sensitivity: "base" });
         if (cmp !== 0) return cmp;
+      } else if (userSort === "status") {
+        const sa = a.active === false ? 2 : isRosterEligibleUser(a) ? 0 : 1;
+        const sb = b.active === false ? 2 : isRosterEligibleUser(b) ? 0 : 1;
+        if (sa !== sb) return sa - sb;
       }
       const na = a.name || a.email || "";
       const nb = b.name || b.email || "";
       return na.localeCompare(nb, "id", { sensitivity: "base" });
     });
 
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / userPageSize));
+  const safePage = Math.min(userPage, totalPages);
+
   return (
-    <div className="card ui-static-bcb0a0d8bd" style={{overflow: 'hidden'}}>
-      <div className="ui-static-7ad892b6d2" style={{display: 'flex'}}>
-        {availableTabs.map(tab => (
-          <button 
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className="ui-static-7d67a0faa0" style={{flex: 1, background: activeTab === tab ? "var(--ui-surface)" : 'transparent', borderBottom: activeTab === tab ? '3px solid var(--primary-color)' : '3px solid transparent', fontWeight: activeTab === tab ? 'bold' : 'normal', cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s'}}
+    <div className={styles.card}>
+      <div className={styles.tabBar} role="tablist" aria-label="Menu Manajemen Tim">
+        {availableTabs.map((tab) => (
+          <button
+            key={tab.id}
+            role="tab"
+            type="button"
+            aria-selected={activeTab === tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`${styles.tabBtn} ${activeTab === tab.id ? styles.tabBtnActive : ""}`}
           >
-            {tab}
+            {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="ui-static-39c1d6c828" >
-        {activeTab === 'users' && (
-          <div>
-            <div className="ui-static-be5b2f6887" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap'}}>
-              <div className="ui-static-e59a73fd03" style={{display: 'flex', alignItems: 'center', flexWrap: 'wrap'}}>
-                <h2 className="ui-static-ff227d0632" >Manage Users</h2>
-                <span className="ui-static-09a5a64ca2" >
-                  {filteredUsers.length} user{filteredUsers.length === 1 ? '' : 's'}
-                  {deptFilter ? ` · ${departments.find(d => String(d.id) === String(deptFilter))?.name || 'dept'}` : ''}
-                </span>
+      <div className={styles.tabBody}>
+        {activeTab === "users" && (
+          <>
+            <div className={styles.summaryGrid}>
+              <button
+                type="button"
+                className={`${styles.summaryCard} ${statusFilter === "active" ? styles.summaryCardActive : ""}`}
+                onClick={() => {
+                  setStatusFilter("active");
+                  setUserPage(1);
+                }}
+              >
+                <span className={styles.summaryLabel}>Anggota Aktif</span>
+                <span className={styles.summaryValue}>{activeUsersCount}</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.summaryCard} ${statusFilter === "eligible" ? styles.summaryCardActive : ""}`}
+                onClick={() => {
+                  setStatusFilter("eligible");
+                  setUserPage(1);
+                }}
+              >
+                <span className={styles.summaryLabel}>Ikut Roster Shift</span>
+                <span className={styles.summaryValue}>{shiftEligibleCount}</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.summaryCard} ${statusFilter === "all" ? styles.summaryCardActive : ""}`}
+                onClick={() => {
+                  setStatusFilter("all");
+                  setUserPage(1);
+                }}
+              >
+                <span className={styles.summaryLabel}>Non-Shift / Manager</span>
+                <span className={styles.summaryValue}>{nonShiftCount}</span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.summaryCard} ${statusFilter === "resigned" ? styles.summaryCardActive : ""}`}
+                onClick={() => {
+                  setStatusFilter("resigned");
+                  setUserPage(1);
+                }}
+              >
+                <span className={styles.summaryLabel}>Resign / Nonaktif</span>
+                <span className={styles.summaryValue}>{resignedCount}</span>
+              </button>
+            </div>
+
+            <div className={styles.toolbar}>
+              <div className={styles.toolbarLeft}>
+                <h2 className={styles.sectionTitle}>Daftar Anggota</h2>
+                <span className={styles.countPill}>{filteredUsers.length} orang</span>
               </div>
-              <div className="ui-static-30f523173e" style={{display: 'flex', flexWrap: 'wrap', alignItems: 'center'}}>
+              <div className={styles.toolbarRight}>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setUserPage(1);
+                  }}
+                  className={styles.select}
+                  aria-label="Filter status keaktifan"
+                >
+                  <option value="active">Status: Aktif</option>
+                  <option value="eligible">Status: Aktif Shift</option>
+                  <option value="resigned">Status: Resign / Nonaktif</option>
+                  <option value="all">Status: Semua</option>
+                </select>
                 <select
                   value={deptFilter}
-                  onChange={(e) => { setDeptFilter(e.target.value); setUserPage(1); }}
-                  className="ui-static-f1182528bd" style={{minWidth: 180}}
-                  title="Filter by department"
+                  onChange={(e) => {
+                    setDeptFilter(e.target.value);
+                    setUserPage(1);
+                  }}
+                  className={styles.select}
+                  aria-label="Filter departemen"
                 >
-                  <option value="">All departments</option>
+                  <option value="">Semua Departemen</option>
                   {departments.map((d) => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
                   ))}
                 </select>
                 <select
                   value={userSort}
-                  onChange={(e) => { setUserSort(e.target.value); setUserPage(1); }}
-                  className="ui-static-f1182528bd"
-                  title="Sort users"
+                  onChange={(e) => {
+                    setUserSort(e.target.value);
+                    setUserPage(1);
+                  }}
+                  className={styles.select}
+                  aria-label="Urutkan anggota"
                 >
-                  <option value="name">Sort: Name A–Z</option>
-                  <option value="department">Sort: Department</option>
+                  <option value="name">Urut: Nama A–Z</option>
+                  <option value="department">Urut: Departemen</option>
+                  <option value="status">Urut: Status Roster</option>
                 </select>
-                <input 
-                  type="search" 
-                  placeholder="Search name or email…" 
+                <input
+                  type="search"
+                  placeholder="Cari nama / email…"
                   value={userSearchQuery}
-                  onChange={e => {setUserSearchQuery(e.target.value); setUserPage(1);}}
-                  className="ui-static-ea9e089afc" style={{width: '260px', outline: 'none'}}
+                  onChange={(e) => {
+                    setUserSearchQuery(e.target.value);
+                    setUserPage(1);
+                  }}
+                  className={`${styles.input} ${styles.searchInput}`}
                 />
+                <button
+                  type="button"
+                  className={styles.btnPrimary}
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  + Tambah Anggota
+                </button>
               </div>
             </div>
-            <form onSubmit={handleAddUser} className="ui-static-2d649ec674" style={{display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)'}}>
-              <input type="text" placeholder="Full Name" required value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} className="ui-static-2bf089dea9"  />
-              <input type="email" placeholder="Email Address" required value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} className="ui-static-2bf089dea9"  />
-              <input type="text" placeholder="Password" required value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} className="ui-static-2bf089dea9"  />
-              <select value={newUser.roleId} onChange={e => setNewUser({...newUser, roleId: e.target.value})} required className="ui-static-2bf089dea9" >
-                <option value="" disabled>Select Role...</option>
-                {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-              </select>
-              <select value={newUser.departmentId} onChange={e => setNewUser({...newUser, departmentId: e.target.value})} required className="ui-static-2bf089dea9" >
-                <option value="" disabled>Select Dept...</option>
-                {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
-              <button type="submit" className="primary-btn ui-static-7f62800e8e" >+ Create User</button>
-            </form>
-            <UserTableClient users={filteredUsers.slice((userPage-1)*userPageSize, userPage*userPageSize)} roles={roles} departments={departments} />
-            
-            {filteredUsers.length > userPageSize && (
-              <div className="ui-static-dd3681565c" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                <div className="ui-static-dd90b11840" >
-                  Showing <strong>{((userPage - 1) * userPageSize) + 1}</strong> to <strong>{Math.min(userPage * userPageSize, filteredUsers.length)}</strong> of <strong>{filteredUsers.length}</strong> entries
-                </div>
-                <div className="ui-static-30f523173e" style={{display: 'flex'}}>
-                  <button onClick={() => setUserPage(p => Math.max(1, p - 1))} disabled={userPage === 1} className="ui-static-bf2977b962" style={{background: userPage > 1 ? "var(--ui-surface)" : "var(--ui-surface)", color: userPage > 1 ? "var(--ui-info)" : "var(--ui-info)", cursor: userPage > 1 ? 'pointer' : 'not-allowed'}}>&laquo; Prev</button>
-                  <span className="ui-static-028aa61c6d" >Page {userPage}</span>
-                  <button onClick={() => setUserPage(p => Math.min(Math.ceil(filteredUsers.length / userPageSize), p + 1))} disabled={userPage >= Math.ceil(filteredUsers.length / userPageSize)} className="ui-static-bf2977b962" style={{background: userPage < Math.ceil(filteredUsers.length / userPageSize) ? "var(--ui-surface)" : "var(--ui-surface)", color: userPage < Math.ceil(filteredUsers.length / userPageSize) ? "var(--ui-info)" : "var(--ui-info)", cursor: userPage < Math.ceil(filteredUsers.length / userPageSize) ? 'pointer' : 'not-allowed'}}>Next &raquo;</button>
-                </div>
+
+            {filteredUsers.length > 0 ? (
+              <>
+                <UserTableClient
+                  users={filteredUsers.slice(
+                    (safePage - 1) * userPageSize,
+                    safePage * userPageSize
+                  )}
+                  roles={roles}
+                  departments={departments}
+                  locations={locations}
+                  currentUserId={currentUserId}
+                />
+                {filteredUsers.length > userPageSize && (
+                  <div className={styles.pagination}>
+                    <span className={styles.memberMeta}>
+                      Menampilkan {(safePage - 1) * userPageSize + 1}–
+                      {Math.min(safePage * userPageSize, filteredUsers.length)} dari{" "}
+                      {filteredUsers.length} anggota
+                    </span>
+                    <div className={styles.actionRow}>
+                      <button
+                        type="button"
+                        className={styles.btnSmall}
+                        onClick={() => setUserPage((p) => Math.max(1, p - 1))}
+                        disabled={safePage === 1}
+                      >
+                        &laquo; Sebelumnya
+                      </button>
+                      <span className={styles.memberMeta}>
+                        Hal {safePage} / {totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.btnSmall}
+                        onClick={() => setUserPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={safePage >= totalPages}
+                      >
+                        Berikutnya &raquo;
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className={styles.emptyState}>
+                Tidak ada anggota yang cocok dengan filter saat ini.
               </div>
             )}
-            
-            {filteredUsers.length === 0 && (
-              <div className="ui-static-8324dd8abf" style={{textAlign: 'center', fontStyle: 'italic'}}>
-                No users found
-                {userSearchQuery ? ` matching "${userSearchQuery}"` : ''}
-                {deptFilter ? ` in selected department` : ''}.
-              </div>
-            )}
-          </div>
+          </>
         )}
 
-        {activeTab === 'roles' && (
-          <div>
-            <h2>Manage Roles</h2>
-            <form onSubmit={handleAddRole} className="ui-static-7b101c5d25" style={{display: 'flex'}}>
-              <input type="text" placeholder="New Role Name" required value={newRole} onChange={e => setNewRole(e.target.value)} className="ui-static-b9ca49b7f6" style={{width: '300px'}} />
-              <button type="submit" className="primary-btn ui-static-4577864700" style={{width: 'auto'}}>+ Add Role</button>
-            </form>
-            <ul className="list-group ui-static-eb0779f480" style={{display: 'flex', flexDirection: 'column', listStyle: 'none'}}>
-              {roles.map(r => {
+        {activeTab === "roles" && (
+          <>
+            <div className={styles.toolbar}>
+              <h2 className={styles.sectionTitle}>Kelola Role & Hak Akses</h2>
+              <form onSubmit={handleAddRole} className={styles.inlineForm}>
+                <input
+                  type="text"
+                  placeholder="Nama Role Baru…"
+                  required
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                  className={styles.input}
+                />
+                <button type="submit" className={styles.btnPrimary}>
+                  + Tambah Role
+                </button>
+              </form>
+            </div>
+
+            <ul className={styles.listStack}>
+              {roles.map((r) => {
                 if (editingRoleId === r.id) {
-                  const isAdminRole = r.name === 'Admin';
+                  const isAdminRole = r.name === "Admin";
                   return (
-                    <li key={r.id} className="list-item ui-static-90d05461b8" style={{display: 'flex', flexDirection: 'column'}}>
-                      <div className="ui-static-af81cc4264" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
-                        <input type="text" value={editRoleName} onChange={e => setEditRoleName(e.target.value)} className="ui-static-e6b8be0e4b" style={{flex: 1}} placeholder="Role Name" />
-                        <div className="ui-static-30f523173e" style={{display: 'flex'}}>
-                          <button onClick={() => handleSaveRole(r.id)} className="ui-static-f0b33b9c0d" style={{cursor: 'pointer'}}> Save</button>
-                          <button onClick={() => setEditingRoleId(null)} className="ui-static-26ad8d43e4" style={{cursor: 'pointer'}}>✕ Cancel</button>
+                    <li key={r.id} className={styles.listCard}>
+                      <div className={styles.listCardTop}>
+                        <input
+                          type="text"
+                          value={editRoleName}
+                          onChange={(e) => setEditRoleName(e.target.value)}
+                          className={styles.input}
+                          style={{ flex: "1 1 220px" }}
+                          placeholder="Nama Role"
+                        />
+                        <div className={styles.actionRow}>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveRole(r.id)}
+                            className={styles.btnPrimary}
+                          >
+                            Simpan
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingRoleId(null)}
+                            className={styles.btnSecondary}
+                          >
+                            Batal
+                          </button>
                         </div>
                       </div>
-                      
-                      {/* Permission checklist grid */}
-                      <div style={{ width: '100%' }}>
-                        <h4 className="ui-static-f2f8d52d13" >Configure Permissions (Capabilities):</h4>
-                        {isAdminRole ? (
-                          <div className="ui-static-1af8047d5b" style={{display: 'flex', alignItems: 'center'}}>
-                            <span></span> Role 'Admin' has hardlocked full permissions to prevent administrative lock-out.
-                          </div>
-                        ) : (
-                          <div className="ui-static-e59a73fd03" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))'}}>
-                            {[
-                              { key: "view_all_tickets", label: "🌐 View All Tickets (Global Scope)" },
-                              { key: "manage_tickets", label: "🎫 Manage Tickets (Master Permission)" },
-                              { key: "create_tickets", label: "➕ Create Tickets" },
-                              { key: "modify_tickets", label: "✏️ Modify Tickets (Status/Assign/Category Shorthand)" },
-                              { key: "change_ticket_status", label: "🔄 Change Ticket Status (Open/Resolve)" },
-                              { key: "assign_tickets", label: "🎯 Assign Tickets (Staff/Tim/Priority)" },
-                              { key: "change_job_category", label: "🏷️ Change Job Category & Performance Score" },
-                              { key: "delete_tickets", label: "🗑️ Delete Tickets" },
-                              { key: "edit_own_tickets", label: "✍️ Edit Tickets Created by Self" },
-                              { key: "edit_other_tickets", label: "📝 Edit Tickets Created by Others" },
-                              { key: "manage_sla", label: "⏱️ Manage SLA Configuration" },
-                              { key: "view_internal_notes", label: "👁️ View Internal Notes" },
-                              { key: "manage_ticket_notes", label: "✍️ Write Internal Notes" },
-                              { key: "view_live_ops", label: "📡 View Live Operations Dashboard" },
-                              { key: "manage_users", label: "👥 Manage Team & NOC Staff" },
-                              { key: "manage_roles", label: "🔐 Manage Security Roles & Permissions" },
-                              { key: "manage_departments", label: "🏢 Manage Sub-Departments & Routing" },
-                              { key: "manage_settings", label: "⚙️ Manage Settings, Fields & Routing" },
-                              { key: "manage_trouble_master", label: "Manage Master Data Trouble" },
-                              { key: "manage_service_work", label: "Kelola Jenis Pekerjaan Layanan" },
-                              { key: "view_reports", label: "📊 View Performance Analytics" },
-                              { key: "manage_schedules", label: "🗓️ Manage Shift Schedules & Types" },
-                              { key: "manage_knowledge", label: "📚 Manage Knowledge Base Articles" },
-                              { key: "manage_assets", label: "🗄️ Manage Customer Assets & Services" },
-                              { key: "manage_meetings", label: "🤝 Manage Meetings & Attendance" }
-                            ].map(p => {
-                              const isChecked = editRolePermissions.includes(p.key);
-                              return (
-                                <label key={p.key} className="ui-static-b1a5d7e3bc" style={{display: 'flex', alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s'}}>
-                                  <input 
-                                    type="checkbox" 
-                                    checked={isChecked}
-                                    onChange={() => handleToggleRolePermission(p.key)}
-                                    style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
-                                  />
-                                  <span>{p.label}</span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
+
+                      {isAdminRole ? (
+                        <div className={`${styles.alertBox} ${styles.alertInfo}`}>
+                          Role Admin memiliki seluruh izin penuh secara permanen untuk mencegah terkuncinya akses sistem.
+                        </div>
+                      ) : (
+                        <div className={styles.permGrid}>
+                          {ROLE_PERMISSIONS.map((p) => (
+                            <label key={p.key} className={styles.permItem}>
+                              <input
+                                type="checkbox"
+                                checked={editRolePermissions.includes(p.key)}
+                                onChange={() => handleToggleRolePermission(p.key)}
+                              />
+                              <span>{p.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
                     </li>
                   );
                 }
-                const isSystemRole = ['Admin', 'Manager', 'User'].includes(r.name);
+
+                const isSystemRole = ["Admin", "Manager", "User"].includes(r.name);
                 const rolePerms = r.permissions || [];
                 return (
-                  <li key={r.id} className="list-item ui-static-aa8677f079" style={{display: 'flex', flexDirection: 'column'}}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <strong className="ui-static-c4618ca26a" >{r.name}</strong>
-                      <div>
-                        <select defaultValue="" onChange={(e) => {
-                          if (e.target.value === 'edit') handleEditRole(r);
-                          if (e.target.value === 'delete') handleDeleteRole(r.id);
-                          e.target.value = '';
-                        }} className="ui-static-2b848f090e" style={{cursor: 'pointer'}}>
-                          <option value="" disabled>Actions ▾</option>
-                          <option value="edit"> Edit & Permissions</option>
-                          {!isSystemRole && <option value="delete"> Delete</option>}
-                        </select>
+                  <li key={r.id} className={styles.listCard}>
+                    <div className={styles.listCardTop}>
+                      <strong>{r.name}</strong>
+                      <div className={styles.actionRow}>
+                        <button
+                          type="button"
+                          className={styles.btnSmall}
+                          onClick={() => handleEditRole(r)}
+                        >
+                          Edit & Izin
+                        </button>
+                        {!isSystemRole && (
+                          <button
+                            type="button"
+                            className={styles.btnDangerOutline}
+                            onClick={() => handleDeleteRole(r.id)}
+                          >
+                            Hapus
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div className="ui-static-950dea6c48" style={{display: 'flex', flexWrap: 'wrap'}}>
+                    <div className={styles.badgeRow}>
                       {rolePerms.length === 0 ? (
-                        <span className="ui-static-f0ec965903" style={{fontStyle: 'italic'}}>No custom capabilities assigned (Basic staff access only)</span>
+                        <span className={styles.memberMeta}>
+                          Hak akses dasar staff saja (tanpa izin khusus).
+                        </span>
                       ) : (
-                        rolePerms.map(p => (
-                          <span key={p} className="ui-static-4a3c2b8c21" style={{textTransform: 'capitalize'}}>
-                            {p.replace(/_/g, ' ')}
+                        rolePerms.map((p) => (
+                          <span key={p} className={styles.badge}>
+                            {p.replace(/_/g, " ")}
                           </span>
                         ))
                       )}
@@ -337,72 +587,292 @@ export default function TeamAccessManager({ users, roles, departments, companies
                 );
               })}
             </ul>
-          </div>
+          </>
         )}
 
-        {activeTab === 'departments' && (
-          <div>
-            <h2>Manage Departments</h2>
-            <form onSubmit={handleAddDept} className="ui-static-7b101c5d25" style={{display: 'flex'}}>
-              <input type="text" placeholder="New Dept Name" required value={newDept} onChange={e => setNewDept(e.target.value)} className="ui-static-b9ca49b7f6" style={{width: '300px'}} />
-              <button type="submit" className="primary-btn ui-static-4577864700" style={{width: 'auto'}}>+ Add Department</button>
-            </form>
-            <ul className="list-group">
-              {departments.map(d => {
+        {activeTab === "departments" && (
+          <>
+            <div className={styles.toolbar}>
+              <h2 className={styles.sectionTitle}>Kelola Departemen & Routing Tiket</h2>
+              <form onSubmit={handleAddDept} className={styles.inlineForm}>
+                <input
+                  type="text"
+                  placeholder="Nama Departemen Baru…"
+                  required
+                  value={newDept}
+                  onChange={(e) => setNewDept(e.target.value)}
+                  className={styles.input}
+                />
+                <button type="submit" className={styles.btnPrimary}>
+                  + Tambah Departemen
+                </button>
+              </form>
+            </div>
+
+            <ul className={styles.listStack}>
+              {departments.map((d) => {
                 if (editingDeptId === d.id) {
                   return (
-                    <li key={d.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="ui-static-f534b4fb6a" style={{display: 'flex', flex: 1, flexWrap: 'wrap'}}>
-                        <input type="text" value={editDeptName} onChange={e => setEditDeptName(e.target.value)} className="ui-static-2bf089dea9" style={{minWidth: '200px'}} placeholder="Dept Name..." />
-                        <select value={editDeptCompany} onChange={e => setEditDeptCompany(e.target.value)} className="ui-static-2bf089dea9" style={{minWidth: '150px'}}>
-                          <option value="">-- No Configured Company --</option>
-                          {companies.map((c, i) => <option key={i} value={c}>{c}</option>)}
-                        </select>
-                        <select value={editDeptAutoRoute} onChange={e => setEditDeptAutoRoute(e.target.value)} className="ui-static-2bf089dea9" style={{minWidth: '200px'}}>
-                          <option value="">-- No Default Ticket Route --</option>
-                          {departments.map(tDept => <option key={tDept.id} value={tDept.id}>{tDept.name}</option>)}
-                        </select>
+                    <li key={d.id} className={styles.listCard}>
+                      <div className={styles.formGrid}>
+                        <label className={styles.field}>
+                          <span className={styles.fieldLabel}>Nama Departemen</span>
+                          <input
+                            type="text"
+                            value={editDeptName}
+                            onChange={(e) => setEditDeptName(e.target.value)}
+                            className={styles.input}
+                          />
+                        </label>
+                        <label className={styles.field}>
+                          <span className={styles.fieldLabel}>Entitas Perusahaan</span>
+                          <select
+                            value={editDeptCompany}
+                            onChange={(e) => setEditDeptCompany(e.target.value)}
+                            className={styles.select}
+                          >
+                            <option value="">-- Tidak diatur --</option>
+                            {companies.map((c, i) => (
+                              <option key={i} value={c}>
+                                {c}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className={styles.field}>
+                          <span className={styles.fieldLabel}>Default Auto-Route Tiket</span>
+                          <select
+                            value={editDeptAutoRoute}
+                            onChange={(e) => setEditDeptAutoRoute(e.target.value)}
+                            className={styles.select}
+                          >
+                            <option value="">-- Tidak ada --</option>
+                            {departments.map((tDept) => (
+                              <option key={tDept.id} value={tDept.id}>
+                                {tDept.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
                       </div>
-                      <div className="ui-static-30f523173e" style={{display: 'flex'}}>
-                        <button onClick={() => handleSaveDept(d.id)} className="ui-static-66e91e8487" style={{cursor: 'pointer'}}>Save</button>
-                        <button onClick={() => setEditingDeptId(null)} className="ui-static-52dfaadc78" style={{cursor: 'pointer'}}>Cancel</button>
+                      <div className={styles.modalFooter}>
+                        <button
+                          type="button"
+                          onClick={() => setEditingDeptId(null)}
+                          className={styles.btnSecondary}
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveDept(d.id)}
+                          className={styles.btnPrimary}
+                        >
+                          Simpan
+                        </button>
                       </div>
                     </li>
                   );
                 }
+
                 return (
-                  <li key={d.id} className="list-item" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div className="ui-static-af81cc4264" style={{display: 'flex', alignItems: 'center', flexWrap: 'wrap'}}>
-                      <strong>{d.name}</strong>
-                      {deptCompanyMap[d.id] && (
-                        <span className="ui-static-c527fed352" >
-                            Entity: {deptCompanyMap[d.id]}
+                  <li key={d.id} className={styles.listCard}>
+                    <div className={styles.listCardTop}>
+                      <div className={styles.badgeRow}>
+                        <strong>{d.name}</strong>
+                        {deptCompanyMap[d.id] && (
+                          <span className={styles.badge}>Entitas: {deptCompanyMap[d.id]}</span>
+                        )}
+                        {deptAutoRouteMap[d.id] && (
+                          <span className={`${styles.badge} ${styles.badgeNonShift}`}>
+                            Route →{" "}
+                            {departments.find(
+                              (x) => String(x.id) === String(deptAutoRouteMap[d.id])
+                            )?.name || "Unknown"}
+                          </span>
+                        )}
+                        <span className={styles.badge}>
+                          Roster: {d.scheduleEnabled !== false ? d.schedulePola || "POLA_1" : "Skip"}
                         </span>
-                      )}
-                      {deptAutoRouteMap[d.id] && (
-                        <span className="ui-static-c527fed352" >
-                            Routes to: {departments.find(x => String(x.id) === String(deptAutoRouteMap[d.id]))?.name || "Unknown"}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                        <select defaultValue="" onChange={(e) => {
-                          if (e.target.value === 'edit') handleEditDept(d);
-                          if (e.target.value === 'delete') handleDeleteDept(d.id);
-                          e.target.value = '';
-                        }} className="ui-static-2b848f090e" style={{cursor: 'pointer'}}>
-                          <option value="" disabled>Actions ▾</option>
-                          <option value="edit"> Edit</option>
-                          <option value="delete"> Delete</option>
-                        </select>
+                      </div>
+                      <div className={styles.actionRow}>
+                        <button
+                          type="button"
+                          className={styles.btnSmall}
+                          onClick={() => handleEditDept(d)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.btnDangerOutline}
+                          onClick={() => handleDeleteDept(d.id)}
+                        >
+                          Hapus
+                        </button>
+                      </div>
                     </div>
                   </li>
                 );
               })}
             </ul>
-          </div>
+          </>
         )}
       </div>
+
+      {showCreateModal && (
+        <div
+          className={styles.modalOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-user-title"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <form
+            className={styles.modalPanel}
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleAddUser}
+          >
+            <div>
+              <h3 id="create-user-title" className={styles.modalTitle}>
+                Tambah Anggota Baru
+              </h3>
+              <p className={styles.modalSubtitle}>
+                Tentukan role, departemen, dan apakah user ikut jadwal shift POLA.
+              </p>
+            </div>
+
+            <div className={styles.formGrid}>
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Nama Lengkap</span>
+                <input
+                  type="text"
+                  required
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                  className={styles.input}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Email</span>
+                <input
+                  type="email"
+                  required
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  className={styles.input}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Password Awal</span>
+                <input
+                  type="password"
+                  required
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  className={styles.input}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Role</span>
+                <select
+                  required
+                  value={newUser.roleId}
+                  onChange={(e) => {
+                    const nextRole = roles.find((r) => String(r.id) === String(e.target.value));
+                    setNewUser({
+                      ...newUser,
+                      roleId: e.target.value,
+                      scheduleEligible: nextRole?.name === "Manager" ? false : true,
+                    });
+                  }}
+                  className={styles.select}
+                >
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Departemen</span>
+                <select
+                  required
+                  value={newUser.departmentId}
+                  onChange={(e) => setNewUser({ ...newUser, departmentId: e.target.value })}
+                  className={styles.select}
+                >
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Lokasi (opsional)</span>
+                <select
+                  value={newUser.locationId}
+                  onChange={(e) => setNewUser({ ...newUser, locationId: e.target.value })}
+                  className={styles.select}
+                >
+                  <option value="">-- Tanpa Lokasi --</option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>
+                      {loc.city}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Flag Jadwal</span>
+                <select
+                  value={newUser.scheduleFlag}
+                  onChange={(e) => setNewUser({ ...newUser, scheduleFlag: e.target.value })}
+                  className={styles.select}
+                >
+                  {SCHEDULE_FLAGS.map((f) => (
+                    <option key={f} value={f}>
+                      {f}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className={`${styles.checkboxRow} ${styles.fieldFull}`}>
+                <input
+                  type="checkbox"
+                  checked={newUser.scheduleEligible}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, scheduleEligible: e.target.checked })
+                  }
+                />
+                <span>Ikut generate roster shift (POLA)</span>
+              </label>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button
+                type="button"
+                className={styles.btnSecondary}
+                onClick={() => setShowCreateModal(false)}
+              >
+                Batal
+              </button>
+              <button type="submit" className={styles.btnPrimary} disabled={creatingUser}>
+                {creatingUser ? "Menyimpan…" : "Buat Anggota"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

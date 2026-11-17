@@ -15,6 +15,8 @@ import { isValidPola } from "@/lib/schedules/pola";
  *  - year, month (1-12) — preferred for pola engine
  *  - departmentId (optional) — one dept; omit = all
  *  - pola (optional override)
+ *  - skipIfExists (optional boolean, default false)
+ *  - overwriteMode: "preserve_manual" (default) | "force_all"
  *  - startDate, endDate, locationId — legacy simple generator
  */
 export async function POST(req) {
@@ -55,6 +57,9 @@ export async function POST(req) {
     }
 
     const polaOverride = body.pola ? String(body.pola).toUpperCase() : null;
+    const skipIfExists = !!body.skipIfExists;
+    const overwriteMode =
+      body.overwriteMode === "force_all" ? "force_all" : "preserve_manual";
 
     if (body.departmentId) {
       const result = await generateDepartmentMonth({
@@ -62,6 +67,8 @@ export async function POST(req) {
         year,
         month,
         polaOverride,
+        skipIfExists,
+        overwriteMode,
       });
       return NextResponse.json({ success: true, results: [result] });
     }
@@ -70,6 +77,8 @@ export async function POST(req) {
       year,
       month,
       polaOverride,
+      skipIfExists,
+      overwriteMode,
     });
     return NextResponse.json({ success: true, results });
   } catch (error) {
@@ -95,7 +104,11 @@ async function legacyGenerate({ startDate, endDate, locationId }) {
     );
   }
 
-  const whereClause = locationId ? { locationId: parseInt(locationId, 10) } : {};
+  const whereClause = {
+    active: true,
+    scheduleEligible: true,
+    ...(locationId ? { locationId: parseInt(locationId, 10) } : {}),
+  };
   const users = await prisma.user.findMany({
     where: whereClause,
     include: { schedulePreference: true },
