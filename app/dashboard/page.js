@@ -103,8 +103,20 @@ export default async function DashboardPage({ searchParams }) {
       assigneeId: parseInt(session?.user?.id),
       status: { notIn: ['Resolved', 'Closed'] }
     }),
+    include: {
+      jobCategory: { select: { id: true, name: true } },
+      services: {
+        include: { customer: { select: { name: true } } },
+        take: 1
+      },
+      notes: {
+        orderBy: { createdAt: 'desc' },
+        take: 1,
+        select: { content: true, createdAt: true }
+      }
+    },
     orderBy: { updatedAt: 'desc' },
-    take: 5
+    take: 8
   });
 
   // Fetch My Upcoming Shifts (Next 7 days)

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import styles from "./ticket-list.module.css";
 
 export default function TicketQuickActions({ ticketId, isUnassigned }) {
   const router = useRouter();
@@ -28,11 +29,13 @@ export default function TicketQuickActions({ ticketId, isUnassigned }) {
   if (!isUnassigned) return null;
 
   return (
-    <button 
-      onClick={handleTake} 
+    <button
+      type="button"
+      onClick={handleTake}
       disabled={loading}
-      className="ui-static-3c13282aa6" style={{cursor: 'pointer'}}>
-      {loading ? '...' : 'Take It'}
+      className={styles.takeBtn}
+    >
+      {loading ? "..." : "Take It"}
     </button>
   );
 }

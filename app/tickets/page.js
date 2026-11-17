@@ -199,134 +199,256 @@ export default async function TicketsPage({ searchParams }) {
 
   return (
     <main className="container">
-      <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className={styles.pageHeader}>
         <div>
-          <h1>{installationView ? 'Instalasi' : workType ? WORK_TYPE_LABELS[workType] : "Semua Tiket"}</h1>
-          <p>Kelola gangguan dan pekerjaan layanan.</p>
+          <h1 className={styles.pageTitle}>
+            {installationView ? "Instalasi" : workType ? WORK_TYPE_LABELS[workType] : "Semua Tiket"}
+          </h1>
+          <p className={styles.pageSubtitle}>Kelola gangguan dan pekerjaan layanan.</p>
         </div>
-        <div className="ui-static-af81cc4264" style={{display: 'flex', alignItems: 'center'}}>
-          {dateParam === 'today' && (
-            <span className="ui-static-ede1c204d7" >
-               Filter Active: Today's Shift Only
-            </span>
+        <div className={styles.headerActions}>
+          {dateParam === "today" && (
+            <span className={styles.todayBadge}>Filter Active: Today&apos;s Shift Only</span>
           )}
           {canCreate && (
-            <Link href={installationView ? '/tickets/new?workType=ServiceWork&operation=Installation' : workType ? `/tickets/new?workType=${workType}` : "/tickets/new"} className="primary-btn" style={{ width: 'auto', textDecoration: 'none' }}>+ Buat tiket</Link>
+            <Link
+              href={
+                installationView
+                  ? "/tickets/new?workType=ServiceWork&operation=Installation"
+                  : workType
+                    ? `/tickets/new?workType=${workType}`
+                    : "/tickets/new"
+              }
+              className={`primary-btn ${styles.createBtn}`}
+            >
+              + Buat tiket
+            </Link>
           )}
         </div>
       </header>
 
       {/* Dynamic Views / Status Tabs */}
-      <div className="ui-static-8f3fb50de8" style={{display: 'flex', overflowX: 'auto'}}>
-         <Link href={installationView ? '/tickets?view=installation' : workType ? `/tickets?workType=${workType}` : "/tickets"} className="ui-static-be2cd19cf4" style={{textDecoration: 'none', color: !tab ? 'var(--primary-color)' : "var(--ui-info)", fontWeight: !tab ? 'bold' : '500', borderBottom: !tab ? '3px solid var(--primary-color)' : 'none'}}>
-            All Active View
-         </Link>
-         {(isCS || user.role === 'Admin' || user.permissions?.includes('manage_sla') || user.permissions?.includes('view_all_tickets')) && (
-           <Link href={`/tickets?tab=cs_radar${installationView ? '&view=installation' : workType ? `&workType=${workType}` : ""}`} className="ui-static-9c11788788" style={{textDecoration: 'none', color: tab === 'cs_radar' ? "var(--ui-danger)" : "var(--ui-info)", fontWeight: tab === 'cs_radar' ? 'bold' : '500', borderBottom: tab === 'cs_radar' ? '3px solid #ef4444' : 'none', display: 'flex', alignItems: 'center'}}>
-               CS SLA Radar
-           </Link>
-         )}
-      </div>
+      <nav className={styles.viewTabs} aria-label="Tampilan daftar tiket">
+        <Link
+          href={
+            installationView
+              ? "/tickets?view=installation"
+              : workType
+                ? `/tickets?workType=${workType}`
+                : "/tickets"
+          }
+          className={`${styles.viewTab} ${!tab ? styles.viewTabActive : ""}`}
+        >
+          All Active View
+        </Link>
+        {(isCS ||
+          user.role === "Admin" ||
+          user.permissions?.includes("manage_sla") ||
+          user.permissions?.includes("view_all_tickets")) && (
+          <Link
+            href={`/tickets?tab=cs_radar${
+              installationView ? "&view=installation" : workType ? `&workType=${workType}` : ""
+            }`}
+            className={`${styles.viewTab} ${tab === "cs_radar" ? styles.viewTabDangerActive : ""}`}
+          >
+            CS SLA Radar
+          </Link>
+        )}
+      </nav>
 
-      <Suspense fallback={<div className="ui-static-595f5f4cf6" >Loading filters...</div>}>
+      <Suspense fallback={<div className={styles.toolbarCard}>Loading filters...</div>}>
         <TicketAdvancedFilter companies={companies} initialCompanyParam={companyParam} />
       </Suspense>
 
-      {workType === 'ServiceWork' && <nav aria-label="Filter jenis pekerjaan" className="ui-static-d099538e24" style={{display:'flex', flexWrap:'wrap'}}>
-        <Link href="/tickets?workType=ServiceWork" aria-current={!serviceWorkTypeId ? 'page' : undefined}>Semua pekerjaan</Link>
-        <Link href="/tickets?workType=Installation">Instalasi (format lama)</Link>
-        {serviceWorkTypes.map(type => <Link key={type.id} href={`/tickets?workType=ServiceWork&serviceWorkTypeId=${type.id}`} aria-current={serviceWorkTypeId === type.id ? 'page' : undefined} className="ui-static-3d6ac67643" >{type.name}{type.active ? '' : ' (nonaktif)'}</Link>)}
-      </nav>}
-      <div className={styles.tableScroll} role="region" aria-label="Daftar tiket" tabIndex={0}><table className="data-table">
-        <caption className="sr-only">Daftar tiket: tracking ID, detail, kategori, status, prioritas, umur, departemen, dan penanggung jawab</caption>
-        <thead>
-          <tr>
-            <th scope="col">Tracking ID</th>
-            <th scope="col">Tiket / Detail</th>
-            <th scope="col">Category</th>
-            <th scope="col">Status</th>
-            <th scope="col">Priority</th>
-            <th scope="col">Age</th>
-            <th scope="col">Department</th>
-            <th scope="col">Assignee</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tickets.length === 0 && (
-            <tr><td colSpan="8" className="ui-static-39c1d6c828" style={{textAlign: 'center'}}>Tidak ada tiket yang cocok dengan filter ini. <Link href="/tickets">Reset filter</Link></td></tr>
-          )}
-          {tickets.map(t => {
-            const isCritical = t.priority === 'Critical';
-            const hoursIdle = (new Date() - new Date(t.updatedAt)) / 3600000;
-            const isSLA = (t.status === 'New' && hoursIdle > 2) || (isCritical && hoursIdle > 1 && t.status !== 'Resolved');
-            const hasPings = t.slaBreaches > 0;
-            
-            let expiryDateStr = null;
-            if (t.customData && typeof t.customData === 'object') {
-              const expiryVal = Object.values(t.customData).find(val => typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val));
-              if (expiryVal) expiryDateStr = expiryVal;
-            }
+      {workType === "ServiceWork" && (
+        <nav aria-label="Filter jenis pekerjaan" className={styles.serviceSubNav}>
+          <Link
+            href="/tickets?workType=ServiceWork"
+            aria-current={!serviceWorkTypeId ? "page" : undefined}
+            className={styles.serviceSubLink}
+          >
+            Semua pekerjaan
+          </Link>
+          <Link href="/tickets?workType=Installation" className={styles.serviceSubLink}>
+            Instalasi (format lama)
+          </Link>
+          {serviceWorkTypes.map((type) => (
+            <Link
+              key={type.id}
+              href={`/tickets?workType=ServiceWork&serviceWorkTypeId=${type.id}`}
+              aria-current={serviceWorkTypeId === type.id ? "page" : undefined}
+              className={styles.serviceSubLink}
+            >
+              {type.name}
+              {type.active ? "" : " (nonaktif)"}
+            </Link>
+          ))}
+        </nav>
+      )}
 
-            let rowClass = "";
-            if (isSLA) rowClass = "ticket-row-sla";
-            else if (t.slaBreaches > 2 && t.status !== 'Resolved') rowClass = "ticket-row-critical";
-            else if (hasPings && t.status !== 'Resolved') rowClass = "ticket-row-warning";
-            else if (expiryDateStr && t.status !== 'Resolved' && new Date(expiryDateStr) < new Date()) rowClass = "ticket-row-expired";
-            
-            const presentation = ticketPresentation(t);
-
-            return (
-              <tr key={t.id} className={rowClass}>
-                <td className="ui-static-a03c8f3240" >{t.trackingId}</td>
-                <td className={styles.ticketDetail}>
-                  <Link href={`/tickets/${t.id}`} className={styles.ticketTitle} title={presentation.title}>{presentation.title}</Link>
-                  {presentation.subtitle && <div className={styles.secondary}>{presentation.subtitle}</div>}
-                  {presentation.cids.length > 0 && <div className={`${styles.secondary} ${styles.circuit}`}>CID: {presentation.cids.join(', ')}</div>}
-                  <div className={styles.secondary}>{t.serviceWorkTypeLabel || WORK_TYPE_LABELS[t.workType] || WORK_TYPE_LABELS.Unclassified}{t.sapReference && ![presentation.title, presentation.subtitle, ...presentation.cids].includes(t.sapReference) && <span> · SAP: {t.sapReference}</span>}</div>
-                  <div className={styles.routing}>
-                    {t.customData?.['Order Origin'] && <span>Penerima order: {t.customData['Order Origin']}</span>}
-                    {t.customData?.['Executing Vendor'] && <span>Pelaksana: {t.customData['Executing Vendor']}</span>}
-                  </div>
-                  <details className={styles.original}><summary>Data asal</summary><dl><dt>Name</dt><dd>{presentation.originalName || 'Tidak diisi'}</dd><dt>Subject</dt><dd>{presentation.originalSubject || 'Tidak diisi'}</dd></dl></details>
-                  {t.slaBreaches > 0 && t.status !== 'Resolved' && (
-                    <span className="ui-static-a7e19d1696" >
-                       x{t.slaBreaches} CS Pings!
-                    </span>
-                  )}
-                  {expiryDateStr && t.status !== 'Resolved' && (
-                    <span className="ui-static-2270ccd56e" style={{background: new Date(expiryDateStr) < new Date() ? 'var(--danger-bg, #ef4444)' : 'var(--warning-bg, #d946ef)', color: new Date(expiryDateStr) < new Date() ? 'var(--danger-text, white)' : 'var(--warning-text, white)'}}>
-                      {new Date(expiryDateStr) < new Date() ? '⚠️ EXPIRED' : `⏳ Exp: ${new Date(expiryDateStr).toLocaleDateString()}`}
-                    </span>
-                  )}
-                </td>
-                <td>
-                  {t.jobCategory ? (
-                    <span className="ui-static-4e3ab66524" style={{whiteSpace: 'nowrap'}}>
-                      {t.jobCategory.name}
-                    </span>
-                  ) : (
-                    <span className="ui-static-60700bd225" style={{fontStyle: 'italic'}}>-</span>
-                  )}
-                </td>
-                <td>
-                  <span className="badge" style={statusStyle(t.status)}>
-                    {t.status}
-                  </span>
-                </td>
-                <td style={{ fontWeight: isCritical ? 'bold' : 'normal', color: isCritical ? "var(--ui-danger)" : 'inherit' }}>{t.priority}</td>
-                <td className="ui-static-9d7e95f546" >{timeAgo(t.updatedAt)}</td>
-                <td>{t.department?.name}</td>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {t.assignee?.name || <span className="ui-static-b9010af219" style={{fontStyle: 'italic'}}>Unassigned</span>}
-                    {canViewAll && <TicketQuickActions ticketId={t.id} isUnassigned={!t.assigneeId} />}
-                  </div>
+      <div className={styles.tableScroll} role="region" aria-label="Daftar tiket" tabIndex={0}>
+        <table className="data-table">
+          <caption className="sr-only">
+            Daftar tiket: tracking ID, detail, kategori, status, prioritas, umur, departemen, dan
+            penanggung jawab
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Tracking ID</th>
+              <th scope="col">Tiket / Detail</th>
+              <th scope="col">Category</th>
+              <th scope="col">Status</th>
+              <th scope="col">Priority</th>
+              <th scope="col">Age</th>
+              <th scope="col">Department</th>
+              <th scope="col">Assignee</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tickets.length === 0 && (
+              <tr>
+                <td colSpan="8" className={styles.emptyRow}>
+                  Tidak ada tiket yang cocok dengan filter ini.{" "}
+                  <Link href="/tickets">Reset filter</Link>
                 </td>
               </tr>
-            );
-          })}
-        </tbody>
-      </table></div>
+            )}
+            {tickets.map((t) => {
+              const isCritical = t.priority === "Critical";
+              const hoursIdle = (new Date() - new Date(t.updatedAt)) / 3600000;
+              const isSLA =
+                (t.status === "New" && hoursIdle > 2) ||
+                (isCritical && hoursIdle > 1 && t.status !== "Resolved");
+              const hasPings = t.slaBreaches > 0;
+
+              let expiryDateStr = null;
+              if (t.customData && typeof t.customData === "object") {
+                const expiryVal = Object.values(t.customData).find(
+                  (val) => typeof val === "string" && /^\d{4}-\d{2}-\d{2}$/.test(val)
+                );
+                if (expiryVal) expiryDateStr = expiryVal;
+              }
+
+              let rowClass = "";
+              if (isSLA) rowClass = "ticket-row-sla";
+              else if (t.slaBreaches > 2 && t.status !== "Resolved") rowClass = "ticket-row-critical";
+              else if (hasPings && t.status !== "Resolved") rowClass = "ticket-row-warning";
+              else if (expiryDateStr && t.status !== "Resolved" && new Date(expiryDateStr) < new Date())
+                rowClass = "ticket-row-expired";
+
+              const presentation = ticketPresentation(t);
+              const isExpired = expiryDateStr ? new Date(expiryDateStr) < new Date() : false;
+
+              return (
+                <tr key={t.id} className={rowClass}>
+                  <td className={styles.trackingCell}>{t.trackingId}</td>
+                  <td className={styles.ticketDetail}>
+                    <Link
+                      href={`/tickets/${t.id}`}
+                      className={styles.ticketTitle}
+                      title={presentation.title}
+                    >
+                      {presentation.title}
+                    </Link>
+                    {presentation.subtitle && (
+                      <div className={styles.secondary}>{presentation.subtitle}</div>
+                    )}
+                    <div className={styles.secondary}>
+                      {t.serviceWorkTypeLabel ||
+                        WORK_TYPE_LABELS[t.workType] ||
+                        WORK_TYPE_LABELS.Unclassified}
+                    </div>
+                    {(presentation.cids.length > 0 ||
+                      (t.sapReference &&
+                        ![presentation.title, presentation.subtitle, ...presentation.cids].includes(
+                          t.sapReference
+                        )) ||
+                      (t.slaBreaches > 0 && t.status !== "Resolved") ||
+                      (expiryDateStr && t.status !== "Resolved")) && (
+                      <div className={styles.metaBadgeRow}>
+                        {presentation.cids.map((cid) => (
+                          <span key={cid} className={styles.circuit}>
+                            CID: {cid}
+                          </span>
+                        ))}
+                        {t.sapReference &&
+                          ![presentation.title, presentation.subtitle, ...presentation.cids].includes(
+                            t.sapReference
+                          ) && <span className={styles.circuit}>SAP: {t.sapReference}</span>}
+                        {t.slaBreaches > 0 && t.status !== "Resolved" && (
+                          <span className={styles.pingBadge}>x{t.slaBreaches} CS Pings!</span>
+                        )}
+                        {expiryDateStr && t.status !== "Resolved" && (
+                          <span
+                            className={`${styles.expiryBadge} ${
+                              isExpired ? styles.expiryBadgeExpired : ""
+                            }`}
+                          >
+                            {isExpired
+                              ? "EXPIRED"
+                              : `Exp: ${new Date(expiryDateStr).toLocaleDateString()}`}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {(t.customData?.["Order Origin"] || t.customData?.["Executing Vendor"]) && (
+                      <div className={styles.routing}>
+                        {t.customData?.["Order Origin"] && (
+                          <span>Penerima order: {t.customData["Order Origin"]}</span>
+                        )}
+                        {t.customData?.["Executing Vendor"] && (
+                          <span>Pelaksana: {t.customData["Executing Vendor"]}</span>
+                        )}
+                      </div>
+                    )}
+                    <details className={styles.original}>
+                      <summary>Data asal</summary>
+                      <dl>
+                        <dt>Name</dt>
+                        <dd>{presentation.originalName || "Tidak diisi"}</dd>
+                        <dt>Subject</dt>
+                        <dd>{presentation.originalSubject || "Tidak diisi"}</dd>
+                      </dl>
+                    </details>
+                  </td>
+                  <td>
+                    {t.jobCategory ? (
+                      <span className={styles.categoryPill}>{t.jobCategory.name}</span>
+                    ) : (
+                      <span className={styles.mutedItalic}>-</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className="badge" style={statusStyle(t.status)}>
+                      {t.status}
+                    </span>
+                  </td>
+                  <td
+                    style={{
+                      fontWeight: isCritical ? 700 : 400,
+                      color: isCritical ? "var(--ui-danger)" : "inherit",
+                    }}
+                  >
+                    {t.priority}
+                  </td>
+                  <td className={styles.ageCell}>{timeAgo(t.updatedAt)}</td>
+                  <td>{t.department?.name}</td>
+                  <td>
+                    <div className={styles.assigneeCell}>
+                      {t.assignee?.name || (
+                        <span className={styles.mutedItalic}>Unassigned</span>
+                      )}
+                      {canViewAll && (
+                        <TicketQuickActions ticketId={t.id} isUnassigned={!t.assigneeId} />
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       <Pagination totalCount={totalTickets} pageSize={pageSize} />
     </main>
